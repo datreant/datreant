@@ -17,12 +17,13 @@ class Sim(object):
     """
 
     def __init__(self, system, **kwargs):
-        """Initialize a base object.
+        """Initialize a Sim object.
 
         :Arguments:
             *system*
                 universe (:class:`MDAnalysis.Universe` object) that contains a
-                trajectory; can also be a directory that contains a base object
+                trajectory; can also be a directory that contains a Sim object
+                metadata file
 
         :Keywords:
             *name*
@@ -45,19 +46,22 @@ class Sim(object):
         # if system is a directory string, load existing base object
         if isinstance(system, basestring):
             self.metadata["basedir"] = os.path.abspath(system)
-            self.metadata["basefile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__name__))
+            self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__name__))
             self._load_base()
         # if system is a universe, begin building new base object
         elif isinstance(system, MDAnalysis.core.AtomGroup.Universe):
             # set location of analysis structures
             location = kwargs.pop('location', None)
             if location == None:
-                projectdir = kwargs.pop('projectdir', None)
-                analysisdir = os.path.join(projectdir, 'analysis/individual')
+                try:
+                    projectdir = kwargs.pop('projectdir')
+                except KeyError:
+                    print "Cannot construct {} object without projectdir. See documentation for details.".format(self.__name__)
+                analysisdir = os.path.join(projectdir, 'MDSynthesis/{}'.format(self.__name__))
                 self.metadata["basedir"] = self._location(system.trajectory.filename, analysisdir)
             else:
                 self.metadata["basedir"] = os.path.abspath(location)
-            self.metadata["basefile"] = os.path.join(self.metadata["basedir"], 'base.yaml')
+            self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__name__))
             self.metadata['structure_file'] = os.path.abspath(system.filename) 
             self.metadata['trajectory_file'] = os.path.abspath(system.trajectory.filename)
             self.universe = system
@@ -115,7 +119,7 @@ class Sim(object):
         """
         self._makedirs(self.metadata["basedir"])
 
-        with open(self.metadata['basefile'], 'w') as f:
+        with open(self.metadata['metafile'], 'w') as f:
             yaml.dump(self.metadata, f)
 
     def _location(self, trajpath, analysisdir):
@@ -140,7 +144,7 @@ class Sim(object):
         """Load base object.
         
         """
-        with open(self.metadata['basefile'], 'r') as f:
+        with open(self.metadata['metafile'], 'r') as f:
             self.metadata = yaml.load(f)
         self.universe = MDAnalysis.Universe(self.metadata['structure_file'], self.metadata['trajectory_file'])
     
