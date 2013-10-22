@@ -140,10 +140,10 @@ class Sim(object):
         """
         objectdir = os.path.join(projectdir, 'MDSynthesis/{}'.format(self.__class__.__name__))
         p = os.path.abspath(trajpath)
-        p.replace(projectdir, '')
+        p = p.replace(projectdir, '')
 
         pluck_segment = os.path.join(os.path.normpath(pluck_segment), '')
-        p.replace(pluck_segment, '')
+        p = p.replace(pluck_segment, '')
         p = os.path.dirname(os.path.normpath(p))
         pdb.set_trace()
 
