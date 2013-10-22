@@ -1,0 +1,11 @@
+Metadata-Version: 1.1
+Name: MDSynthesis
+Version: 0.1.0-dev
+Summary: UNKNOWN
+Home-page: UNKNOWN
+Author: David Dotson
+Author-email: dotsdl@gmail.com
+License: GPL 2
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires: MDAnalysis

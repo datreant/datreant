@@ -12,9 +12,9 @@ from setuptools import setup
 setup(name='MDSynthesis',
       version='0.1.0-dev',
       author='David Dotson',
-      author_email='dotsdl@gmail.com'
+      author_email='dotsdl@gmail.com',
       packages=['MDSynthesis'],
-      license'GPL 2',
-      long_description=open('README').read()
-      requires = ['MDAnalysis']
+      license='GPL 2',
+      long_description=open('README').read(),
+      requires=['MDAnalysis']
      )
