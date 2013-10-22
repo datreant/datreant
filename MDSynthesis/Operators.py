@@ -19,11 +19,35 @@ class Analysis(object):
     """
     
     def __init__(self, *args, **kwargs):
-        """Initialize analysis object.
+        """Generate analysis object.
+
+        Analysis objects perform an analysis operation on individual Sims,
+        looping through the trajectory to look at each timestep.
+
+        When multiple Sims are loaded, each Analysis method operates on them
+        in parallel using separate processes.
+
+        Important methods::
+
+        :method:`run()` - perform this time-consuming trajectory-loop data
+                          collection
+
+        :method:`analyze()` - post-collection operations that do not directly
+                              require trajectory information
+
+        This class is meant to be a parent class to a specific analysis for
+        specific Sim-derived objects. When inheriting, one need only replace::
+        
+        :method:`_run_system_pre()`
+        :method:`_run_system_loop()`
+        :method:`_run_system_post()`
+        :method:`analyze()`
+
+        at minimum to implement specific results.
 
         :Arguments:
             *args
-                Base-derived objects to analyze 
+                Sim (or Sim-derived) objects to analyze
 
         """
         self.systems = list(args)
@@ -59,12 +83,23 @@ class Analysis(object):
     def _run_system(self, system, **kwargs):
         """Run timeseries collection for single system.
 
+        :Arguments:
+            *system*
+                Sim (or Sim-derived) object
+
+        :Keywords:
+            **kwargs passed to :method:`_run_system_pre()`
+                               :method:`_run_system_loop()`
+                               :method:`_run_system_post()`
+
         """
         system.logger.info("Running {} analysis on '{}'...".format(self.__name__, system.metadata['name']))
 
         # set up data storage structure
         sys_results = {'time': np.zeros((len(system.universe.trajectory),), dtype=float),
                       }
+
+        self._run_system_pre(system, sys_results, **kwargs)
 
         # iterate through trajectory; collect raw data
         system.logger.info("Collecting timeseries...")
@@ -73,19 +108,61 @@ class Analysis(object):
         for ts in system.universe.trajectory:
             pm.echo(ts.frame)
             sys_results['time'][system.universe.trajectory.frame - 1] = system.universe.trajectory.time
-            # stuff to do
-        
-        self.save(system, sys_results)
+            self._run_system_loop(system, sys_results, **kwargs)
 
+        self._run_system_post(system, sys_results, **kwargs)
+        self._save(system, sys_results)
+ 
+    def _run_system_pre(system, sys_results, **kwargs):
+        """Operations to be performed before run loop.
+
+        :Arguments:
+            *system*
+                Sim (or Sim-derived) object
+            *sys_results*
+                dict storing results for *system*
+
+        :Keywords:
+
+        """
+        return
+
+    def _run_system_loop(system, sys_results, **kwargs):
+        """Operations to be performed inside of run loop.
+
+        :Arguments:
+            *system*
+                Sim (or Sim-derived) object
+            *sys_results*
+                dict storing results for *system*
+
+        :Keywords:
+    
+        """
+        return
+
+    def _run_system_post(system, sys_results, **kwargs):
+        """Operations to be performed after run loop.
+
+        :Arguments:
+            *system*
+                Sim (or Sim-derived) object
+            *sys_results*
+                dict storing results for *system*
+
+        :Keywords:
+
+        """
+        return
 
     def analyze(self, **kwargs):
         """Perform analysis of timeseries.
 
         """
         # make sure data loaded into each system; should use try/catch here
-        self.load()
+        self._load()
 
-    def save(self, system, sys_results):
+    def _save(self, system, sys_results):
         """Save results to main data file.
 
         :Arguments:
@@ -101,7 +178,7 @@ class Analysis(object):
         with open(main_file, 'wb') as f:
             cPickle.dump(sys_results, f)
 
-    def load(self, **kwargs):
+    def _load(self, **kwargs):
         """Load data for each system if not already loaded.
 
         :Keywords:

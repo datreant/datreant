@@ -7,37 +7,76 @@
 :mod:`MDSynthesis` --- an organizational framework using MDAnalysis
 ====================================================================
 
+MDSynthesis is designed to address the logistical aspects of molecular dynamics
+trajectory analysis. Whereas MDAnalysis gives the computational tools to dissect
+trajectories, MDSynthesis provides a framework for automatically organizing the
+results. This allows you (the scientist) to focus on your science, letting the
+computer handle the lower-level logistical details. 
 
-.. rubric:: Included algorithms
+Generating Sim objects
+----------------------
 
-If you use the RMSD alignment code (:mod:`MDAnalysis.analysis.align`) that
-uses the :mod:`~MDAnalysis.core.qcprot` module please also cite
-
-    Douglas L. Theobald. Rapid calculation of RMSD using a
-    quaternion-based characteristic polynomial. Acta Crystallographica
-    A 61 (2005), 478-480.
-
-    Pu Liu, Dmitris K. Agrafiotis, and Douglas L. Theobald. Fast
-    determination of the optimal rotational matrix for macromolecular
-    superpositions. J. Comput. Chem. 31 (2010), 1561-1563.
-
-Getting started
----------------
-
-Import the package::
+In an interactive python session, import the package::
 
   >>> import MDSynthesis
 
-(note that not everything in MDAnalysis is imported right away; for
-additional functionality you might have to import sub-modules
-separately, e.g. for RMS fitting ``import MDAnalysis.analysis.align``.)
-
-Build a "universe" from a topology (PSF, PDB) and a trajectory (DCD, XTC/TRR);
-here we are assuming that PSF, DCD, etc contain file names. If you don't have
-trajectories at hand you can play with the ones that come with MDAnalysis for
-testing (see below under `Examples`_)::
+The Sim class is immediately available. You can create a Sim object by giving it
+a MDAnalysis Universe::
 
   >>> u = MDAnalysis.Universe(PSF, DCD)
+  >>> s = MDSynthesis.Sim(u, location=".")
+
+The Sim object is now loaded in the python session, but it is also stored in
+the filesystem. In this case, we specified that it be stored in the current
+directory. You can find this object in `./MDSynthesis/Sim/`, where it is
+really just a single YaML file that stores its metadata.
+
+Now, leave the session. Starting a new session, you can reload the object by
+simply specifiying the directory in which the metadata file is stored::
+
+  >>> import MDSynthesis
+  >>> s = MDSynthesis.Sim('./MDSynthesis/Sim/')
+
+The metadata is loaded, and the Sim object is identical to the one initialized
+before using a universe.
+
+Using Analysis objects
+----------------------
+
+The real strength of MDSynthesis is in its analysis framework. The Analysis
+class in :mod:`MDSynthesis.Operators` can be used as a base class for any
+timeseries analysis. If we built an analysis object called `Salt` that looked
+at ion interactions with a protein, we could then run this on our simulation object
+with::
+
+  >>> salt = Salt(s) 
+  >>> salt.run()
+
+For this Sim object, the resulting data is pickled and stored in 
+`./MDSynthesis/Sim/Salt/Salt.pkl`. It can be reloaded for immediate parsing
+with::
+
+  >>> s.load('Salt')
+
+and unloaded with::
+
+  >>> s.unload('Salt')
+
+This allows one to collect large numbers of unrelated datasets for a specific
+simulation system, then easily recall select datasets for analysis later. All
+the while, the datasets remain organized.
+
+Further automation
+------------------
+
+Instead of specifying a location to store the Sim object as before, we can
+specify the project directory out of which we are working::
+
+  >>> u = MDAnalysis.Universe(PSF, DCD)
+  >>> s = MDSynthesis.Sim(u, projectdir="/home/monty/Projects/Spam/Eggs/")
+
+If the trajectory file is stored in `/home/monty/Projects/Spam/Eggs/WORK/system1`, 
+then the Sim object will be placed in
 
 .. SeeAlso:: :class:`MDAnalysis.core.AtomGroup.Universe` for details
 
@@ -49,7 +88,4 @@ __version__ = "0.1.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 __all__ = ['Sim', 'SimSet', 'SimAnalysis', 'SimSetAnalysis']
 
 # Bring some often used objects into the current namespace
-from Sim import Timeseries
-from core.AtomGroup import Universe, asUniverse
-from coordinates.core import writer as Writer
-
+from Containers import Sim

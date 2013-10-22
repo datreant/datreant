@@ -1,5 +1,5 @@
 """
-Useful container objects for :mod:`MDAnalysis` :class:`MDAnalysis.core.AtomGroup.Universe`.
+Useful container objects for :mod:`MDAnalysis` :class:`MDAnalysis.Universe`.
 These are the organizational units for :mod:`MDSynthesis`.
 
 """
@@ -10,6 +10,7 @@ import cPickle
 import yaml
 import logging
 import MDAnalysis
+import pdb
 
 class Sim(object):
     """Base class for simulation objects.
@@ -17,7 +18,7 @@ class Sim(object):
     """
 
     def __init__(self, system, **kwargs):
-        """Initialize a Sim object.
+        """Generate a Sim object.
 
         :Arguments:
             *system*
@@ -26,18 +27,17 @@ class Sim(object):
                 metadata file
 
         :Keywords:
+            NOTE: keywords only used if *system* is a universe.
             *name*
-                desired name of object, used for logging and referring to
+                desired name for object, used for logging and referring to
                 object in some analyses; default is trajectory file directory
                 basename
             *location*
-                location for analysis data storage; default is analysis
-                directory corresponding to trajectory directory
-                if *system* is a base object directory, location is set
-                to that directory
+                where to store object, only used if *system* is a universe;
+                default automatically places object in MDSynthesis directory
+                structure. See the :mod:MDSynthesis documentation for details.
             *projectdir*
                 path to main project directory; required if no *location* given
-
         """
         self.metadata = dict()              # information about object; defines base object
         self.selections = dict()            # AtomGroups
@@ -46,7 +46,7 @@ class Sim(object):
         # if system is a directory string, load existing base object
         if isinstance(system, basestring):
             self.metadata["basedir"] = os.path.abspath(system)
-            self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__name__))
+            self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__class__.__name__))
             self._load_base()
         # if system is a universe, begin building new base object
         elif isinstance(system, MDAnalysis.core.AtomGroup.Universe):
@@ -56,12 +56,15 @@ class Sim(object):
                 try:
                     projectdir = kwargs.pop('projectdir')
                 except KeyError:
-                    print "Cannot construct {} object without projectdir. See documentation for details.".format(self.__name__)
-                analysisdir = os.path.join(projectdir, 'MDSynthesis/{}'.format(self.__name__))
-                self.metadata["basedir"] = self._location(system.trajectory.filename, analysisdir)
+                    print "Cannot construct {} object without projectdir. See object documentation for details.".format(self.__class__.__name__)
+                    raise
+                projectdir = os.path.abspath(projectdir)
+                pluck_segment = kwargs.pop('pluck_segment', '')
+                self.metadata["basedir"] = self._location(system.trajectory.filename, projectdir, pluck_segment)
             else:
-                self.metadata["basedir"] = os.path.abspath(location)
-            self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__name__))
+                location = os.path.abspath(location)
+                self.metadata["basedir"] = os.path.join(location, 'MDSynthesis/{}'.format(self.__class__.__name__))
+            self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__class__.__name__))
             self.metadata['structure_file'] = os.path.abspath(system.filename) 
             self.metadata['trajectory_file'] = os.path.abspath(system.trajectory.filename)
             self.universe = system
@@ -95,7 +98,7 @@ class Sim(object):
             self.logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
 
     def unload(self, *args):
-        """Load data instances into object.
+        """Unload data instances from object.
 
         If 'all' is in argument list, every loaded dataset is unloaded.
 
@@ -122,19 +125,29 @@ class Sim(object):
         with open(self.metadata['metafile'], 'w') as f:
             yaml.dump(self.metadata, f)
 
-    def _location(self, trajpath, analysisdir):
-        """Build analysis directory path from trajectory path.
+    def _location(self, trajpath, projectdir, pluck_segment):
+        """Build Sim object directory path from trajectory path.
     
         :Arguments:
             *trajpath*
                 path to trajectory
+            *projectdir*
+                path to project directory
+            *pluck_segment*
+                component of *trajpath* to leave out of final Sim object
+                directory path, e.g. 'WORK/'
+                
         """
+        objectdir = os.path.join(projectdir, 'MDSynthesis/{}'.format(self.__class__.__name__))
         p = os.path.abspath(trajpath)
-        ind = p.split('/').index('WORK')
-        seg = '/'.join(p.split('/')[ind+1:])
-        seg = os.path.dirname(seg)
-    
-        return os.path.join(analysisdir, seg)
+        p.replace(projectdir, '')
+
+        pluck_segment = os.path.join(os.path.normpath(pluck_segment), '')
+        p.replace(pluck_segment, '')
+        p = os.path.dirname(os.path.normpath(p))
+        pdb.set_trace()
+
+        return os.path.join(objectdir, p)
 
     def _makedirs(self, p):
         if not os.path.exists(p):
@@ -161,9 +174,9 @@ class Sim(object):
         """
         # building core items
         attributes = {'name': kwargs.pop('name', os.path.basename(os.path.dirname(self.metadata['trajectory_file']))),
-                      'logfile': os.path.join(self.metadata['basedir'], '{}.log'.format(self.__name__)),
+                      'logfile': os.path.join(self.metadata['basedir'], '{}.log'.format(self.__class__.__name__)),
                       'analysis_list': [],
-                      'type': self.__name__,
+                      'type': self.__class__.__name__,
                       }
 
         for key in attributes.keys():
@@ -175,7 +188,7 @@ class Sim(object):
 
         """
         # set up logging
-        self.logger = logging.getLogger('{}.{}'.format(self.__name__, self.metadata['name']))
+        self.logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
         ch = logging.StreamHandler(sys.stdout)
         fh = logging.FileHandler(self.metadata['logfile'])
         self.logger.addHandler(ch)
