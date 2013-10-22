@@ -125,7 +125,7 @@ class Sim(object):
         with open(self.metadata['metafile'], 'w') as f:
             yaml.dump(self.metadata, f)
 
-    def _location(self, trajpath, projectdir, pluck_segment):
+    def _location(self, trajpath, projectdir, *pluck_segment):
         """Build Sim object directory path from trajectory path.
     
         :Arguments:
@@ -134,19 +134,27 @@ class Sim(object):
             *projectdir*
                 path to project directory
             *pluck_segment*
-                component of *trajpath* to leave out of final Sim object
+                components of *trajpath* to leave out of final Sim object
                 directory path, e.g. 'WORK/'
                 
         """
+        # add missing ending slashes to projectdir; get objectdir
+        projectdir = os.path.join(projectdir, '')
         objectdir = os.path.join(projectdir, 'MDSynthesis/{}'.format(self.__class__.__name__))
+
+        # build path to container from trajpath; subtract off projectdir
         p = os.path.abspath(trajpath)
         p = p.replace(projectdir, '')
 
-        pluck_segment = os.path.join(os.path.normpath(pluck_segment), '')
-        p = p.replace(pluck_segment, '')
-        p = os.path.dirname(os.path.normpath(p))
-        pdb.set_trace()
+        # subtract plucked segments from container path
+        for seg in pluck_segment:
+            seg = os.path.join(os.path.normpath(seg), '')
+            p = p.replace(seg, '')
 
+        # pluck off trajectory filename from container path
+        p = os.path.dirname(os.path.normpath(p))
+
+        # return final constructed path
         return os.path.join(objectdir, p)
 
     def _makedirs(self, p):
