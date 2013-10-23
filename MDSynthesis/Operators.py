@@ -158,6 +158,8 @@ class Analysis(object):
     def analyze(self, **kwargs):
         """Perform analysis of timeseries.
 
+        Does not require stepping through trajectory.
+
         """
         # make sure data loaded into each system; should use try/catch here
         self._load()
