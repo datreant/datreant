@@ -59,15 +59,14 @@ class Sim(object):
                 try:
                     projectdir = kwargs.pop('projectdir')
                 except KeyError:
-                    print "Cannot construct {} object without projectdir. See object documentation for details.".format(self.__class__.__name__)
-                    raise
+                    raise KeyError("Cannot construct {} object without location or projectdir. See object documentation for details.".format(self.__class__.__name__))
                 projectdir = os.path.abspath(projectdir)
                 pluck_segment = kwargs.pop('pluck_segment', ('',))
                 try:
                     if isinstance(pluck_segment, basestring):
-                        raise TypeError
+                        raise TypeError("pluck_segment must be a tuple, not a string.")
                 except TypeError:
-                        print "pluck_segment must be a tuple, not a string."
+                        raise
                 self.metadata["basedir"] = self._location(system.trajectory.filename, projectdir, *pluck_segment)
             else:
                 location = os.path.abspath(location)
