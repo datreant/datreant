@@ -76,7 +76,18 @@ specify the project directory out of which we are working::
   >>> s = MDSynthesis.Sim(u, projectdir="/home/monty/Projects/Spam/Eggs/")
 
 If the trajectory file is stored in `/home/monty/Projects/Spam/Eggs/WORK/system1`, 
-then the Sim object will be placed in
+then the Sim object will be placed in 
+`/home/monty/Projects/Spam/Eggs/MDSynthesis/Sim/WORK/system1`. One can remove
+portions of the directory structure after the object name (`Sim`) using the
+`pluck_segment` keyword.
+
+The advantage with this is that, once created, the Sim object can be reloaded
+from the directory in which it is stored. You need never track down the
+structure file or trajectory file ever again. 
+
+The Sim class can also be used as a base class for a container that is more
+specific to the type of simulations one is working with. All classes
+in MDSynthesis are designed with easy inheritance in mind.
 
 .. SeeAlso:: :class:`MDAnalysis.core.AtomGroup.Universe` for details
 
