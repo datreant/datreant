@@ -38,6 +38,9 @@ class Sim(object):
                 structure. See the :mod:MDSynthesis documentation for details.
             *projectdir*
                 path to main project directory; required if no *location* given
+            *pluck_segment*
+                tuple with components of *trajpath* to leave out of final Sim
+                object directory path, e.g. ('WORK/',)
         """
         self.metadata = dict()              # information about object; defines base object
         self.selections = dict()            # AtomGroups
@@ -60,7 +63,7 @@ class Sim(object):
                     raise
                 projectdir = os.path.abspath(projectdir)
                 pluck_segment = kwargs.pop('pluck_segment', '')
-                self.metadata["basedir"] = self._location(system.trajectory.filename, projectdir, pluck_segment)
+                self.metadata["basedir"] = self._location(system.trajectory.filename, projectdir, *pluck_segment)
             else:
                 location = os.path.abspath(location)
                 self.metadata["basedir"] = os.path.join(location, 'MDSynthesis/{}'.format(self.__class__.__name__))
@@ -134,8 +137,8 @@ class Sim(object):
             *projectdir*
                 path to project directory
             *pluck_segment*
-                components of *trajpath* to leave out of final Sim object
-                directory path, e.g. 'WORK/'
+                tuple with components of *trajpath* to leave out of final Sim
+                object directory path, e.g. 'WORK/'
                 
         """
         # add missing ending slashes to projectdir; get objectdir
