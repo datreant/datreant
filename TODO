@@ -4,12 +4,29 @@
 TODO List
 =============
 
+Containers:
+
+Containers.Sim:
+
 + Add automatic location checking for metafile and basedir upon generation
   of Sim object. This would make it so that the metadata is properly updated
   if the object directory is moved without a manual edit.
 
 + Add basic VMD method to Sim object.
 
+Containers.SimSet:
+
++ build class to operate as a bundle of Sim or Sim-derived objects
++ make Sim objects accessible as elements of a dictionary keyed by Sim name
+
+
+Operators:
+
 + Create VMD operator that can take multiple objects and load all of them
   at once.
+
+Operators.Anaysis:
+
++ add a progressbar scheme that shows progress of multiple systems
+  in a meaningful way; current one is meant for serial use.
 
