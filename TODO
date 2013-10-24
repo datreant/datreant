@@ -1,0 +1,15 @@
+.. encoding UTF-8
+
+=============
+TODO List
+=============
+
++ Add automatic location checking for metafile and basedir upon generation
+  of Sim object. This would make it so that the metadata is properly updated
+  if the object directory is moved without a manual edit.
+
++ Add basic VMD method to Sim object.
+
++ Create VMD operator that can take multiple objects and load all of them
+  at once.
+
