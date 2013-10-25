@@ -70,7 +70,7 @@ class Sim(object):
                 self.metadata["basedir"] = self._location(system.trajectory.filename, projectdir, *pluck_segment)
             else:
                 location = os.path.abspath(location)
-                self.metadata["basedir"] = os.path.join(location, 'MDSynthesis/{}'.format(self.__class__.__name__))
+                self.metadata["basedir"] = os.path.join(location, 'MDSynthesis/{}/{}'.format(self.__class__.__name__, kwargs.get('name', os.path.splitext(os.path.basename(system.filename))[0])))
             self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__class__.__name__))
             self.metadata['structure_file'] = os.path.abspath(system.filename) 
             self.metadata['trajectory_file'] = os.path.abspath(system.trajectory.filename)
@@ -79,6 +79,7 @@ class Sim(object):
         # finish up and save
         self._build_metadata(**kwargs)
         self.save()
+        self._build_attributes()
 
     def load(self, *args):
         """Load data instances into object.

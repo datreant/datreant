@@ -70,11 +70,11 @@ class Analysis(object):
                 p.start()
                 joblist.append(p)
             else:
-                system.logger.info('{} data already present; skipping data collection.'.format(self.__name__))
+                system.logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
 
             # update analysis list in each object
-            if not self.__name__ in system.metadata['analysis_list']:
-                system.metadata['analysis_list'].append(self.__name__)
+            if not self.__class__.__name__ in system.metadata['analysis_list']:
+                system.metadata['analysis_list'].append(self.__class__.__name__)
                 system.save()
 
         for p in joblist:
@@ -93,7 +93,7 @@ class Analysis(object):
                                :method:`_run_system_post()`
 
         """
-        system.logger.info("Running {} analysis on '{}'...".format(self.__name__, system.metadata['name']))
+        system.logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, system.metadata['name']))
 
         # set up data storage structure
         sys_results = {'time': np.zeros((len(system.universe.trajectory),), dtype=float),
@@ -173,9 +173,9 @@ class Analysis(object):
             *sys_results*
                 results for system
         """
-        analysis_dir = os.path.join(system.metadata['basedir'], self.__name__)
+        analysis_dir = os.path.join(system.metadata['basedir'], self.__class__.__name__)
         system._makedirs(analysis_dir)
-        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__name__))
+        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
 
         with open(main_file, 'wb') as f:
             cPickle.dump(sys_results, f)
@@ -191,8 +191,8 @@ class Analysis(object):
 
         # make sure data loaded into each system; should use try/catch here
         for system in self.systems:
-            if (not self.__name__ in system.analysis.keys()) or force:
-                system.load(self.__name__)
+            if (not self.__class__.__name__ in system.analysis.keys()) or force:
+                system.load(self.__class__.__name__)
     
     def _datacheck(self, system):
         """Check if data file already present.
@@ -205,8 +205,8 @@ class Analysis(object):
             *present*
                 True if data is already present; False otherwise
         """
-        analysis_dir = os.path.join(system.metadata['basedir'], self.__name__)
-        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__name__))
+        analysis_dir = os.path.join(system.metadata['basedir'], self.__class__.__name__)
+        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
         return os.path.isfile(main_file)
 
 class AnalysisSet(object):
