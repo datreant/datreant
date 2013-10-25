@@ -14,6 +14,10 @@ Containers.Sim:
 
 + Add basic VMD method to Sim object.
 
++ Add the ability to give a structure or structure+trajectory to generate
+  universe automatically. Saves a step for interactive work, and shouldn't
+  overcomplicate the class. :)
+
 Containers.SimSet:
 
 + build class to operate as a bundle of Sim or Sim-derived objects
