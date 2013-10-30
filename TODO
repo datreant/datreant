@@ -34,3 +34,12 @@ Operators.Anaysis:
 + add a progressbar scheme that shows progress of multiple systems
   in a meaningful way; current one is meant for serial use.
 
+
+Ideastorm
+==========
+Classes for handling md systems that are still being run?
++ integration with GromacsWrapper?
++ globus-toolkit methods and/or classes?
+
+Markov analysis class?
++ see Michael Grabe's work on mitochondrial channels
