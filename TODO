@@ -43,3 +43,6 @@ Classes for handling md systems that are still being run?
 
 Markov analysis class?
 + see Michael Grabe's work on mitochondrial channels
+
+Globus Toolkit!
++ build an Operator that can perform globus tasks on container objects
