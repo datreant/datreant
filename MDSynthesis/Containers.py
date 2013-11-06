@@ -173,8 +173,13 @@ class Sim(object):
         """Load base object.
         
         """
-        with open(self.metadata['metafile'], 'r') as f:
+        basedir = self.metadata['basedir']
+        metafile = self.metadata['metafile']
+        with open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
+        
+        self.metadata['basedir'] = basedir
+        self.metadata['metafile'] = metafile
         self.universe = MDAnalysis.Universe(self.metadata['structure_file'], self.metadata['trajectory_file'])
     
     def _build_metadata(self, **kwargs):
