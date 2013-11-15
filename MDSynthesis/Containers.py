@@ -17,14 +17,23 @@ class Sim(object):
 
     """
 
-    def __init__(self, system, **kwargs):
+    def __init__(self, system, trajectory=None, **kwargs):
         """Generate a Sim object.
+
+        To generate a Sim object, provide a universe (:class:`MDAnalysis.Universe`)
+        for *system*, OR provide a topology file and a corresponding trajectory.
+        This second option shortcuts the need to generate a universe first.
+
+        To regenerate an existing Sim object, give as *system* a directory that
+        contains a Sim object metadata (self.__class__.__name__ + ".yaml").
 
         :Arguments:
             *system*
                 universe (:class:`MDAnalysis.Universe` object) that contains a
-                trajectory; can also be a directory that contains a Sim object
-                metadata file
+                trajectory, or a topology; can also be a directory that
+                contains a Sim object metadata file (self.__class__.__name__ + ".yaml")
+            *trajectory*
+                a trajectory file; only used if a topology file given for *system*
 
         :Keywords:
             NOTE: keywords only used if *system* is a universe.
@@ -51,8 +60,10 @@ class Sim(object):
             self.metadata["basedir"] = os.path.abspath(system)
             self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__class__.__name__))
             self._load_base()
-        # if system is a universe, begin building new base object
-        elif isinstance(system, MDAnalysis.core.AtomGroup.Universe):
+        # if system is a universe, or a structure and trajectory is given, begin building new base object
+        elif isinstance(system, MDAnalysis.core.AtomGroup.Universe) or (trajectory != None):
+            if (trajectory != None):
+                system = MDAnalysis.Universe(system, trajectory)
             # set location of analysis structures
             location = kwargs.pop('location', None)
             if location == None:
