@@ -21,8 +21,13 @@ Containers.Sim
     + Have each sim represented by a unique hash that is made from something
       unique to that object that will never be the same as another. The hash
       can be static, too, meaning that it will never be re-generated.
-      + perhaps make it generated on object's initial generation?
+        + perhaps make it generated on object's initial generation?
 
++ make it so that universes with an arbitrary number of trajectory files can
+  also have their paths stored.
+
++ do paths relative to project directory for projectdir stores; for location
+  stores, do path relative to homedir
 
 Containers.SimSet
 ~~~~~~~~~~~~~~~~~
