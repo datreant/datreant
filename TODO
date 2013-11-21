@@ -23,6 +23,9 @@ Containers.Sim
       can be static, too, meaning that it will never be re-generated.
       + perhaps make it generated on object's initial generation?
 
++ Improving logging output format to give timestamps; see MDAnalysis logging
+  format for a good suggestion
+
 
 Containers.SimSet
 ~~~~~~~~~~~~~~~~~

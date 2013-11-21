@@ -17,7 +17,7 @@ class Sim(object):
 
     """
 
-    def __init__(self, system, trajectory=None, **kwargs):
+    def __init__(self, system, *args, **kwargs):
         """Generate a Sim object.
 
         To generate a Sim object, provide a universe (:class:`MDAnalysis.Universe`)
@@ -56,7 +56,7 @@ class Sim(object):
         self.analysis = dict()              # analysis data 'modular dock'
 
         # if system is a directory string, load existing base object
-        if isinstance(system, basestring):
+        if isinstance(system, basestring) and (trajectory == None):
             self.metadata["basedir"] = os.path.abspath(system)
             self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__class__.__name__))
             self._load_base()
