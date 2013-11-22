@@ -17,23 +17,13 @@ class Sim(object):
 
     """
 
-    def __init__(self, system, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Generate a Sim object.
 
-        To generate a Sim object, provide a universe (:class:`MDAnalysis.Universe`)
-        for *system*, OR provide a topology file and a corresponding trajectory.
-        This second option shortcuts the need to generate a universe first.
-
         To regenerate an existing Sim object, give as *system* a directory that
-        contains a Sim object metadata (self.__class__.__name__ + ".yaml").
+        contains a Sim object metadata file (self.__class__.__name__ + ".yaml").
 
         :Arguments:
-            *system*
-                universe (:class:`MDAnalysis.Universe` object) that contains a
-                trajectory, or a topology; can also be a directory that
-                contains a Sim object metadata file (self.__class__.__name__ + ".yaml")
-            *trajectory*
-                a trajectory file; only used if a topology file given for *system*
 
         :Keywords:
             NOTE: keywords only used if *system* is a universe.
@@ -55,42 +45,12 @@ class Sim(object):
         self.selections = dict()            # AtomGroups
         self.analysis = dict()              # analysis data 'modular dock'
 
-        # if system is a directory string, load existing base object
-        if isinstance(system, basestring) and (trajectory == None):
-            self.metadata["basedir"] = os.path.abspath(system)
-            self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__class__.__name__))
-            self._load_base()
-        # if system is a universe, or a structure and trajectory is given, begin building new base object
-        elif isinstance(system, MDAnalysis.core.AtomGroup.Universe) or (trajectory != None):
-            if (trajectory != None):
-                system = MDAnalysis.Universe(system, trajectory)
-            # set location of analysis structures
-            location = kwargs.pop('location', None)
-            if location == None:
-                try:
-                    projectdir = kwargs.pop('projectdir')
-                except KeyError:
-                    raise KeyError("Cannot construct {} object without location or projectdir. See object documentation for details.".format(self.__class__.__name__))
-                projectdir = os.path.abspath(projectdir)
-                pluck_segment = kwargs.pop('pluck_segment', ('',))
-                try:
-                    if isinstance(pluck_segment, basestring):
-                        raise TypeError("pluck_segment must be a tuple, not a string.")
-                except TypeError:
-                        raise
-                self.metadata["basedir"] = self._location(system.trajectory.filename, projectdir, *pluck_segment)
-            else:
-                location = os.path.abspath(location)
-                self.metadata["basedir"] = os.path.join(location, 'MDSynthesis/{}/{}'.format(self.__class__.__name__, kwargs.get('name', os.path.splitext(os.path.basename(system.filename))[0])))
-            self.metadata["metafile"] = os.path.join(self.metadata["basedir"], '{}.yaml'.format(self.__class__.__name__))
-            self.metadata['structure_file'] = os.path.abspath(system.filename) 
-            self.metadata['trajectory_file'] = os.path.abspath(system.trajectory.filename)
-            self.universe = system
-
-        # finish up and save
-        self._build_metadata(**kwargs)
-        self.save()
-        self._build_attributes()
+        if (os.path.isdir(args[0])):
+        # if system is a directory string, load existing object
+            self._regenerate(*args)
+        else:
+        # if a structure and trajectory(s) are given, begin building new object
+            self._generate(*args, **kwargs)
 
     def load(self, *args):
         """Load data instances into object.
@@ -139,59 +99,129 @@ class Sim(object):
         """Save base object metadata.
 
         """
-        self._makedirs(self.metadata["basedir"])
+        basedir = self._rel2abspath(self.metadata["basedir"])
+        self._makedirs(basedir)
 
-        with open(self.metadata['metafile'], 'w') as f:
+        with open(os.path.join(basedir, self.metadata['metafile']), 'w') as f:
             yaml.dump(self.metadata, f)
 
-    def _location(self, trajpath, projectdir, *pluck_segment):
+    def _build_location(self, trajpath, *pluck_segment):
         """Build Sim object directory path from trajectory path.
     
         :Arguments:
             *trajpath*
                 path to trajectory
-            *projectdir*
-                path to project directory
             *pluck_segment*
                 tuple with components of *trajpath* to leave out of final Sim
                 object directory path, e.g. 'WORK/'
                 
         """
-        # add missing ending slashes to projectdir; get objectdir
-        projectdir = os.path.join(projectdir, '')
-        objectdir = os.path.join(projectdir, 'MDSynthesis/{}'.format(self.__class__.__name__))
+        objectdir = '$PROJECT/MDSynthesis/{}'.format(self.__class__.__name__)
 
-        # build path to container from trajpath; subtract off projectdir
+        # build path to container from trajpath
         p = os.path.abspath(trajpath)
-        p = p.replace(projectdir, '')
+
+        # pluck off trajectory filename from container path
+        p = os.path.dirname(p)
+
+        # pluck off projectdir part of path; replace with reference
+        p = p.replace(self.metadata['projectdir'], objectdir)
 
         # subtract plucked segments from container path
         for seg in pluck_segment:
             seg = os.path.join(os.path.normpath(seg), '')
             p = p.replace(seg, '')
 
-        # pluck off trajectory filename from container path
-        p = os.path.dirname(os.path.normpath(p))
-
         # return final constructed path
-        return os.path.join(objectdir, p)
+        return p
 
+    def _update_projectdir(self, basedir_abs):
+        """Update projectdir based on given (and current) absolute path of basedir.
+
+        """
+        self.metadata['projectdir'] = basedir_abs.partition('/MDSynthesis')[0]
+
+    def _abs2relpath(self, abspath):
+        """Return path to file relative to project path.
+        
+        """
+        return abspath.replace(self.metadata['projectdir'], '$PROJECT')
+
+    def _rel2abspath(self, relpath):
+        """Return realpath given a path relative to project directory. The
+            opposite of _project_relpath.
+        """
+        return relpath.replace('$PROJECT', self.metadata['projectdir'])
+        
     def _makedirs(self, p):
         if not os.path.exists(p):
             os.makedirs(p)
 
-    def _load_base(self):
-        """Load base object.
+    def _generate(self, *args, **kwargs):
+        """Generate new Sim object.
+         
+        """
+        system = MDAnalysis.Universe(*args, **kwargs)
+        
+        # set location of analysis structures
+        location = kwargs.pop('location', None)
+        if location == None:
+            try:
+                projectdir = kwargs.pop('projectdir')
+            except KeyError:
+                raise KeyError("Cannot construct {} object without location or projectdir. See object documentation for details.".format(self.__class__.__name__))
+            self.metadata['projectdir'] = os.path.abspath(projectdir)
+
+            # process plucked segments
+            pluck_segment = kwargs.pop('pluck_segment', ('',))
+            if isinstance(pluck_segment, basestring):
+                pluck_segment = (pluck_segment,)
+
+            self.metadata["basedir"] = self._build_location(system.trajectory.filename, *pluck_segment)
+
+        else:
+            self.metadata['projectdir'] = os.path.abspath(location)
+            self.metadata['basedir'] = '$PROJECT/MDSynthesis/{}/{}'.format(self.__class__.__name__, kwargs.get('name', os.path.splitext(os.path.basename(system.filename))[0]))
+
+        self.metadata['metafile'] = '{}.yaml'.format(self.__class__.__name__)
+        self.metadata['structure_file'] = self._abs2relpath(os.path.abspath(system.filename))
+
+        # record trajectory file(s)
+        try:
+            self.metadata['trajectory_files'] = [ self._abs2relpath(os.path.abspath(x)) for x in system.trajectory.filenames ] 
+        except AttributeError:
+            self.metadata['trajectory_files'] = [self._abs2relpath(os.path.abspath(system.trajectory.filename))]
+
+        # finally, attach universe to object
+        self.universe = system
+
+        # finish up and save
+        self._build_metadata(**kwargs)
+        self.save()
+        self._build_attributes()
+
+    def _regenerate(self, *args, **kwargs):
+        """Re-generate existing object.
         
         """
-        basedir = self.metadata['basedir']
-        metafile = self.metadata['metafile']
+        basedir = os.path.abspath(args[0])
+        metafile = os.path.join(basedir, '{}.yaml'.format(self.__class__.__name__))
         with open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
         
-        self.metadata['basedir'] = basedir
-        self.metadata['metafile'] = metafile
-        self.universe = MDAnalysis.Universe(self.metadata['structure_file'], self.metadata['trajectory_file'])
+        # update location of object if changed
+        self._update_projectdir(basedir)
+        self.metadata['basedir'] = self._abs2relpath(basedir)
+        structure = self._rel2abspath(self.metadata['structure_file'])
+        trajectory = [ self._rel2abspath(x) for x in self.metadata['trajectory_files'] ]
+
+        # attach universe
+        self.universe = MDAnalysis.Universe(structure, *trajectory) 
+
+        # finish up and save
+        self._build_metadata(**kwargs)
+        self.save()
+        self._build_attributes()
     
     def _build_metadata(self, **kwargs):
         """Build metadata. Runs on object generation. 
@@ -205,8 +235,8 @@ class Sim(object):
                 basename
         """
         # building core items
-        attributes = {'name': kwargs.pop('name', os.path.basename(os.path.dirname(self.metadata['trajectory_file']))),
-                      'logfile': os.path.join(self.metadata['basedir'], '{}.log'.format(self.__class__.__name__)),
+        attributes = {'name': kwargs.pop('name', os.path.basename(os.path.dirname(self.metadata['trajectory_files'][0]))),
+                      'logfile': '{}.log'.format(self.__class__.__name__),
                       'analysis_list': [],
                       'type': self.__class__.__name__,
                       }
@@ -219,14 +249,29 @@ class Sim(object):
         """Build attributes. Needed each time object is generated.
 
         """
+        self._start_logger()
+
+    def _start_logger(self):
+        """Start up the logger.
+
+        """
         # set up logging
         self.logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
-        ch = logging.StreamHandler(sys.stdout)
-        fh = logging.FileHandler(self.metadata['logfile'])
-        self.logger.addHandler(ch)
-        self.logger.addHandler(fh)
         self.logger.setLevel(logging.INFO)
 
+        # file handler
+        logfile = self._rel2abspath(os.path.join(self.metadata['basedir'], self.metadata['logfile']))
+        fh = logging.FileHandler(logfile)
+        ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+        fh.setFormatter(ff)
+        self.logger.addHandler(fh)
+
+        # output handler
+        ch = logging.StreamHandler(sys.stdout)
+        cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+        ch.setFormatter(cf)
+        self.logger.addHandler(ch)
+        
 class SimSet(object):
     """Base class for a set of simulation objects.
 
