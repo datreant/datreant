@@ -13,15 +13,49 @@ import MDAnalysis
 import pdb
 
 class Sim(object):
-    """Base class for simulation objects.
+    """The MDSynthesis Sim object is the base container for single simulations.
+
+    The Sim object contains all the machinery required to handle trajectories
+    and the data generated from them in an organized and object-oriented fashion.
+    It is built to be used as a parent class, expanded upon for specific use
+    cases as needed for specific simulation systems.
+
+    To generate a Sim object from scratch, provide a topology and a trajectory
+    in the same way you would for a Universe (:class:`MDAnalysis.Universe`). 
+
+    For example, as with a Universe::
+
+       s = Sim(topology, trajectory)          # read system from file(s)
+       s = Sim(pdbfile)                       # read atoms and coordinates from PDB or GRO
+       s = Sim(topology, [traj1, traj2, ...]) # read from a list of trajectories
+       s = Sim(topology, traj1, traj2, ...)   # read from multiple trajectories
+
+    The real strength of the Sim object is how it stores its information. Generating
+    an object from scratch stores the information needed to re-generate it in the
+    filesystem. By default, this is the current working directory::
+
+        ./MDSynthesis/Sim/name
+
+    The object name can be specified as a keyword, or generated automatically.
+
+    This directory contains a metadata file (Sim.yaml) with all the information
+    needed by the object to find its trajectories and other generated data. To
+    alter it, you need only open it in a text editor. This file is the same
+    dictionary as in::
+
+        s.metadata
+
+    You can reload the metadata with ``s.
+
+
+    To regenerate an existing Sim object, as an argument a directory that
+    contains a Sim object metadata file (self.__class__.__name__ + ".yaml").
+
 
     """
 
     def __init__(self, *args, **kwargs):
         """Generate a Sim object.
-
-        To regenerate an existing Sim object, give as *system* a directory that
-        contains a Sim object metadata file (self.__class__.__name__ + ".yaml").
 
         :Arguments:
 
@@ -47,7 +81,7 @@ class Sim(object):
 
         if (os.path.isdir(args[0])):
         # if system is a directory string, load existing object
-            self._regenerate(*args)
+            self._regenerate(*args, **kwargs)
         else:
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
@@ -62,19 +96,19 @@ class Sim(object):
                 datasets to load as attributes
         """
         if 'all' in args:
-            self.logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))
+            self._logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))
             for i in self.metadata['analysis_list']:
-                self.logger.info("Loading {}...".format(i))
+                self._logger.info("Loading {}...".format(i))
                 with open(os.path.join(self.metadata['basedir'], '{}/{}.pkl'.format(i, i)), 'rb') as f:
                     self.analysis[i] = cPickle.load(f)
-            self.logger.info("Object '{}' loaded with all known data.".format(self.metadata['name']))
+            self._logger.info("Object '{}' loaded with all known data.".format(self.metadata['name']))
         else:
-            self.logger.info("Loading selected data into object '{}'...".format(self.metadata['name']))
+            self._logger.info("Loading selected data into object '{}'...".format(self.metadata['name']))
             for i in args:
-                self.logger.info("Loading {}...".format(i))
+                self._logger.info("Loading {}...".format(i))
                 with open(os.path.join(self.metadata['basedir'], '{}/{}.pkl'.format(i, i)), 'rb') as f:
                     self.analysis[i] = cPickle.load(f)
-            self.logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
+            self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
 
     def unload(self, *args):
         """Unload data instances from object.
@@ -87,13 +121,13 @@ class Sim(object):
         """
         if 'all' in args:
             self.analysis.clear()
-            self.logger.info("Object '{}' unloaded of all data.".format(self.metadata['name']))
+            self._logger.info("Object '{}' unloaded of all data.".format(self.metadata['name']))
         else:
-            self.logger.info("Unloading selected data from object {}...".format(self.metadata['name']))
+            self._logger.info("Unloading selected data from object {}...".format(self.metadata['name']))
             for i in args:
-                self.logger.info("Unloading {}...".format(i))
+                self._logger.info("Unloading {}...".format(i))
                 self.analysis.pop(i, None)
-            self.logger.info("Object '{}' unloaded of selected data.".format(self.metadata['name']))
+            self._logger.info("Object '{}' unloaded of selected data.".format(self.metadata['name']))
 
     def save(self):
         """Save base object metadata.
@@ -104,6 +138,15 @@ class Sim(object):
 
         with open(os.path.join(basedir, self.metadata['metafile']), 'w') as f:
             yaml.dump(self.metadata, f)
+
+    def refresh(self):
+        """Reloads metadata from file.
+
+        """
+        basedir = self._rel2abspath(self.metadata['basedir'])
+        metafile = os.path.join(basedir, self.metadata['metafile'])
+        with open(metafile, 'r') as f:
+            self.metadata = yaml.load(f)
 
     def _build_location(self, trajpath, *pluck_segment):
         """Build Sim object directory path from trajectory path.
@@ -164,24 +207,22 @@ class Sim(object):
         system = MDAnalysis.Universe(*args, **kwargs)
         
         # set location of analysis structures
-        location = kwargs.pop('location', None)
-        if location == None:
-            try:
-                projectdir = kwargs.pop('projectdir')
-            except KeyError:
-                raise KeyError("Cannot construct {} object without location or projectdir. See object documentation for details.".format(self.__class__.__name__))
+        projectdir = kwargs.pop('projectdir', None)
+        if projectdir == None:
+            # if no projectdir given, default to location
+            location = kwargs.pop('location', '.')
+            self.metadata['projectdir'] = os.path.abspath(location)
+            self.metadata['basedir'] = '$PROJECT/MDSynthesis/{}/{}'.format(self.__class__.__name__, kwargs.get('name', os.path.splitext(os.path.basename(system.filename))[0]))
+        else:
             self.metadata['projectdir'] = os.path.abspath(projectdir)
 
             # process plucked segments
             pluck_segment = kwargs.pop('pluck_segment', ('',))
             if isinstance(pluck_segment, basestring):
-                pluck_segment = (pluck_segment,)
-
+                pluck_segment = [pluck_segment]
+            else:
+                pluck_segment = list(pluck_segment)
             self.metadata["basedir"] = self._build_location(system.trajectory.filename, *pluck_segment)
-
-        else:
-            self.metadata['projectdir'] = os.path.abspath(location)
-            self.metadata['basedir'] = '$PROJECT/MDSynthesis/{}/{}'.format(self.__class__.__name__, kwargs.get('name', os.path.splitext(os.path.basename(system.filename))[0]))
 
         self.metadata['metafile'] = '{}.yaml'.format(self.__class__.__name__)
         self.metadata['structure_file'] = self._abs2relpath(os.path.abspath(system.filename))
@@ -256,21 +297,21 @@ class Sim(object):
 
         """
         # set up logging
-        self.logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
-        self.logger.setLevel(logging.INFO)
+        self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
+        self._logger.setLevel(logging.INFO)
 
         # file handler
         logfile = self._rel2abspath(os.path.join(self.metadata['basedir'], self.metadata['logfile']))
         fh = logging.FileHandler(logfile)
         ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
         fh.setFormatter(ff)
-        self.logger.addHandler(fh)
+        self._logger.addHandler(fh)
 
         # output handler
         ch = logging.StreamHandler(sys.stdout)
         cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
         ch.setFormatter(cf)
-        self.logger.addHandler(ch)
+        self._logger.addHandler(ch)
         
 class SimSet(object):
     """Base class for a set of simulation objects.
