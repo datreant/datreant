@@ -76,22 +76,21 @@ class Sim(object):
     """
 
     def __init__(self, *args, **kwargs):
-        """Generate a Sim object.
+        """Generate or regenerate a Sim object.
 
         :Arguments:
+              *args*
+                either a string giving the path to a directory with a Sim object
+                metadata file, or the arguments normally given to an MDAnalysis
+                Universe
 
         :Keywords:
-            NOTE: keywords only used if *system* is a universe.
             *name*
                 desired name for object, used for logging and referring to
                 object in some analyses; default is trajectory file directory
                 basename
-            *location*
-                where to store object, only used if *system* is a universe;
-                default automatically places object in MDSynthesis directory
-                structure. See the :mod:MDSynthesis documentation for details.
             *projectdir*
-                path to main project directory; required if no *location* given
+                path to main project directory; defaults to current directory
             *pluck_segment*
                 tuple with components of *trajpath* to leave out of final Sim
                 object directory path, e.g. ('WORK/',)
@@ -230,21 +229,19 @@ class Sim(object):
         # set location of analysis structures
         projectdir = kwargs.pop('projectdir', None)
         if projectdir == None:
-            # if no projectdir given, default to location
-            location = kwargs.pop('location', '.')
-            self.metadata['projectdir'] = os.path.abspath(location)
-            self.metadata['basedir'] = '$PROJECT/MDSynthesis/{}/{}'.format(self.__class__.__name__, kwargs.get('name', os.path.splitext(os.path.basename(system.filename))[0]))
+            # if no projectdir given, default to cwd
+            self.metadata['projectdir'] = os.path.abspath('.')
         else:
             self.metadata['projectdir'] = os.path.abspath(projectdir)
 
-            # process plucked segments
-            pluck_segment = kwargs.pop('pluck_segment', ('',))
-            if isinstance(pluck_segment, basestring):
-                pluck_segment = [pluck_segment]
-            else:
-                pluck_segment = list(pluck_segment)
-            self.metadata["basedir"] = self._build_location(system.trajectory.filename, *pluck_segment)
-
+        # process plucked segments
+        pluck_segment = kwargs.pop('pluck_segment', ('',))
+        if isinstance(pluck_segment, basestring):
+            pluck_segment = [pluck_segment]
+        else:
+            pluck_segment = list(pluck_segment)
+        self.metadata["basedir"] = self._build_location(system.trajectory.filename, *pluck_segment)
+        
         self.metadata['metafile'] = '{}.yaml'.format(self.__class__.__name__)
         self.metadata['structure_file'] = self._abs2relpath(os.path.abspath(system.filename))
 
@@ -296,8 +293,13 @@ class Sim(object):
                 object in some analyses; default is trajectory file directory
                 basename
         """
+        # fix name if object generated with no name or projectdir
+        name = os.path.basename(os.path.dirname(self.metadata['trajectory_files'][0]))
+        if name == '$PROJECT':
+            name = self.__class__.__name__
+
         # building core items
-        attributes = {'name': kwargs.pop('name', os.path.basename(os.path.dirname(self.metadata['trajectory_files'][0]))),
+        attributes = {'name': kwargs.pop('name', name),
                       'logfile': '{}.log'.format(self.__class__.__name__),
                       'analysis_list': [],
                       'type': self.__class__.__name__,
