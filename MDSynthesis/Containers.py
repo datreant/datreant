@@ -45,12 +45,33 @@ class Sim(object):
 
         s.metadata
 
-    You can reload the metadata with ``s.
+    You can reload the metadata from the file with ``s.refresh()``. If you make
+    changes to the metadata attribute interactively, you can write to the file
+    using ``s.save()``.
 
+    To regenerate an existing Sim object, give a directory that contains a Sim
+    object metadata file (self.__class__.__name__ + ".yaml") instead of a topology::
 
-    To regenerate an existing Sim object, as an argument a directory that
-    contains a Sim object metadata file (self.__class__.__name__ + ".yaml").
+        s = Sim('./MDSynthesis/Sim/name')
 
+    The Sim object will be back as it was before.
+
+    Data from Analysis objects are stored in the object directory. Having generated
+    data from an Analysis called 'Foo', one would reload it with::
+
+        s.load('Foo')
+
+    and access it with::
+
+        s.analysis['Foo']
+
+    The data can be unloaded with::
+
+        s.unload['Foo']
+
+    This is beneficial if the data is rather large, freeing up memory. See the
+    documentation for :class:`MDSynthesis.Operators.Analysis` for more details
+    on how this scheme works.
 
     """
 
@@ -80,7 +101,7 @@ class Sim(object):
         self.analysis = dict()              # analysis data 'modular dock'
 
         if (os.path.isdir(args[0])):
-        # if system is a directory string, load existing object
+        # if first arg is a directory string, load existing object
             self._regenerate(*args, **kwargs)
         else:
         # if a structure and trajectory(s) are given, begin building new object
