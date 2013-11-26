@@ -173,7 +173,7 @@ class Analysis(object):
             *sys_results*
                 results for system
         """
-        analysis_dir = os.path.join(system.metadata['basedir'], self.__class__.__name__)
+        analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
         system._makedirs(analysis_dir)
         main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
 
@@ -205,7 +205,7 @@ class Analysis(object):
             *present*
                 True if data is already present; False otherwise
         """
-        analysis_dir = os.path.join(system.metadata['basedir'], self.__class__.__name__)
+        analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
         main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
         return os.path.isfile(main_file)
 
