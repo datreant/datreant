@@ -70,7 +70,7 @@ class Analysis(object):
                 p.start()
                 joblist.append(p)
             else:
-                system.logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
+                system._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
 
             # update analysis list in each object
             if not self.__class__.__name__ in system.metadata['analysis_list']:
@@ -93,7 +93,7 @@ class Analysis(object):
                                :method:`_run_system_post()`
 
         """
-        system.logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, system.metadata['name']))
+        system._logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, system.metadata['name']))
 
         # set up data storage structure
         sys_results = {'time': np.zeros((len(system.universe.trajectory),), dtype=float),
@@ -102,7 +102,7 @@ class Analysis(object):
         self._run_system_pre(system, sys_results, **kwargs)
 
         # iterate through trajectory; collect raw data
-        system.logger.info("Collecting timeseries...")
+        system._logger.info("Collecting timeseries...")
         pm = ProgressMeter(system.universe.trajectory.numframes, interval=100)
         system.universe.trajectory[0]
         for ts in system.universe.trajectory:
@@ -209,7 +209,7 @@ class Analysis(object):
         main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
         return os.path.isfile(main_file)
 
-class AnalysisSet(object):
+class AnalySet(object):
     """Base class for analysis on SimSet objects.
 
     """

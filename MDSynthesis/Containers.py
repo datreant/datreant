@@ -119,14 +119,14 @@ class Sim(object):
             self._logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))
             for i in self.metadata['analysis_list']:
                 self._logger.info("Loading {}...".format(i))
-                with open(os.path.join(self.metadata['basedir'], '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
                     self.analysis[i] = cPickle.load(f)
             self._logger.info("Object '{}' loaded with all known data.".format(self.metadata['name']))
         else:
             self._logger.info("Loading selected data into object '{}'...".format(self.metadata['name']))
             for i in args:
                 self._logger.info("Loading {}...".format(i))
-                with open(os.path.join(self.metadata['basedir'], '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
                     self.analysis[i] = cPickle.load(f)
             self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
 
