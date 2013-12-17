@@ -1,5 +1,5 @@
 """
-Operator objects that perform some kind of operation using container objects
+Operator objects that perform some kind of operation using Container objects
 as input.
 
 """
@@ -209,7 +209,7 @@ class Analysis(object):
         main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
         return os.path.isfile(main_file)
 
-class AnalySet(object):
+class MetaAnalysis(object):
     """Base class for analysis on SimSet objects.
 
     """

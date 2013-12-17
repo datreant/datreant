@@ -1,18 +1,15 @@
 """
-Useful container objects for :mod:`MDAnalysis` :class:`MDAnalysis.Universe`.
-These are the organizational units for :mod:`MDSynthesis`.
+Basic Container objects: the organizational units for :mod:`MDSynthesis`.
 
 """
 
 import os
-import sys
-import cPickle
 import yaml
-import logging
 import MDAnalysis
-import pdb
 
-class Sim(object):
+import Core
+
+class Sim(ContainerCore):
     """The MDSynthesis Sim object is the base container for single simulations.
 
     The Sim object contains all the machinery required to handle trajectories
@@ -95,9 +92,8 @@ class Sim(object):
                 tuple with components of *trajpath* to leave out of final Sim
                 object directory path, e.g. ('WORK/',)
         """
-        self.metadata = dict()              # information about object; defines base object
+        super(Sim, self).__init__()
         self.selections = dict()            # AtomGroups
-        self.analysis = dict()              # analysis data 'modular dock'
 
         if (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
@@ -105,68 +101,6 @@ class Sim(object):
         else:
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
-
-    def load(self, *args):
-        """Load data instances into object.
-
-        If 'all' is in argument list, every available dataset is loaded.
-
-        :Arguments:
-            *args*
-                datasets to load as attributes
-        """
-        if 'all' in args:
-            self._logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))
-            for i in self.metadata['analysis_list']:
-                self._logger.info("Loading {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
-                    self.analysis[i] = cPickle.load(f)
-            self._logger.info("Object '{}' loaded with all known data.".format(self.metadata['name']))
-        else:
-            self._logger.info("Loading selected data into object '{}'...".format(self.metadata['name']))
-            for i in args:
-                self._logger.info("Loading {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
-                    self.analysis[i] = cPickle.load(f)
-            self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
-
-    def unload(self, *args):
-        """Unload data instances from object.
-
-        If 'all' is in argument list, every loaded dataset is unloaded.
-
-        :Arguments:
-            *args*
-                datasets to unload
-        """
-        if 'all' in args:
-            self.analysis.clear()
-            self._logger.info("Object '{}' unloaded of all data.".format(self.metadata['name']))
-        else:
-            self._logger.info("Unloading selected data from object {}...".format(self.metadata['name']))
-            for i in args:
-                self._logger.info("Unloading {}...".format(i))
-                self.analysis.pop(i, None)
-            self._logger.info("Object '{}' unloaded of selected data.".format(self.metadata['name']))
-
-    def save(self):
-        """Save base object metadata.
-
-        """
-        basedir = self._rel2abspath(self.metadata["basedir"])
-        self._makedirs(basedir)
-
-        with open(os.path.join(basedir, self.metadata['metafile']), 'w') as f:
-            yaml.dump(self.metadata, f)
-
-    def refresh(self):
-        """Reloads metadata from file.
-
-        """
-        basedir = self._rel2abspath(self.metadata['basedir'])
-        metafile = os.path.join(basedir, self.metadata['metafile'])
-        with open(metafile, 'r') as f:
-            self.metadata = yaml.load(f)
 
     def _build_location(self, trajpath, *pluck_segment):
         """Build Sim object directory path from trajectory path.
@@ -197,28 +131,6 @@ class Sim(object):
 
         # return final constructed path
         return p
-
-    def _update_projectdir(self, basedir_abs):
-        """Update projectdir based on given (and current) absolute path of basedir.
-
-        """
-        self.metadata['projectdir'] = basedir_abs.partition('/MDSynthesis')[0]
-
-    def _abs2relpath(self, abspath):
-        """Return path to file relative to project path.
-        
-        """
-        return abspath.replace(self.metadata['projectdir'], '$PROJECT')
-
-    def _rel2abspath(self, relpath):
-        """Return realpath given a path relative to project directory. The
-            opposite of _project_relpath.
-        """
-        return relpath.replace('$PROJECT', self.metadata['projectdir'])
-        
-    def _makedirs(self, p):
-        if not os.path.exists(p):
-            os.makedirs(p)
 
     def _generate(self, *args, **kwargs):
         """Generate new Sim object.
@@ -297,46 +209,96 @@ class Sim(object):
         name = os.path.basename(os.path.dirname(self.metadata['trajectory_files'][0]))
         if name == '$PROJECT':
             name = self.__class__.__name__
+        name = kwargs.pop('name', name)
 
-        # building core items
-        attributes = {'name': kwargs.pop('name', name),
-                      'logfile': '{}.log'.format(self.__class__.__name__),
-                      'analysis_list': [],
-                      'type': self.__class__.__name__,
-                      }
+        super(Sim, self)._build_metadata(name=name, **kwargs)
 
-        for key in attributes.keys():
-            if not key in self.metadata:
-                self.metadata[key] = attributes[key]
-
-    def _build_attributes(self):
-        """Build attributes. Needed each time object is generated.
-
-        """
-        self._start_logger()
-
-    def _start_logger(self):
-        """Start up the logger.
-
-        """
-        # set up logging
-        self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
-        self._logger.setLevel(logging.INFO)
-
-        # file handler
-        logfile = self._rel2abspath(os.path.join(self.metadata['basedir'], self.metadata['logfile']))
-        fh = logging.FileHandler(logfile)
-        ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-        fh.setFormatter(ff)
-        self._logger.addHandler(fh)
-
-        # output handler
-        ch = logging.StreamHandler(sys.stdout)
-        cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-        ch.setFormatter(cf)
-        self._logger.addHandler(ch)
-        
-class SimSet(object):
-    """Base class for a set of simulation objects.
+class Group(ContainerCore):
+    """Base class for a grouping of simulation objects.
 
     """
+    def __init__(self, *args, **kwargs):
+        """Generate or regenerate a Group object.
+
+        :Arguments:
+              *args*
+                either a string giving the path to a directory with a Group object
+                metadata file, or any number of re-generated Sim-derived
+                objects 
+
+        :Keywords:
+            *name*
+                desired name for object, used for logging and referring to
+                object in some analyses; default is class name
+        """
+        super(Group, self).__init__()
+
+        if (os.path.isdir(args[0])):
+        # if first arg is a directory string, load existing object
+            self._regenerate(*args, **kwargs)
+        else:
+        # if a number of Sim-derived objects are given, build a new group 
+            self._generate(*args, **kwargs)
+
+    def _generate(self, *args, **kwargs):
+        """Generate new Group.
+         
+        """
+        # get project directory from first object
+        self.metadata['projectdir'] = args[0].metadata['projectdir']
+        self.metadata['metafile'] = '{}.yaml'.format(self.__class__.__name__)
+
+        # since names are not necessarily unique, we make a list of paths for
+        # each; still not sure if there is a more elegant solution using
+        # hashes, but building the database will help figure this out.
+        self.metadata['systems'] = dict()
+        for system in args:
+            if system.metadata['name'] in self.metadata['systems'].keys():
+                self.metadata['systems'][system.metadata['name']].append(system.metadata['basedir'])
+            else:
+                self.metadata['systems'][system.metadata['name']] = [system.metadata['basedir']]
+
+        self._build_metadata(**kwargs)
+        self.metadata['basedir'] = '$PROJECT/MDSynthesis/{}/{}'.format(self.__class__.__name__, self.metadata['name'])
+
+        # attach systems to object
+        self._attach_systems()
+
+        # finish up and save
+        self.save()
+        self._build_attributes()
+
+    def _regenerate(self, *args, **kwargs):
+        """Re-generate existing object.
+        
+        """
+        basedir = os.path.abspath(args[0])
+        metafile = os.path.join(basedir, '{}.yaml'.format(self.__class__.__name__))
+        with open(metafile, 'r') as f:
+            self.metadata = yaml.load(f)
+        
+        # update location of object if changed
+        self._update_projectdir(basedir)
+        self.metadata['basedir'] = self._abs2relpath(basedir)
+
+        # attach systems to object
+        self._attach_systems()
+
+        # finish up and save
+        self._build_metadata(**kwargs)
+        self.save()
+        self._build_attributes()
+
+    def _attach_systems(self):
+        """Attach systems to Group object.
+
+        """
+
+
+        self.systems = dict()
+        for name in self.metadata['systems'].keys():
+            self.systems[name] = [ 
+            
+
+        self.names
+        self.locations
