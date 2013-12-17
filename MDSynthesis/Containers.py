@@ -248,21 +248,20 @@ class Group(ContainerCore):
         self.metadata['projectdir'] = args[0].metadata['projectdir']
         self.metadata['metafile'] = '{}.yaml'.format(self.__class__.__name__)
 
-        # since names are not necessarily unique, we make a list of paths for
-        # each; still not sure if there is a more elegant solution using
-        # hashes, but building the database will help figure this out.
-        self.metadata['systems'] = dict()
+        # build list of Group members
+        # will need to add unique hash references later
+        self.metadata['systems'] = list()
         for system in args:
-            if system.metadata['name'] in self.metadata['systems'].keys():
-                self.metadata['systems'][system.metadata['name']].append(system.metadata['basedir'])
-            else:
-                self.metadata['systems'][system.metadata['name']] = [system.metadata['basedir']]
+            self.metadata['systems'].append({'name': system.metadata['name'],
+                                             'type': system.metadata['type'],
+                                             'basedir': system.metadata['basedir']
+                                            })
 
         self._build_metadata(**kwargs)
         self.metadata['basedir'] = '$PROJECT/MDSynthesis/{}/{}'.format(self.__class__.__name__, self.metadata['name'])
 
         # attach systems to object
-        self._attach_systems()
+        self.systems = args
 
         # finish up and save
         self.save()
@@ -291,14 +290,12 @@ class Group(ContainerCore):
 
     def _attach_systems(self):
         """Attach systems to Group object.
+            
+        Uses eval() builtin; requires Sim-derived class to be in
+        current namespace.
 
         """
-
-
-        self.systems = dict()
-        for name in self.metadata['systems'].keys():
-            self.systems[name] = [ 
-            
-
-        self.names
-        self.locations
+        self.systems = list()
+        for entry in self.metadata['systems']:
+            Simtype = eval(entry['type'])
+            self.systems.append(Simtype(self.rel2abspath(entry['basedir'])))
