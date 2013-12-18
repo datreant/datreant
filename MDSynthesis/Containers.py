@@ -7,7 +7,7 @@ import os
 import yaml
 import MDAnalysis
 
-import Core
+from Core import *
 
 class Sim(ContainerCore):
     """The MDSynthesis Sim object is the base container for single simulations.
@@ -233,7 +233,7 @@ class Group(ContainerCore):
         """
         super(Group, self).__init__()
 
-        if (os.path.isdir(args[0])):
+        if (isinstance(args[0], basestring)):
         # if first arg is a directory string, load existing object
             self._regenerate(*args, **kwargs)
         else:

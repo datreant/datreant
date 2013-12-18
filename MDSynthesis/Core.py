@@ -2,11 +2,13 @@
 Lower level mixins.
 
 """
+import os
+import yaml
 import sys
 import cPickle
 import logging
 
-class ContainerCore(object)
+class ContainerCore(object):
     """Mixin class for all containers.
 
     The ContainerCore object is not intended to be useful on its own, but
