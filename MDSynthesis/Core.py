@@ -7,9 +7,10 @@ import yaml
 import sys
 import cPickle
 import logging
+from multiprocessing import Process
 
 class ContainerCore(object):
-    """Mixin class for all containers.
+    """Mixin class for all Containers.
 
     The ContainerCore object is not intended to be useful on its own, but
     instead contains methods and attributes common to all Container objects.
@@ -41,7 +42,7 @@ class ContainerCore(object):
         with open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
 
-    def load(self, *args):
+    def load(self, *args, **kwargs):
         """Load data instances into object.
 
         If 'all' is in argument list, every available dataset is loaded.
@@ -49,20 +50,33 @@ class ContainerCore(object):
         :Arguments:
             *args*
                 datasets to load
+            
+        :Keywords:
+            *force*
+                if True, reload data even if already loaded; default False
         """
+
+        force = kwargs.pop('force', False)
+
         if 'all' in args:
             self._logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))
             for i in self.metadata['analysis_list']:
-                self._logger.info("Loading {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
-                    self.analysis[i] = cPickle.load(f)
+                if (i not in self.analysis) or (force == True):
+                    self._logger.info("Loading {}...".format(i))
+                    with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                        self.analysis[i] = cPickle.load(f)
+                else:
+                    self._logger.info("Skipping reload of {}...".format(i))
             self._logger.info("Object '{}' loaded with all known data.".format(self.metadata['name']))
         else:
             self._logger.info("Loading selected data into object '{}'...".format(self.metadata['name']))
             for i in args:
-                self._logger.info("Loading {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
-                    self.analysis[i] = cPickle.load(f)
+                if (i not in self.analysis) or (force == True):
+                    self._logger.info("Loading {}...".format(i))
+                    with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                        self.analysis[i] = cPickle.load(f)
+                else:
+                    self._logger.info("Skipping reload of {}...".format(i))
             self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
 
     def unload(self, *args):
@@ -154,3 +168,114 @@ class ContainerCore(object):
         cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
         ch.setFormatter(cf)
         self._logger.addHandler(ch)
+
+class OperatorCore(object):
+    """Mixin class for all Operators.
+
+    The OperatorCore object is not intended to be useful on its own, but
+    instead contains methods and attributes common to all Operator objects.
+
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        
+        """
+        self.systems = list(args)
+
+    def run(self, **kwargs):
+        """Obtain compute-intensive data, usually timeseries.
+
+        :Keywords:
+            *force*
+                If True, force recollection of data; default False
+
+            **kwargs passed to `:meth:self._run_system()`
+        """
+        joblist = []
+        force = kwargs.pop('force', False)
+
+        for system in self.systems:
+            if (not self._datacheck(system)) or force:
+                p = (Process(target=self._run_system, args=(system,), kwargs=kwargs))
+                p.start()
+                joblist.append(p)
+            else:
+                system._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
+
+            # update analysis list in each object
+            if not self.__class__.__name__ in system.metadata['analysis_list']:
+                system.metadata['analysis_list'].append(self.__class__.__name__)
+                system.save()
+
+        for p in joblist:
+            p.join()
+
+    def analyze(self, **kwargs):
+        """Perform analysis of compute-intensive.
+
+        Does not require stepping through any trajectories.
+
+        """
+        # make sure data loaded into each system; should use try/catch here
+        self._load()
+
+    def _save(self, system, sys_results):
+        """Save results to main data file.
+
+        :Arguments:
+            *system*
+                system to save data for
+            *sys_results*
+                results for system
+        """
+        analysis_dir = self._make_savedir(system)
+        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
+
+        with open(main_file, 'wb') as f:
+            cPickle.dump(sys_results, f)
+
+    def _make_savedir(self, system):
+        """Make directory where all output files are placed.
+
+        :Arguments:
+            *system*
+                system to save data for
+
+        :Returns:
+            *analysis_dir*
+                full path to output file directory
+
+        """
+        analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
+        system._makedirs(analysis_dir)
+
+        return analysis_dir
+    
+    def _load(self, **kwargs):
+        """Load data for each system if not already loaded.
+
+        :Keywords:
+            *force*
+                If True, force reload of data; default False
+        """
+        force = kwargs.pop('force', False)
+
+        # make sure data loaded into each system; should use try/catch here
+        for system in self.systems:
+            if (not self.__class__.__name__ in system.analysis.keys()) or force:
+                system.load(self.__class__.__name__)
+    
+    def _datacheck(self, system):
+        """Check if data file already present.
+
+        :Arguments:
+            *system*
+                Container object
+                
+        :Returns:
+            *present*
+                True if data is already present; False otherwise
+        """
+        analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
+        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
+        return os.path.isfile(main_file)

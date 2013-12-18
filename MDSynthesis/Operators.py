@@ -4,16 +4,13 @@ as input.
 
 """
 import numpy as np
-import os
-import sys
-import cPickle
-from multiprocessing import Process
-import matplotlib.pyplot as plt
 
 import MDAnalysis
 from MDAnalysis.core.log import ProgressMeter
 
-class Analysis(object):
+from Core import *
+
+class Analysis(OperatorCore):
     """Base class for analysis on individual Sim objects.
         
     """
@@ -29,7 +26,7 @@ class Analysis(object):
 
         Important methods::
 
-        :method:`run()` - perform this time-consuming trajectory-loop data
+        :method:`run()` - perform time-consuming trajectory-loop data
                           collection
 
         :method:`analyze()` - post-collection operations that do not directly
@@ -50,35 +47,7 @@ class Analysis(object):
                 Sim (or Sim-derived) objects to analyze
 
         """
-        self.systems = list(args)
-
-    def run(self, **kwargs):
-        """Obtain timeseries data.
-
-        :Keywords:
-            *force*
-                If True, force recollection of data; default False
-
-            **kwargs passed to `:meth:self._run_system()`
-        """
-        joblist = []
-        force = kwargs.pop('force', False)
-
-        for system in self.systems:
-            if (not self._datacheck(system)) or force:
-                p = (Process(target=self._run_system, args=(system,), kwargs=kwargs))
-                p.start()
-                joblist.append(p)
-            else:
-                system._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
-
-            # update analysis list in each object
-            if not self.__class__.__name__ in system.metadata['analysis_list']:
-                system.metadata['analysis_list'].append(self.__class__.__name__)
-                system.save()
-
-        for p in joblist:
-            p.join()
+        super(Analysis, self).__init__(*args, **kwargs)
 
     def _run_system(self, system, **kwargs):
         """Run timeseries collection for single system.
@@ -155,61 +124,39 @@ class Analysis(object):
         """
         return
 
-    def analyze(self, **kwargs):
-        """Perform analysis of timeseries.
-
-        Does not require stepping through trajectory.
-
-        """
-        # make sure data loaded into each system; should use try/catch here
-        self._load()
-
-    def _save(self, system, sys_results):
-        """Save results to main data file.
-
-        :Arguments:
-            *system*
-                system to save data for
-            *sys_results*
-                results for system
-        """
-        analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
-        system._makedirs(analysis_dir)
-        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
-
-        with open(main_file, 'wb') as f:
-            cPickle.dump(sys_results, f)
-
-    def _load(self, **kwargs):
-        """Load data for each system if not already loaded.
-
-        :Keywords:
-            *force*
-                If True, force reload of data; default False
-        """
-        force = kwargs.pop('force', False)
-
-        # make sure data loaded into each system; should use try/catch here
-        for system in self.systems:
-            if (not self.__class__.__name__ in system.analysis.keys()) or force:
-                system.load(self.__class__.__name__)
-    
-    def _datacheck(self, system):
-        """Check if data file already present.
-
-        :Arguments:
-            *system*
-                Base-derived object
-
-        :Returns:
-            *present*
-                True if data is already present; False otherwise
-        """
-        analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
-        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
-        return os.path.isfile(main_file)
-
-class MetaAnalysis(object):
-    """Base class for analysis on SimSet objects.
+class MetaAnalysis(OperatorCore):
+    """Base class for analysis on Group objects.
 
     """
+    def __init__(self, *args, **kwargs):
+        """Generate meta-analysis object.
+
+        MetaAnalysis objects perform analysis operations on Groups, allowing
+        for direct comparison of trajectories to distill larger patterns.
+
+        When multiple Groups are loaded, each MetaAnalysis method operates on
+        them in parallel using separate processes.
+
+        Important methods::
+    
+        :method:`run()` - perform time-consuming trajectory-loop data
+                          collection
+
+        :method:`analyze()` - post-collection operations that do not directly
+                              require trajectory information
+
+        This class is meant to be a parent class to a specific analysis for
+        specific Group-derived objects. When inheriting, one need only replace::
+
+        :method:`_run_system_pre()`
+        :method:`_run_system_loop()`
+        :method:`_run_system_post()`
+        :method:`analyze()`
+
+        at minimum to implement specific results.
+
+        :Arguments:
+            *args
+                Group (or Group-derived) objects to analyze
+        """
+        super(MetaAnalysis, self).__init__(*args, **kwargs)
