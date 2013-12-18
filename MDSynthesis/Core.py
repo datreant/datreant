@@ -48,7 +48,7 @@ class ContainerCore(object):
 
         :Arguments:
             *args*
-                datasets to load as attributes
+                datasets to load
         """
         if 'all' in args:
             self._logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))

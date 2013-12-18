@@ -217,6 +217,7 @@ class Group(ContainerCore):
     """Base class for a grouping of simulation objects.
 
     """
+
     def __init__(self, *args, **kwargs):
         """Generate or regenerate a Group object.
 
@@ -240,6 +241,32 @@ class Group(ContainerCore):
         # if a number of Sim-derived objects are given, build a new group 
             self._generate(*args, **kwargs)
 
+    def load_members(self, *args):
+        """Load data instances for individual members of group.
+    
+        If 'all' is in argument list, every available dataset is loaded for
+        each member.
+
+        :Arguments:
+            *args*
+                datasets to load into each member
+        """
+        for member in self.members:
+            member.load(*args)
+
+    def unload_members(self, *args):
+        """Unload data instances from individual members of group.
+
+        If 'all' is in argument list, every loaded dataset is unloaded from
+        each member.
+
+        :Arguments:
+            *args*
+                datasets to unload from each member
+        """
+        for member in self.members:
+            member.unload(*args)
+
     def _generate(self, *args, **kwargs):
         """Generate new Group.
          
@@ -250,9 +277,9 @@ class Group(ContainerCore):
 
         # build list of Group members
         # will need to add unique hash references later
-        self.metadata['systems'] = list()
+        self.metadata['members'] = list()
         for system in args:
-            self.metadata['systems'].append({'name': system.metadata['name'],
+            self.metadata['members'].append({'name': system.metadata['name'],
                                              'type': system.metadata['type'],
                                              'basedir': system.metadata['basedir']
                                             })
@@ -260,8 +287,8 @@ class Group(ContainerCore):
         self._build_metadata(**kwargs)
         self.metadata['basedir'] = '$PROJECT/MDSynthesis/{}/{}'.format(self.__class__.__name__, self.metadata['name'])
 
-        # attach systems to object
-        self.systems = args
+        # attach members to object
+        self.members = args
 
         # finish up and save
         self.save()
@@ -280,22 +307,34 @@ class Group(ContainerCore):
         self._update_projectdir(basedir)
         self.metadata['basedir'] = self._abs2relpath(basedir)
 
-        # attach systems to object
-        self._attach_systems()
+        # attach members to object
+        self._attach_members()
 
         # finish up and save
         self._build_metadata(**kwargs)
         self.save()
         self._build_attributes()
 
-    def _attach_systems(self):
-        """Attach systems to Group object.
+    def _attach_members(self):
+        """Attach members to Group object.
             
-        Uses eval() builtin; requires Sim-derived class to be in
-        current namespace.
-
         """
-        self.systems = list()
-        for entry in self.metadata['systems']:
-            Simtype = eval(entry['type'])
-            self.systems.append(Simtype(self.rel2abspath(entry['basedir'])))
+        self.members = list()
+        for entry in self.metadata['members']:
+            Simtype = self._simtype(entry['type'])
+            self.members.append(Simtype(self._rel2abspath(entry['basedir'])))
+    
+    def _simtype(self, typestring):
+        """Return Sim or Sim-derived object based on type recorded in object
+           metadata.
+
+        :Arguments:
+            *typestring*
+                string pulled from Sim-derived object metadata signifying the
+                object type (e.g. for a plain Sim object, this is ``Sim``)
+        """
+        objectout = None
+        if typestring == 'Sim':
+            objectout = Sim
+            
+        return objectout
