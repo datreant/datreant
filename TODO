@@ -8,27 +8,17 @@ Containers
 Containers.Sim
 ~~~~~~~~~~~~~~
 
-+ Add basic VMD method to Sim object.
-
-+ Add the ability to give a structure or structure+trajectory to generate
-  universe automatically. Saves a step for interactive work, and shouldn't
-  overcomplicate the class. :)
-
 + Add a top-level registry of container objects that is updated by each object
-  each one is regenerated. This will allow SimSet object to query the registry
-  and always find their members, even when they move.
+  on regenerated. This will allow Group objects to query the registry and always
+  find their members, even when they move.
 
-    + Have each sim represented by a unique hash that is made from something
+    + Have each container represented by a unique hash that is made from something
       unique to that object that will never be the same as another. The hash
       can be static, too, meaning that it will never be re-generated.
         + perhaps make it generated on object's initial generation?
 
-
-Containers.SimSet
+Containers.Group
 ~~~~~~~~~~~~~~~~~
-
-+ build class to operate as a bundle of Sim or Sim-derived objects
-+ make Sim objects accessible as elements of a dictionary keyed by Sim name
 
 
 Operators
@@ -43,12 +33,14 @@ Operators.Anaysis
 + add a progressbar scheme that shows progress of multiple systems
   in a meaningful way; current one is meant for serial use.
 
-
 Ideastorm
 ==========
 Classes for handling md systems that are still being run?
 + integration with GromacsWrapper?
 + globus-toolkit methods and/or classes?
+-> these are probably outside the scope of MDSynthesis, but I am considering
+   building an "applications" package that includes specific and useful Containers
+   and Operators
 
 Markov analysis class?
 + see Michael Grabe's work on mitochondrial channels
