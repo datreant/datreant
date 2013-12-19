@@ -91,6 +91,10 @@ class Sim(ContainerCore):
             *pluck_segment*
                 tuple with components of *trajpath* to leave out of final Sim
                 object directory path, e.g. ('WORK/',)
+            *naked*
+                if True, Sim will load WITHOUT attaching trajectory or loading
+                additional attributes; this is useful if only loadable analysis
+                data are needed or trajectories are unavailable; default False
         """
         super(Sim, self).__init__()
         self.selections = dict()            # AtomGroups
@@ -137,6 +141,7 @@ class Sim(ContainerCore):
          
         """
         system = MDAnalysis.Universe(*args, **kwargs)
+        naked = kwargs.pop('naked', False)
         
         # set location of analysis structures
         projectdir = kwargs.pop('projectdir', None)
@@ -163,18 +168,22 @@ class Sim(ContainerCore):
         except AttributeError:
             self.metadata['trajectory_files'] = [self._abs2relpath(os.path.abspath(system.trajectory.filename))]
 
-        # finally, attach universe to object
-        self.universe = system
-
         # finish up and save
         self._build_metadata(**kwargs)
+        self._start_logger()
         self.save()
-        self._build_attributes()
+
+        # finally, attach universe to object
+        if naked == False:
+            self.universe = system
+            self._build_attributes()
+
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing object.
         
         """
+        naked = kwargs.pop('naked', False)
         basedir = os.path.abspath(args[0])
         metafile = os.path.join(basedir, '{}.yaml'.format(self.__class__.__name__))
         with open(metafile, 'r') as f:
@@ -183,17 +192,33 @@ class Sim(ContainerCore):
         # update location of object if changed
         self._update_projectdir(basedir)
         self.metadata['basedir'] = self._abs2relpath(basedir)
+
+        # finish up and save
+        self._build_metadata(**kwargs)
+        self._start_logger()
+        self.save()
+
+        # attach universe
+        if naked == False:
+            self._attach_universe()
+            self._build_attributes()
+    
+    def _attach_universe(self):
+        """Attach universe, even if already attached.
+
+        """
         structure = self._rel2abspath(self.metadata['structure_file'])
         trajectory = [ self._rel2abspath(x) for x in self.metadata['trajectory_files'] ]
 
         # attach universe
         self.universe = MDAnalysis.Universe(structure, *trajectory) 
 
-        # finish up and save
-        self._build_metadata(**kwargs)
-        self.save()
-        self._build_attributes()
-    
+    def _detach_universe(self):
+        """Detach universe.
+
+        """
+        del self.universe
+
     def _build_metadata(self, **kwargs):
         """Build metadata. Runs on object generation. 
         

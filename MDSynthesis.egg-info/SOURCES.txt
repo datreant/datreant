@@ -1,9 +1,0 @@
-README
-setup.py
-MDSynthesis/Containers.py
-MDSynthesis/Operators.py
-MDSynthesis/__init__.py
-MDSynthesis.egg-info/PKG-INFO
-MDSynthesis.egg-info/SOURCES.txt
-MDSynthesis.egg-info/dependency_links.txt
-MDSynthesis.egg-info/top_level.txt

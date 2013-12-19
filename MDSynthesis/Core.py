@@ -142,9 +142,14 @@ class ContainerCore(object):
             if not key in self.metadata:
                 self.metadata[key] = attributes[key]
     
-    def _build_attributes(self):
+    def _build_attributes(self, **kwargs):
         """Build attributes. Needed each time object is generated.
 
+        :Keywords:
+            *naked*
+                if True, Sim will load WITHOUT attaching trajectory; this is
+                useful if only loadable analysis data are needed or
+                trajectories are unavailable; default False
         """
         self._start_logger()
     
