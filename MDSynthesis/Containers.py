@@ -178,7 +178,6 @@ class Sim(ContainerCore):
             self.universe = system
             self._build_attributes()
 
-
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing object.
         
@@ -242,7 +241,6 @@ class Group(ContainerCore):
     """Base class for a grouping of simulation objects.
 
     """
-
     def __init__(self, *args, **kwargs):
         """Generate or regenerate a Group object.
 
@@ -346,7 +344,7 @@ class Group(ContainerCore):
         self.save()
         self._build_attributes()
 
-    def _attach_members(self, **kwargs):
+    def _attach_members(self, **kwarg):
         """Attach members to Group object.
             
         Keyword arguments passed to Sim-derived object __init__().
@@ -355,7 +353,8 @@ class Group(ContainerCore):
         self.members = list()
         for entry in self.metadata['members']:
             Simtype = self._simtype(entry['type'])
-            self.members.append(Simtype(self._rel2abspath(entry['basedir']), **kwargs))
+            self.members.append(Simtype(self._rel2abspath(entry['basedir']),
+                        **kwargs))
     
     def _simtype(self, typestring):
         """Return Sim or Sim-derived object based on type recorded in object
