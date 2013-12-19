@@ -256,10 +256,16 @@ class Group(ContainerCore):
             *name*
                 desired name for object, used for logging and referring to
                 object in some analyses; default is class name
+            *naked*
+                if True, members will load WITHOUT attaching trajectories or
+                loading additional attributes; this is useful if only loadable
+                analysis data are needed or trajectories are unavailable;
+                default False
+                
         """
         super(Group, self).__init__()
 
-        if (isinstance(args[0], basestring)):
+        if (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
             self._regenerate(*args, **kwargs)
         else:
@@ -333,21 +339,23 @@ class Group(ContainerCore):
         self.metadata['basedir'] = self._abs2relpath(basedir)
 
         # attach members to object
-        self._attach_members()
+        self._attach_members(**kwargs)
 
         # finish up and save
         self._build_metadata(**kwargs)
         self.save()
         self._build_attributes()
 
-    def _attach_members(self):
+    def _attach_members(self, **kwargs):
         """Attach members to Group object.
             
+        Keyword arguments passed to Sim-derived object __init__().
+
         """
         self.members = list()
         for entry in self.metadata['members']:
             Simtype = self._simtype(entry['type'])
-            self.members.append(Simtype(self._rel2abspath(entry['basedir'])))
+            self.members.append(Simtype(self._rel2abspath(entry['basedir']), **kwargs))
     
     def _simtype(self, typestring):
         """Return Sim or Sim-derived object based on type recorded in object
