@@ -23,8 +23,27 @@ class ContainerCore(object):
         self.metadata = dict()              # information about object; defines base object
         self.analysis = dict()              # analysis data 'modular dock'
     
-    def save(self):
-        """Save base object metadata.
+    def save(self, *args):
+        """Save base object metadata and, if desired, analysis data instances.
+
+        By providing names of loaded datasets as arguments, you can save the
+        loaded versions of the data to their source files. This is useful if
+        you have need to manually edit the data in a source file, as you can
+        load it, make changes, then write it out.
+
+        If no arguments are given, then no datasets are saved to their source
+        files. Only metadata is saved.
+
+        If 'all' is in argument list, every dataset that is loaded is written
+        to its file.
+
+        :Arguments:
+            *args*
+                datasets to load
+            
+        :Keywords:
+            *force*
+                if True, reload data even if already loaded; default False
 
         """
         basedir = self._rel2abspath(self.metadata["basedir"])
@@ -32,6 +51,21 @@ class ContainerCore(object):
 
         with open(os.path.join(basedir, self.metadata['metafile']), 'w') as f:
             yaml.dump(self.metadata, f)
+
+        if 'all' in args:
+            self._logger.info("Saving all loaded data into source files for '{}'...".format(self.metadata['name']))
+            for i in self.analysis:
+                self._logger.info("Saving {}...".format(i))
+                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                    cPickle.dump(self.analysis[i], f)
+            self._logger.info("All loaded data saved.")
+        else:
+            self._logger.info("Saving selected data into source files for '{}'...".format(self.metadata['name']))
+            for i in args:
+                self._logger.info("Saving {}...".format(i))
+                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                    cPickle.dump(self.analysis[i], f)
+            self._logger.info("All selected data saved.")
 
     def refresh(self):
         """Reloads metadata from file.
