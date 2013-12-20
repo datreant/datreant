@@ -263,7 +263,7 @@ class Group(ContainerCore):
         """
         super(Group, self).__init__()
 
-        if (os.path.isdir(args[0])):
+        if isinstance(args[0], basestring):
         # if first arg is a directory string, load existing object
             self._regenerate(*args, **kwargs)
         else:
@@ -320,6 +320,7 @@ class Group(ContainerCore):
         self.members = args
 
         # finish up and save
+        self._start_logger()
         self.save()
         self._build_attributes()
 
@@ -341,10 +342,11 @@ class Group(ContainerCore):
 
         # finish up and save
         self._build_metadata(**kwargs)
+        self._start_logger()
         self.save()
         self._build_attributes()
 
-    def _attach_members(self, **kwarg):
+    def _attach_members(self, **kwargs):
         """Attach members to Group object.
             
         Keyword arguments passed to Sim-derived object __init__().

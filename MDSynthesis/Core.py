@@ -56,14 +56,14 @@ class ContainerCore(object):
             self._logger.info("Saving all loaded data into source files for '{}'...".format(self.metadata['name']))
             for i in self.analysis:
                 self._logger.info("Saving {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'wb') as f:
                     cPickle.dump(self.analysis[i], f)
             self._logger.info("All loaded data saved.")
-        else:
+        elif len(args) != 0:
             self._logger.info("Saving selected data into source files for '{}'...".format(self.metadata['name']))
             for i in args:
                 self._logger.info("Saving {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'wb') as f:
                     cPickle.dump(self.analysis[i], f)
             self._logger.info("All selected data saved.")
 
