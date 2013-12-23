@@ -296,6 +296,33 @@ class Group(ContainerCore):
         for member in self.members:
             member.unload(*args)
 
+    def add_member(self, *args):
+        """Add a member to the Group.
+
+        :Arguments:
+            *args*
+                Sim-derived objects to add to Group
+        """
+        for system in args:
+            self.metadata['members'].append({'name': system.metadata['name'],
+                                             'type': system.metadata['type'],
+                                             'basedir': system.metadata['basedir']
+                                            })
+            self.members.append(system)
+        self.save()
+
+    def remove_member(self, *args):
+        """Remove a member from the Group.
+
+        :Arguments:
+            *args*
+                index of member in self.members to be removed from Group
+        """
+        for index in args:
+            self.metadata['members'].pop(index)
+            self.members.pop(index)
+        self.save()
+
     def _generate(self, *args, **kwargs):
         """Generate new Group.
          
