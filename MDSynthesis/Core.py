@@ -202,6 +202,35 @@ class ContainerCore(object):
         ch.setFormatter(cf)
         self._logger.addHandler(ch)
 
+    def _update_database(self):
+        """Update metadata stored in Database for this Container.
+    
+        """
+
+    def _update_container(self):
+        """Update metadata from information stored in Database for this Container.
+
+        Note: This will overwrite metadata file with Database version!
+
+        """
+
+    def _locate_database(self):
+        """Find a database; to be used if it can't be found.
+
+        The Container looks upward from its location on the filesystem through
+        the file heirarchy, looking for a Database file. If it does not find
+        it, it creates a new one where it things it should have been.
+
+        """
+    
+    def _generate_database(self):
+        """Generate a database for the first time.
+
+        If no Database exists for the Container to give its information to,
+        this method is used to create a new one.
+
+        """
+
 class OperatorCore(object):
     """Mixin class for all Operators.
 
@@ -312,3 +341,112 @@ class OperatorCore(object):
         analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
         main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
         return os.path.isfile(main_file)
+
+class Database(object):
+    """Database object for tracking and coordinating Containers.
+    
+    """
+    def __init__(self):
+        """Generate Database object for the first time, or interface with an existing one.
+
+
+        """
+    
+    def search(self):
+        """Search the Database for Containers that match certain criteria.
+
+        Results are printed in digest form to the screen. To print full
+        metadata for all matching containers, use print='full'
+
+        :Keywords:
+            *print*
+                format of results printed to ouptut
+
+        :Returns:
+            *locations*
+                filesystem paths to Containers that match criteria
+
+        """
+
+    def add(self, *containers, **kwargs):
+        """Add Container to Database.
+
+        :Arguments:
+            *containers*
+                Containers to add, each given as a path to a Container directory
+                or as a generated Container object
+            
+        """
+
+    def remove(self, *containers, **kwargs):
+        """Remove Container from Database.
+
+        Note: if Container name is used to specify removal and more than one
+        Container has that name, then both will be removed.
+
+        :Arguments:
+            *containers*
+                Containers to remove, each given as a path to a Container directory,
+                a Container UUID, or a Container's given name
+
+        :Keywords:
+            *hard*
+                if True, delete Container object from filesystem too ``[False]``
+
+        """
+
+    def clean(self):
+        """Clear entries from Database corresponding to Containers that can't be found.
+
+        """
+
+    def update_database(self, *args, **kwargs):
+        """Update information stored in Database from Container metadata.
+
+        Note: if Container name is used to specify the update, all Containers
+        with that name will be updated in the Database.
+
+        :Arguments:
+            *args*
+                Containers to update, each given as a path to a Container directory,
+                a Container UUID, or a Container's given name
+
+        :Keywords:
+            *all*
+                if True, will update entries for all known Containers from metadata files
+        """
+
+    def update_container(self, *containers):
+        """Update Container metadata with information stored in Database.
+
+        This is the opposite of `:meth:self.update_database()`
+
+        Note: if Container name is used to specify the update, all Containers
+        with that name will have metadata updated.
+
+        :Arguments:
+            *containers*
+                Containers to update; either a path to a Container directory,
+                Container UUID, or a Container's given name
+        :Keywords:
+            *all*
+                if True, will update all known Container metadata files from entries
+
+        """
+
+    def discover_containers(self):
+        """Traverse filesystem downward from Database directory and add all new Containers found.
+        
+        """
+    
+    def _check_location(self):
+        """Check Database location; if changed, send new location to all Containers.
+
+        """
+        # update projectdir
+
+    def _locate_container(self):
+        """Find a Container that has moved by traversing downward through the filesystem. 
+            
+        """
+
