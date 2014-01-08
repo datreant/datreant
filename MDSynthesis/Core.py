@@ -94,23 +94,18 @@ class ContainerCore(object):
 
         if 'all' in args:
             self._logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))
-            for i in self.metadata['analysis_list']:
-                if (i not in self.analysis) or (force == True):
-                    self._logger.info("Loading {}...".format(i))
-                    with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
-                        self.analysis[i] = cPickle.load(f)
-                else:
-                    self._logger.info("Skipping reload of {}...".format(i))
-            self._logger.info("Object '{}' loaded with all known data.".format(self.metadata['name']))
+            loadlist = self.metadata['analyses']
         else:
             self._logger.info("Loading selected data into object '{}'...".format(self.metadata['name']))
-            for i in args:
-                if (i not in self.analysis) or (force == True):
-                    self._logger.info("Loading {}...".format(i))
-                    with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
-                        self.analysis[i] = cPickle.load(f)
-                else:
-                    self._logger.info("Skipping reload of {}...".format(i))
+            loadlist = args
+
+        for i in loadlist:
+            if (i not in self.analysis) or (force == True):
+                self._logger.info("Loading {}...".format(i))
+                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                    self.analysis[i] = cPickle.load(f)
+            else:
+                self._logger.info("Skipping reload of {}...".format(i))
             self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
 
     def unload(self, *args):

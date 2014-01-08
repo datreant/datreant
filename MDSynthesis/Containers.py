@@ -202,21 +202,52 @@ class Sim(ContainerCore):
             self._attach_universe()
             self._build_attributes()
     
-    def _attach_universe(self):
-        """Attach universe, even if already attached.
+    def attach_universe(self, *args, **kwargs):
+        """Attach universe.
 
+        If 'all' is in argument list, every affiliated universe is loaded.
+
+        :Keywords:
+            *force*
+                if True, reload data even if already loaded; default False
         """
-        structure = self._rel2abspath(self.metadata['structure_file'])
-        trajectory = [ self._rel2abspath(x) for x in self.metadata['trajectory_files'] ]
+        force = kwargs.pop('force', False)
 
-        # attach universe
-        self.universe = MDAnalysis.Universe(structure, *trajectory) 
+        if 'all' in args:
+            self._logger.info("Attaching all affiliated universes with '{}'...".format(self.metadata['name']))
+            loadlist = self.metadata['universes']
+        else:
+            self._logger.info("Attaching selected universes to object '{}'...".format(self.metadata['name']))
+            loadlist = args
 
-    def _detach_universe(self):
+        for i in loadlist:
+            if (i not in self.universes) or (force == True):
+                self._logger.info("Attaching {}...".format(i))
+                structure = self._rel2abspath(self.metadata['universes'][i]['structure'])
+                trajectory = [ self._rel2abspath(x) for x in self.metadata['universes'][i]['trajectories'] ]
+                self.universe[i] = MDAnalysis.Universe(structure, *trajectory) 
+            else:
+                self._logger.info("Skipping re-attach of {}...".format(i))
+        self._logger.info("Object '{}' attached to selected universes.".format(self.metadata['name']))
+
+    def detach_universe(self, *args, **kwargs):
         """Detach universe.
 
+        If 'all' is in argument list, every loaded dataset is unloaded.
+
+        :Arguments:
+            *args*
+                datasets to unload
         """
-        del self.universe
+        if 'all' in args:
+            self.universes.clear()
+            self._logger.info("Object '{}' detached from all universes.".format(self.metadata['name']))
+        else:
+            self._logger.info("Detaching selected universes from object {}...".format(self.metadata['name']))
+            for i in args:
+                self._logger.info("Detaching {}...".format(i))
+                self.universes.pop(i, None)
+            self._logger.info("Object '{}' detached from all selected universes.".format(self.metadata['name']))
 
     def _build_metadata(self, **kwargs):
         """Build metadata. Runs on object generation. 
