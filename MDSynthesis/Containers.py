@@ -202,6 +202,54 @@ class Sim(ContainerCore):
             self._attach_universe()
             self._build_attributes()
     
+    def attach_alternate(self, *args, **kwargs):
+        """Attach alternate universe.
+
+        If 'all' is in argument list, every affiliated universe is loaded.
+
+        :Keywords:
+            *force*
+                if True, reload data even if already loaded; default False
+        """
+        force = kwargs.pop('force', False)
+
+        if 'all' in args:
+            self._logger.info("Attaching all alternate universes to '{}'...".format(self.metadata['name']))
+            loadlist = self.metadata['alternates']
+        else:
+            self._logger.info("Attaching selected alternate universes to '{}'...".format(self.metadata['name']))
+            loadlist = args
+
+        for i in loadlist:
+            if (i not in self.universes) or (force == True):
+                self._logger.info("Attaching {}...".format(i))
+                structure = self._rel2abspath(self.metadata['alternates'][i]['structure'])
+                trajectory = [ self._rel2abspath(x) for x in self.metadata['alternates'][i]['trajectories'] ]
+                self.alternates[i] = MDAnalysis.Universe(structure, *trajectory) 
+            else:
+                self._logger.info("Skipping re-attach of {}...".format(i))
+        self._logger.info("'{}' attached to selected alternate universes.".format(self.metadata['name']))
+
+    def detach_alternate(self, *args, **kwargs):
+        """Detach alternate universe.
+
+        If 'all' is in argument list, every alternate universe is detached.
+
+        :Arguments:
+            *args*
+                datasets to unload
+        """
+        if 'all' in args:
+            self.alternates.clear()
+            self._logger.info("'{}' detached from all universes.".format(self.metadata['name']))
+        else:
+            self._logger.info("Detaching selected alternate universes from object {}...".format(self.metadata['name']))
+            for i in args:
+                self._logger.info("Detaching {}...".format(i))
+                self.alternates.pop(i, None)
+            self._logger.info("'{}' detached from all selected alternate universes.".format(self.metadata['name']))
+
+    def add_alternate(self, 
     def _attach_universe(self):
         """Attach universe, even if already attached.
 
