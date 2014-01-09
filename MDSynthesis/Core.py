@@ -132,24 +132,6 @@ class ContainerCore(object):
                 self.analysis.pop(i, None)
             self._logger.info("Object '{}' unloaded of selected data.".format(self.metadata['name']))
 
-    def _abs2relpath(self, abspath):
-        """Return path to file relative to project path.
-        
-        """
-        return abspath.replace(self.metadata['projectdir'], '$PROJECT')
-
-    def _rel2abspath(self, relpath):
-        """Return realpath given a path relative to project directory. The
-            opposite of _project_relpath.
-        """
-        return relpath.replace('$PROJECT', self.metadata['projectdir'])
-    
-    def _update_projectdir(self, basedir_abs):
-        """Update projectdir based on given (and current) absolute path of basedir.
-
-        """
-        self.metadata['projectdir'] = basedir_abs.partition('/MDSynthesis')[0]
-        
     def _makedirs(self, p):
         if not os.path.exists(p):
             os.makedirs(p)
