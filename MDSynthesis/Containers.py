@@ -86,8 +86,11 @@ class Sim(ContainerCore):
                 desired name for object, used for logging and referring to
                 object in some analyses; default is trajectory file directory
                 basename
-            *projectdir*
-                path to main project directory; defaults to current directory
+            *database*
+                path to database to associate with this object; if the database
+                does not exist, it is created; if none is specified, a database
+                is created in the current directory; used only on initial
+                generation of Sim
             *pluck_segment*
                 tuple with components of *trajpath* to leave out of final Sim
                 object directory path, e.g. ('WORK/',)
@@ -117,7 +120,8 @@ class Sim(ContainerCore):
                 object directory path, e.g. 'WORK/'
                 
         """
-        objectdir = '$PROJECT/MDSynthesis/{}'.format(self.__class__.__name__)
+        
+        objectdir = os.path.join(os.path.dirname(self.metadata['database']), '{}'.format(self.__class__.__name__))
 
         # build path to container from trajpath
         p = os.path.abspath(trajpath)
@@ -125,8 +129,14 @@ class Sim(ContainerCore):
         # pluck off trajectory filename from container path
         p = os.path.dirname(p)
 
-        # pluck off projectdir part of path; replace with reference
-        p = p.replace(self.metadata['projectdir'], objectdir)
+        #TODO: perhaps extract part of path common to both the database and the
+        # trajectory file, then from what's left apply plucks and use as
+        # directory components beneath?
+        # should be able to just use the previous version of this method, as I
+        # deleted the key part
+
+        # alternatively, you just forget the stupid path thing altogether and
+        # simply place them by name only
 
         # subtract plucked segments from container path
         for seg in pluck_segment:
@@ -202,9 +212,9 @@ class Sim(ContainerCore):
             self._attach_universe()
             self._build_attributes()
     
-    def attach_alternate(self, *args, **kwargs):
-        """Attach alternate universe.
-
+    def attach_universe(self, *args, **kwargs):
+        """Attach universe.
+    
         If 'all' is in argument list, every affiliated universe is loaded.
 
         :Keywords:
@@ -214,57 +224,40 @@ class Sim(ContainerCore):
         force = kwargs.pop('force', False)
 
         if 'all' in args:
-            self._logger.info("Attaching all alternate universes to '{}'...".format(self.metadata['name']))
-            loadlist = self.metadata['alternates']
+            self._logger.info("Attaching all affiliated universes with '{}'...".format(self.metadata['name']))
+            loadlist = self.metadata['universes']
         else:
-            self._logger.info("Attaching selected alternate universes to '{}'...".format(self.metadata['name']))
+            self._logger.info("Attaching selected universes to object '{}'...".format(self.metadata['name']))
             loadlist = args
 
         for i in loadlist:
             if (i not in self.universes) or (force == True):
                 self._logger.info("Attaching {}...".format(i))
-                structure = self._rel2abspath(self.metadata['alternates'][i]['structure'])
-                trajectory = [ self._rel2abspath(x) for x in self.metadata['alternates'][i]['trajectories'] ]
-                self.alternates[i] = MDAnalysis.Universe(structure, *trajectory) 
+                structure = self._rel2abspath(self.metadata['universes'][i]['structure'])
+                trajectory = [ self._rel2abspath(x) for x in self.metadata['universes'][i]['trajectories'] ]
+                self.universes[i] = MDAnalysis.Universe(structure, *trajectory) 
             else:
                 self._logger.info("Skipping re-attach of {}...".format(i))
-        self._logger.info("'{}' attached to selected alternate universes.".format(self.metadata['name']))
+        self._logger.info("Object '{}' attached to selected universes.".format(self.metadata['name']))
 
-    def detach_alternate(self, *args, **kwargs):
-        """Detach alternate universe.
+    def detach_universe(self, *args, **kwargs):
+        """Detach universe.
 
-        If 'all' is in argument list, every alternate universe is detached.
+        If 'all' is in argument list, every loaded dataset is unloaded.
 
         :Arguments:
             *args*
                 datasets to unload
         """
         if 'all' in args:
-            self.alternates.clear()
-            self._logger.info("'{}' detached from all universes.".format(self.metadata['name']))
+            self.universes.clear()
+            self._logger.info("Object '{}' detached from all universes.".format(self.metadata['name']))
         else:
-            self._logger.info("Detaching selected alternate universes from object {}...".format(self.metadata['name']))
+            self._logger.info("Detaching selected universes from object {}...".format(self.metadata['name']))
             for i in args:
                 self._logger.info("Detaching {}...".format(i))
-                self.alternates.pop(i, None)
-            self._logger.info("'{}' detached from all selected alternate universes.".format(self.metadata['name']))
-
-    def add_alternate(self, 
-    def _attach_universe(self):
-        """Attach universe, even if already attached.
-
-        """
-        structure = self._rel2abspath(self.metadata['structure_file'])
-        trajectory = [ self._rel2abspath(x) for x in self.metadata['trajectory_files'] ]
-
-        # attach universe
-        self.universe = MDAnalysis.Universe(structure, *trajectory) 
-
-    def _detach_universe(self):
-        """Detach universe.
-
-        """
-        del self.universe
+                self.universes.pop(i, None)
+            self._logger.info("Object '{}' detached from all selected universes.".format(self.metadata['name']))
 
     def _build_metadata(self, **kwargs):
         """Build metadata. Runs on object generation. 
