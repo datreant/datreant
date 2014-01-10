@@ -440,3 +440,9 @@ class Group(ContainerCore):
             objectout = Sim
             
         return objectout
+
+    def _find_member(self, *uuid):
+        """Find a member that has gone missing by consulting the Database.
+
+        """
+
