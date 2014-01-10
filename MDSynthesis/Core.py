@@ -54,18 +54,16 @@ class ContainerCore(object):
 
         if 'all' in args:
             self._logger.info("Saving all loaded data into source files for '{}'...".format(self.metadata['name']))
-            for i in self.analysis:
-                self._logger.info("Saving {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'wb') as f:
-                    cPickle.dump(self.analysis[i], f)
-            self._logger.info("All loaded data saved.")
+            savelist = self.analysis
         elif len(args) != 0:
             self._logger.info("Saving selected data into source files for '{}'...".format(self.metadata['name']))
-            for i in args:
-                self._logger.info("Saving {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'wb') as f:
-                    cPickle.dump(self.analysis[i], f)
-            self._logger.info("All selected data saved.")
+            savelist = args
+
+        for i in savelist:
+            self._logger.info("Saving {}...".format(i))
+            with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'wb') as f:
+                cPickle.dump(self.analysis[i], f)
+        self._logger.info("All selected data saved.")
 
     def refresh(self):
         """Reloads metadata from file.
@@ -106,7 +104,7 @@ class ContainerCore(object):
                     self.analysis[i] = cPickle.load(f)
             else:
                 self._logger.info("Skipping reload of {}...".format(i))
-            self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
+        self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
 
     def unload(self, *args):
         """Unload data instances from object.
