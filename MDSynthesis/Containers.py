@@ -64,7 +64,7 @@ class Sim(ContainerCore):
 
     The data can be unloaded with::
 
-        s.unload['Foo']
+        s.unload('Foo')
 
     This is beneficial if the data is rather large, freeing up memory. See the
     documentation for :class:`MDSynthesis.Operators.Analysis` for more details
