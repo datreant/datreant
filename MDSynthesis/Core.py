@@ -9,6 +9,10 @@ import cPickle
 import logging
 from multiprocessing import Process
 
+metafile = 'metadata.yaml'
+logfile = 'logfile.log'
+datafile = 'data.pkl'
+
 class ContainerCore(object):
     """Mixin class for all Containers.
 
@@ -16,9 +20,9 @@ class ContainerCore(object):
     instead contains methods and attributes common to all Container objects.
 
     """
-    self._metafile = 'metadata.yaml'
-    self._logfile = 'logfile.yaml'
-    self._datafile = 'data.pkl'
+    self._metafile = metafile
+    self._logfile = logfile
+    self._datafile = datafile
 
     def __init__(self):
         """
@@ -189,11 +193,11 @@ class ContainerCore(object):
         """
 
     def _locate_database(self):
-        """Find a database; to be used if it can't be found.
+        """Find database; to be used if it can't be found.
 
         The Container looks upward from its location on the filesystem through
-        the file heirarchy, looking for a Database file. If it does not find
-        it, it creates a new one where it things it should have been.
+        the file heirarchy, looking for its Database file. If it does not find
+        it, it creates a new one where it thinks it should have been.
 
         """
     
@@ -212,11 +216,13 @@ class OperatorCore(object):
     instead contains methods and attributes common to all Operator objects.
 
     """
+    self._datafile = datafile
+
     def __init__(self, *args, **kwargs):
         """
         
         """
-        self.systems = list(args)
+        self.containers = list(args)
 
     def run(self, **kwargs):
         """Obtain compute-intensive data, usually timeseries.
@@ -225,70 +231,73 @@ class OperatorCore(object):
             *force*
                 If True, force recollection of data; default False
 
-            **kwargs passed to `:meth:self._run_system()`
+            **kwargs passed to `:meth:self._run_container()`
         """
         joblist = []
         force = kwargs.pop('force', False)
 
-        for system in self.systems:
+        # run analysis on each container as a separate process
+        for container in self.containers:
             if (not self._datacheck(system)) or force:
-                p = (Process(target=self._run_system, args=(system,), kwargs=kwargs))
+                p = (Process(target=self._run_container, args=(container,), kwargs=kwargs))
                 p.start()
                 joblist.append(p)
             else:
                 system._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
 
-            # update analysis list in each object
-            if not self.__class__.__name__ in system.metadata['analysis_list']:
-                system.metadata['analysis_list'].append(self.__class__.__name__)
-                system.save()
-
         for p in joblist:
             p.join()
+    
+        # finish up
+        for container in self.containers:
+            # update analysis list in each object
+            if not self.__class__.__name__ in container.metadata['analysis_list']:
+                container.metadata['analysis'].append(self.__class__.__name__)
+                container.save()
 
     def analyze(self, **kwargs):
-        """Perform analysis of compute-intensive.
+        """Perform analysis of compute-intensive data.
 
         Does not require stepping through any trajectories.
 
         """
-        # make sure data loaded into each system; should use try/catch here
+        # make sure data loaded into each container; should use try/catch here
         self._load()
 
-    def _save(self, system, sys_results):
+    def _save(self, container, cont_results):
         """Save results to main data file.
 
         :Arguments:
-            *system*
-                system to save data for
-            *sys_results*
-                results for system
+            *container*
+                container to save data for
+            *cont_results*
+                results for container
         """
-        analysis_dir = self._make_savedir(system)
-        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
+        outputdir = self._make_savedir(container)
+        main_file = self._datafile(container)
 
         with open(main_file, 'wb') as f:
-            cPickle.dump(sys_results, f)
+            cPickle.dump(cont_results, f)
 
-    def _make_savedir(self, system):
+    def _make_savedir(self, container):
         """Make directory where all output files are placed.
 
         :Arguments:
-            *system*
-                system to save data for
+            *container*
+                Container for which to save data 
 
         :Returns:
-            *analysis_dir*
-                full path to output file directory
+            *outputdir*
+                full path to output directory
 
         """
-        analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
-        system._makedirs(analysis_dir)
+        outputdir = self._outputdir(container)
+        container._makedirs(outputdir)
 
-        return analysis_dir
+        return outputdir
     
     def _load(self, **kwargs):
-        """Load data for each system if not already loaded.
+        """Load data for each container if not already loaded.
 
         :Keywords:
             *force*
@@ -297,24 +306,50 @@ class OperatorCore(object):
         force = kwargs.pop('force', False)
 
         # make sure data loaded into each system; should use try/catch here
-        for system in self.systems:
-            if (not self.__class__.__name__ in system.analysis.keys()) or force:
-                system.load(self.__class__.__name__)
+        for container in self.containers:
+            if (not self.__class__.__name__ in container.analysis.keys()) or force:
+                container.load(self.__class__.__name__)
     
-    def _datacheck(self, system):
+    def _datacheck(self, container):
         """Check if data file already present.
 
         :Arguments:
-            *system*
-                Container object
+            *container*
+                Container object to check
                 
         :Returns:
             *present*
                 True if data is already present; False otherwise
         """
-        analysis_dir = os.path.join(system._rel2abspath(system.metadata['basedir']), self.__class__.__name__)
-        main_file = os.path.join(analysis_dir, '{}.pkl'.format(self.__class__.__name__))
+        outputdir = self._outputdir(container)
+        main_file = os.path.join(analysisdir, self._datafile)
         return os.path.isfile(main_file)
+
+    def _outputdir(self, container):
+        """Return path to output directory for a particular Container.
+
+        :Arguments:
+            *container*
+                Container object
+
+        :Returns:
+            *analysis_path*
+                path to output directory
+        """
+        return os.path.join(container.metadata['basedir'], self.__class__.__name__)
+    
+    def _datafile(self, container):
+        """Return path to main output datafile for a particular Container.
+
+        :Arguments:
+            *container*
+                Container object
+
+        :Returns:
+            *datafile_path*
+                path to datafile
+        """
+        return os.path.join(self._outputdir(container), self._datafile)
 
 class Database(object):
     """Database object for tracking and coordinating Containers.
@@ -423,4 +458,3 @@ class Database(object):
         """Find a Container that has moved by traversing downward through the filesystem. 
             
         """
-
