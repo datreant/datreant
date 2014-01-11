@@ -16,6 +16,10 @@ class ContainerCore(object):
     instead contains methods and attributes common to all Container objects.
 
     """
+    self._metafile = 'metadata.yaml'
+    self._logfile = 'logfile.yaml'
+    self._datafile = 'data.pkl'
+
     def __init__(self):
         """
         
@@ -39,17 +43,12 @@ class ContainerCore(object):
 
         :Arguments:
             *args*
-                datasets to load
-            
-        :Keywords:
-            *force*
-                if True, reload data even if already loaded; default False
+                datasets to save
 
         """
-        basedir = self._rel2abspath(self.metadata["basedir"])
-        self._makedirs(basedir)
+        self._makedirs(self.metadata['basedir'])
 
-        with open(os.path.join(basedir, self.metadata['metafile']), 'w') as f:
+        with open(os.path.join(basedir, self._metafile), 'w') as f:
             yaml.dump(self.metadata, f)
 
         if 'all' in args:
@@ -61,7 +60,7 @@ class ContainerCore(object):
 
         for i in savelist:
             self._logger.info("Saving {}...".format(i))
-            with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'wb') as f:
+            with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}'.format(i, self._datafile)), 'wb') as f:
                 cPickle.dump(self.analysis[i], f)
         self._logger.info("All selected data saved.")
 
@@ -69,8 +68,7 @@ class ContainerCore(object):
         """Reloads metadata from file.
 
         """
-        basedir = self._rel2abspath(self.metadata['basedir'])
-        metafile = os.path.join(basedir, self.metadata['metafile'])
+        metafile = os.path.join(self.metadata['basedir'], self.metadata['metafile'])
         with open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
 
@@ -100,7 +98,7 @@ class ContainerCore(object):
         for i in loadlist:
             if (i not in self.analysis) or (force == True):
                 self._logger.info("Loading {}...".format(i))
-                with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}.pkl'.format(i, i)), 'rb') as f:
+                with open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'rb') as f:
                     self.analysis[i] = cPickle.load(f)
             else:
                 self._logger.info("Skipping reload of {}...".format(i))
@@ -142,9 +140,8 @@ class ContainerCore(object):
         """
         # building core items
         attributes = {'name': kwargs.pop('name', self.__class__.__name__),
-                      'logfile': '{}.log'.format(self.__class__.__name__),
                       'analysis_list': [],
-                      'type': self.__class__.__name__,
+                      'class': self.__class__.__name__,
                       }
 
         for key in attributes.keys():
@@ -152,7 +149,7 @@ class ContainerCore(object):
                 self.metadata[key] = attributes[key]
     
     def _build_attributes(self):
-        """Build attributes. Needed each time object is generated.
+        """Build attributes. Runs each time object is generated.
 
         """
     
@@ -162,20 +159,22 @@ class ContainerCore(object):
         """
         # set up logging
         self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
-        self._logger.setLevel(logging.INFO)
 
-        # file handler
-        logfile = self._rel2abspath(os.path.join(self.metadata['basedir'], self.metadata['logfile']))
-        fh = logging.FileHandler(logfile)
-        ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-        fh.setFormatter(ff)
-        self._logger.addHandler(fh)
+        if not self._logger.handlers:
+            self._logger.setLevel(logging.INFO)
 
-        # output handler
-        ch = logging.StreamHandler(sys.stdout)
-        cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-        ch.setFormatter(cf)
-        self._logger.addHandler(ch)
+            # file handler
+            logfile = os.path.join(self.metadata['basedir'], self._logfile)
+            fh = logging.FileHandler(logfile)
+            ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+            fh.setFormatter(ff)
+            self._logger.addHandler(fh)
+
+            # output handler
+            ch = logging.StreamHandler(sys.stdout)
+            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+            ch.setFormatter(cf)
+            self._logger.addHandler(ch)
 
     def _update_database(self):
         """Update metadata stored in Database for this Container.
