@@ -81,26 +81,27 @@ class Sim(ContainerCore):
                 metadata file, or the arguments normally given to an MDAnalysis
                 Universe
 
-        :Keywords:
+        :Keywords used on object generation:
             *name*
                 desired name for object, used for logging and referring to
-                object in some analyses; default is trajectory file directory
-                basename
+                object in some analyses; default will be the object's randomly
+                selected UUID; used only on initial generation of Sim
             *database*
-                path to database to associate with this object; if the database
-                does not exist, it is created; if none is specified, a database
-                is created in the current directory; used only on initial
-                generation of Sim
-            *pluck_segment*
-                tuple with components of *trajpath* to leave out of final Sim
-                object directory path, e.g. ('WORK/',)
+                directory of the database to associate with this object; if the
+                database does not exist, it is created; if none is specified, a
+                database is created in the current directory; used only on
+                initial generation of Sim
+
+        :Keywords used on object regeneration:
             *naked*
-                if True, Sim will load WITHOUT attaching trajectory or loading
-                additional attributes; this is useful if only loadable analysis
-                data are needed or trajectories are unavailable; default False
+                if True, Sim will load WITHOUT attaching trajectory; this is
+                useful if only loadable analysis data are needed or
+                trajectories are unavailable; default False
+
         """
         super(Sim, self).__init__()
-        self.selections = dict()            # AtomGroups
+        
+        self.universe = dict()                  # universe 'modular dock'
 
         if (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
@@ -109,84 +110,38 @@ class Sim(ContainerCore):
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
 
-    def _build_location(self, trajpath, *pluck_segment):
-        """Build Sim object directory path from trajectory path.
-    
-        :Arguments:
-            *trajpath*
-                path to trajectory
-            *pluck_segment*
-                tuple with components of *trajpath* to leave out of final Sim
-                object directory path, e.g. 'WORK/'
-                
-        """
-        
-        objectdir = os.path.join(os.path.dirname(self.metadata['database']), '{}'.format(self.__class__.__name__))
-
-        # build path to container from trajpath
-        p = os.path.abspath(trajpath)
-
-        # pluck off trajectory filename from container path
-        p = os.path.dirname(p)
-
-        #TODO: perhaps extract part of path common to both the database and the
-        # trajectory file, then from what's left apply plucks and use as
-        # directory components beneath?
-        # should be able to just use the previous version of this method, as I
-        # deleted the key part
-
-        # alternatively, you just forget the stupid path thing altogether and
-        # simply place them by name only
-
-        # subtract plucked segments from container path
-        for seg in pluck_segment:
-            seg = os.path.join(os.path.normpath(seg), '')
-            p = p.replace(seg, '')
-
-        # return final constructed path
-        return p
-
     def _generate(self, *args, **kwargs):
         """Generate new Sim object.
          
         """
         system = MDAnalysis.Universe(*args, **kwargs)
-        naked = kwargs.pop('naked', False)
-        
-        # set location of analysis structures
-        projectdir = kwargs.pop('projectdir', None)
-        if projectdir == None:
-            # if no projectdir given, default to cwd
-            self.metadata['projectdir'] = os.path.abspath('.')
-        else:
-            self.metadata['projectdir'] = os.path.abspath(projectdir)
 
-        # process plucked segments
-        pluck_segment = kwargs.pop('pluck_segment', ('',))
-        if isinstance(pluck_segment, basestring):
-            pluck_segment = [pluck_segment]
-        else:
-            pluck_segment = list(pluck_segment)
-        self.metadata["basedir"] = self._build_location(system.trajectory.filename, *pluck_segment)
-        
-        self.metadata['metafile'] = '{}.yaml'.format(self.__class__.__name__)
-        self.metadata['structure_file'] = self._abs2relpath(os.path.abspath(system.filename))
+        # generate metadata items
+        self._build_metadata(**kwargs)
 
-        # record trajectory file(s)
+        # determine storage location
+        database = os.path.abspath(kwargs.pop('database', None))
+        if database == None:
+            self
+        self.metadata['basedir'] = self._build_basedir(database, name)
+
+        # if basedir already exists, use UUID instead
+
+
+        
+        # record universe
+        self.metadata['universe']['main']['structure'] = os.path.abspath(system.filename)
         try:
-            self.metadata['trajectory_files'] = [ self._abs2relpath(os.path.abspath(x)) for x in system.trajectory.filenames ] 
+            self.metadata['universe'['main']['trajectories'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
         except AttributeError:
-            self.metadata['trajectory_files'] = [self._abs2relpath(os.path.abspath(system.trajectory.filename))]
+            self.metadata['universe']['main']['trajectories'] = [os.path.abspath(system.trajectory.filename)]
 
         # finish up and save
-        self._build_metadata(**kwargs)
         self.save()
         self._start_logger()
 
         # finally, attach universe to object
-        if naked == False:
-            self.universe = system
-            self._build_attributes()
+        self.universe['main'] = system
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing object.
@@ -194,13 +149,13 @@ class Sim(ContainerCore):
         """
         naked = kwargs.pop('naked', False)
         basedir = os.path.abspath(args[0])
-        metafile = os.path.join(basedir, '{}.yaml'.format(self.__class__.__name__))
-        with open(metafile, 'r') as f:
-            self.metadata = yaml.load(f)
+        self.metadata['basedir'] = basedir
+        
+        # get metadata (overwrites basedir metadata)
+        self.refresh()
         
         # update location of object if changed
-        self._update_projectdir(basedir)
-        self.metadata['basedir'] = self._abs2relpath(basedir)
+        self.metadata['basedir'] = basedir
 
         # finish up and save
         self._build_metadata(**kwargs)
@@ -210,7 +165,6 @@ class Sim(ContainerCore):
         # attach universe
         if naked == False:
             self._attach_universe()
-            self._build_attributes()
     
     def attach_universe(self, *args, **kwargs):
         """Attach universe.
@@ -225,17 +179,17 @@ class Sim(ContainerCore):
 
         if 'all' in args:
             self._logger.info("Attaching all affiliated universes with '{}'...".format(self.metadata['name']))
-            loadlist = self.metadata['universes']
+            loadlist = self.metadata['universe']
         else:
             self._logger.info("Attaching selected universes to object '{}'...".format(self.metadata['name']))
             loadlist = args
 
         for i in loadlist:
-            if (i not in self.universes) or (force == True):
+            if (i not in self.universe) or (force == True):
                 self._logger.info("Attaching {}...".format(i))
-                structure = self._rel2abspath(self.metadata['universes'][i]['structure'])
-                trajectory = [ self._rel2abspath(x) for x in self.metadata['universes'][i]['trajectories'] ]
-                self.universes[i] = MDAnalysis.Universe(structure, *trajectory) 
+                structure = self.metadata['universe'][i]['structure'])
+                trajectory = [ x for x in self.metadata['universe'][i]['trajectories'] ]
+                self.universe[i] = MDAnalysis.Universe(structure, *trajectory) 
             else:
                 self._logger.info("Skipping re-attach of {}...".format(i))
         self._logger.info("Object '{}' attached to selected universes.".format(self.metadata['name']))
@@ -250,33 +204,14 @@ class Sim(ContainerCore):
                 datasets to unload
         """
         if 'all' in args:
-            self.universes.clear()
+            self.universe.clear()
             self._logger.info("Object '{}' detached from all universes.".format(self.metadata['name']))
         else:
             self._logger.info("Detaching selected universes from object {}...".format(self.metadata['name']))
             for i in args:
                 self._logger.info("Detaching {}...".format(i))
-                self.universes.pop(i, None)
+                self.universe.pop(i, None)
             self._logger.info("Object '{}' detached from all selected universes.".format(self.metadata['name']))
-
-    def _build_metadata(self, **kwargs):
-        """Build metadata. Runs on object generation. 
-        
-        Only adds keys; never modifies existing ones.
-
-        :Keywords:
-            *name*
-                desired name of object, used for logging and referring to
-                object in some analyses; default is trajectory file directory
-                basename
-        """
-        # fix name if object generated with no name or projectdir
-        name = os.path.basename(os.path.dirname(self.metadata['trajectory_files'][0]))
-        if name == '$PROJECT':
-            name = self.__class__.__name__
-        name = kwargs.pop('name', name)
-
-        super(Sim, self)._build_metadata(name=name, **kwargs)
 
 class Group(ContainerCore):
     """Base class for a grouping of simulation objects.

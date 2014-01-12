@@ -7,11 +7,14 @@ import yaml
 import sys
 import cPickle
 import logging
+import glob
+from uuid import uuid4
 from multiprocessing import Process
 
 metafile = 'metadata.yaml'
 logfile = 'logfile.log'
 datafile = 'data.pkl'
+database = 'MDSdatabase.yaml'
 
 class ContainerCore(object):
     """Mixin class for all Containers.
@@ -23,6 +26,7 @@ class ContainerCore(object):
     self._metafile = metafile
     self._logfile = logfile
     self._datafile = datafile
+    self._database = database
 
     def __init__(self):
         """
@@ -72,7 +76,7 @@ class ContainerCore(object):
         """Reloads metadata from file.
 
         """
-        metafile = os.path.join(self.metadata['basedir'], self.metadata['metafile'])
+        metafile = os.path.join(self.metadata['basedir'], self._metafile)
         with open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
 
@@ -139,24 +143,41 @@ class ContainerCore(object):
         :Keywords:
             *name*
                 desired name of object, used for logging and referring to
-                object in some analyses; default is trajectory file directory
-                basename
+                object in some analyses; default None
         """
         # building core items
-        attributes = {'name': kwargs.pop('name', self.__class__.__name__),
-                      'analysis_list': [],
+        uuid = self._generate_id()
+        attributes = {'id': uuid,
+                      'name': kwargs.pop('name', None),
+                      'analysis': list(),
                       'class': self.__class__.__name__,
+                      'categories': kwargs.pop('categories', dict()),
+                      'tags': kwargs.pop('tags', list()),
                       }
 
-        for key in attributes.keys():
+        for key in attributes:
             if not key in self.metadata:
                 self.metadata[key] = attributes[key]
     
-    def _build_attributes(self):
-        """Build attributes. Runs each time object is generated.
+    def _build_basedir(self, database, name):
+        """Build basedir location based on database location, Container class, and Container name.
 
+        :Arguments:
+            *database*
+                directory where database resides
+            *name*
         """
-    
+        basedir = os.path.join(os.path.abspath(database), '{}/{}'.format(self.__class__.__name__, name)
+
+        if os.path.exists(basedir):
+            basedir = self._build_basedir(database, self.metadata['id'])
+
+
+
+
+
+        return os.path.join(os.path.abspath(database), '{}/{}'.format(self.__class__.__name__, name)
+
     def _start_logger(self):
         """Start up the logger.
 
@@ -180,6 +201,12 @@ class ContainerCore(object):
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
 
+    def _generate_id(self):
+        """Generate a 'unique' identifier.
+
+        """
+        return str(uuid4())
+
     def _update_database(self):
         """Update metadata stored in Database for this Container.
     
@@ -200,7 +227,32 @@ class ContainerCore(object):
         it, it creates a new one where it thinks it should have been.
 
         """
-    
+        database = self.metadata['database']
+
+        # search upward for a database
+        directory = self.metadata['basedir']
+        found == False
+
+        while (directory != '/') and (not found):
+            directory, tail = os.path.split(directory)
+            candidates = glob.glob(os.path.join(directory, self._database))
+
+            if candidates:
+                db = Database(candidates[0])
+                db_id = db._handshake()
+                if db_id == self.metadata['database']['id']
+                #TODO: figure out the structure of your database entry in
+                # metadata, and whether or not we're going to even bother with
+                # some kind of ID system for databases; ID could be useful, but
+                # if it makes things needlessly complicated then we should
+                # forget it.
+                
+                
+
+        # if the Container has no database, then the first one it finds as it
+        # searches upward will be its database
+        if database == None:
+            
     def _generate_database(self):
         """Generate a database for the first time.
 
@@ -355,6 +407,11 @@ class Database(object):
     """Database object for tracking and coordinating Containers.
     
     """
+    #TODO: add simple lock scheme to Database so that only one instance at a
+    # time can commit changes to the file, and that when this happens all
+    # Database instances have a way of knowing a change has been made and can
+    # update their record 
+
     def __init__(self):
         """Generate Database object for the first time, or interface with an existing one.
 
@@ -447,6 +504,7 @@ class Database(object):
         """Traverse filesystem downward from Database directory and add all new Containers found.
         
         """
+        # use os.walk
     
     def _check_location(self):
         """Check Database location; if changed, send new location to all Containers.
@@ -458,3 +516,11 @@ class Database(object):
         """Find a Container that has moved by traversing downward through the filesystem. 
             
         """
+        # use os.walk
+
+    def _handshake(self):
+        """Run check to ensure that database is fine. Return database ID.
+
+        """
+        #TODO: add various checks to ensure things are in working order
+        return self.database['metadata']['id']
