@@ -120,8 +120,7 @@ class Sim(ContainerCore):
 
         # find or generate database
         database = os.path.abspath(kwargs.pop('database', None))
-        self._init_database(
-            
+        self._init_database(database=database)
 
         # determine storage location
             

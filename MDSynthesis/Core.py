@@ -220,84 +220,98 @@ class ContainerCore(object):
 
         """
 
+
     def _init_database(self, **kwargs):
         """On generation of Container, perform standard database interactions.
 
         :Keywords:
             *database*
                 path to database; default None
+            *locate*
+                if True, automatically try to find a database if none specified;
+                if False, generate new database in current directory if none 
+                specified; default True
         
         """
         database = kwargs.pop('database', None)
+        locate = kwargs.pop('locate', True)
 
         if database:
             database = os.path.dirname(database)
             self._logger.info("Attempting to connect to database in {}".format(database))
             self._connect_database(database)
         else:
-            self._logger.info("No database specified.".format(database))
-            database = self._locate_database()
-            if database:
-                self._connect_database(database)
-            else:
-                self._generate_database(
-                
+            self._logger.info("No database specified. Looking upward to find one.".format(database))
+            database = self._locate_database(startdir='.')
+            if not database:
+                self.logger.info("Generating new database in current directory.")
+                self._connect_database('.')
             
-    def _connect_database(self, database):
-        """Connect Container to database.
+    def _connect_database(self, **kwargs):
+        """Connect Container to a Database.
+
+        If the Database doesn't exist, it will be created.
 
         :Keywords:
             *database*
                 path to database
+
+        :Returns:
+            *success*
+                True if connection succeeded; False otherwise
         """
         # attempt to open database
-        db = 
+        database = kwargs.pop('database', self.metadata['database'])
+        db = Database(database)
+        
+        if db._handshake():
+            self._logger.info("Handshake success; database now in {}".format(db.database['basedir'])
+            self.metadata['database'] = db.metadata['basedir']
+            db.add(self)
+            success = True
+        else:
+            self._logger.warning("Specified database failed handshake; not a real database?")
+            success = False
+    
+        return success
 
-
-    def _locate_database(self):
+    def _locate_database(self, **kwargs):
         """Find database; to be used if it can't be found.
 
         The Container looks upward from its location on the filesystem through
-        the file heirarchy, looking for its Database file. If it does not find
-        it, it creates a new one where it thinks it should have been.
+        the file heirarchy, looking for a Database file. The first such file
+        found will become its new Database. If none is found, 
 
         :Keywords:
-            *init*
-                if True, run in ``init`` mode; default False
+            *startdir*
+                directory from which to begin upward search; default is
+                Container basedir
 
+        :Returns:
+            *database*
+                path to located database; if no database found, is None
+        
         """
-        database = self.metadata['database']
-        init = kwargs.pop('init', False)
+        startdir = kwargs.pop('startdir', self.metadata['basedir'])
 
         # search upward for a database
-        if init:
-            directory = '.'
-        else:
-            directory = self.metadata['basedir']
-
-        found == False
-
+        directory = startdir
+        found = False
+        
+        self._logger.info("Beginning search for database from {}".format(directory))
         while (directory != '/') and (not found):
             directory, tail = os.path.split(directory)
             candidates = glob.glob(os.path.join(directory, self._database))
-
-            if candidates:
-                db = Database(candidates[0])
-                if db._handshake():
-                    self.metadata['database'] = db.metadata['basedir']
-                
-
-        # if the Container has no database, then the first one it finds as it
-        # searches upward will be its database
-        if database == None:
             
-    def _generate_database(self, database):
-        """Generate a database for the first time.
+            if candidates:
+                self._logger.info("Database candidate located: {}".format(candidates[0])
+                found = self._connect_database(candidates[0]):
+        
+        if not found:
+            self._logger.info("No database found!")
+            self.metadata['database'] = None
 
-        If no Database exists for the Container to give its information to,
-        this method is used to create a new one.
-
-        """
+        return self.metadata['database']
 
 class OperatorCore(object):
     """Mixin class for all Operators.
@@ -472,6 +486,10 @@ class Database(object):
 
         """
 
+    def select(self, *containers):
+
+    def deselect(self, *containers):
+
     def add(self, *containers, **kwargs):
         """Add Container to Database.
 
@@ -481,6 +499,8 @@ class Database(object):
                 or as a generated Container object
             
         """
+        for container in containers:
+            self.
 
     def remove(self, *containers, **kwargs):
         """Remove Container from Database.
@@ -544,6 +564,22 @@ class Database(object):
         """
         # use os.walk
     
+    def merge(self, database):
+        """Merge another database's contents into this one.
+        
+        :Arguments:
+            *database*
+                path to database or Database object
+
+        """
+
+    def split(self, database):
+        """Split selected Containers off of database into another.
+        
+        :Arguments:
+            *database*
+                path to destination database or Database object
+        """
     def _check_location(self):
         """Check Database location; if changed, send new location to all Containers.
 
@@ -562,3 +598,4 @@ class Database(object):
         """
         #TODO: add various checks to ensure things are in working order
         return self.database['metadata']['id']
+
