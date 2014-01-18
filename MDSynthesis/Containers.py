@@ -85,12 +85,11 @@ class Sim(ContainerCore):
             *name*
                 desired name for object, used for logging and referring to
                 object in some analyses; default will be the object's randomly
-                selected UUID; used only on initial generation of Sim
+                selected UUID
             *database*
                 directory of the database to associate with this object; if the
                 database does not exist, it is created; if none is specified, a
-                database is created in the current directory; used only on
-                initial generation of Sim
+                database is created in the current directory
 
         :Keywords used on object regeneration:
             *naked*
@@ -119,10 +118,14 @@ class Sim(ContainerCore):
         # generate metadata items
         self._build_metadata(**kwargs)
 
-        # determine storage location
+        # find or generate database
         database = os.path.abspath(kwargs.pop('database', None))
-        if database == None:
-            self
+        self._init_database(
+            
+
+        # determine storage location
+            
+
         self.metadata['basedir'] = self._build_basedir(database, name)
 
         # if basedir already exists, use UUID instead

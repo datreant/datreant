@@ -172,6 +172,7 @@ class ContainerCore(object):
         if os.path.exists(basedir):
             basedir = self._build_basedir(database, self.metadata['id'])
 
+        
 
 
 
@@ -219,6 +220,40 @@ class ContainerCore(object):
 
         """
 
+    def _init_database(self, **kwargs):
+        """On generation of Container, perform standard database interactions.
+
+        :Keywords:
+            *database*
+                path to database; default None
+        
+        """
+        database = kwargs.pop('database', None)
+
+        if database:
+            database = os.path.dirname(database)
+            self._logger.info("Attempting to connect to database in {}".format(database))
+            self._connect_database(database)
+        else:
+            self._logger.info("No database specified.".format(database))
+            database = self._locate_database()
+            if database:
+                self._connect_database(database)
+            else:
+                self._generate_database(
+                
+            
+    def _connect_database(self, database):
+        """Connect Container to database.
+
+        :Keywords:
+            *database*
+                path to database
+        """
+        # attempt to open database
+        db = 
+
+
     def _locate_database(self):
         """Find database; to be used if it can't be found.
 
@@ -226,11 +261,20 @@ class ContainerCore(object):
         the file heirarchy, looking for its Database file. If it does not find
         it, it creates a new one where it thinks it should have been.
 
+        :Keywords:
+            *init*
+                if True, run in ``init`` mode; default False
+
         """
         database = self.metadata['database']
+        init = kwargs.pop('init', False)
 
         # search upward for a database
-        directory = self.metadata['basedir']
+        if init:
+            directory = '.'
+        else:
+            directory = self.metadata['basedir']
+
         found == False
 
         while (directory != '/') and (not found):
@@ -239,21 +283,15 @@ class ContainerCore(object):
 
             if candidates:
                 db = Database(candidates[0])
-                db_id = db._handshake()
-                if db_id == self.metadata['database']['id']
-                #TODO: figure out the structure of your database entry in
-                # metadata, and whether or not we're going to even bother with
-                # some kind of ID system for databases; ID could be useful, but
-                # if it makes things needlessly complicated then we should
-                # forget it.
-                
+                if db._handshake():
+                    self.metadata['database'] = db.metadata['basedir']
                 
 
         # if the Container has no database, then the first one it finds as it
         # searches upward will be its database
         if database == None:
             
-    def _generate_database(self):
+    def _generate_database(self, database):
         """Generate a database for the first time.
 
         If no Database exists for the Container to give its information to,
