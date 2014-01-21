@@ -146,7 +146,7 @@ class Sim(ContainerCore):
         self.universe['main'] = system
 
     def _regenerate(self, *args, **kwargs):
-        """Re-generate existing object.
+        """Re-generate existing Sim object.
         
         """
         naked = kwargs.pop('naked', False)
@@ -327,7 +327,6 @@ class Group(ContainerCore):
         # finish up and save
         self.save()
         self._start_logger()
-        self._build_attributes()
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing object.
@@ -349,7 +348,6 @@ class Group(ContainerCore):
         self._build_metadata(**kwargs)
         self._start_logger()
         self.save()
-        self._build_attributes()
 
     def _attach_members(self, **kwargs):
         """Attach members to Group object.

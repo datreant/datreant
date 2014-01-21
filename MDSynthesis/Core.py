@@ -56,7 +56,7 @@ class ContainerCore(object):
         """
         self._makedirs(self.metadata['basedir'])
 
-        with open(os.path.join(basedir, self._metafile), 'w') as f:
+        with open(os.path.join(self.metadata['basedir'], self._metafile), 'w') as f:
             yaml.dump(self.metadata, f)
 
         if 'all' in args:
@@ -147,7 +147,7 @@ class ContainerCore(object):
         """
         # building core items
         uuid = self._generate_id()
-        attributes = {'id': uuid,
+        attributes = {'uuid': uuid,
                       'name': kwargs.pop('name', None),
                       'analysis': list(),
                       'class': self.__class__.__name__,
@@ -202,7 +202,7 @@ class ContainerCore(object):
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
 
-    def _generate_id(self):
+    def _generate_uuid(self):
         """Generate a 'unique' identifier.
 
         """
@@ -219,7 +219,6 @@ class ContainerCore(object):
         Note: This will overwrite metadata file with Database version!
 
         """
-
 
     def _init_database(self, **kwargs):
         """On generation of Container, perform standard database interactions.
@@ -459,18 +458,32 @@ class Database(object):
     """Database object for tracking and coordinating Containers.
     
     """
+    self._metafile = metafile
+    self._database = database
+
     #TODO: add simple lock scheme to Database so that only one instance at a
     # time can commit changes to the file, and that when this happens all
     # Database instances have a way of knowing a change has been made and can
     # update their record 
 
-    def __init__(self):
+    def __init__(self, database, **kwargs):
         """Generate Database object for the first time, or interface with an existing one.
 
+        :Arguments:
+            *database*
+                directory containing a Database file; if no Database file is
+                found, a new one is generated
 
         """
+        self.database = dict()              # the database data itself
+
+        dbfile = os.path.join(os.path.dirname(database), self._database)
+        if os.path.exists(dbfile):
+            self._regenerate(database, **kwargs)
+        else:
+            self._generate(database, **kwargs)
     
-    def search(self):
+    def search(self, ):
         """Search the Database for Containers that match certain criteria.
 
         Results are printed in digest form to the screen. To print full
@@ -485,6 +498,8 @@ class Database(object):
                 filesystem paths to Containers that match criteria
 
         """
+
+
 
     def select(self, *containers):
 
@@ -524,6 +539,22 @@ class Database(object):
 
         """
 
+    def save(self):
+        """Save the current state of the database to its file.
+        
+        """
+        self._makedirs(self.database['basedir'])
+        with open(os.path.join(self.database['basedir'], self._database), 'w') as f:
+            yaml.dump(self.database, f)
+
+    def refresh(self):
+        """Reload contents of database file.
+
+        """
+        dbfile = os.path.join(self.database['basedir'], self._database)
+        with open(dbfile, 'r') as f:
+            self.database = yaml.load(f)
+
     def update_database(self, *args, **kwargs):
         """Update information stored in Database from Container metadata.
 
@@ -557,6 +588,10 @@ class Database(object):
                 if True, will update all known Container metadata files from entries
 
         """
+        for container in containers:
+            if os.path.isdir(container):
+
+            elif 
 
     def discover_containers(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
@@ -580,17 +615,72 @@ class Database(object):
             *database*
                 path to destination database or Database object
         """
-    def _check_location(self):
+
+    def _check_location(self, database):
         """Check Database location; if changed, send new location to all Containers.
 
         """
-        # update projectdir
+        basedir = os.path.dirname(database)
+        if basedir != self.database['basedir']:
+            self.database['basedir'] = basedir
+            self.save()
+            self.update_container
+
+
+
+
+    def _generate(self, database):
+        """Generate a new database.
+        
+        """
+        self.database['basedir'] = os.path.dirname(database)
+        self._build_metadata()
+        self._build_attributes()
+
+        # write to database file
+        self.save()
+
+    def _regenerate(self, database):
+        """Re-generate existing database.
+    
+        """
+        self.database['basedir'] = os.path.dirname(database)
+        self.refresh()
+        
+        self._check_location(database)
+
+        # rebuild missing parts
+        self._build_metadata()
+        self._build_attributes()
+
+    def _build_metadata(self):
+        """Build metadata. Runs each time object is generated.
+        
+        Only adds keys; never modifies existing ones.
+
+        """
+        attributes = {'class': self.__class__.__name__,
+                      }
+    
+        for key in attributes:
+            if not key in self.database
+                self.database[key] = attributes[key]
+
+    def _build_attributes(self):
+        """Build attributes of Database. Runs each time object is generated.
+
+        """
+        self.selections = []
 
     def _locate_container(self):
         """Find a Container that has moved by traversing downward through the filesystem. 
             
         """
         # use os.walk
+
+    def _makedirs(self, p):
+        if not os.path.exists(p):
+            os.makedirs(p)
 
     def _handshake(self):
         """Run check to ensure that database is fine. Return database ID.
