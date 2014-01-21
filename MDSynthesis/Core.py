@@ -483,11 +483,15 @@ class Database(object):
         else:
             self._generate(database, **kwargs)
     
-    def search(self, ):
+    def search(self, searchstring):
         """Search the Database for Containers that match certain criteria.
 
         Results are printed in digest form to the screen. To print full
         metadata for all matching containers, use print='full'
+
+        :Arguments:
+            *searchstring*
+                string giving the search query
 
         :Keywords:
             *print*
@@ -498,12 +502,9 @@ class Database(object):
                 filesystem paths to Containers that match criteria
 
         """
-
-
-
-    def select(self, *containers):
-
-    def deselect(self, *containers):
+        #TODO: Add in selection system similar to that implemented in
+        # MDAnalysis for atom selections. This one, however, will parse
+        # metadata elements, and shouldn't be quite so complex
 
     def add(self, *containers, **kwargs):
         """Add Container to Database.
@@ -571,7 +572,7 @@ class Database(object):
                 if True, will update entries for all known Containers from metadata files
         """
 
-    def update_container(self, *containers):
+    def update_container(self, *containers, **kwargs):
         """Update Container metadata with information stored in Database.
 
         This is the opposite of `:meth:self.update_database()`
@@ -586,12 +587,26 @@ class Database(object):
         :Keywords:
             *all*
                 if True, will update all known Container metadata files from entries
-
+            *keys*
+                list of metadata keys to update; default None will update all
+                metadata items
         """
-        for container in containers:
-            if os.path.isdir(container):
+        all_conts = kwargs.pop('all', False)
+        keys = kwargs.pop('keys', None)
 
-            elif 
+        if all_conts:
+            containers = [ x for x in self.database['containers'] ]
+
+        #TODO: perhaps don't include keys as a keyword, as this might be
+        # overcomplicated. To safely update locations, just update the database
+        # (pull), then update containers (push)
+        for container in containers:
+            if keys:
+                if os.path.isdir(container):
+
+                else:
+                    # search both container keys (UUIDs) and container names to
+                    # build match list
 
     def discover_containers(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
@@ -624,7 +639,7 @@ class Database(object):
         if basedir != self.database['basedir']:
             self.database['basedir'] = basedir
             self.save()
-            self.update_container
+            self.update_container(all=True, keys=['database'])
 
 
 
@@ -670,7 +685,6 @@ class Database(object):
         """Build attributes of Database. Runs each time object is generated.
 
         """
-        self.selections = []
 
     def _locate_container(self):
         """Find a Container that has moved by traversing downward through the filesystem. 
@@ -683,9 +697,9 @@ class Database(object):
             os.makedirs(p)
 
     def _handshake(self):
-        """Run check to ensure that database is fine. Return database ID.
+        """Run check to ensure that database is fine.
 
         """
         #TODO: add various checks to ensure things are in working order
-        return self.database['metadata']['id']
+        return ('basedir' in self.database)
 
