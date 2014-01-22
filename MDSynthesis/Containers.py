@@ -5,6 +5,7 @@ Basic Container objects: the organizational units for :mod:`MDSynthesis`.
 
 import os
 import yaml
+import pdb
 import MDAnalysis
 
 from Core import *
@@ -132,7 +133,7 @@ class Sim(ContainerCore):
         for seg in pluck_segment:
             seg = os.path.join(os.path.normpath(seg), '')
             p = p.replace(seg, '')
-
+        
         # return final constructed path
         return p
 
@@ -170,8 +171,8 @@ class Sim(ContainerCore):
 
         # finish up and save
         self._build_metadata(**kwargs)
-        self._start_logger()
         self.save()
+        self._start_logger()
 
         # finally, attach universe to object
         if naked == False:

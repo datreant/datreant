@@ -187,20 +187,22 @@ class ContainerCore(object):
         """
         # set up logging
         self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
-        self._logger.setLevel(logging.INFO)
 
-        # file handler
-        logfile = self._rel2abspath(os.path.join(self.metadata['basedir'], self.metadata['logfile']))
-        fh = logging.FileHandler(logfile)
-        ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-        fh.setFormatter(ff)
-        self._logger.addHandler(fh)
+        if not self._logger.handlers:
+            self._logger.setLevel(logging.INFO)
 
-        # output handler
-        ch = logging.StreamHandler(sys.stdout)
-        cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-        ch.setFormatter(cf)
-        self._logger.addHandler(ch)
+            # file handler
+            logfile = self._rel2abspath(os.path.join(self.metadata['basedir'], self.metadata['logfile']))
+            fh = logging.FileHandler(logfile)
+            ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+            fh.setFormatter(ff)
+            self._logger.addHandler(fh)
+
+            # output handler
+            ch = logging.StreamHandler(sys.stdout)
+            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+            ch.setFormatter(cf)
+            self._logger.addHandler(ch)
 
 class OperatorCore(object):
     """Mixin class for all Operators.
