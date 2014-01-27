@@ -14,7 +14,7 @@ from multiprocessing import Process
 metafile = 'metadata.yaml'
 logfile = 'logfile.log'
 datafile = 'data.pkl'
-database = 'MDSdatabase.yaml'
+dbfile = 'MDSdatabase.yaml'
 
 class ContainerCore(object):
     """Mixin class for all Containers.
@@ -23,10 +23,10 @@ class ContainerCore(object):
     instead contains methods and attributes common to all Container objects.
 
     """
-    self._metafile = metafile
-    self._logfile = logfile
-    self._datafile = datafile
-    self._database = database
+    _metafile = metafile
+    _logfile = logfile
+    _datafile = datafile
+    _dbfile = dbfile
 
     def __init__(self):
         """
@@ -59,6 +59,9 @@ class ContainerCore(object):
         with open(os.path.join(self.metadata['basedir'], self._metafile), 'w') as f:
             yaml.dump(self.metadata, f)
 
+        # update database
+        self.push()
+
         if 'all' in args:
             self._logger.info("Saving all loaded data into source files for '{}'...".format(self.metadata['name']))
             savelist = self.analysis
@@ -68,7 +71,7 @@ class ContainerCore(object):
 
         for i in savelist:
             self._logger.info("Saving {}...".format(i))
-            with open(os.path.join(self._rel2abspath(self.metadata['basedir']), '{}/{}'.format(i, self._datafile)), 'wb') as f:
+            with open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'wb') as f:
                 cPickle.dump(self.analysis[i], f)
         self._logger.info("All selected data saved.")
 
@@ -151,8 +154,8 @@ class ContainerCore(object):
                       'name': kwargs.pop('name', None),
                       'analysis': list(),
                       'class': self.__class__.__name__,
-                      'categories': kwargs.pop('categories', dict()),
-                      'tags': kwargs.pop('tags', list()),
+                      'category': kwargs.pop('category', dict()),
+                      'tag': kwargs.pop('tag', list()),
                       }
 
         for key in attributes:
@@ -167,7 +170,7 @@ class ContainerCore(object):
                 directory where database resides
             *name*
         """
-        basedir = os.path.join(os.path.abspath(database), '{}/{}'.format(self.__class__.__name__, name)
+        basedir = os.path.join(os.path.abspath(database), '{}/{}'.format(self.__class__.__name__, name))
 
         if os.path.exists(basedir):
             basedir = self._build_basedir(database, self.metadata['id'])
@@ -177,7 +180,7 @@ class ContainerCore(object):
 
 
 
-        return os.path.join(os.path.abspath(database), '{}/{}'.format(self.__class__.__name__, name)
+        return os.path.join(os.path.abspath(database), '{}/{}'.format(self.__class__.__name__, name))
 
     def _start_logger(self):
         """Start up the logger.
@@ -208,12 +211,12 @@ class ContainerCore(object):
         """
         return str(uuid4())
 
-    def _update_database(self):
+    def _push(self):
         """Update metadata stored in Database for this Container.
     
         """
 
-    def _update_container(self):
+    def _pull(self):
         """Update metadata from information stored in Database for this Container.
 
         Note: This will overwrite metadata file with Database version!
@@ -264,7 +267,7 @@ class ContainerCore(object):
         db = Database(database)
         
         if db._handshake():
-            self._logger.info("Handshake success; database now in {}".format(db.database['basedir'])
+            self._logger.info("Handshake success; database now in {}".format(db.database['basedir']))
             self.metadata['database'] = db.metadata['basedir']
             db.add(self)
             success = True
@@ -300,11 +303,11 @@ class ContainerCore(object):
         self._logger.info("Beginning search for database from {}".format(directory))
         while (directory != '/') and (not found):
             directory, tail = os.path.split(directory)
-            candidates = glob.glob(os.path.join(directory, self._database))
+            candidates = glob.glob(os.path.join(directory, self._dbfile))
             
             if candidates:
-                self._logger.info("Database candidate located: {}".format(candidates[0])
-                found = self._connect_database(candidates[0]):
+                self._logger.info("Database candidate located: {}".format(candidates[0]))
+                found = self._connect_database(candidates[0])
         
         if not found:
             self._logger.info("No database found!")
@@ -319,7 +322,7 @@ class OperatorCore(object):
     instead contains methods and attributes common to all Operator objects.
 
     """
-    self._datafile = datafile
+    _datafile = datafile
 
     def __init__(self, *args, **kwargs):
         """
@@ -354,7 +357,7 @@ class OperatorCore(object):
         # finish up
         for container in self.containers:
             # update analysis list in each object
-            if not self.__class__.__name__ in container.metadata['analysis_list']:
+            if not self.__class__.__name__ in container.metadata['analysis']:
                 container.metadata['analysis'].append(self.__class__.__name__)
                 container.save()
 
@@ -458,8 +461,9 @@ class Database(object):
     """Database object for tracking and coordinating Containers.
     
     """
-    self._metafile = metafile
-    self._database = database
+    _metafile = metafile
+    _dbfile = dbfile
+    _logfile = logfile
 
     #TODO: add simple lock scheme to Database so that only one instance at a
     # time can commit changes to the file, and that when this happens all
@@ -477,12 +481,45 @@ class Database(object):
         """
         self.database = dict()              # the database data itself
 
-        dbfile = os.path.join(os.path.dirname(database), self._database)
+        dbfile = os.path.join(os.path.abspath(database), self._dbfile)
         if os.path.exists(dbfile):
-            self._regenerate(database, **kwargs)
+            self._regenerate(dbfile, **kwargs)
         else:
-            self._generate(database, **kwargs)
+            self._generate(dbfile, **kwargs)
     
+    def _generate(self, database):
+        """Generate a new database.
+        
+        """
+        self.database['basedir'] = os.path.dirname(database)
+        self._build_metadata()
+        self._build_attributes()
+
+        # write to database file
+        self.save()
+        self._start_logger()
+
+    def _regenerate(self, database):
+        """Re-generate existing database.
+    
+        """
+        self.database['basedir'] = os.path.dirname(database)
+        self.refresh()
+        
+        self._check_location(database)
+
+        # rebuild missing parts
+        self._build_metadata()
+        self._build_attributes()
+        self._start_logger()
+
+    def _handshake(self):
+        """Run check to ensure that database is fine.
+
+        """
+        #TODO: add various checks to ensure things are in working order
+        return ('basedir' in self.database)
+
     def search(self, searchstring):
         """Search the Database for Containers that match certain criteria.
 
@@ -506,6 +543,8 @@ class Database(object):
         # MDAnalysis for atom selections. This one, however, will parse
         # metadata elements, and shouldn't be quite so complex
 
+        return
+
     def add(self, *containers, **kwargs):
         """Add Container to Database.
 
@@ -516,7 +555,16 @@ class Database(object):
             
         """
         for container in containers:
-            self.
+            if os.path.isdir(container):
+                with open(os.path.join(container, self._metafile), 'r') as f:
+                    meta = yaml.load(f)
+                uuid = meta['uuid']
+                self.database['container'][uuid] = meta
+            else:
+                uuid = container.metadata['uuid']
+                self.database['container'][uuid] = container.metadata
+    
+            self._logger.info("Added {} container '{}' to database.".format(self.database['container'][uuid]['class'], self.database['container'][uuid]['name']))
 
     def remove(self, *containers, **kwargs):
         """Remove Container from Database.
@@ -545,18 +593,18 @@ class Database(object):
         
         """
         self._makedirs(self.database['basedir'])
-        with open(os.path.join(self.database['basedir'], self._database), 'w') as f:
+        with open(os.path.join(self.database['basedir'], self._dbfile), 'w') as f:
             yaml.dump(self.database, f)
 
     def refresh(self):
         """Reload contents of database file.
 
         """
-        dbfile = os.path.join(self.database['basedir'], self._database)
+        dbfile = os.path.join(self.database['basedir'], self._dbfile)
         with open(dbfile, 'r') as f:
             self.database = yaml.load(f)
 
-    def update_database(self, *args, **kwargs):
+    def pull(self, *args, **kwargs):
         """Update information stored in Database from Container metadata.
 
         Note: if Container name is used to specify the update, all Containers
@@ -572,7 +620,7 @@ class Database(object):
                 if True, will update entries for all known Containers from metadata files
         """
 
-    def update_container(self, *containers, **kwargs):
+    def push(self, *containers, **kwargs):
         """Update Container metadata with information stored in Database.
 
         This is the opposite of `:meth:self.update_database()`
@@ -587,32 +635,42 @@ class Database(object):
         :Keywords:
             *all*
                 if True, will update all known Container metadata files from entries
-            *keys*
-                list of metadata keys to update; default None will update all
-                metadata items
         """
         all_conts = kwargs.pop('all', False)
-        keys = kwargs.pop('keys', None)
 
         if all_conts:
             containers = [ x for x in self.database['containers'] ]
 
-        #TODO: perhaps don't include keys as a keyword, as this might be
-        # overcomplicated. To safely update locations, just update the database
+        #To safely update locations, just update the database
         # (pull), then update containers (push)
         for container in containers:
-            if keys:
-                if os.path.isdir(container):
+            if os.path.isdir(container):
+                basedir = os.path.abspath(container)
 
-                else:
-                    # search both container keys (UUIDs) and container names to
-                    # build match list
+
+            else:
+                return
+                
+                # search both container keys (UUIDs) and container names to
+                # build match list
+
+    def _push_container(self, container):
+        """Update individual container.
+
+        :Arguments:
+             *container*
+                Container UUID
+        """
+
+        
 
     def discover_containers(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
         
         """
         # use os.walk
+    
+        return
     
     def merge(self, database):
         """Merge another database's contents into this one.
@@ -639,46 +697,25 @@ class Database(object):
         if basedir != self.database['basedir']:
             self.database['basedir'] = basedir
             self.save()
-            self.update_container(all=True, keys=['database'])
+            self.push(all=True)
 
 
 
 
-    def _generate(self, database):
-        """Generate a new database.
-        
-        """
-        self.database['basedir'] = os.path.dirname(database)
-        self._build_metadata()
-        self._build_attributes()
 
-        # write to database file
-        self.save()
-
-    def _regenerate(self, database):
-        """Re-generate existing database.
-    
-        """
-        self.database['basedir'] = os.path.dirname(database)
-        self.refresh()
-        
-        self._check_location(database)
-
-        # rebuild missing parts
-        self._build_metadata()
-        self._build_attributes()
-
-    def _build_metadata(self):
+    def _build_metadata(self, **kwargs):
         """Build metadata. Runs each time object is generated.
         
         Only adds keys; never modifies existing ones.
 
         """
         attributes = {'class': self.__class__.__name__,
+                      'name': kwargs.pop('name', os.path.basename(self.database['basedir'])),
+                      'container': dict(),
                       }
     
         for key in attributes:
-            if not key in self.database
+            if not key in self.database:
                 self.database[key] = attributes[key]
 
     def _build_attributes(self):
@@ -692,14 +729,31 @@ class Database(object):
         """
         # use os.walk
 
+        return
+
     def _makedirs(self, p):
         if not os.path.exists(p):
             os.makedirs(p)
-
-    def _handshake(self):
-        """Run check to ensure that database is fine.
+    
+    def _start_logger(self):
+        """Start up the logger.
 
         """
-        #TODO: add various checks to ensure things are in working order
-        return ('basedir' in self.database)
+        # set up logging
+        self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.database['name']))
 
+        if not self._logger.handlers:
+            self._logger.setLevel(logging.INFO)
+
+            # file handler
+            logfile = os.path.join(self.database['basedir'], self._logfile)
+            fh = logging.FileHandler(logfile)
+            ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+            fh.setFormatter(ff)
+            self._logger.addHandler(fh)
+
+            # output handler
+            ch = logging.StreamHandler(sys.stdout)
+            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+            ch.setFormatter(cf)
+            self._logger.addHandler(ch)

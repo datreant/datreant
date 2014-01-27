@@ -90,6 +90,12 @@ class Sim(ContainerCore):
                 directory of the database to associate with this object; if the
                 database does not exist, it is created; if none is specified, a
                 database is created in the current directory
+            *category*
+                dictionary with user-defined keys and values; basically used to
+                give Sims distinguishing characteristics
+            *tag*
+                list with user-defined values; like category, but useful for
+                adding many distinguishing descriptors
 
         :Keywords used on object regeneration:
             *naked*
@@ -134,9 +140,9 @@ class Sim(ContainerCore):
         # record universe
         self.metadata['universe']['main']['structure'] = os.path.abspath(system.filename)
         try:
-            self.metadata['universe'['main']['trajectories'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
+            self.metadata['universe']['main']['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
         except AttributeError:
-            self.metadata['universe']['main']['trajectories'] = [os.path.abspath(system.trajectory.filename)]
+            self.metadata['universe']['main']['trajectory'] = [os.path.abspath(system.trajectory.filename)]
 
         # finish up and save
         self.save()
@@ -189,8 +195,8 @@ class Sim(ContainerCore):
         for i in loadlist:
             if (i not in self.universe) or (force == True):
                 self._logger.info("Attaching {}...".format(i))
-                structure = self.metadata['universe'][i]['structure'])
-                trajectory = [ x for x in self.metadata['universe'][i]['trajectories'] ]
+                structure = self.metadata['universe'][i]['structure']
+                trajectory = [ x for x in self.metadata['universe'][i]['trajectory'] ]
                 self.universe[i] = MDAnalysis.Universe(structure, *trajectory) 
             else:
                 self._logger.info("Skipping re-attach of {}...".format(i))
