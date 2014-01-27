@@ -98,7 +98,7 @@ class Sim(ContainerCore):
                 adding many distinguishing descriptors
 
         :Keywords used on object regeneration:
-            *naked*
+            *detached*
                 if True, Sim will load WITHOUT attaching trajectory; this is
                 useful if only loadable analysis data are needed or
                 trajectories are unavailable; default False
@@ -155,7 +155,7 @@ class Sim(ContainerCore):
         """Re-generate existing Sim object.
         
         """
-        naked = kwargs.pop('naked', False)
+        detached = kwargs.pop('detached', False)
         basedir = os.path.abspath(args[0])
         self.metadata['basedir'] = basedir
         
@@ -171,10 +171,10 @@ class Sim(ContainerCore):
         self.save()
 
         # attach universe
-        if naked == False:
-            self._attach_universe()
+        if not detached:
+            self.attach('main')
     
-    def attach_universe(self, *args, **kwargs):
+    def attach(self, *args, **kwargs):
         """Attach universe.
     
         If 'all' is in argument list, every affiliated universe is loaded.
@@ -202,7 +202,7 @@ class Sim(ContainerCore):
                 self._logger.info("Skipping re-attach of {}...".format(i))
         self._logger.info("Object '{}' attached to selected universes.".format(self.metadata['name']))
 
-    def detach_universe(self, *args, **kwargs):
+    def detach(self, *args, **kwargs):
         """Detach universe.
 
         If 'all' is in argument list, every loaded dataset is unloaded.
@@ -238,7 +238,7 @@ class Group(ContainerCore):
             *name*
                 desired name for object, used for logging and referring to
                 object in some analyses; default is class name
-            *naked*
+            *detached*
                 if True, members will load WITHOUT attaching trajectories or
                 loading additional attributes; this is useful if only loadable
                 analysis data are needed or trajectories are unavailable;

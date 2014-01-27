@@ -62,18 +62,19 @@ class ContainerCore(object):
         # update database
         self.push()
 
-        if 'all' in args:
-            self._logger.info("Saving all loaded data into source files for '{}'...".format(self.metadata['name']))
-            savelist = self.analysis
-        elif len(args) != 0:
-            self._logger.info("Saving selected data into source files for '{}'...".format(self.metadata['name']))
-            savelist = args
+        if args:
+            if 'all' in args:
+                self._logger.info("Saving all loaded data into source files for '{}'...".format(self.metadata['name']))
+                savelist = self.analysis
+            else:
+                self._logger.info("Saving selected data into source files for '{}'...".format(self.metadata['name']))
+                savelist = args
 
-        for i in savelist:
-            self._logger.info("Saving {}...".format(i))
-            with open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'wb') as f:
-                cPickle.dump(self.analysis[i], f)
-        self._logger.info("All selected data saved.")
+            for i in savelist:
+                self._logger.info("Saving {}...".format(i))
+                with open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'wb') as f:
+                    cPickle.dump(self.analysis[i], f)
+            self._logger.info("All selected data saved.")
 
     def refresh(self):
         """Reloads metadata from file.
@@ -149,7 +150,7 @@ class ContainerCore(object):
                 object in some analyses; default None
         """
         # building core items
-        uuid = self._generate_id()
+        uuid = self._generate_uuid()
         attributes = {'uuid': uuid,
                       'name': kwargs.pop('name', None),
                       'analysis': list(),
@@ -211,12 +212,12 @@ class ContainerCore(object):
         """
         return str(uuid4())
 
-    def _push(self):
+    def push(self):
         """Update metadata stored in Database for this Container.
     
         """
 
-    def _pull(self):
+    def pull(self):
         """Update metadata from information stored in Database for this Container.
 
         Note: This will overwrite metadata file with Database version!
@@ -481,17 +482,18 @@ class Database(object):
         """
         self.database = dict()              # the database data itself
 
-        dbfile = os.path.join(os.path.abspath(database), self._dbfile)
+        database = os.path.abspath(database)
+        dbfile = os.path.join(database, self._dbfile)
         if os.path.exists(dbfile):
-            self._regenerate(dbfile, **kwargs)
+            self._regenerate(database, **kwargs)
         else:
-            self._generate(dbfile, **kwargs)
+            self._generate(database, **kwargs)
     
     def _generate(self, database):
         """Generate a new database.
         
         """
-        self.database['basedir'] = os.path.dirname(database)
+        self.database['basedir'] = database
         self._build_metadata()
         self._build_attributes()
 
@@ -503,7 +505,7 @@ class Database(object):
         """Re-generate existing database.
     
         """
-        self.database['basedir'] = os.path.dirname(database)
+        self.database['basedir'] = database
         self.refresh()
         
         self._check_location(database)
@@ -564,6 +566,9 @@ class Database(object):
                 uuid = container.metadata['uuid']
                 self.database['container'][uuid] = container.metadata
     
+            self.database['container'][uuid]['database'] = self.database['basedir']
+            self._check_location(self.database['basedir'], force=True)
+            self.push(uuid)
             self._logger.info("Added {} container '{}' to database.".format(self.database['container'][uuid]['class'], self.database['container'][uuid]['name']))
 
     def remove(self, *containers, **kwargs):
@@ -604,7 +609,7 @@ class Database(object):
         with open(dbfile, 'r') as f:
             self.database = yaml.load(f)
 
-    def pull(self, *args, **kwargs):
+    def pull(self, *containers, **kwargs):
         """Update information stored in Database from Container metadata.
 
         Note: if Container name is used to specify the update, all Containers
@@ -619,11 +624,32 @@ class Database(object):
             *all*
                 if True, will update entries for all known Containers from metadata files
         """
+        all_conts = kwargs.pop('all', False)
+
+        if all_conts:
+            containers = [ x for x in self.database['container'] ]
+    
+        for container in containers:
+            if os.path.isdir(container):
+                basedir = os.path.abspath(container)
+                contype = ['basedir']
+            else:
+                contype = ['uuid', 'name']
+
+            matches = []
+            for entry in self.database['container'].values():
+                for criteria in contype:
+                    if entry[criteria] == container:
+                        matches.append(entry['uuid'])
+
+            for match in matches:
+                with open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
+                    self.database['container'][match] = yaml.load(f)
 
     def push(self, *containers, **kwargs):
         """Update Container metadata with information stored in Database.
 
-        This is the opposite of `:meth:self.update_database()`
+        This is the opposite of `:meth:self.pull()`
 
         Note: if Container name is used to specify the update, all Containers
         with that name will have metadata updated.
@@ -639,30 +665,24 @@ class Database(object):
         all_conts = kwargs.pop('all', False)
 
         if all_conts:
-            containers = [ x for x in self.database['containers'] ]
+            containers = [ x for x in self.database['container'] ]
 
-        #To safely update locations, just update the database
-        # (pull), then update containers (push)
         for container in containers:
             if os.path.isdir(container):
                 basedir = os.path.abspath(container)
-
-
+                contype = ['basedir']
             else:
-                return
-                
-                # search both container keys (UUIDs) and container names to
-                # build match list
+                contype = ['uuid', 'name']
 
-    def _push_container(self, container):
-        """Update individual container.
-
-        :Arguments:
-             *container*
-                Container UUID
-        """
-
-        
+            matches = []
+            for entry in self.database['container'].values():
+                for criteria in contype:
+                    if entry[criteria] == container:
+                        matches.append(entry['uuid'])
+    
+            for match in matches:
+                with open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
+                    yaml.dump(self.database['container'][match], f)
 
     def discover_containers(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
@@ -689,19 +709,24 @@ class Database(object):
                 path to destination database or Database object
         """
 
-    def _check_location(self, database):
+    def _check_location(self, database, **kwargs):
         """Check Database location; if changed, send new location to all Containers.
 
+        :Keywords:
+            *force*
+                if True, new location sent to all Containers even if unchanged;
+                default False
         """
-        basedir = os.path.dirname(database)
-        if basedir != self.database['basedir']:
-            self.database['basedir'] = basedir
+        force = kwargs.pop('force', False)
+
+        if (database != self.database['basedir']) or force:
+            self.database['basedir'] = database
+
+            for entry in self.database['container'].values():
+                entry['database'] = self.database['basedir']
+                            
             self.save()
             self.push(all=True)
-
-
-
-
 
     def _build_metadata(self, **kwargs):
         """Build metadata. Runs each time object is generated.
