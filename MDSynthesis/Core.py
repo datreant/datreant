@@ -36,7 +36,7 @@ class ContainerCore(object):
         self.analysis = dict()              # analysis data 'modular dock'
     
     def save(self, *args):
-        """Save base object metadata and, if desired, analysis data instances.
+        """Save Container metadata and, if desired, analysis data instances.
 
         By providing names of loaded datasets as arguments, you can save the
         loaded versions of the data to their source files. This is useful if
@@ -45,6 +45,8 @@ class ContainerCore(object):
 
         If no arguments are given, then no datasets are saved to their source
         files. Only metadata is saved.
+
+        Metadata is also pushed to Database.
 
         If 'all' is in argument list, every dataset that is loaded is written
         to its file.
@@ -171,17 +173,14 @@ class ContainerCore(object):
                 directory where database resides
             *name*
         """
-        basedir = os.path.join(os.path.abspath(database), '{}/{}'.format(self.__class__.__name__, name))
+        # if name given and directory with name doesn't already exist, make named basedir
+        if self.metadata['name'] and os.path.exists(os.path.join(database, self.__class__.__name__, self.metadata['name'])):
+            dest = self.metadata['name']
+        # if basedir already exists, use UUID instead
+        else:
+            dest = self.metadata['uuid']
 
-        if os.path.exists(basedir):
-            basedir = self._build_basedir(database, self.metadata['id'])
-
-        
-
-
-
-
-        return os.path.join(os.path.abspath(database), '{}/{}'.format(self.__class__.__name__, name))
+        return os.path.join(os.path.abspath(database), self.__class__.__name__, dest)
 
     def _start_logger(self):
         """Start up the logger.
@@ -224,57 +223,104 @@ class ContainerCore(object):
 
         """
 
-    def _init_database(self, **kwargs):
-        """On generation of Container, perform standard database interactions.
+    def _init_database(self, database, **kwargs):
+        """On generation of Container, perform standard Database interactions.
+
+        If the Database specified already exists, this Container will interface
+        with it. If it does not exist, a new Database will be created where the
+        specified one should have been.
+
+        If the *locate* keyword is set to True, then in the event it cannot find
+        the specified Database, the Container will search directories upward
+        from its location for a Database. If it finds one, it will interface
+        with that Database. If it does not find one, then a new Database will
+        be created where the specified one should have been.
+
+        :Arguments:
+            *database*
+                directory of database
 
         :Keywords:
-            *database*
-                path to database; default None
             *locate*
-                if True, automatically try to find a database if none specified;
-                if False, generate new database in current directory if none 
-                specified; default True
+                if True, automatically try to find a database if not found ``[False]``
         
         """
-        database = kwargs.pop('database', None)
-        locate = kwargs.pop('locate', True)
+        locate = kwargs.pop('locate', False)
 
-        if database:
-            database = os.path.dirname(database)
-            self._logger.info("Attempting to connect to database in {}".format(database))
-            self._connect_database(database)
-        else:
-            self._logger.info("No database specified. Looking upward to find one.".format(database))
-            database = self._locate_database(startdir='.')
-            if not database:
-                self.logger.info("Generating new database in current directory.")
-                self._connect_database('.')
+        database = os.path.abspath(database)
+        self._logger.info("Attempting to connect to database in {}".format(database))
+        success = self._connect_database(database)
+
+        if not success:
+            if locate:
+                new_database = self._locate_database(startdir='.')
+                if new_database:
+                    database = new_database
+    
+            self._connect_database(database, new=True)
             
-    def _connect_database(self, **kwargs):
+    def _restore_database(self, database, **kwargs):
+        """When Database can't be reached, find or make a new one.
+
+        If the *locate* keyword is set to True, then in the event it cannot find
+        the specified Database, the Container will search directories upward
+        from its location for a Database. If it finds one, it will interface
+        with that Database. If it does not find one, then a new Database will
+        be created where the specified one should have been.
+
+        :Arguments:
+            *database*
+                directory of database
+        
+        :Keywords:
+            *locate*
+                if True, automatically try to find a database if not found ``[False]``
+        """
+        new_database = self._locate_database(startdir='.')
+        if new_database:
+            database = new_database
+        self._connect_database(database, new=True)
+    
+    def _connect_database(self, database, **kwargs):
         """Connect Container to a Database.
 
-        If the Database doesn't exist, it will be created.
+        If the Database doesn't exist, it can be created with the *new* keyword.
+
+        :Arguments:
+            *database*
+                directory containing a Database 
 
         :Keywords:
-            *database*
-                path to database
+            *new*
+                if True, will make a new Database if an existing one is not
+                found  ``[False]``
 
         :Returns:
             *success*
                 True if connection succeeded; False otherwise
         """
-        # attempt to open database
-        database = kwargs.pop('database', self.metadata['database'])
-        db = Database(database)
+        new = kwargs.pop('new', False)
+
+        # attempt to open existing database
+        database = os.path.abspath(database)
+        if os.path.exists(os.path.join(database, self._dbfile)):
+            db = Database(database)
         
-        if db._handshake():
-            self._logger.info("Handshake success; database now in {}".format(db.database['basedir']))
-            self.metadata['database'] = db.metadata['basedir']
+            if db._handshake():
+                self._logger.info("Handshake success; database in {}".format(db.database['basedir']))
+                self.metadata['database'] = db.database['basedir']
+                db.add(self)
+                success = True
+            else:
+                self._logger.warning("Specified database failed handshake; not a real database?")
+                success = False
+        # make a new database in location
+        elif new:
+            db = Database(database)
+            self.metadata['database'] = db.database['basedir']
             db.add(self)
+            self._logger.info("Created new database in {}".format(db.database['basedir']))
             success = True
-        else:
-            self._logger.warning("Specified database failed handshake; not a real database?")
-            success = False
     
         return success
 
@@ -282,8 +328,9 @@ class ContainerCore(object):
         """Find database; to be used if it can't be found.
 
         The Container looks upward from its location on the filesystem through
-        the file heirarchy, looking for a Database file. The first such file
-        found will become its new Database. If none is found, 
+        the file heirarchy, looking for a Database file. The directory containing
+        the first such file found will be returned. None is returned if no such
+        files found.
 
         :Keywords:
             *startdir*
@@ -292,7 +339,7 @@ class ContainerCore(object):
 
         :Returns:
             *database*
-                path to located database; if no database found, is None
+                directory of located Database; if no Database found, is None
         
         """
         startdir = kwargs.pop('startdir', self.metadata['basedir'])
@@ -308,13 +355,15 @@ class ContainerCore(object):
             
             if candidates:
                 self._logger.info("Database candidate located: {}".format(candidates[0]))
-                found = self._connect_database(candidates[0])
+                basedir = os.path.dirname(candidates[0])
+                db = Database(basedir)
+                found = db._handshake()
         
         if not found:
             self._logger.info("No database found!")
-            self.metadata['database'] = None
+            basedir = None
 
-        return self.metadata['database']
+        return basedir
 
 class OperatorCore(object):
     """Mixin class for all Operators.

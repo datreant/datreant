@@ -88,8 +88,7 @@ class Sim(ContainerCore):
                 selected UUID
             *database*
                 directory of the database to associate with this object; if the
-                database does not exist, it is created; if none is specified, a
-                database is created in the current directory
+                database does not exist, it is created
             *category*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
@@ -97,7 +96,7 @@ class Sim(ContainerCore):
                 list with user-defined values; like category, but useful for
                 adding many distinguishing descriptors
 
-        :Keywords used on object regeneration:
+        :Keywords always available:
             *detached*
                 if True, Sim will load WITHOUT attaching trajectory; this is
                 useful if only loadable analysis data are needed or
@@ -125,20 +124,19 @@ class Sim(ContainerCore):
         self._build_metadata(**kwargs)
 
         # find or generate database
-        database = os.path.abspath(kwargs.pop('database', None))
-        self._init_database(database=database)
+        database = os.path.abspath(kwargs.pop('database'))
+        self._init_database(database)
 
-        # determine storage location
-        if self.metadata['name']:
+        # construct basedir
+        self.metadata['basedir'] = self._build_basedir(database, self.metadata['name'])
+        # if name given and directory with name doesn't already exist, make named basedir
+        if self.metadata['name'] and os.path.exists(os.path.join(database, self.__class__.__name__, self.metadata['name'])):
             dest = self.metadata['name']
+            self.metadata['basedir'] = os.path.join(database, self.__class__.__name__, dest) 
+        # if basedir already exists, use UUID instead
         else:
             dest = self.metadata['uuid']
-
-        self.metadata['basedir'] = os.path.join(database, self.__class__.__name__, dest) 
-
-        # if basedir already exists, use UUID instead
-
-
+            self.metadata['basedir'] = os.path.join(database, self.__class__.__name__, dest) 
         
         # record universe
         self.metadata['universe']['main']['structure'] = os.path.abspath(system.filename)
@@ -152,7 +150,8 @@ class Sim(ContainerCore):
         self._start_logger()
 
         # finally, attach universe to object
-        self.universe['main'] = system
+        if not detached:
+            self.attach('main')
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
