@@ -129,9 +129,12 @@ class Sim(ContainerCore):
         self._init_database(database=database)
 
         # determine storage location
-            
+        if self.metadata['name']:
+            dest = self.metadata['name']
+        else:
+            dest = self.metadata['uuid']
 
-        self.metadata['basedir'] = self._build_basedir(database, name)
+        self.metadata['basedir'] = os.path.join(database, self.__class__.__name__, dest) 
 
         # if basedir already exists, use UUID instead
 
@@ -238,6 +241,16 @@ class Group(ContainerCore):
             *name*
                 desired name for object, used for logging and referring to
                 object in some analyses; default is class name
+            *database*
+                directory of the database to associate with this object; if the
+                database does not exist, it is created; if none is specified, a
+                database is created in the current directory
+            *category*
+                dictionary with user-defined keys and values; basically used to
+                give Sims distinguishing characteristics
+            *tag*
+                list with user-defined values; like category, but useful for
+                adding many distinguishing descriptors
             *detached*
                 if True, members will load WITHOUT attaching trajectories or
                 loading additional attributes; this is useful if only loadable

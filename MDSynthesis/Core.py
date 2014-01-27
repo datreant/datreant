@@ -561,13 +561,15 @@ class Database(object):
                 with open(os.path.join(container, self._metafile), 'r') as f:
                     meta = yaml.load(f)
                 uuid = meta['uuid']
+                meta['basedir'] = os.path.abspath(container)
                 self.database['container'][uuid] = meta
+                with open(os.path.join(container, self._metafile), 'w') as f:
+                    yaml.dump(meta, f)
             else:
                 uuid = container.metadata['uuid']
                 self.database['container'][uuid] = container.metadata
     
             self.database['container'][uuid]['database'] = self.database['basedir']
-            self._check_location(self.database['basedir'], force=True)
             self.push(uuid)
             self._logger.info("Added {} container '{}' to database.".format(self.database['container'][uuid]['class'], self.database['container'][uuid]['name']))
 
@@ -585,8 +587,29 @@ class Database(object):
         :Keywords:
             *hard*
                 if True, delete Container object from filesystem too ``[False]``
-
+            *all*
+                if True, will remove all entries ``[False]``
         """
+        all_conts = kwargs.pop('all', False)
+
+        if all_conts:
+            containers = [ x for x in self.database['container'] ]
+
+        for container in containers:
+            if os.path.isdir(container):
+                basedir = os.path.abspath(container)
+                contype = ['basedir']
+            else:
+                contype = ['uuid', 'name']
+
+            matches = []
+            for entry in self.database['container'].values():
+                for criteria in contype:
+                    if entry[criteria] == container:
+                        matches.append(entry['uuid'])
+    
+            for match in matches:
+                self.database['container'].pop(match, None)
 
     def clean(self):
         """Clear entries from Database corresponding to Containers that can't be found.
@@ -684,12 +707,14 @@ class Database(object):
                 with open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
                     yaml.dump(self.database['container'][match], f)
 
-    def discover_containers(self):
+    def discover(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
         
         """
-        # use os.walk
-    
+        for root, dirs, files in os.walk(self.database['basedir']):
+            if self._metafile in files:
+                dirs = []
+                self.add(root)
         return
     
     def merge(self, database):
