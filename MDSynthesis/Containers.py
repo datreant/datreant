@@ -129,14 +129,6 @@ class Sim(ContainerCore):
 
         # construct basedir
         self.metadata['basedir'] = self._build_basedir(database, self.metadata['name'])
-        # if name given and directory with name doesn't already exist, make named basedir
-        if self.metadata['name'] and os.path.exists(os.path.join(database, self.__class__.__name__, self.metadata['name'])):
-            dest = self.metadata['name']
-            self.metadata['basedir'] = os.path.join(database, self.__class__.__name__, dest) 
-        # if basedir already exists, use UUID instead
-        else:
-            dest = self.metadata['uuid']
-            self.metadata['basedir'] = os.path.join(database, self.__class__.__name__, dest) 
         
         # record universe
         self.metadata['universe']['main']['structure'] = os.path.abspath(system.filename)
