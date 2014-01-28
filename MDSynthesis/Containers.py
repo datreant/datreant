@@ -348,8 +348,8 @@ class Group(ContainerCore):
         self.members = args
 
         # finish up and save
-        self._start_logger()
         self.save()
+        self._start_logger()
         self._build_attributes()
 
     def _regenerate(self, *args, **kwargs):
