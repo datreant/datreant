@@ -10,13 +10,24 @@ import logging
 import glob
 from uuid import uuid4
 from multiprocessing import Process
+import fcntl
 
 metafile = 'metadata.yaml'
 logfile = 'logfile.log'
 datafile = 'data.pkl'
 dbfile = 'MDSdatabase.yaml'
 
-class ContainerCore(object):
+class ObjectCore(object):
+    """Lowest-level mixin; functionality common to all MDSynthesis objects.
+    
+    """
+    def __init__(self):
+        """Low-level attribute initialization.
+
+        """
+        self.utilities = Utilities()
+
+class ContainerCore(ObjectCore):
     """Mixin class for all Containers.
 
     The ContainerCore object is not intended to be useful on its own, but
@@ -32,6 +43,7 @@ class ContainerCore(object):
         """
         
         """
+        super(ContainerCore, self).__init__()
         self.metadata = dict()              # information about object; defines base object
         self.analysis = dict()              # analysis data 'modular dock'
     
@@ -58,7 +70,7 @@ class ContainerCore(object):
         """
         self._makedirs(self.metadata['basedir'])
 
-        with open(os.path.join(self.metadata['basedir'], self._metafile), 'w') as f:
+        with self.utilities.open(os.path.join(self.metadata['basedir'], self._metafile), 'w') as f:
             yaml.dump(self.metadata, f)
 
         # update database
@@ -74,7 +86,7 @@ class ContainerCore(object):
 
             for i in savelist:
                 self._logger.info("Saving {}...".format(i))
-                with open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'wb') as f:
+                with self.utilities.open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'wb') as f:
                     cPickle.dump(self.analysis[i], f)
             self._logger.info("All selected data saved.")
 
@@ -83,7 +95,7 @@ class ContainerCore(object):
 
         """
         metafile = os.path.join(self.metadata['basedir'], self._metafile)
-        with open(metafile, 'r') as f:
+        with self.utilities.open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
 
     def load(self, *args, **kwargs):
@@ -112,7 +124,7 @@ class ContainerCore(object):
         for i in loadlist:
             if (i not in self.analysis) or (force == True):
                 self._logger.info("Loading {}...".format(i))
-                with open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'rb') as f:
+                with self.utilities.open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'rb') as f:
                     self.analysis[i] = cPickle.load(f)
             else:
                 self._logger.info("Skipping reload of {}...".format(i))
@@ -365,7 +377,7 @@ class ContainerCore(object):
 
         return basedir
 
-class OperatorCore(object):
+class OperatorCore(ObjectCore):
     """Mixin class for all Operators.
 
     The OperatorCore object is not intended to be useful on its own, but
@@ -432,7 +444,7 @@ class OperatorCore(object):
         outputdir = self._make_savedir(container)
         main_file = self._datafile(container)
 
-        with open(main_file, 'wb') as f:
+        with self.utilities.open(main_file, 'wb') as f:
             cPickle.dump(cont_results, f)
 
     def _make_savedir(self, container):
@@ -507,7 +519,7 @@ class OperatorCore(object):
         """
         return os.path.join(self._outputdir(container), self._datafile)
 
-class Database(object):
+class Database(ObjectCore):
     """Database object for tracking and coordinating Containers.
     
     """
@@ -607,12 +619,12 @@ class Database(object):
         """
         for container in containers:
             if os.path.isdir(container):
-                with open(os.path.join(container, self._metafile), 'r') as f:
+                with self.utilities.open(os.path.join(container, self._metafile), 'r') as f:
                     meta = yaml.load(f)
                 uuid = meta['uuid']
                 meta['basedir'] = os.path.abspath(container)
                 self.database['container'][uuid] = meta
-                with open(os.path.join(container, self._metafile), 'w') as f:
+                with self.utilities.open(os.path.join(container, self._metafile), 'w') as f:
                     yaml.dump(meta, f)
             else:
                 uuid = container.metadata['uuid']
@@ -670,7 +682,7 @@ class Database(object):
         
         """
         self._makedirs(self.database['basedir'])
-        with open(os.path.join(self.database['basedir'], self._dbfile), 'w') as f:
+        with self.utilities.open(os.path.join(self.database['basedir'], self._dbfile), 'w') as f:
             yaml.dump(self.database, f)
 
     def refresh(self):
@@ -678,7 +690,7 @@ class Database(object):
 
         """
         dbfile = os.path.join(self.database['basedir'], self._dbfile)
-        with open(dbfile, 'r') as f:
+        with self.utilities.open(dbfile, 'r') as f:
             self.database = yaml.load(f)
 
     def pull(self, *containers, **kwargs):
@@ -715,7 +727,7 @@ class Database(object):
                         matches.append(entry['uuid'])
 
             for match in matches:
-                with open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
+                with self.utilities.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
                     self.database['container'][match] = yaml.load(f)
 
     def push(self, *containers, **kwargs):
@@ -753,7 +765,7 @@ class Database(object):
                         matches.append(entry['uuid'])
     
             for match in matches:
-                with open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
+                with self.utilities.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
                     yaml.dump(self.database['container'][match], f)
 
     def discover(self):
@@ -856,3 +868,18 @@ class Database(object):
             cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
+
+class Utilities(object):
+    """Lowest level utilities; contains all methods that are common to every 
+       MDSynthesis object.
+
+    """
+    def open(self, *args, **kwargs):
+        """Open a file for i/o and apply an exclusive lock.
+    
+        Arguments and keywords are passed directly to the open() builtin.
+    
+        """
+        f = open(*args, **kwargs)
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        return f
