@@ -1,0 +1,11 @@
+analysis: []
+basedir: 'absolute/path/to/object/directory'
+category: {}
+class: 'Sim'
+database: 'absolute/path/to/database'
+name: 'container name'
+tag: []
+universe: {'main': {'structure': 'path/to/structure', 'trajectory': ['path/to/trajectory', 'path/to/next/traj/segment', 'etc/']}
+           'water': {'structure': 'path/to/structure', 'trajectory': ['path/to/trajectory', 'path/to/next/traj/segment', 'etc/']}
+}
+uuid: 'unique id'
