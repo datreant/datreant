@@ -679,7 +679,7 @@ class Database(ObjectCore):
 
         """
 
-    def save(self):
+    def commit(self):
         """Save the current state of the database to its file.
         
         """
@@ -895,7 +895,6 @@ class File(object):
         """
         self.file = open(*args, **kwargs)
         self.lockname = "{}.lock".format(self.file.name) 
-
         self.lock()
 
     def __enter__(self):

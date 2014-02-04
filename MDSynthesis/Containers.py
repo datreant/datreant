@@ -284,7 +284,7 @@ class Group(ContainerCore):
         for member in self.members:
             member.unload(*args)
 
-    def add_member(self, *args):
+    def add(self, *args):
         """Add a member to the Group.
 
         :Arguments:
@@ -299,7 +299,7 @@ class Group(ContainerCore):
             self.members.append(system)
         self.save()
 
-    def remove_member(self, *args):
+    def remove(self, *args):
         """Remove a member from the Group.
 
         :Arguments:
@@ -315,21 +315,23 @@ class Group(ContainerCore):
         """Generate new Group.
          
         """
-        # get project directory from first object
-        self.metadata['projectdir'] = args[0].metadata['projectdir']
-        self.metadata['metafile'] = '{}.yaml'.format(self.__class__.__name__)
+        # generate metadata items
+        self._build_metadata(**kwargs)
+
+        # find or generate database
+        database = os.path.abspath(kwargs.pop('database'))
+        self._init_database(database)
 
         # build list of Group members
-        # will need to add unique hash references later
-        self.metadata['members'] = list()
-        for system in args:
-            self.metadata['members'].append({'name': system.metadata['name'],
-                                             'type': system.metadata['type'],
-                                             'basedir': system.metadata['basedir']
-                                            })
+        self.metadata['members'] = dict()
+        for container in args:
+            self.metadata['members'][container.metadata['uuid']] = {'name': container.metadata['name'],
+                                                                    'class': container.metadata['class'],
+                                                                    'basedir': container.metadata['basedir']
+                                                                   }
 
-        self._build_metadata(**kwargs)
-        self.metadata['basedir'] = '$PROJECT/MDSynthesis/{}/{}'.format(self.__class__.__name__, self.metadata['name'])
+        # construct basedir
+        self.metadata['basedir'] = self._build_basedir(database, self.metadata['name'])
 
         # attach members to object
         self.members = args
