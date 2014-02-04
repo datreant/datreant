@@ -2,9 +2,9 @@
 Lower level mixins.
 
 """
-import os
+import os, sys
+import time
 import yaml
-import sys
 import cPickle
 import logging
 import glob
@@ -882,6 +882,43 @@ class Utilities(object):
         Arguments and keywords are passed directly to the open() builtin.
     
         """
-        f = open(*args, **kwargs)
-        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-        return f
+        F = File(*args, **kwargs)
+        return F
+
+class File(object):
+    """File object class. Implements needed file locking.
+
+    """
+    def __init__(self, *args, **kwargs):
+        """Create File instance for loading files and consistently handling locking.
+
+        """
+        self.file = open(*args, **kwargs)
+        self.lockname = "{}.lock".format(self.file.name) 
+
+        self.lock()
+
+    def __enter__(self):
+        return self.file
+
+    def __exit__(self, *args):
+        self.close()
+
+    def lock(self):
+        """Get lock.
+    
+        """
+        # if lockfile already present, wait until it disappears
+        while os.path.exists(self.lockname):
+            time.sleep(5)
+
+        # open lockfile (will appear in filesystem)
+        self.lockfile = open(self.lockname, 'w')
+
+    def close(self):
+        """Close file stream.
+        
+        """
+        self.file.close()
+        self.lockfile.close()
+        os.remove(self.lockname)
