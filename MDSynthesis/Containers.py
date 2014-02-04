@@ -119,6 +119,7 @@ class Sim(ContainerCore):
          
         """
         system = MDAnalysis.Universe(*args, **kwargs)
+        self._start_logger()
 
         # generate metadata items
         self._build_metadata(**kwargs)
@@ -127,9 +128,6 @@ class Sim(ContainerCore):
         database = os.path.abspath(kwargs.pop('database'))
         self._init_database(database)
 
-        # construct basedir
-        self.metadata['basedir'] = self._build_basedir(database, self.metadata['name'])
-        
         # record universe
         self.metadata['universe']['main']['structure'] = os.path.abspath(system.filename)
         try:
@@ -268,7 +266,7 @@ class Group(ContainerCore):
             *args*
                 datasets to load into each member
         """
-        for member in self.members:
+        for member in self.member:
             member.load(*args)
 
     def unload_members(self, *args):
@@ -281,7 +279,7 @@ class Group(ContainerCore):
             *args*
                 datasets to unload from each member
         """
-        for member in self.members:
+        for member in self.member:
             member.unload(*args)
 
     def add(self, *args):
@@ -292,11 +290,11 @@ class Group(ContainerCore):
                 Sim-derived objects to add to Group
         """
         for system in args:
-            self.metadata['members'].append({'name': system.metadata['name'],
+            self.metadata['member'].append({'name': system.metadata['name'],
                                              'type': system.metadata['type'],
                                              'basedir': system.metadata['basedir']
                                             })
-            self.members.append(system)
+            self.member.append(system)
         self.save()
 
     def remove(self, *args):
@@ -307,8 +305,8 @@ class Group(ContainerCore):
                 index of member in self.members to be removed from Group
         """
         for index in args:
-            self.metadata['members'].pop(index)
-            self.members.pop(index)
+            self.metadata['member'].pop(index)
+            self.member.pop(index)
         self.save()
 
     def _generate(self, *args, **kwargs):
@@ -317,24 +315,22 @@ class Group(ContainerCore):
         """
         # generate metadata items
         self._build_metadata(**kwargs)
+        self._start_logger()
 
         # find or generate database
-        database = os.path.abspath(kwargs.pop('database'))
-        self._init_database(database)
+        database = kwargs.pop('database', None)
+        self._init_database(database, locate=True)
 
         # build list of Group members
-        self.metadata['members'] = dict()
+        self.metadata['member'] = dict()
         for container in args:
-            self.metadata['members'][container.metadata['uuid']] = {'name': container.metadata['name'],
+            self.metadata['member'][container.metadata['uuid']] = {'name': container.metadata['name'],
                                                                     'class': container.metadata['class'],
                                                                     'basedir': container.metadata['basedir']
                                                                    }
 
-        # construct basedir
-        self.metadata['basedir'] = self._build_basedir(database, self.metadata['name'])
-
         # attach members to object
-        self.members = args
+        self.member = args
 
         # finish up and save
         self.save()
@@ -345,33 +341,33 @@ class Group(ContainerCore):
         
         """
         basedir = os.path.abspath(args[0])
-        metafile = os.path.join(basedir, '{}.yaml'.format(self.__class__.__name__))
-        with self.util.open(metafile, 'r') as f:
-            self.metadata = yaml.load(f)
+        self.metadata['basedir'] = basedir
         
-        # update location of object if changed
-        self._update_projectdir(basedir)
-        self.metadata['basedir'] = self._abs2relpath(basedir)
+        # get metadata (overwrites basedir metadata)
+        self.refresh()
 
-        # attach members to object
-        self._attach_members(**kwargs)
+        # update location of object if changed
+        self.metadata['basedir'] = basedir
 
         # finish up and save
         self._build_metadata(**kwargs)
         self._start_logger()
         self.save()
 
+        # attach members to object
+        self._attach_members(**kwargs)
+
     def _attach_members(self, **kwargs):
-        """Attach members to Group object.
+        """Attach member to Group object.
             
         Keyword arguments passed to Sim-derived object __init__().
 
         """
-        self.members = list()
-        for entry in self.metadata['members']:
-            Simtype = self._simtype(entry['type'])
-            self.members.append(Simtype(self._rel2abspath(entry['basedir']),
-                        **kwargs))
+        self.member = dict()
+        for key in self.metadata['member']:
+            entry = self.metadata['member'][key]
+            Simtype = self._simtype(entry['class'])
+            self.member[key] = Simtype(entry['basedir'], **kwargs)
     
     def _simtype(self, typestring):
         """Return Sim or Sim-derived object based on type recorded in object

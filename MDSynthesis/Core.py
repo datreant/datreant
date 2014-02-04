@@ -68,7 +68,7 @@ class ContainerCore(ObjectCore):
                 datasets to save
 
         """
-        self._makedirs(self.metadata['basedir'])
+        self.util.makedirs(self.metadata['basedir'])
 
         with self.util.open(os.path.join(self.metadata['basedir'], self._metafile), 'w') as f:
             yaml.dump(self.metadata, f)
@@ -177,23 +177,6 @@ class ContainerCore(ObjectCore):
             if not key in self.metadata:
                 self.metadata[key] = attributes[key]
     
-    def _build_basedir(self, database, name):
-        """Build basedir location based on database location, Container class, and Container name.
-
-        :Arguments:
-            *database*
-                directory where database resides
-            *name*
-        """
-        # if name given and directory with name doesn't already exist, make named basedir
-        if self.metadata['name'] and os.path.exists(os.path.join(database, self.__class__.__name__, self.metadata['name'])):
-            dest = self.metadata['name']
-        # if basedir already exists, use UUID instead
-        else:
-            dest = self.metadata['uuid']
-
-        return os.path.join(os.path.abspath(database), self.__class__.__name__, dest)
-
     def _start_logger(self):
         """Start up the logger.
 
@@ -205,11 +188,12 @@ class ContainerCore(ObjectCore):
             self._logger.setLevel(logging.INFO)
 
             # file handler
-            logfile = os.path.join(self.metadata['basedir'], self._logfile)
-            fh = logging.FileHandler(logfile)
-            ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-            fh.setFormatter(ff)
-            self._logger.addHandler(fh)
+            if 'basedir' in self.metadata:
+                logfile = os.path.join(self.metadata['basedir'], self._logfile)
+                fh = logging.FileHandler(logfile)
+                ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+                fh.setFormatter(ff)
+                self._logger.addHandler(fh)
 
             # output handler
             ch = logging.StreamHandler(sys.stdout)
@@ -227,6 +211,7 @@ class ContainerCore(ObjectCore):
         """Update metadata stored in Database for this Container.
     
         """
+        # use restore_database if database file does not exist
 
     def pull(self):
         """Update metadata from information stored in Database for this Container.
@@ -259,16 +244,18 @@ class ContainerCore(ObjectCore):
         """
         locate = kwargs.pop('locate', False)
 
-        database = os.path.abspath(database)
-        self._logger.info("Attempting to connect to database in {}".format(database))
-        success = self._connect_database(database)
+        if database:
+            database = os.path.abspath(database)
+            self._logger.info("Attempting to connect to database in {}".format(database))
+            success = self._connect_database(database)
+        else:
+            success = False
 
         if not success:
             if locate:
                 new_database = self._locate_database(startdir='.')
                 if new_database:
                     database = new_database
-    
             self._connect_database(database, new=True)
             
     def _restore_database(self, database, **kwargs):
@@ -354,13 +341,20 @@ class ContainerCore(ObjectCore):
                 directory of located Database; if no Database found, is None
         
         """
-        startdir = kwargs.pop('startdir', self.metadata['basedir'])
+        startdir = kwargs.pop('startdir', None)
+        
+        # necessary for objects that don't yet have a basedir defined
+        if not startdir:
+            startdir = self.metadata['basedir']
+
 
         # search upward for a database
+        startdir = os.path.abspath(startdir)
         directory = startdir
         found = False
         
         self._logger.info("Beginning search for database from {}".format(directory))
+
         while (directory != '/') and (not found):
             directory, tail = os.path.split(directory)
             candidates = glob.glob(os.path.join(directory, self._dbfile))
@@ -528,11 +522,6 @@ class Database(ObjectCore):
     _dbfile = dbfile
     _logfile = logfile
 
-    #TODO: add simple lock scheme to Database so that only one instance at a
-    # time can commit changes to the file, and that when this happens all
-    # Database instances have a way of knowing a change has been made and can
-    # update their record 
-
     def __init__(self, database, **kwargs):
         """Generate Database object for the first time, or interface with an existing one.
 
@@ -620,7 +609,7 @@ class Database(ObjectCore):
             
         """
         for container in containers:
-            if os.path.isdir(container):
+            if isinstance(container, basestring) and os.path.isdir(container):
                 with self.util.open(os.path.join(container, self._metafile), 'r') as f:
                     meta = yaml.load(f)
                 uuid = meta['uuid']
@@ -683,7 +672,7 @@ class Database(ObjectCore):
         """Save the current state of the database to its file.
         
         """
-        self._makedirs(self.database['basedir'])
+        self.util.makedirs(self.database['basedir'])
         with self.util.open(os.path.join(self.database['basedir'], self._dbfile), 'w') as f:
             yaml.dump(self.database, f)
 
@@ -767,8 +756,14 @@ class Database(ObjectCore):
                         matches.append(entry['uuid'])
     
             for match in matches:
-                with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
-                    yaml.dump(self.database['container'][match], f)
+                try:
+                    with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
+                        yaml.dump(self.database['container'][match], f)
+                except KeyError:
+                    self.database['container'][match]['basedir'] = self._build_basedir(match)
+                    with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
+                        yaml.dump(self.database['container'][match], f)
+                    
 
     def discover(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
@@ -844,10 +839,29 @@ class Database(ObjectCore):
 
         return
 
-    def _makedirs(self, p):
-        if not os.path.exists(p):
-            os.makedirs(p)
-    
+    def _build_basedir(self, uuid):
+        """Build basedir location based on database location, Container class, and Container name.
+
+        :Arguments:
+            *database*
+                directory where database resides
+            *name*
+        """
+        database = self.database['basedir']
+        container = self.database['container'][uuid]
+
+        # if name given and directory with name doesn't already exist, make named basedir
+        if container['name'] and not os.path.exists(os.path.join(database, container['class'], container['name'])):
+            dest = container['name']
+        # if basedir already exists, use UUID instead
+        else:
+            dest = container['uuid']
+
+        dest = os.path.join(database, container['class'], dest)
+        self.util.makedirs(dest)
+
+        return dest
+
     def _start_logger(self):
         """Start up the logger.
 
@@ -885,6 +899,10 @@ class Utilities(object):
         F = File(*args, **kwargs)
         return F
 
+    def makedirs(self, p):
+        if not os.path.exists(p):
+            os.makedirs(p)
+    
 class File(object):
     """File object class. Implements needed file locking.
 
