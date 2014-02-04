@@ -898,7 +898,7 @@ class Utilities(object):
         """
         F = File(*args, **kwargs)
         return F
-
+    
     def makedirs(self, p):
         if not os.path.exists(p):
             os.makedirs(p)
@@ -939,3 +939,10 @@ class File(object):
         self.file.close()
         self.lockfile.close()
         os.remove(self.lockname)
+
+class Attributes(object):
+    """Class for user-defined attributes.
+
+    """
+    def __init__(self):
+        pass
