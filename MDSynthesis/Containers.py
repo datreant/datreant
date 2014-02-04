@@ -344,7 +344,7 @@ class Group(ContainerCore):
         """
         basedir = os.path.abspath(args[0])
         metafile = os.path.join(basedir, '{}.yaml'.format(self.__class__.__name__))
-        with self.utilities.open(metafile, 'r') as f:
+        with self.util.open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
         
         # update location of object if changed

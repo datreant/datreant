@@ -25,7 +25,7 @@ class ObjectCore(object):
         """Low-level attribute initialization.
 
         """
-        self.utilities = Utilities()
+        self.util = Utilities()
 
 class ContainerCore(ObjectCore):
     """Mixin class for all Containers.
@@ -45,7 +45,7 @@ class ContainerCore(ObjectCore):
         """
         super(ContainerCore, self).__init__()
         self.metadata = dict()              # information about object; defines base object
-        self.analysis = dict()              # analysis data 'modular dock'
+        self.data = dict()              # analysis data 'modular dock'
     
     def save(self, *args):
         """Save Container metadata and, if desired, analysis data instances.
@@ -70,7 +70,7 @@ class ContainerCore(ObjectCore):
         """
         self._makedirs(self.metadata['basedir'])
 
-        with self.utilities.open(os.path.join(self.metadata['basedir'], self._metafile), 'w') as f:
+        with self.util.open(os.path.join(self.metadata['basedir'], self._metafile), 'w') as f:
             yaml.dump(self.metadata, f)
 
         # update database
@@ -79,15 +79,15 @@ class ContainerCore(ObjectCore):
         if args:
             if 'all' in args:
                 self._logger.info("Saving all loaded data into source files for '{}'...".format(self.metadata['name']))
-                savelist = self.analysis
+                savelist = self.data
             else:
                 self._logger.info("Saving selected data into source files for '{}'...".format(self.metadata['name']))
                 savelist = args
 
             for i in savelist:
                 self._logger.info("Saving {}...".format(i))
-                with self.utilities.open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'wb') as f:
-                    cPickle.dump(self.analysis[i], f)
+                with self.util.open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'wb') as f:
+                    cPickle.dump(self.data[i], f)
             self._logger.info("All selected data saved.")
 
     def refresh(self):
@@ -95,7 +95,7 @@ class ContainerCore(ObjectCore):
 
         """
         metafile = os.path.join(self.metadata['basedir'], self._metafile)
-        with self.utilities.open(metafile, 'r') as f:
+        with self.util.open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
 
     def load(self, *args, **kwargs):
@@ -122,10 +122,10 @@ class ContainerCore(ObjectCore):
             loadlist = args
 
         for i in loadlist:
-            if (i not in self.analysis) or (force == True):
+            if (i not in self.data) or (force == True):
                 self._logger.info("Loading {}...".format(i))
-                with self.utilities.open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'rb') as f:
-                    self.analysis[i] = cPickle.load(f)
+                with self.util.open(os.path.join(self.metadata['basedir'], '{}/{}'.format(i, self._datafile)), 'rb') as f:
+                    self.data[i] = cPickle.load(f)
             else:
                 self._logger.info("Skipping reload of {}...".format(i))
         self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
@@ -140,13 +140,13 @@ class ContainerCore(ObjectCore):
                 datasets to unload
         """
         if 'all' in args:
-            self.analysis.clear()
+            self.data.clear()
             self._logger.info("Object '{}' unloaded of all data.".format(self.metadata['name']))
         else:
             self._logger.info("Unloading selected data from object {}...".format(self.metadata['name']))
             for i in args:
                 self._logger.info("Unloading {}...".format(i))
-                self.analysis.pop(i, None)
+                self.data.pop(i, None)
             self._logger.info("Object '{}' unloaded of selected data.".format(self.metadata['name']))
 
     def _makedirs(self, p):
@@ -167,7 +167,7 @@ class ContainerCore(ObjectCore):
         uuid = self._generate_uuid()
         attributes = {'uuid': uuid,
                       'name': kwargs.pop('name', None),
-                      'analysis': list(),
+                      'data': list(),
                       'class': self.__class__.__name__,
                       'category': kwargs.pop('category', dict()),
                       'tag': kwargs.pop('tag', list()),
@@ -390,6 +390,7 @@ class OperatorCore(ObjectCore):
         """
         
         """
+        super(OperatorCore, self).__init__()
         self.containers = list(args)
 
     def run(self, **kwargs):
@@ -444,7 +445,7 @@ class OperatorCore(ObjectCore):
         outputdir = self._make_savedir(container)
         main_file = self._datafile(container)
 
-        with self.utilities.open(main_file, 'wb') as f:
+        with self.util.open(main_file, 'wb') as f:
             cPickle.dump(cont_results, f)
 
     def _make_savedir(self, container):
@@ -541,6 +542,7 @@ class Database(ObjectCore):
                 found, a new one is generated
 
         """
+        super(Database, self).__init__()
         self.database = dict()              # the database data itself
 
         database = os.path.abspath(database)
@@ -619,12 +621,12 @@ class Database(ObjectCore):
         """
         for container in containers:
             if os.path.isdir(container):
-                with self.utilities.open(os.path.join(container, self._metafile), 'r') as f:
+                with self.util.open(os.path.join(container, self._metafile), 'r') as f:
                     meta = yaml.load(f)
                 uuid = meta['uuid']
                 meta['basedir'] = os.path.abspath(container)
                 self.database['container'][uuid] = meta
-                with self.utilities.open(os.path.join(container, self._metafile), 'w') as f:
+                with self.util.open(os.path.join(container, self._metafile), 'w') as f:
                     yaml.dump(meta, f)
             else:
                 uuid = container.metadata['uuid']
@@ -682,7 +684,7 @@ class Database(ObjectCore):
         
         """
         self._makedirs(self.database['basedir'])
-        with self.utilities.open(os.path.join(self.database['basedir'], self._dbfile), 'w') as f:
+        with self.util.open(os.path.join(self.database['basedir'], self._dbfile), 'w') as f:
             yaml.dump(self.database, f)
 
     def refresh(self):
@@ -690,7 +692,7 @@ class Database(ObjectCore):
 
         """
         dbfile = os.path.join(self.database['basedir'], self._dbfile)
-        with self.utilities.open(dbfile, 'r') as f:
+        with self.util.open(dbfile, 'r') as f:
             self.database = yaml.load(f)
 
     def pull(self, *containers, **kwargs):
@@ -727,7 +729,7 @@ class Database(ObjectCore):
                         matches.append(entry['uuid'])
 
             for match in matches:
-                with self.utilities.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
+                with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
                     self.database['container'][match] = yaml.load(f)
 
     def push(self, *containers, **kwargs):
@@ -765,7 +767,7 @@ class Database(ObjectCore):
                         matches.append(entry['uuid'])
     
             for match in matches:
-                with self.utilities.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
+                with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
                     yaml.dump(self.database['container'][match], f)
 
     def discover(self):
