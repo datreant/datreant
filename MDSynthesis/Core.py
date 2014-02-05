@@ -718,11 +718,13 @@ class Database(ObjectCore):
                         matches.append(entry['uuid'])
 
             for match in matches:
-                
-                with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
-                    meta = yaml.load(f)
-                    if meta['uuid'] == match:
-                        self.database['container'][match] = yaml.load(f)
+                # ensure we are finding the right Container
+                basedir = self._get_container(match)
+                if not basedir:
+                    self._logger.warning("Not found: {}".format(match))
+                else:
+                    with self.util.open(os.path.join(basedir, self._metafile), 'r') as f:
+                        meta = yaml.load(f)
 
     def push(self, *containers, **kwargs):
         """Update Container metadata with information stored in Database.
@@ -759,9 +761,16 @@ class Database(ObjectCore):
                         matches.append(entry['uuid'])
     
             for match in matches:
+                # since this method is used for Container init, basedir may not
+                # be defined in metadata yet
                 try:
-                    with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
-                        yaml.dump(self.database['container'][match], f)
+                    # ensure we are finding the right Container
+                    basedir = self._get_container(match)
+                    if not basedir:
+                        self._logger.warning("Not found: {}".format(match))
+                    else:
+                        with self.util.open(os.path.join(basedir, self._metafile), 'w') as f:
+                            yaml.dump(self.database['container'][match], f)
                 except KeyError:
                     self.database['container'][match]['basedir'] = self._build_basedir(match)
                     with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
@@ -776,22 +785,22 @@ class Database(ObjectCore):
         :Arguments:
             *uuid*
                 unique id for Container to return
+
+        :Returns:
+            *container*
+                path to Container
         """
         if os.path.exists(os.path.join(self.database['container'][uuid]['basedir'], self._metafile)):
-            f = self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w')
-            meta = yaml.load(f.file)
+            with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
+                meta = yaml.load(f)
             if meta['uuid'] == match:
-                
-                
+                container = self.database['container'][uuid]['basedir']
+            else:
+                container = self._locate_container(uuid)
+        else:
+            container = self._locate_container(uuid)
 
-
-        try:
-            f = self.util.open(os.path.join(self.database['container'][uuid]['basedir'], self._metafile), 'w')
-        except IOError:
-            self.database['container'][match]['basedir'] = self._build_basedir(match)
-            with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
-                yaml.dump(self.database['container'][match], f)
-        
+        return container
 
     def discover(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
@@ -801,7 +810,6 @@ class Database(ObjectCore):
             if self._metafile in files:
                 dirs = []
                 self.add(root)
-        return
     
     def merge(self, database):
         """Merge another database's contents into this one.
@@ -862,13 +870,32 @@ class Database(ObjectCore):
 
         """
 
-    def _locate_container(self):
-        """Find a Container that has moved by traversing downward through the filesystem. 
-            
-        """
-        # use os.walk
+    def _locate_container(self, uuid):
+        """Find a Container by traversing downward through the filesystem. 
 
-        return
+        Looks in each directory below the Database. If found, the basedir for the
+        Container is updated in both metadata and the Database.
+
+        :Arguments:
+            *uuid*
+                unique id for Container to return
+        """
+        container = None
+        for root, dirs, files in os.walk(self.database['basedir']):
+            if self._metafile in files:
+                dirs = []
+                with self.util.open(os.path.join(root, self._metafile), 'r') as f:
+                    meta = yaml.load(f)
+                if meta['uuid'] == uuid:
+                    container = os.path.abspath(root)
+                    meta['basedir'] = container
+
+                    # update basedir in Container metadata and in Database
+                    with self.util.open(os.path.join(root, self._metafile), 'w') as f:
+                        yaml.dump(meta, f)
+                    self.database['container'][uuid]['basedir'] = container
+                
+        return container
 
     def _build_basedir(self, uuid):
         """Build basedir location based on database location, Container class, and Container name.
