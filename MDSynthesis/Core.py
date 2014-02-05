@@ -1,5 +1,5 @@
 """
-Lower level mixins.
+Base classes for :mod:`MDSynthesis` objects.
 
 """
 import os, sys
@@ -10,7 +10,6 @@ import logging
 import glob
 from uuid import uuid4
 from multiprocessing import Process
-import fcntl
 
 metafile = 'metadata.yaml'
 logfile = 'logfile.log'
