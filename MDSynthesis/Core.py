@@ -718,8 +718,11 @@ class Database(ObjectCore):
                         matches.append(entry['uuid'])
 
             for match in matches:
+                
                 with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
-                    self.database['container'][match] = yaml.load(f)
+                    meta = yaml.load(f)
+                    if meta['uuid'] == match:
+                        self.database['container'][match] = yaml.load(f)
 
     def push(self, *containers, **kwargs):
         """Update Container metadata with information stored in Database.
@@ -763,7 +766,32 @@ class Database(ObjectCore):
                     self.database['container'][match]['basedir'] = self._build_basedir(match)
                     with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
                         yaml.dump(self.database['container'][match], f)
-                    
+
+    def _get_container(self, uuid):
+        """Get path to a Container.
+
+        Will perform checks to ensure the Container returned matches the uuid given.
+        It will go looking for the Container if not found at last known location.
+
+        :Arguments:
+            *uuid*
+                unique id for Container to return
+        """
+        if os.path.exists(os.path.join(self.database['container'][uuid]['basedir'], self._metafile)):
+            f = self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w')
+            meta = yaml.load(f.file)
+            if meta['uuid'] == match:
+                
+                
+
+
+        try:
+            f = self.util.open(os.path.join(self.database['container'][uuid]['basedir'], self._metafile), 'w')
+        except IOError:
+            self.database['container'][match]['basedir'] = self._build_basedir(match)
+            with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
+                yaml.dump(self.database['container'][match], f)
+        
 
     def discover(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
@@ -805,10 +833,13 @@ class Database(ObjectCore):
         if (database != self.database['basedir']) or force:
             self.database['basedir'] = database
 
+            # update entries first
+            self.pull(all=True)
+
             for entry in self.database['container'].values():
                 entry['database'] = self.database['basedir']
                             
-            self.save()
+            self.commit()
             self.push(all=True)
 
     def _build_metadata(self, **kwargs):
