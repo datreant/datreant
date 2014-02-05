@@ -125,8 +125,8 @@ class Sim(ContainerCore):
         self._build_metadata(**kwargs)
 
         # find or generate database
-        database = os.path.abspath(kwargs.pop('database'))
-        self._init_database(database)
+        database = kwargs.pop('database', None)
+        self._init_database(database, locate=True)
 
         # record universe
         self.metadata['universe']['main']['structure'] = os.path.abspath(system.filename)

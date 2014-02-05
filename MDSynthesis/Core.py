@@ -247,16 +247,22 @@ class ContainerCore(ObjectCore):
         if database:
             database = os.path.abspath(database)
             self._logger.info("Attempting to connect to database in {}".format(database))
-            success = self._connect_database(database)
+            dbname = self._connect_database(database)
         else:
-            success = False
+            self._logger.info("No database specified.".format(database))
+            dbname = None
 
-        if not success:
+        if not dbname:
             if locate:
                 new_database = self._locate_database(startdir='.')
                 if new_database:
                     database = new_database
-            self._connect_database(database, new=True)
+            dbname = self._connect_database(database, new=True)
+
+        if dbname:
+            self._logger.info("Successfully connected to database {}.".format(dbname))
+        else:
+            self._logger.info("Could not connect to a database.".format(dbname))
             
     def _restore_database(self, database, **kwargs):
         """When Database can't be reached, find or make a new one.
@@ -295,10 +301,13 @@ class ContainerCore(ObjectCore):
                 found  ``[False]``
 
         :Returns:
-            *success*
-                True if connection succeeded; False otherwise
+            *dbname*
+                name of database if connection success; otherwise None
         """
         new = kwargs.pop('new', False)
+
+        if not database:
+            return False
 
         # attempt to open existing database
         database = os.path.abspath(database)
@@ -309,19 +318,19 @@ class ContainerCore(ObjectCore):
                 self._logger.info("Handshake success; database in {}".format(db.database['basedir']))
                 self.metadata['database'] = db.database['basedir']
                 db.add(self)
-                success = True
+                dbname = db.database['name']
             else:
                 self._logger.warning("Specified database failed handshake; not a real database?")
-                success = False
+                dbname = None
         # make a new database in location
         elif new:
             db = Database(database)
             self.metadata['database'] = db.database['basedir']
             db.add(self)
             self._logger.info("Created new database in {}".format(db.database['basedir']))
-            success = True
+            dbname = db.database['name']
     
-        return success
+        return dbname
 
     def _locate_database(self, **kwargs):
         """Find database; to be used if it can't be found.
@@ -343,10 +352,8 @@ class ContainerCore(ObjectCore):
         """
         startdir = kwargs.pop('startdir', None)
         
-        # necessary for objects that don't yet have a basedir defined
         if not startdir:
             startdir = self.metadata['basedir']
-
 
         # search upward for a database
         startdir = os.path.abspath(startdir)
@@ -366,7 +373,7 @@ class ContainerCore(ObjectCore):
                 found = db._handshake()
         
         if not found:
-            self._logger.info("No database found!")
+            self._logger.warning("No database found!")
             basedir = None
 
         return basedir
