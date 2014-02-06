@@ -433,6 +433,12 @@ class OperatorCore(ObjectCore):
         # make sure data loaded into each container; should use try/catch here
         self._load()
 
+    def _class(self):
+        """Return class name.
+
+        """
+        return self.__class__.__name__
+
     def _save(self, container, cont_results):
         """Save results to main data file.
 
