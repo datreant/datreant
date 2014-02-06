@@ -237,23 +237,32 @@ class Sim(ContainerCore):
             self._logger.warning("Aborting cache; universe already cached!")
             return
             
+        # build and store location so we can delete it later
         self.util.makedirs(location)
         location = os.path.abspath(location)
+        location = os.path.join(location, self.metadata['uuid'])
 
+        self._cache[universe] = dict()
+        self._cache[universe]['location'] = location
+
+        location = os.path.join(location, universe)
+
+        # build cached structure and trajectory filenames
         structure = self.metadata['universes'][universe]['structure']
         trajectory = self.metadata['universes'][universe]['trajectory']
 
         structure_c = os.path.join(location, os.path.basename(structure))
         trajectory_c = [ os.path.join(location, os.path.basename(x)) for x in trajectory ]
 
+        # check before we accidentally overwrite valuable data
         if (structure_c == structure) or (trajectory_c == trajectory):
             self._logger.warning("Aborting cache; cache location same as storage!")
             return
 
-        self._cache[universe] = dict()
         self._cache[universe]['structure'] = structure_c
         self._cache[universe]['trajectory'] = trajectory_c
 
+        # copy to cache
         self._logger.info("Caching trajectory to {}\nThis may take some time...".format(location))
         shutil.copy2(structure, structure_c)
         for traj, traj_c in zip(trajectory, trajectory_c):
@@ -284,14 +293,13 @@ class Sim(ContainerCore):
         
         structure_c = self._cache[universe]['structure']
         trajectory_c = self._cache[universe]['trajectory']
+        location_c = self._cache[universe]['location']
 
         # final safety feature before delete
         if (structure_c == structure) or (trajectory_c == trajectory):
             self._logger.warning("Somehow cache is also storage location. Stopping before delete!")
         else:
-            os.remove(structure_c)
-            for traj in trajectory_c:
-                os.remove(traj)
+            shutil.rmtree(location_c)
 
         del self._cache[universe]
         self._logger.info("Universe '{}' de-cached.".format(universe))
