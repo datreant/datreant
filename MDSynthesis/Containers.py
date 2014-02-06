@@ -121,17 +121,20 @@ class Sim(ContainerCore):
         """Generate new Sim object.
          
         """
+        detached = kwargs.pop('detached', False)
         system = MDAnalysis.Universe(*args, **kwargs)
-        self._start_logger()
 
         # generate metadata items
         self._build_metadata(**kwargs)
+
+        self._start_logger()
 
         # find or generate database
         database = kwargs.pop('database', None)
         self._init_database(database, locate=True)
 
         # record universe
+        self.metadata['universes'] = {'main':{}}
         self.metadata['universes']['main']['structure'] = os.path.abspath(system.filename)
         try:
             self.metadata['universes']['main']['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
@@ -230,6 +233,10 @@ class Sim(ContainerCore):
             *location*
                 path to cache directory; will be made if it does not exist
         """
+        if universe in self._cache:
+            self._logger.warning("Aborting cache; universe already cached!")
+            return
+            
         self.util.makedirs(location)
         location = os.path.abspath(location)
 
@@ -243,15 +250,17 @@ class Sim(ContainerCore):
             self._logger.warning("Aborting cache; cache location same as storage!")
             return
 
+        self._cache[universe] = dict()
         self._cache[universe]['structure'] = structure_c
         self._cache[universe]['trajectory'] = trajectory_c
 
         self._logger.info("Caching trajectory to {}\nThis may take some time...".format(location))
         shutil.copy2(structure, structure_c)
-        for traj, traj_n in zip(trajectory, trajectory_c):
+        for traj, traj_c in zip(trajectory, trajectory_c):
             shutil.copy2(traj, traj_c)
 
         self.universes[universe] = MDAnalysis.Universe(structure_c, *trajectory_c)
+        self._logger.info("Universe '{}' now cached.".format(universe))
     
     def decache(self, universe):
         """Remove cached trajectory from cache; re-attach universe to originals.
@@ -268,7 +277,7 @@ class Sim(ContainerCore):
             self._logger.info("Universe '{}' not cached.".format(universe))
             return
 
-        self.attach(universe)
+        self.attach(universe, force=True)
 
         structure = self.metadata['universes'][universe]['structure']
         trajectory = self.metadata['universes'][universe]['trajectory']
@@ -283,6 +292,9 @@ class Sim(ContainerCore):
             os.remove(structure_c)
             for traj in trajectory_c:
                 os.remove(traj)
+
+        del self._cache[universe]
+        self._logger.info("Universe '{}' de-cached.".format(universe))
         
 class Group(ContainerCore):
     """Base class for a grouping of simulation objects.

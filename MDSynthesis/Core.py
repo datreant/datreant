@@ -165,7 +165,7 @@ class ContainerCore(ObjectCore):
         # building core items
         uuid = self._generate_uuid()
         attributes = {'uuid': uuid,
-                      'name': kwargs.pop('name', None),
+                      'name': kwargs.pop('name', self.__class__.__name__),
                       'data': list(),
                       'class': self.__class__.__name__,
                       'categories': kwargs.pop('categories', dict()),
