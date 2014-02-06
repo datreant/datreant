@@ -168,8 +168,8 @@ class ContainerCore(ObjectCore):
                       'name': kwargs.pop('name', None),
                       'data': list(),
                       'class': self.__class__.__name__,
-                      'category': kwargs.pop('category', dict()),
-                      'tag': kwargs.pop('tag', list()),
+                      'categories': kwargs.pop('categories', dict()),
+                      'tags': kwargs.pop('tags', list()),
                       }
 
         for key in attributes:
@@ -623,16 +623,16 @@ class Database(ObjectCore):
                     meta = yaml.load(f)
                 uuid = meta['uuid']
                 meta['basedir'] = os.path.abspath(container)
-                self.database['container'][uuid] = meta
+                self.database['containers'][uuid] = meta
                 with self.util.open(os.path.join(container, self._metafile), 'w') as f:
                     yaml.dump(meta, f)
             else:
                 uuid = container.metadata['uuid']
-                self.database['container'][uuid] = container.metadata
+                self.database['containers'][uuid] = container.metadata
     
-            self.database['container'][uuid]['database'] = self.database['basedir']
+            self.database['containers'][uuid]['database'] = self.database['basedir']
             self.push(uuid)
-            self._logger.info("Added {} container '{}' to database.".format(self.database['container'][uuid]['class'], self.database['container'][uuid]['name']))
+            self._logger.info("Added {} container '{}' to database.".format(self.database['containers'][uuid]['class'], self.database['containers'][uuid]['name']))
 
     def remove(self, *containers, **kwargs):
         """Remove Container from Database.
@@ -654,7 +654,7 @@ class Database(ObjectCore):
         all_conts = kwargs.pop('all', False)
 
         if all_conts:
-            containers = [ x for x in self.database['container'] ]
+            containers = [ x for x in self.database['containers'] ]
 
         for container in containers:
             if os.path.isdir(container):
@@ -664,13 +664,13 @@ class Database(ObjectCore):
                 contype = ['uuid', 'name']
 
             matches = []
-            for entry in self.database['container'].values():
+            for entry in self.database['containers'].values():
                 for criteria in contype:
                     if entry[criteria] == container:
                         matches.append(entry['uuid'])
     
             for match in matches:
-                self.database['container'].pop(match, None)
+                self.database['containers'].pop(match, None)
 
     def clean(self):
         """Clear entries from Database corresponding to Containers that can't be found.
@@ -711,7 +711,7 @@ class Database(ObjectCore):
         all_conts = kwargs.pop('all', False)
 
         if all_conts:
-            containers = [ x for x in self.database['container'] ]
+            containers = [ x for x in self.database['containers'] ]
     
         for container in containers:
             if os.path.isdir(container):
@@ -721,7 +721,7 @@ class Database(ObjectCore):
                 contype = ['uuid', 'name']
 
             matches = []
-            for entry in self.database['container'].values():
+            for entry in self.database['containers'].values():
                 for criteria in contype:
                     if entry[criteria] == container:
                         matches.append(entry['uuid'])
@@ -754,7 +754,7 @@ class Database(ObjectCore):
         all_conts = kwargs.pop('all', False)
 
         if all_conts:
-            containers = [ x for x in self.database['container'] ]
+            containers = [ x for x in self.database['containers'] ]
 
         for container in containers:
             if os.path.isdir(container):
@@ -764,7 +764,7 @@ class Database(ObjectCore):
                 contype = ['uuid', 'name']
 
             matches = []
-            for entry in self.database['container'].values():
+            for entry in self.database['containers'].values():
                 for criteria in contype:
                     if entry[criteria] == container:
                         matches.append(entry['uuid'])
@@ -779,11 +779,11 @@ class Database(ObjectCore):
                         self._logger.warning("Not found: {}".format(match))
                     else:
                         with self.util.open(os.path.join(basedir, self._metafile), 'w') as f:
-                            yaml.dump(self.database['container'][match], f)
+                            yaml.dump(self.database['containers'][match], f)
                 except KeyError:
-                    self.database['container'][match]['basedir'] = self._build_basedir(match)
-                    with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
-                        yaml.dump(self.database['container'][match], f)
+                    self.database['containers'][match]['basedir'] = self._build_basedir(match)
+                    with self.util.open(os.path.join(self.database['containers'][match]['basedir'], self._metafile), 'w') as f:
+                        yaml.dump(self.database['containers'][match], f)
             self.commit()
 
     def _get_container(self, uuid):
@@ -800,11 +800,11 @@ class Database(ObjectCore):
             *container*
                 path to Container
         """
-        if os.path.exists(os.path.join(self.database['container'][uuid]['basedir'], self._metafile)):
-            with self.util.open(os.path.join(self.database['container'][uuid]['basedir'], self._metafile), 'r') as f:
+        if os.path.exists(os.path.join(self.database['containers'][uuid]['basedir'], self._metafile)):
+            with self.util.open(os.path.join(self.database['containers'][uuid]['basedir'], self._metafile), 'r') as f:
                 meta = yaml.load(f)
             if meta['uuid'] == uuid:
-                container = self.database['container'][uuid]['basedir']
+                container = self.database['containers'][uuid]['basedir']
             else:
                 container = self._locate_container(uuid)
         else:
@@ -854,7 +854,7 @@ class Database(ObjectCore):
             # update entries first
             self.pull(all=True)
 
-            for entry in self.database['container'].values():
+            for entry in self.database['containers'].values():
                 entry['database'] = self.database['basedir']
                             
             self.commit()
@@ -868,7 +868,7 @@ class Database(ObjectCore):
         """
         attributes = {'class': self.__class__.__name__,
                       'name': kwargs.pop('name', os.path.basename(self.database['basedir'])),
-                      'container': dict(),
+                      'containers': dict(),
                       }
     
         for key in attributes:
@@ -890,7 +890,7 @@ class Database(ObjectCore):
             *uuid*
                 unique id for Container to return
         """
-        self._logger.info("Searching for Container: {} ({})".format(self.database['container'][uuid]['name'], uuid))
+        self._logger.info("Searching for Container: {} ({})".format(self.database['containers'][uuid]['name'], uuid))
         container = None
         for root, dirs, files in os.walk(self.database['basedir']):
             if self._metafile in files:
@@ -905,7 +905,7 @@ class Database(ObjectCore):
                     # update basedir in Container metadata and in Database
                     with self.util.open(os.path.join(root, self._metafile), 'w') as f:
                         yaml.dump(meta, f)
-                    self.database['container'][uuid]['basedir'] = container
+                    self.database['containers'][uuid]['basedir'] = container
 
         if not container:
             self._logger.warning("Could not find Container.")
@@ -921,7 +921,7 @@ class Database(ObjectCore):
             *name*
         """
         database = self.database['basedir']
-        container = self.database['container'][uuid]
+        container = self.database['containers'][uuid]
 
         # if name given and directory with name doesn't already exist, make named basedir
         if container['name'] and not os.path.exists(os.path.join(database, container['class'], container['name'])):

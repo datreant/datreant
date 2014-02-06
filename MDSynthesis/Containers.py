@@ -93,7 +93,7 @@ class Sim(ContainerCore):
             *category*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
-            *tag*
+            *tags*
                 list with user-defined values; like category, but useful for
                 adding many distinguishing descriptors
 
@@ -106,7 +106,7 @@ class Sim(ContainerCore):
         """
         super(Sim, self).__init__()
         
-        self.universe = dict()                  # universe 'modular dock'
+        self.universes = dict()                  # universe 'modular dock'
 
         if (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
@@ -130,11 +130,11 @@ class Sim(ContainerCore):
         self._init_database(database, locate=True)
 
         # record universe
-        self.metadata['universe']['main']['structure'] = os.path.abspath(system.filename)
+        self.metadata['universes']['main']['structure'] = os.path.abspath(system.filename)
         try:
-            self.metadata['universe']['main']['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
+            self.metadata['universes']['main']['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
         except AttributeError:
-            self.metadata['universe']['main']['trajectory'] = [os.path.abspath(system.trajectory.filename)]
+            self.metadata['universes']['main']['trajectory'] = [os.path.abspath(system.trajectory.filename)]
             
         # finish up and save
         self.save()
@@ -168,7 +168,7 @@ class Sim(ContainerCore):
             self.attach('main')
     
     def attach(self, *args, **kwargs):
-        """Attach universe.
+        """Attach universes.
     
         If 'all' is in argument list, every affiliated universe is loaded.
 
@@ -180,17 +180,17 @@ class Sim(ContainerCore):
 
         if 'all' in args:
             self._logger.info("Attaching all affiliated universes with '{}'...".format(self.metadata['name']))
-            loadlist = self.metadata['universe']
+            loadlist = self.metadata['universes']
         else:
             self._logger.info("Attaching selected universes to object '{}'...".format(self.metadata['name']))
             loadlist = args
 
         for i in loadlist:
-            if (i not in self.universe) or (force == True):
+            if (i not in self.universes) or (force == True):
                 self._logger.info("Attaching {}...".format(i))
-                structure = self.metadata['universe'][i]['structure']
-                trajectory = [ x for x in self.metadata['universe'][i]['trajectory'] ]
-                self.universe[i] = MDAnalysis.Universe(structure, *trajectory) 
+                structure = self.metadata['universes'][i]['structure']
+                trajectory = [ x for x in self.metadata['universes'][i]['trajectory'] ]
+                self.universes[i] = MDAnalysis.Universe(structure, *trajectory) 
             else:
                 self._logger.info("Skipping re-attach of {}...".format(i))
         self._logger.info("Object '{}' attached to selected universes.".format(self.metadata['name']))
@@ -211,7 +211,7 @@ class Sim(ContainerCore):
             self._logger.info("Detaching selected universes from object {}...".format(self.metadata['name']))
             for i in args:
                 self._logger.info("Detaching {}...".format(i))
-                self.universe.pop(i, None)
+                self.universespop(i, None)
             self._logger.info("Object '{}' detached from all selected universes.".format(self.metadata['name']))
 
 class Group(ContainerCore):
@@ -238,7 +238,7 @@ class Group(ContainerCore):
             *category*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
-            *tag*
+            *tags*
                 list with user-defined values; like category, but useful for
                 adding many distinguishing descriptors
             *detached*
@@ -267,7 +267,7 @@ class Group(ContainerCore):
             *args*
                 datasets to load into each member
         """
-        for member in self.member.values():
+        for member in self.members.values():
             member.load(*args)
 
     def unload_members(self, *args):
@@ -280,22 +280,22 @@ class Group(ContainerCore):
             *args*
                 datasets to unload from each member
         """
-        for member in self.member:
+        for member in self.members:
             member.unload(*args)
 
-    def add(self, *args):
+    def add(self, *args): 
         """Add a member to the Group.
-
+    
         :Arguments:
             *args*
                 Sim-derived objects to add to Group
         """
         for system in args:
-            self.metadata['member'].append({'name': system.metadata['name'],
+            self.metadata['members'].append({'name': system.metadata['name'],
                                              'type': system.metadata['type'],
                                              'basedir': system.metadata['basedir']
                                             })
-            self.member.append(system)
+            self.members.append(system)
         self.save()
 
     def remove(self, *args):
@@ -306,8 +306,8 @@ class Group(ContainerCore):
                 index of member in self.members to be removed from Group
         """
         for index in args:
-            self.metadata['member'].pop(index)
-            self.member.pop(index)
+            self.metadata['members'].pop(index)
+            self.members.pop(index)
         self.save()
 
     def _generate(self, *args, **kwargs):
@@ -323,15 +323,15 @@ class Group(ContainerCore):
         self._init_database(database, locate=True)
 
         # build list of Group members
-        self.metadata['member'] = dict()
+        self.metadata['members'] = dict()
         for container in args:
-            self.metadata['member'][container.metadata['uuid']] = {'name': container.metadata['name'],
+            self.metadata['members'][container.metadata['uuid']] = {'name': container.metadata['name'],
                                                                     'class': container.metadata['class'],
                                                                     'basedir': container.metadata['basedir']
                                                                    }
 
         # attach members to object
-        self.member = args
+        self.members = args
 
         # finish up and save
         self.save()
@@ -364,11 +364,11 @@ class Group(ContainerCore):
         Keyword arguments passed to Sim-derived object __init__().
 
         """
-        self.member = dict()
-        for key in self.metadata['member']:
-            entry = self.metadata['member'][key]
+        self.members = dict()
+        for key in self.metadata['members']:
+            entry = self.metadata['members'][key]
             Simtype = self._simtype(entry['class'])
-            self.member[key] = Simtype(entry['basedir'], **kwargs)
+            self.members[key] = Simtype(entry['basedir'], **kwargs)
     
     def _simtype(self, typestring):
         """Return Sim or Sim-derived object based on type recorded in object
