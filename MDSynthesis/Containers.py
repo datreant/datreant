@@ -240,12 +240,13 @@ class Sim(ContainerCore):
         # build and store location so we can delete it later
         self.util.makedirs(location)
         location = os.path.abspath(location)
-        location = os.path.join(location, self.metadata['uuid'])
-        u_location = os.path.join(location, universe)
+        loc = location = os.path.join(location, self.metadata['uuid'])
 
-        if os.path.exists(u_location):
-            self._logger.warning("Aborting cache; another instance is already caching in this location.")
-            return
+        i = 1
+        while os.path.exists(location):
+            location = "{}.{}".format(loc, i)
+            i += 1
+        u_location = os.path.join(location, universe)
 
         self._cache[universe] = dict()
         self._cache[universe]['location'] = location
