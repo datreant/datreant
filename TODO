@@ -6,9 +6,15 @@ TODO List
 Core
 ====
 
++ add class `Metadata` that serves as an interface to metadata files
+    + we'd like to move away from manual edits of the metadata in-object
+    + basically, atomize changes made to the metadata to ensure that it can be
+      user-edited while still avoiding stale writes
+    + along with this idea is full persistence: before an object ever writes out
+      metadata, it refreshes its copy first
+
 Containers
 ==========
-
 
 
 Containers.Sim
@@ -21,14 +27,19 @@ Containers.Group
 Operators
 ~~~~~~~~~
 
-+ Create VMD operator that can take multiple objects and load all of them
-  at once.
 
 Operators.Anaysis
 ~~~~~~~~~~~~~~~~~
 
 + add a progressbar scheme that shows progress of multiple systems
   in a meaningful way; current one is meant for serial use.
+
++ rethink the basic paradigm with decorators
+    + could design a decorator that corresponds to timeseries, parallelism, or
+      mix-n-match; basically, one only needs to write an analysis routine with
+      minimal criteria, then decorate it!
+    + will have to think hard on this to avoid too much magic that it
+      obfuscates function.
 
 Ideastorm
 ==========
@@ -42,5 +53,7 @@ Classes for handling md systems that are still being run?
 Markov analysis class?
 + see Michael Grabe's work on mitochondrial channels
 
++ Create VMD operator that can take multiple objects and load all of them
+  at once.
 Globus Toolkit!
 + build an Operator that can perform globus tasks on container objects

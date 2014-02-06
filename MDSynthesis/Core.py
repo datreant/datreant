@@ -115,7 +115,7 @@ class ContainerCore(ObjectCore):
 
         if 'all' in args:
             self._logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))
-            loadlist = self.metadata['analyses']
+            loadlist = self.metadata['data']
         else:
             self._logger.info("Loading selected data into object '{}'...".format(self.metadata['name']))
             loadlist = args
@@ -420,8 +420,8 @@ class OperatorCore(ObjectCore):
         # finish up
         for container in self.containers:
             # update analysis list in each object
-            if not self.__class__.__name__ in container.metadata['analysis']:
-                container.metadata['analysis'].append(self.__class__.__name__)
+            if not self.__class__.__name__ in container.metadata['data']:
+                container.metadata['data'].append(self.__class__.__name__)
                 container.save()
 
     def analyze(self, **kwargs):
@@ -443,9 +443,9 @@ class OperatorCore(ObjectCore):
                 results for container
         """
         outputdir = self._make_savedir(container)
-        main_file = self._datafile(container)
+        datafile = self._datafile(container)
 
-        with self.util.open(main_file, 'wb') as f:
+        with self.util.open(datafile, 'wb') as f:
             cPickle.dump(cont_results, f)
 
     def _make_savedir(self, container):
@@ -461,8 +461,7 @@ class OperatorCore(ObjectCore):
 
         """
         outputdir = self._outputdir(container)
-        container._makedirs(outputdir)
-
+        self.util.makedirs(outputdir)
         return outputdir
     
     def _load(self, **kwargs):
@@ -476,7 +475,7 @@ class OperatorCore(ObjectCore):
 
         # make sure data loaded into each system; should use try/catch here
         for container in self.containers:
-            if (not self.__class__.__name__ in container.analysis.keys()) or force:
+            if (not self.__class__.__name__ in container.data.keys()) or force:
                 container.load(self.__class__.__name__)
     
     def _datacheck(self, container):
@@ -490,9 +489,7 @@ class OperatorCore(ObjectCore):
             *present*
                 True if data is already present; False otherwise
         """
-        outputdir = self._outputdir(container)
-        main_file = os.path.join(analysisdir, self._datafile)
-        return os.path.isfile(main_file)
+        return os.path.isfile(self._datafile(container))
 
     def _outputdir(self, container):
         """Return path to output directory for a particular Container.
@@ -556,7 +553,7 @@ class Database(ObjectCore):
         self._build_attributes()
 
         # write to database file
-        self.save()
+        self.commit()
         self._start_logger()
 
     def _regenerate(self, database):
@@ -565,13 +562,13 @@ class Database(ObjectCore):
         """
         self.database['basedir'] = database
         self.refresh()
+        self._start_logger(database)
         
         self._check_location(database)
 
         # rebuild missing parts
         self._build_metadata()
         self._build_attributes()
-        self._start_logger()
 
     def _handshake(self):
         """Run check to ensure that database is fine.
@@ -781,6 +778,7 @@ class Database(ObjectCore):
                     self.database['container'][match]['basedir'] = self._build_basedir(match)
                     with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'w') as f:
                         yaml.dump(self.database['container'][match], f)
+            self.commit()
 
     def _get_container(self, uuid):
         """Get path to a Container.
@@ -797,9 +795,9 @@ class Database(ObjectCore):
                 path to Container
         """
         if os.path.exists(os.path.join(self.database['container'][uuid]['basedir'], self._metafile)):
-            with self.util.open(os.path.join(self.database['container'][match]['basedir'], self._metafile), 'r') as f:
+            with self.util.open(os.path.join(self.database['container'][uuid]['basedir'], self._metafile), 'r') as f:
                 meta = yaml.load(f)
-            if meta['uuid'] == match:
+            if meta['uuid'] == uuid:
                 container = self.database['container'][uuid]['basedir']
             else:
                 container = self._locate_container(uuid)
@@ -886,6 +884,7 @@ class Database(ObjectCore):
             *uuid*
                 unique id for Container to return
         """
+        self._logger.info("Searching for Container: {} ({})".format(self.database['container'][uuid]['name'], uuid))
         container = None
         for root, dirs, files in os.walk(self.database['basedir']):
             if self._metafile in files:
@@ -895,11 +894,15 @@ class Database(ObjectCore):
                 if meta['uuid'] == uuid:
                     container = os.path.abspath(root)
                     meta['basedir'] = container
+                    self._logger.info("Found: {}".format(container))
 
                     # update basedir in Container metadata and in Database
                     with self.util.open(os.path.join(root, self._metafile), 'w') as f:
                         yaml.dump(meta, f)
                     self.database['container'][uuid]['basedir'] = container
+
+        if not container:
+            self._logger.warning("Could not find Container.")
                 
         return container
 
@@ -926,7 +929,7 @@ class Database(ObjectCore):
 
         return dest
 
-    def _start_logger(self):
+    def _start_logger(self, basedir):
         """Start up the logger.
 
         """
@@ -937,7 +940,7 @@ class Database(ObjectCore):
             self._logger.setLevel(logging.INFO)
 
             # file handler
-            logfile = os.path.join(self.database['basedir'], self._logfile)
+            logfile = os.path.join(basedir, self._logfile)
             fh = logging.FileHandler(logfile)
             ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
             fh.setFormatter(ff)
