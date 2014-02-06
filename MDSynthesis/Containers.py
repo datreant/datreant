@@ -238,7 +238,6 @@ class Sim(ContainerCore):
             return
             
         # build and store location so we can delete it later
-        self.util.makedirs(location)
         location = os.path.abspath(location)
         loc = os.path.join(location, "{}.{}".format(self.metadata['uuid'], universe))
 
@@ -250,6 +249,7 @@ class Sim(ContainerCore):
 
         self._cache[universe] = dict()
         self._cache[universe]['location'] = location
+        self.util.makedirs(location)
 
         # build cached structure and trajectory filenames
         structure = self.metadata['universes'][universe]['structure']
