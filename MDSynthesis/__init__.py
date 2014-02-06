@@ -99,4 +99,4 @@ __version__ = "0.1.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 __all__ = ['Sim', 'SimSet', 'Analysis', 'AnalySet']
 
 # Bring some often used objects into the current namespace
-from Containers import Sim
+from Containers import Sim, Group, Database

@@ -1,0 +1,5 @@
+basedir: 'absolute/path/to/object/directory'
+class: 'Database'
+containers: {'uuidofobject': {}
+            }
+name: 'Handle for database'
