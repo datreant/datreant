@@ -234,18 +234,21 @@ class Sim(ContainerCore):
                 path to cache directory; will be made if it does not exist
         """
         if universe in self._cache:
-            self._logger.warning("Aborting cache; universe already cached!")
+            self._logger.warning("Aborting cache; universe already cached.")
             return
             
         # build and store location so we can delete it later
         self.util.makedirs(location)
         location = os.path.abspath(location)
         location = os.path.join(location, self.metadata['uuid'])
+        u_location = os.path.join(location, universe)
+
+        if os.path.exists(u_location):
+            self._logger.warning("Aborting cache; another instance is already caching in this location.")
+            return
 
         self._cache[universe] = dict()
         self._cache[universe]['location'] = location
-
-        location = os.path.join(location, universe)
 
         # build cached structure and trajectory filenames
         structure = self.metadata['universes'][universe]['structure']
