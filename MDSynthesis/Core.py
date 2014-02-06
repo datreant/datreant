@@ -407,12 +407,12 @@ class OperatorCore(ObjectCore):
 
         # run analysis on each container as a separate process
         for container in self.containers:
-            if (not self._datacheck(system)) or force:
+            if (not self._datacheck(container)) or force:
                 p = (Process(target=self._run_container, args=(container,), kwargs=kwargs))
                 p.start()
                 joblist.append(p)
             else:
-                system._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
+                container._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
 
         for p in joblist:
             p.join()
@@ -449,7 +449,7 @@ class OperatorCore(ObjectCore):
                 results for container
         """
         outputdir = self._make_savedir(container)
-        datafile = self._datafile(container)
+        datafile = self._datapath(container)
 
         with self.util.open(datafile, 'wb') as f:
             cPickle.dump(cont_results, f)
@@ -495,7 +495,7 @@ class OperatorCore(ObjectCore):
             *present*
                 True if data is already present; False otherwise
         """
-        return os.path.isfile(self._datafile(container))
+        return os.path.isfile(self._datapath(container))
 
     def _outputdir(self, container):
         """Return path to output directory for a particular Container.
@@ -510,7 +510,7 @@ class OperatorCore(ObjectCore):
         """
         return os.path.join(container.metadata['basedir'], self.__class__.__name__)
     
-    def _datafile(self, container):
+    def _datapath(self, container):
         """Return path to main output datafile for a particular Container.
 
         :Arguments:

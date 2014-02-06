@@ -6,6 +6,7 @@ Basic Container objects: the organizational units for :mod:`MDSynthesis`.
 import os
 import yaml
 import pdb
+import shutil
 import MDAnalysis
 
 from Core import *
@@ -107,6 +108,7 @@ class Sim(ContainerCore):
         super(Sim, self).__init__()
         
         self.universes = dict()                  # universe 'modular dock'
+        self._cache = dict()                     # cache path storage
 
         if (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
@@ -189,7 +191,7 @@ class Sim(ContainerCore):
             if (i not in self.universes) or (force == True):
                 self._logger.info("Attaching {}...".format(i))
                 structure = self.metadata['universes'][i]['structure']
-                trajectory = [ x for x in self.metadata['universes'][i]['trajectory'] ]
+                trajectory = self.metadata['universes'][i]['trajectory']
                 self.universes[i] = MDAnalysis.Universe(structure, *trajectory) 
             else:
                 self._logger.info("Skipping re-attach of {}...".format(i))
@@ -211,9 +213,77 @@ class Sim(ContainerCore):
             self._logger.info("Detaching selected universes from object {}...".format(self.metadata['name']))
             for i in args:
                 self._logger.info("Detaching {}...".format(i))
-                self.universespop(i, None)
+                self.universes.pop(i, None)
             self._logger.info("Object '{}' detached from all selected universes.".format(self.metadata['name']))
+    
+    def cache(self, universe, location):
+        """Copy trajectory to a temporary location, and attach it as a universe.
 
+        Useful if running analysis on a trajectory on a networked filesystem.
+        This method will physically copy the structure and trajectory for the
+        named *universe* to the specified *location*. Once transferred, the
+        universe will be re-attached from the new location.
+
+        :Arguments:
+            *universe*
+                universe to cache
+            *location*
+                path to cache directory; will be made if it does not exist
+        """
+        self.util.makedirs(location)
+        location = os.path.abspath(location)
+
+        structure = self.metadata['universes'][universe]['structure']
+        trajectory = self.metadata['universes'][universe]['trajectory']
+
+        structure_c = os.path.join(location, os.path.basename(structure))
+        trajectory_c = [ os.path.join(location, os.path.basename(x)) for x in trajectory ]
+
+        if (structure_c == structure) or (trajectory_c == trajectory):
+            self._logger.warning("Aborting cache; cache location same as storage!")
+            return
+
+        self._cache[universe]['structure'] = structure_c
+        self._cache[universe]['trajectory'] = trajectory_c
+
+        self._logger.info("Caching trajectory to {}\nThis may take some time...".format(location))
+        shutil.copy2(structure, structure_c)
+        for traj, traj_n in zip(trajectory, trajectory_c):
+            shutil.copy2(traj, traj_c)
+
+        self.universes[universe] = MDAnalysis.Universe(structure_c, *trajectory_c)
+    
+    def decache(self, universe):
+        """Remove cached trajectory from cache; re-attach universe to originals.
+
+        This operation deletes cached files, but ONLY cached files. It will not
+        delete original trajectories.
+
+        :Arguments:
+            *universe*
+                universe to decache
+
+        """
+        if not (universe in self._cache):
+            self._logger.info("Universe '{}' not cached.".format(universe))
+            return
+
+        self.attach(universe)
+
+        structure = self.metadata['universes'][universe]['structure']
+        trajectory = self.metadata['universes'][universe]['trajectory']
+        
+        structure_c = self._cache[universe]['structure']
+        trajectory_c = self._cache[universe]['trajectory']
+
+        # final safety feature before delete
+        if (structure_c == structure) or (trajectory_c == trajectory):
+            self._logger.warning("Somehow cache is also storage location. Stopping before delete!")
+        else:
+            os.remove(structure_c)
+            for traj in trajectory_c:
+                os.remove(traj)
+        
 class Group(ContainerCore):
     """Base class for a grouping of simulation objects.
 
