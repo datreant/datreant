@@ -35,9 +35,9 @@ class Analysis(OperatorCore):
         This class is meant to be a parent class to a specific analysis for
         specific Sim-derived objects. When inheriting, one need only replace::
         
-        :method:`_run_system_pre()`
-        :method:`_run_system_loop()`
-        :method:`_run_system_post()`
+        :method:`_run_container_pre()`
+        :method:`_run_container_loop()`
+        :method:`_run_container_post()`
         :method:`analyze()`
 
         at minimum to implement specific results.
@@ -49,75 +49,78 @@ class Analysis(OperatorCore):
         """
         super(Analysis, self).__init__(*args, **kwargs)
 
-    def _run_system(self, system, **kwargs):
-        """Run timeseries collection for single system.
+    def _run_container(self, container, **kwargs):
+        """Run timeseries collection for single container.
 
         :Arguments:
-            *system*
+            *container*
                 Sim (or Sim-derived) object
 
         :Keywords:
-            **kwargs passed to :method:`_run_system_pre()`
-                               :method:`_run_system_loop()`
-                               :method:`_run_system_post()`
+            *universe*
+                key of universe to use for analysis [``'main'``]
+
+            **kwargs passed to :method:`_run_container_pre()`
+                               :method:`_run_container_loop()`
+                               :method:`_run_container_post()`
 
         """
-        system._logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, system.metadata['name']))
+        container._logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, container.metadata['name']))
 
         # set up data storage structure
-        sys_results = {'time': np.zeros((len(system.universe.trajectory),), dtype=float),
+        con_results = {'time': np.zeros((len(container.universe.trajectory),), dtype=float),
                       }
 
-        self._run_system_pre(system, sys_results, **kwargs)
+        self._run_container_pre(container, con_results, **kwargs)
 
         # iterate through trajectory; collect raw data
-        system._logger.info("Collecting timeseries...")
-        pm = ProgressMeter(system.universe.trajectory.numframes, interval=100)
-        system.universe.trajectory[0]
-        for ts in system.universe.trajectory:
+        container._logger.info("Collecting timeseries...")
+        pm = ProgressMeter(container.universe.trajectory.numframes, interval=100)
+        container.universe.trajectory[0]
+        for ts in container.universe.trajectory:
             pm.echo(ts.frame)
-            sys_results['time'][system.universe.trajectory.frame - 1] = system.universe.trajectory.time
-            self._run_system_loop(system, sys_results, **kwargs)
+            con_results['time'][container.universe.trajectory.frame - 1] = container.universe.trajectory.time
+            self._run_container_loop(container, con_results, **kwargs)
 
-        self._run_system_post(system, sys_results, **kwargs)
-        self._save(system, sys_results)
+        self._run_container_post(container, con_results, **kwargs)
+        self._save(container, con_results)
  
-    def _run_system_pre(system, sys_results, **kwargs):
+    def _run_container_pre(container, con_results, **kwargs):
         """Operations to be performed before run loop.
 
         :Arguments:
-            *system*
+            *container*
                 Sim (or Sim-derived) object
-            *sys_results*
-                dict storing results for *system*
+            *con_results*
+                dict storing results for *container*
 
         :Keywords:
 
         """
         return
 
-    def _run_system_loop(system, sys_results, **kwargs):
+    def _run_container_loop(container, con_results, **kwargs):
         """Operations to be performed inside of run loop.
 
         :Arguments:
-            *system*
+            *container*
                 Sim (or Sim-derived) object
-            *sys_results*
-                dict storing results for *system*
+            *con_results*
+                dict storing results for *container*
 
         :Keywords:
     
         """
         return
 
-    def _run_system_post(system, sys_results, **kwargs):
+    def _run_container_post(container, con_results, **kwargs):
         """Operations to be performed after run loop.
 
         :Arguments:
-            *system*
+            *container*
                 Sim (or Sim-derived) object
-            *sys_results*
-                dict storing results for *system*
+            *con_results*
+                dict storing results for *container*
 
         :Keywords:
 
@@ -148,9 +151,9 @@ class MetaAnalysis(OperatorCore):
         This class is meant to be a parent class to a specific analysis for
         specific Group-derived objects. When inheriting, one need only replace::
 
-        :method:`_run_system_pre()`
-        :method:`_run_system_loop()`
-        :method:`_run_system_post()`
+        :method:`_run_container_pre()`
+        :method:`_run_container_loop()`
+        :method:`_run_container_post()`
         :method:`analyze()`
 
         at minimum to implement specific results.

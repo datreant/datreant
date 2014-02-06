@@ -267,7 +267,7 @@ class Group(ContainerCore):
             *args*
                 datasets to load into each member
         """
-        for member in self.member:
+        for member in self.member.values():
             member.load(*args)
 
     def unload_members(self, *args):
