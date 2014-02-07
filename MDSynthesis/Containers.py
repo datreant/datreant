@@ -134,12 +134,7 @@ class Sim(ContainerCore):
         self._init_database(database, locate=True)
 
         # record universe
-        self.metadata['universes'] = {'main':{}}
-        self.metadata['universes']['main']['structure'] = os.path.abspath(system.filename)
-        try:
-            self.metadata['universes']['main']['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
-        except AttributeError:
-            self.metadata['universes']['main']['trajectory'] = [os.path.abspath(system.trajectory.filename)]
+        self.add('main', *args, **kwargs)
             
         # finish up and save
         self.save()
@@ -172,6 +167,40 @@ class Sim(ContainerCore):
         if not detached:
             self.attach('main')
     
+    def add(self, name, *args, **kwargs):
+        """Add a universe to the Sim.
+
+        It is often useful to convert a raw MD trajectory into forms that are
+        convenient for different types of analysis. Given this, the Sim object
+        can associate with multiple trajectories, with the idea that all of
+        these trajectories are drawn from the same raw simulation. The same Sim
+        can thus be used to analyze every processed trajectory, keeping the
+        data for a single simulation together.
+
+        This method adds one universe at a time. 
+
+        :Arguments:
+            *name*
+                identifier to use for the new universe
+            
+            *args*
+                arguments normally given to ``MDAnalysis.Universe``
+
+        :Keywords:
+            **kwargs passed to ``MDAnalysis.Universe``
+
+        """
+        system = MDAnalysis.Universe(*args, **kwargs)
+        self.metadata['universes'][name] = dict()
+
+        self.metadata['universes'][name]['structure'] = os.path.abspath(system.filename)
+        try:
+            self.metadata['universes'][name]['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
+        except AttributeError:
+            self.metadata['universes'][name]['trajectory'] = [os.path.abspath(system.trajectory.filename)]
+
+        self.save()
+
     def attach(self, *args, **kwargs):
         """Attach universes.
     
