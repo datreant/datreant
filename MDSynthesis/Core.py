@@ -100,20 +100,21 @@ class ContainerCore(ObjectCore):
     def load(self, *args, **kwargs):
         """Load data instances into object.
 
-        If 'all' is in argument list, every available dataset is loaded.
-
         :Arguments:
             *args*
-                datasets to load
+                data instances to load
             
         :Keywords:
             *force*
-                if True, reload data even if already loaded; default False
+                if True, reload data even if already loaded; [``False``]
+            *all*
+                if True, load all available data instances [``False``]
         """
 
         force = kwargs.pop('force', False)
+        k_all = kwargs.pop('all', False)
 
-        if 'all' in args:
+        if k_all:
             self._logger.info("Loading all known data into object '{}'...".format(self.metadata['name']))
             loadlist = self.metadata['data']
         else:
@@ -132,13 +133,15 @@ class ContainerCore(ObjectCore):
     def unload(self, *args):
         """Unload data instances from object.
 
-        If 'all' is in argument list, every loaded dataset is unloaded.
-
         :Arguments:
             *args*
                 datasets to unload
+            *all*
+                if True, unload all data instances [``False``]
         """
-        if 'all' in args:
+        k_all = kwargs.pop('all', False)
+
+        if k_all:
             self.data.clear()
             self._logger.info("Object '{}' unloaded of all data.".format(self.metadata['name']))
         else:

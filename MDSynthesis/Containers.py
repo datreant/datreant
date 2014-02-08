@@ -90,19 +90,28 @@ class Sim(ContainerCore):
                 selected UUID
             *database*
                 directory of the database to associate with this object; if the
-                database does not exist, it is created
+                database does not exist, it is created; if none given, the
+                directory tree will be searched upward until one or none is found
+            *universe*
+                desired name to associate with first universe [``main``]
             *category*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
             *tags*
                 list with user-defined values; like category, but useful for
                 adding many distinguishing descriptors
-
-        :Keywords always available:
             *detached*
                 if True, Sim will load WITHOUT attaching trajectory; this is
                 useful if only loadable analysis data are needed or
                 trajectories are unavailable; default False
+
+        :Keywords used on object generation:
+            *attach*
+                list of universe names to attach
+            *load*
+                list of data elements to load
+
+        :Keywords always available:
 
         """
         super(Sim, self).__init__()
@@ -122,6 +131,7 @@ class Sim(ContainerCore):
          
         """
         detached = kwargs.pop('detached', False)
+        uname = kwargs.pop('universe', 'main')
         system = MDAnalysis.Universe(*args, **kwargs)
 
         # generate metadata items
@@ -142,13 +152,15 @@ class Sim(ContainerCore):
 
         # finally, attach universe to object
         if not detached:
-            self.attach('main')
+            self.attach('uname')
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
         
         """
-        detached = kwargs.pop('detached', False)
+        attach = kwargs.pop('attach', None)
+        load = kwargs.pop('load', None)
+
         basedir = os.path.abspath(args[0])
         self.metadata['basedir'] = basedir
         
@@ -163,8 +175,8 @@ class Sim(ContainerCore):
         self._start_logger()
         self.save()
 
-        # attach universe
-        if not detached:
+        # attach universe, if desired
+        if attach:
             self.attach('main')
     
     def add(self, name, *args, **kwargs):
@@ -204,15 +216,16 @@ class Sim(ContainerCore):
     def attach(self, *args, **kwargs):
         """Attach universes.
     
-        If 'all' is in argument list, every affiliated universe is loaded.
-
         :Keywords:
             *force*
-                if True, reload data even if already loaded; default False
+                if True, reattach universe even if already loaded; [``False``]
+            *all*
+                if True, attach all affiliated universes [``False``]
         """
         force = kwargs.pop('force', False)
+        k_all = kwargs.pop('all', False)
 
-        if 'all' in args:
+        if k_all:
             self._logger.info("Attaching all affiliated universes with '{}'...".format(self.metadata['name']))
             loadlist = self.metadata['universes']
         else:
@@ -232,13 +245,15 @@ class Sim(ContainerCore):
     def detach(self, *args, **kwargs):
         """Detach universe.
 
-        If 'all' is in argument list, every loaded dataset is unloaded.
-
         :Arguments:
             *args*
                 datasets to unload
+            *all*
+                if True, detach all universes [``False``]
         """
-        if 'all' in args:
+        k_all = kwargs.pop('all', False)
+
+        if k_all:
             self.universe.clear()
             self._logger.info("Object '{}' detached from all universes.".format(self.metadata['name']))
         else:
