@@ -194,7 +194,6 @@ class Sim(ContainerCore):
         :Arguments:
             *name*
                 identifier to use for the new universe
-            
             *args*
                 arguments normally given to ``MDAnalysis.Universe``
 
@@ -210,12 +209,32 @@ class Sim(ContainerCore):
             self.metadata['universes'][name]['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
         except AttributeError:
             self.metadata['universes'][name]['trajectory'] = [os.path.abspath(system.trajectory.filename)]
-
+    
         self.save()
 
-    def attach(self, *args, **kwargs):
-        """Attach universes.
+    def remove(self, *universe):
+        """Remove a universe from Sim.
+
+        This just removes the universe reference from the Sim's metadata, so
+        it cannot be attached. This does not remove any other data, even if it
+        was generated from the removed universe.
+
+        :Arguments:
+            *universe*
+                identifier(s) of universe to remove
+        """
+        for n in universe:
+            self.metadata['universes'].pop(n)
+            self.detach(
+        self.save()
+
+    def attach(self, *universe, **kwargs):
+        """Attach universe.
     
+        :Arguments:
+            *universe*
+                universe(s) to attach
+
         :Keywords:
             *force*
                 if True, reattach universe even if already loaded; [``False``]
@@ -230,7 +249,7 @@ class Sim(ContainerCore):
             loadlist = self.metadata['universes']
         else:
             self._logger.info("Attaching selected universes to object '{}'...".format(self.metadata['name']))
-            loadlist = args
+            loadlist = universe
 
         for i in loadlist:
             if (i not in self.universes) or (force == True):
@@ -242,23 +261,25 @@ class Sim(ContainerCore):
                 self._logger.info("Skipping re-attach of {}...".format(i))
         self._logger.info("Object '{}' attached to selected universes.".format(self.metadata['name']))
 
-    def detach(self, *args, **kwargs):
+    def detach(self, *universe, **kwargs):
         """Detach universe.
 
         :Arguments:
-            *args*
-                datasets to unload
+            *universe*
+                universe(s) to detach
+        
+        :Keywords:
             *all*
                 if True, detach all universes [``False``]
         """
         k_all = kwargs.pop('all', False)
 
         if k_all:
-            self.universe.clear()
+            self.universes.clear()
             self._logger.info("Object '{}' detached from all universes.".format(self.metadata['name']))
         else:
             self._logger.info("Detaching selected universes from object {}...".format(self.metadata['name']))
-            for i in args:
+            for i in universe:
                 self._logger.info("Detaching {}...".format(i))
                 self.universes.pop(i, None)
             self._logger.info("Object '{}' detached from all selected universes.".format(self.metadata['name']))
@@ -395,15 +416,16 @@ class Group(ContainerCore):
         # if a number of Sim-derived objects are given, build a new group 
             self._generate(*args, **kwargs)
 
-    def load_members(self, *args):
+    def load_members(self, *args, **kwargs):
         """Load data instances for individual members of group.
     
-        If 'all' is in argument list, every available dataset is loaded for
-        each member.
-
         :Arguments:
             *args*
                 datasets to load into each member
+
+        :Keywords:
+            *all*
+                if True, unload all data instances [``False``]
         """
         for member in self.members.values():
             member.load(*args)
@@ -411,14 +433,15 @@ class Group(ContainerCore):
     def unload_members(self, *args):
         """Unload data instances from individual members of group.
 
-        If 'all' is in argument list, every loaded dataset is unloaded from
-        each member.
-
         :Arguments:
             *args*
                 datasets to unload from each member
+
+        :Keywords:
+            *all*
+                if True, unload all data instances from each member [``False``]
         """
-        for member in self.members:
+        for member in self.members.values():
             member.unload(*args)
 
     def add(self, *args): 
@@ -441,11 +464,11 @@ class Group(ContainerCore):
 
         :Arguments:
             *args*
-                index of member in self.members to be removed from Group
+                uuid of member in self.members to be removed from Group
         """
-        for index in args:
-            self.metadata['members'].pop(index)
-            self.members.pop(index)
+        for uuid in args:
+            self.metadata['members'].pop(uuid)
+            self.members.pop(uuid)
         self.save()
 
     def _generate(self, *args, **kwargs):

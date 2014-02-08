@@ -130,12 +130,14 @@ class ContainerCore(ObjectCore):
                 self._logger.info("Skipping reload of {}...".format(i))
         self._logger.info("Object '{}' loaded with selected data.".format(self.metadata['name']))
 
-    def unload(self, *args):
+    def unload(self, *args, **kwargs):
         """Unload data instances from object.
 
         :Arguments:
             *args*
                 datasets to unload
+
+        :Keywords:
             *all*
                 if True, unload all data instances [``False``]
         """
