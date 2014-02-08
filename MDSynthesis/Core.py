@@ -7,6 +7,7 @@ import time
 import yaml
 import cPickle
 import logging
+import pdb
 import glob
 from uuid import uuid4
 from multiprocessing import Process
@@ -695,8 +696,8 @@ class Database(ObjectCore):
         """
         self._logger.info("Cleaning out entries that cannot be found")
 
-        for uuid in self.database['containers']:
-            self._get_container(uuid)
+        for uuid in self.database['containers'].keys():
+            self._get_containers(uuid)
             if not self.database['containers'][uuid]['basedir']:
                 self._logger.info("Removing: {} ({})".format(self.database['containers'][uuid]['name'], uuid))
                 self.database['containers'].pop(uuid)
@@ -737,6 +738,7 @@ class Database(ObjectCore):
         if all_conts:
             containers = [ x for x in self.database['containers'] ]
     
+        matches = []
         for container in containers:
             if os.path.isdir(container):
                 basedir = os.path.abspath(container)
@@ -744,20 +746,19 @@ class Database(ObjectCore):
             else:
                 contype = ['uuid', 'name']
 
-            matches = []
             for entry in self.database['containers'].values():
                 for criteria in contype:
                     if entry[criteria] == container:
                         matches.append(entry['uuid'])
 
-            for match in matches:
-                # ensure we are finding the right Container
-                basedir = self._get_container(match)
-                if not basedir:
-                    self._logger.warning("Not found: {}".format(match))
-                else:
-                    with self.util.open(os.path.join(basedir, self._metafile), 'r') as f:
-                        meta = yaml.load(f)
+        # ensure we are finding the right Container
+        basedirs = self._get_containers(*matches)
+
+        for i in xrange(len(matches)):
+            if basedirs[i]:
+                with self.util.open(os.path.join(basedirs[i], self._metafile), 'r') as f:
+                    self.database['containers'][matches[i]] = yaml.load(f)
+        self.commit()
 
     def push(self, *containers, **kwargs):
         """Update Container metadata with information stored in Database.
@@ -793,51 +794,59 @@ class Database(ObjectCore):
                     if entry[criteria] == container:
                         matches.append(entry['uuid'])
     
+            # since this method is used for Container init, basedir may not
+            # be defined in metadata yet
             for match in matches:
-                # since this method is used for Container init, basedir may not
-                # be defined in metadata yet
-                try:
-                    # ensure we are finding the right Container
-                    basedir = self._get_container(match)
-                    if not basedir:
-                        self._logger.warning("Not found: {}".format(match))
-                    else:
-                        with self.util.open(os.path.join(basedir, self._metafile), 'w') as f:
-                            yaml.dump(self.database['containers'][match], f)
-                except KeyError:
+                if not ('basedir' in self.database['containers'][match]):
                     self.database['containers'][match]['basedir'] = self._build_basedir(match)
-                    with self.util.open(os.path.join(self.database['containers'][match]['basedir'], self._metafile), 'w') as f:
+                
+            # ensure we are finding the right Container
+            basedirs = self._get_containers(*matches)
+
+            for i in xrange(len(matches)):
+                if basedirs[i]:
+                    with self.util.open(os.path.join(basedirs[i], self._metafile), 'w') as f:
                         yaml.dump(self.database['containers'][match], f)
+
             self.commit()
 
-    def _get_container(self, *uuid):
-        """Get path to a Container.
+    def _get_containers(self, *uuids):
+        """Get path to Containers.
 
         Will perform checks to ensure the Container returned matches the uuid given.
         It will go looking for the Container if not found at last known location.
 
         :Arguments:
-            *uuid*
-                unique id for Container(s) to return
+            *uuids*
+                unique ids for Containers to return
 
         :Returns:
-            *container*
-                path to Container
+            *containers*
+                tuple giving paths to Containers
         """
-        if not self.database['containers'][uuid]['basedir']:
-            return 
+        missing = [None]*len(uuids)
+        for i in xrange(len(uuids)):
+            if not self.database['containers'][uuids[i]]['basedir']:
+                continue
 
-        if os.path.exists(os.path.join(self.database['containers'][uuid]['basedir'], self._metafile)):
-            with self.util.open(os.path.join(self.database['containers'][uuid]['basedir'], self._metafile), 'r') as f:
-                meta = yaml.load(f)
-            if meta['uuid'] == uuid:
-                container = self.database['containers'][uuid]['basedir']
+            if os.path.exists(os.path.join(self.database['containers'][uuids[i]]['basedir'], self._metafile)):
+                with self.util.open(os.path.join(self.database['containers'][uuids[i]]['basedir'], self._metafile), 'r') as f:
+                    meta = yaml.load(f)
+                if meta['uuid'] == uuids[i]:
+                    container = self.database['containers'][uuids[i]]['basedir']
+                else:
+                    self._logger.info("Missing: {} ({})".format(self.database['containers'][uuids[i]]['name'], uuids[i]))
+                    missing[i] = uuids[i]
             else:
-                container = self._locate_container(uuid)
-        else:
-            container = self._locate_container(uuid)
+                self._logger.info("Missing: {} ({})".format(self.database['containers'][uuids[i]]['name'], uuids[i]))
+                missing[i] = uuids[i]
 
-        return container
+        if all(missing):
+            containers = self._locate_containers(*missing)
+        else:
+            containers = missing
+
+        return containers
 
     def discover(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
@@ -907,37 +916,43 @@ class Database(ObjectCore):
 
         """
 
-    def _locate_container(self, uuid):
-        """Find a Container by traversing downward through the filesystem. 
+    def _locate_containers(self, *uuids):
+        """Find Containers by traversing downward through the filesystem. 
 
         Looks in each directory below the Database. If found, the basedir for the
         Container is updated in both metadata and the Database.
 
         :Arguments:
-            *uuid*
-                unique id for Container to return
+            *uuids*
+                unique ids for Containers to return
         """
-        self._logger.info("Searching for Container: {} ({})".format(self.database['containers'][uuid]['name'], uuid))
-        container = None
+        self._logger.info("Searching for {} Containers.".format(len(uuids) - uuids.count(None)))
+        container = [None]*len(uuids)
         for root, dirs, files in os.walk(self.database['basedir']):
             if self._metafile in files:
                 dirs = []
                 with self.util.open(os.path.join(root, self._metafile), 'r') as f:
                     meta = yaml.load(f)
-                if meta['uuid'] == uuid:
-                    container = os.path.abspath(root)
-                    meta['basedir'] = container
-                    self._logger.info("Found: {}".format(container))
+                try: 
+                    i = uuids.index(meta['uuid'])
+                    container[i] = os.path.abspath(root)
+                    meta['basedir'] = container[i]
 
                     # update basedir in Container metadata and in Database
                     with self.util.open(os.path.join(root, self._metafile), 'w') as f:
                         yaml.dump(meta, f)
-                    self.database['containers'][uuid]['basedir'] = container
+                    self.database['containers'][uuids[i]]['basedir'] = container[i]
+                    self._logger.info("Found: {} ({})\nLocation: {}".format(meta['name'], uuids[i], meta['basedir']))
+                except ValueError:
+                    pass
 
-        if not container:
-            self._logger.warning("Could not find Container.")
-            self.database['containers'][uuid]['basedir'] = None
-                
+        for i in xrange(len(container)):
+            if uuids[i]:
+                if not container[i]:
+                    self.database['containers'][uuids[i]]['basedir'] = None
+                    self._logger.warning("Not found: {} ({})".format(self.database['containers'][uuids[i]]['name'], uuids[i]))
+                    
+        self._logger.info("{} Containers not found.".format(container.count(None) - uuids.count(None)))
         return container
 
     def _build_basedir(self, uuid):
