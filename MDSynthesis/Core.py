@@ -401,26 +401,38 @@ class OperatorCore(ObjectCore):
     def run(self, **kwargs):
         """Obtain compute-intensive data, usually timeseries.
 
+        This operation is performed on each Container in series by default. 
+        Use the keyword *parallel* to operate on each Container as a separate
+        process.
+
+        kwargs passed to `:meth:self._run_container()`
+
         :Keywords:
             *force*
-                If True, force recollection of data; default False
-
-            **kwargs passed to `:meth:self._run_container()`
+                If True, force recollection of data [``False``]
+            *parallel*
+                If True, operate on each Container in parallel as 
+                separate processes [``False``]
         """
         joblist = []
         force = kwargs.pop('force', False)
+        parallel = kwargs.pop('force' False)
 
         # run analysis on each container as a separate process
-        for container in self.containers:
-            if (not self._datacheck(container)) or force:
-                p = (Process(target=self._run_container, args=(container,), kwargs=kwargs))
-                p.start()
-                joblist.append(p)
-            else:
-                container._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
+        if parallel:
+            for container in self.containers:
+                if (not self._datacheck(container)) or force:
+                    p = (Process(target=self._run_container, args=(container,), kwargs=kwargs))
+                    p.start()
+                    joblist.append(p)
+                else:
+                    container._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
 
-        for p in joblist:
-            p.join()
+            for p in joblist:
+                p.join()
+        else:
+            for container in self.containers:
+                self._run_container(container, **kwargs)
     
         # finish up
         for container in self.containers:
