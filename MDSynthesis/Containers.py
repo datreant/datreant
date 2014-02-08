@@ -225,7 +225,7 @@ class Sim(ContainerCore):
         """
         for n in universe:
             self.metadata['universes'].pop(n)
-            self.detach(
+            self.detach(n)
         self.save()
 
     def attach(self, *universe, **kwargs):

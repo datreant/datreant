@@ -6,12 +6,29 @@ TODO List
 Core
 ====
 
++ class `File` needs a rewrite.
+    + turn it into an interface for an instance of an MDS file (metadata, database, datafile)
+    + will allow atomic (modification of individaul elements with no stale overwrites) editing
+    + synced with actual file every time object is accessed.
+
 + add class `Metadata` that serves as an interface to metadata files
     + we'd like to move away from manual edits of the metadata in-object
     + basically, atomize changes made to the metadata to ensure that it can be
       user-edited while still avoiding stale writes
     + along with this idea is full persistence: before an object ever writes out
       metadata, it refreshes its copy first
+
++ add class `DBFile` for database.
+
++ add class `Datafile` for individual datafiles.
+
++ class `Data` to handle multiple datafile instances for Operators
+    + we will abandon the 1-file-per-operator mindset, placing no restriction
+      on the number of files one can store data in.
+    + will serve as interface to all data instances
+    + this new paradigm will mesh with another: that Operator base classes are
+      built with few prescriptive methods but instead contain decorators that
+      can be mixed and matched to get powerful functionality with little work.
 
 Containers
 ==========
@@ -35,7 +52,7 @@ Operators.Anaysis
   in a meaningful way; current one is meant for serial use.
 
 + rethink the basic paradigm with decorators
-    + could design a decorator that corresponds to timeseries, parallelism, or
+    + could decorators that corresponds to timeseries, parallelism, or
       mix-n-match; basically, one only needs to write an analysis routine with
       minimal criteria, then decorate it!
     + will have to think hard on this to avoid too much magic that it
