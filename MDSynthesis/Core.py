@@ -1036,3 +1036,11 @@ class Attributes(object):
     """
     def __init__(self):
         pass
+
+class RwBunch(object):
+    def __init__(self, odict):
+        adict = dict(odict)
+        for key in adict:
+            if type(adict[key]) is dict:
+                adict[key] = RwBunch(adict[key])
+        self.__dict__ = adict
