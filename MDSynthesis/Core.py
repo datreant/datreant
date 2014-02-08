@@ -693,6 +693,13 @@ class Database(ObjectCore):
         """Clear entries from Database corresponding to Containers that can't be found.
 
         """
+        self._logger.info("Cleaning out entries that cannot be found")
+
+        for uuid in self.database['containers']:
+            self._get_container(uuid)
+            if not self.database['containers'][uuid]['basedir']:
+                self._logger.info("Removing: {} ({})".format(self.database['containers'][uuid]['name'], uuid))
+                self.database['containers'].pop(uuid)
 
     def commit(self):
         """Save the current state of the database to its file.
@@ -803,7 +810,7 @@ class Database(ObjectCore):
                         yaml.dump(self.database['containers'][match], f)
             self.commit()
 
-    def _get_container(self, uuid):
+    def _get_container(self, *uuid):
         """Get path to a Container.
 
         Will perform checks to ensure the Container returned matches the uuid given.
@@ -811,12 +818,15 @@ class Database(ObjectCore):
 
         :Arguments:
             *uuid*
-                unique id for Container to return
+                unique id for Container(s) to return
 
         :Returns:
             *container*
                 path to Container
         """
+        if not self.database['containers'][uuid]['basedir']:
+            return 
+
         if os.path.exists(os.path.join(self.database['containers'][uuid]['basedir'], self._metafile)):
             with self.util.open(os.path.join(self.database['containers'][uuid]['basedir'], self._metafile), 'r') as f:
                 meta = yaml.load(f)
@@ -926,6 +936,7 @@ class Database(ObjectCore):
 
         if not container:
             self._logger.warning("Could not find Container.")
+            self.database['containers'][uuid]['basedir'] = None
                 
         return container
 
