@@ -451,7 +451,7 @@ class Group(ContainerCore):
             *args*
                 Sim-derived objects to add to Group
         """
-        for system in args:
+        for container in args:
             self.metadata['members'].append({'name': system.metadata['name'],
                                              'type': system.metadata['type'],
                                              'basedir': system.metadata['basedir']
@@ -471,6 +471,15 @@ class Group(ContainerCore):
             self.members.pop(uuid)
         self.save()
 
+    def _update_members(self):
+        """Update member attributes.
+
+        """
+        for container in self.members:
+            self.metadata['members'][container]['name'] = self.members[container].metadata['name']
+
+        self.save()
+            
     def _generate(self, *args, **kwargs):
         """Generate new Group.
          
@@ -518,6 +527,7 @@ class Group(ContainerCore):
 
         # attach members to object
         self._attach_members(**kwargs)
+        self._update_members()
 
     def _attach_members(self, **kwargs):
         """Attach member to Group object.
