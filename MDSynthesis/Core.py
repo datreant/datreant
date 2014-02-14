@@ -647,9 +647,19 @@ class Database(ObjectCore):
             else:
                 uuid = container.metadata['uuid']
                 self.database['containers'][uuid] = container.metadata
-    
+
             self.database['containers'][uuid]['database'] = self.database['basedir']
-            self.push(uuid)
+
+            # since this method is used for Container init, basedir may not
+            # be defined in metadata yet
+            if not ('basedir' in self.database['containers'][uuid]):
+                container.metadata['basedir'] = self._build_basedir(uuid)
+                self.database['containers'][uuid]['basedir'] = container.metadata['basedir']
+                with self.util.open(os.path.join(container.metadata['basedir'], self._metafile), 'w') as f:
+                    yaml.dump(self.database['containers'][uuid], f)
+            else:
+                self.push(uuid)
+
             self._logger.info("Added {} container '{}' to database.".format(self.database['containers'][uuid]['class'], self.database['containers'][uuid]['name']))
 
     def remove(self, *containers, **kwargs):
@@ -804,7 +814,6 @@ class Database(ObjectCore):
         # ensure we are finding the right Container
         basedirs = self._get_containers(*matches)
 
-        pdb.set_trace()
         for i in xrange(len(matches)):
             if basedirs[i]:
                 with self.util.open(os.path.join(basedirs[i], self._metafile), 'w') as f:
@@ -851,7 +860,6 @@ class Database(ObjectCore):
             if not containers[i]:
                 containers[i] = missing[i]
 
-        pdb.set_trace()
         return containers
 
     def discover(self):

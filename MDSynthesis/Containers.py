@@ -152,7 +152,7 @@ class Sim(ContainerCore):
 
         # finally, attach universe to object
         if not detached:
-            self.attach('uname')
+            self.attach(uname)
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
