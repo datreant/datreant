@@ -657,9 +657,9 @@ class Database(ObjectCore):
                 self.database['containers'][uuid]['basedir'] = container.metadata['basedir']
                 with self.util.open(os.path.join(container.metadata['basedir'], self._metafile), 'w') as f:
                     yaml.dump(self.database['containers'][uuid], f)
+                self.commit()
             else:
                 self.push(uuid)
-
             self._logger.info("Added {} container '{}' to database.".format(self.database['containers'][uuid]['class'], self.database['containers'][uuid]['name']))
 
     def remove(self, *containers, **kwargs):
@@ -706,8 +706,10 @@ class Database(ObjectCore):
         """
         self._logger.info("Cleaning out entries that cannot be found.")
 
-        for uuid in self.database['containers'].keys():
-            self._get_containers(uuid)
+        uuids = [ x for x in self.database['containers'] ] 
+        self._get_containers(*uuids)
+        
+        for uuid in uuids:
             if not self.database['containers'][uuid]['basedir']:
                 self._logger.info("Removing: {} ({})".format(self.database['containers'][uuid]['name'], uuid))
                 self.database['containers'].pop(uuid)
@@ -817,7 +819,7 @@ class Database(ObjectCore):
         for i in xrange(len(matches)):
             if basedirs[i]:
                 with self.util.open(os.path.join(basedirs[i], self._metafile), 'w') as f:
-                    yaml.dump(self.database['containers'][match], f)
+                    yaml.dump(self.database['containers'][matches[i]], f)
         self.commit()
 
     def _get_containers(self, *uuids):
@@ -870,6 +872,7 @@ class Database(ObjectCore):
             if self._metafile in files:
                 dirs = []
                 self.add(root)
+        self.commit()
     
     def merge(self, database):
         """Merge another database's contents into this one.
