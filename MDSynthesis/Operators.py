@@ -65,11 +65,11 @@ class Analysis(OperatorCore):
                                :method:`_run_container_post()`
 
         """
-        ukey = kwargs.pop(universe, 'main')
+        ukey = kwargs.pop('universe', 'main')
         container._logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, container.metadata['name']))
 
         # set up data storage structure
-        con_results = {'time': np.zeros((len(container.universe.trajectory),), dtype=float),
+        con_results = {'time': np.zeros((len(container.universes[ukey].trajectory),), dtype=float),
                       }
 
         self._run_container_pre(container, con_results, **kwargs)
@@ -78,15 +78,15 @@ class Analysis(OperatorCore):
         container._logger.info("Collecting timeseries...")
         pm = ProgressMeter(container.universes[ukey].trajectory.numframes, interval=100)
         container.universes[ukey].trajectory[0]
-        for ts in container.universes[key].trajectory:
+        for ts in container.universes[ukey].trajectory:
             pm.echo(ts.frame)
-            con_results['time'][container.universes[key].trajectory.frame - 1] = container.universes[key].trajectory.time
+            con_results['time'][container.universes[ukey].trajectory.frame - 1] = container.universes[ukey].trajectory.time
             self._run_container_loop(container, con_results, **kwargs)
 
         self._run_container_post(container, con_results, **kwargs)
         self._save(container, con_results)
  
-    def _run_container_pre(container, con_results, **kwargs):
+    def _run_container_pre(self, container, con_results, **kwargs):
         """Operations to be performed before run loop.
 
         :Arguments:
@@ -100,7 +100,7 @@ class Analysis(OperatorCore):
         """
         return
 
-    def _run_container_loop(container, con_results, **kwargs):
+    def _run_container_loop(self, container, con_results, **kwargs):
         """Operations to be performed inside of run loop.
 
         :Arguments:
@@ -114,7 +114,7 @@ class Analysis(OperatorCore):
         """
         return
 
-    def _run_container_post(container, con_results, **kwargs):
+    def _run_container_post(self, container, con_results, **kwargs):
         """Operations to be performed after run loop.
 
         :Arguments:

@@ -417,7 +417,7 @@ class OperatorCore(ObjectCore):
         """
         joblist = []
         force = kwargs.pop('force', False)
-        parallel = kwargs.pop('force', False)
+        parallel = kwargs.pop('parallel', False)
 
         # run analysis on each container as a separate process
         if parallel:
