@@ -65,6 +65,7 @@ class Analysis(OperatorCore):
                                :method:`_run_container_post()`
 
         """
+        ukey = kwargs.pop(universe, 'main')
         container._logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, container.metadata['name']))
 
         # set up data storage structure
@@ -75,11 +76,11 @@ class Analysis(OperatorCore):
 
         # iterate through trajectory; collect raw data
         container._logger.info("Collecting timeseries...")
-        pm = ProgressMeter(container.universe.trajectory.numframes, interval=100)
-        container.universe.trajectory[0]
-        for ts in container.universe.trajectory:
+        pm = ProgressMeter(container.universes[ukey].trajectory.numframes, interval=100)
+        container.universes[ukey].trajectory[0]
+        for ts in container.universes[key].trajectory:
             pm.echo(ts.frame)
-            con_results['time'][container.universe.trajectory.frame - 1] = container.universe.trajectory.time
+            con_results['time'][container.universes[key].trajectory.frame - 1] = container.universes[key].trajectory.time
             self._run_container_loop(container, con_results, **kwargs)
 
         self._run_container_post(container, con_results, **kwargs)

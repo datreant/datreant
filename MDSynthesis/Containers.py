@@ -144,6 +144,7 @@ class Sim(ContainerCore):
         self._init_database(database, locate=True)
 
         # record universe
+        self.metadata['universes'] = dict()
         self.add('main', *args, **kwargs)
             
         # finish up and save
