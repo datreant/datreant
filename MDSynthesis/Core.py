@@ -1063,7 +1063,7 @@ class Attributes(object):
     def __init__(self):
         pass
 
-class RwBunch(object):
+class Bunch(object):
     def __init__(self, odict):
         adict = dict(odict)
         for key in adict:
