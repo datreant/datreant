@@ -64,11 +64,11 @@ class Analysis(OperatorCore):
         """
         container._logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, container.metadata['name']))
 
-        # set up data storage structure
-        con_results = {'time': np.zeros((len(container.universe.trajectory),), dtype=float),
-                      }
-
+        con_results = dict()
         self._run_container_pre(container, con_results, **kwargs)
+
+        # set up data storage structure
+        con_results['time'] = np.zeros((len(container.universe.trajectory),), dtype=float)
 
         # iterate through trajectory; collect raw data
         container._logger.info("Collecting timeseries...")
