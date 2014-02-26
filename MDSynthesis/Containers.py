@@ -107,7 +107,7 @@ class Sim(ContainerCore):
 
         :Keywords used on object generation:
             *attach*
-                list of universe names to attach
+                name of universe to attach
             *load*
                 list of data elements to load
 
@@ -116,7 +116,8 @@ class Sim(ContainerCore):
         """
         super(Sim, self).__init__()
         
-        self.universes = dict()                  # universe 'modular dock'
+        self.universe = None                     # universe 'dock'
+        self.selections = dict()                 # AtomGroup selections
         self._cache = dict()                     # cache path storage
 
         if (os.path.isdir(args[0])):
@@ -178,7 +179,7 @@ class Sim(ContainerCore):
 
         # attach universe, if desired
         if attach:
-            self.attach('main')
+            self.attach(attach)
     
     def add(self, name, *args, **kwargs):
         """Add a universe to the Sim.
@@ -226,80 +227,65 @@ class Sim(ContainerCore):
         """
         for n in universe:
             self.metadata['universes'].pop(n)
-            self.detach(n)
+            if n == self._uname:
+                self.detach()
         self.save()
 
-    def attach(self, *universe, **kwargs):
+    def attach(self, universe, **kwargs):
         """Attach universe.
+
+        If another universe is already attached, it is detached first.
     
         :Arguments:
             *universe*
-                universe(s) to attach
+                universe to attach
 
         :Keywords:
             *force*
                 if True, reattach universe even if already loaded; [``False``]
-            *all*
-                if True, attach all affiliated universes [``False``]
         """
         force = kwargs.pop('force', False)
-        k_all = kwargs.pop('all', False)
 
-        if k_all:
-            self._logger.info("Attaching all affiliated universes with '{}'...".format(self.metadata['name']))
-            loadlist = self.metadata['universes']
-        else:
-            self._logger.info("Attaching selected universes to object '{}'...".format(self.metadata['name']))
-            loadlist = universe
+        if (universe != self._uname) or (force == True):
+            self._logger.info("Attaching '{}'...".format(universe))
 
-        for i in loadlist:
-            if (i not in self.universes) or (force == True):
-                self._logger.info("Attaching {}...".format(i))
-                structure = self.metadata['universes'][i]['structure']
-                trajectory = self.metadata['universes'][i]['trajectory']
-                self.universes[i] = MDAnalysis.Universe(structure, *trajectory) 
+            # attach cached universe if found to be cached; otherwise, attach original
+            if universe in self._cache:
+                self._logger.info("Found '{}' in cache; attaching cached version (decache to load original).".format(universe))
+                structure = self._cache[universe]['structure']
+                trajectory = self._cache[universe]['trajectory']
+                self.universe = MDAnalysis.Universe(structure, *trajectory)
             else:
-                self._logger.info("Skipping re-attach of {}...".format(i))
-        self._logger.info("Object '{}' attached to selected universes.".format(self.metadata['name']))
+                structure = self.metadata['universes'][universe]['structure']
+                trajectory = self.metadata['universes'][universe]['trajectory']
+                self.universe = MDAnalysis.Universe(structure, *trajectory) 
 
-    def detach(self, *universe, **kwargs):
+            self._uname = universe
+            self._logger.info("'{}' attached to universe '{}'.".format(self.metadata['name'], universe))
+        else:
+            self._logger.info("Skipping re-attach of {}...".format(i))
+
+    def detach(self):
         """Detach universe.
 
-        :Arguments:
-            *universe*
-                universe(s) to detach
-        
-        :Keywords:
-            *all*
-                if True, detach all universes [``False``]
         """
-        k_all = kwargs.pop('all', False)
-
-        if k_all:
-            self.universes.clear()
-            self._logger.info("Object '{}' detached from all universes.".format(self.metadata['name']))
-        else:
-            self._logger.info("Detaching selected universes from object {}...".format(self.metadata['name']))
-            for i in universe:
-                self._logger.info("Detaching {}...".format(i))
-                self.universes.pop(i, None)
-            self._logger.info("Object '{}' detached from all selected universes.".format(self.metadata['name']))
+        self.universe = None
+        self._logger.info("'{}' detached from universe'{}'".format(self.metadata['name'], self._uname))
+        self._uname = None
     
-    def cache(self, universe, location):
+    def cache(self, location):
         """Copy trajectory to a temporary location, and attach it as a universe.
 
         Useful if running analysis on a trajectory on a networked filesystem.
         This method will physically copy the structure and trajectory for the
-        named *universe* to the specified *location*. Once transferred, the
+        current universe to the specified *location*. Once transferred, the
         universe will be re-attached from the new location.
 
         :Arguments:
-            *universe*
-                universe to cache
             *location*
                 path to cache directory; will be made if it does not exist
         """
-        if universe in self._cache:
+        if self._uname in self._cache:
             self._logger.warning("Aborting cache; universe already cached.")
             return
             
@@ -338,25 +324,21 @@ class Sim(ContainerCore):
         for traj, traj_c in zip(trajectory, trajectory_c):
             shutil.copy2(traj, traj_c)
 
-        self.universes[universe] = MDAnalysis.Universe(structure_c, *trajectory_c)
+        self.universe = MDAnalysis.Universe(structure_c, *trajectory_c)
         self._logger.info("Universe '{}' now cached.".format(universe))
     
-    def decache(self, universe):
-        """Remove cached trajectory from cache; re-attach universe to originals.
+    def decache(self):
+        """Remove cached trajectory from cache; re-attach universe to original.
 
         This operation deletes cached files, but ONLY cached files. It will not
         delete original trajectories.
 
-        :Arguments:
-            *universe*
-                universe to decache
-
         """
-        if not (universe in self._cache):
+        if not (self._uname in self._cache):
             self._logger.info("Universe '{}' not cached.".format(universe))
             return
 
-        self.attach(universe, force=True)
+        self.attach(self._uname, force=True)
 
         structure = self.metadata['universes'][universe]['structure']
         trajectory = self.metadata['universes'][universe]['trajectory']
