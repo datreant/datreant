@@ -68,6 +68,8 @@ class Analysis(OperatorCore):
         ukey = kwargs.pop('universe', 'main')
         container._logger.info("Running {} analysis on '{}'...".format(self.__class__.__name__, container.metadata['name']))
 
+        container.attach(ukey)
+
         # set up data storage structure
         con_results = {'time': np.zeros((len(container.universes[ukey].trajectory),), dtype=float),
                       }
