@@ -74,3 +74,7 @@ Markov analysis class?
   at once.
 Globus Toolkit!
 + build an Operator that can perform globus tasks on container objects
+
+Perhaps use IPython.Config as a prototype for a dictionary accessible as
+attributes.
+
