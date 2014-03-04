@@ -31,7 +31,7 @@ class ContainerCore(ObjectCore):
         self.metadata = dict()              # information about object; defines base object
         self.data = dict()              # analysis data 'modular dock'
     
-    def save(self, *args):
+    def _save(self, *args):
         """Save Container metadata and, if desired, analysis data instances.
 
         By providing names of loaded datasets as arguments, you can save the
@@ -58,7 +58,7 @@ class ContainerCore(ObjectCore):
             yaml.dump(self.metadata, f)
 
         # update database
-        self.push()
+        self._push()
 
         if args:
             if 'all' in args:
@@ -74,7 +74,7 @@ class ContainerCore(ObjectCore):
                     cPickle.dump(self.data[i], f)
             self._logger.info("All selected data saved.")
 
-    def refresh(self):
+    def _refresh(self):
         """Reloads metadata from file.
 
         """
@@ -160,6 +160,7 @@ class ContainerCore(ObjectCore):
                       'class': self.__class__.__name__,
                       'categories': kwargs.pop('categories', dict()),
                       'tags': kwargs.pop('tags', list()),
+                      'details': kwargs.pop('details', str())
                       }
 
         for key in attributes:
@@ -196,13 +197,13 @@ class ContainerCore(ObjectCore):
         """
         return str(uuid4())
 
-    def push(self):
+    def _push(self):
         """Update metadata stored in Database for this Container.
     
         """
         # use restore_database if database file does not exist
 
-    def pull(self):
+    def _pull(self):
         """Update metadata from information stored in Database for this Container.
 
         Note: This will overwrite metadata file with Database version!
@@ -485,34 +486,41 @@ class Sim(ContainerCore):
             self._generate(*args, **kwargs)
 
     def __repr__(self):
-        #if self._uname in self._cache:
-        #    out = "{}(Sim): '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
-        #else:
-        #    out = "{}(Sim): '{}' | universe: '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+        if self._uname in self._cache:
+            out = "{}(Sim): '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+        else:
+            out = "{}(Sim): '{}' | universe: '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
 
+        return out
+
+    def info(self):
+        """Output the current status of the Sim.
+
+        """
         title = "{}: '{}'".format(self.__class__.__name__, self.metadata['name'])
 
-        universes = "universes: "
-        for universe in self.metadata['universes'].sort():
+        universes = "universes:\t"
+        for universe in self.metadata['universes']:
             attached = cached = " "
             if universe in self._cache:
                 cached = "(cached)"
             if self._uname == universe:
                 attached = "*"
 
-            universes = universes + "\t\t{} {} {}\n".format(universe, attached, cached)
+            universes = universes + "{} {} {}\n".format(universe, attached, cached)
+            universes = universes + "\t\t"
 
         data = "data: "
-        for datum in self.metadata['data'].sort():
+        for datum in self.metadata['data']:
             loaded = " "
             if datum in self.data:
                 loaded = "*"
 
-            data = data + "\t\t{} {} {}\n".format(datum, loaded)
+            data = data + "\t\t{} {}\n".format(datum, loaded)
 
         out = "{}\n{}\n{}".format(title, universes, data)
 
-        return out
+        print out
 
     def _generate(self, *args, **kwargs):
         """Generate new Sim object.
@@ -536,7 +544,7 @@ class Sim(ContainerCore):
         self.add('main', *args, **kwargs)
             
         # finish up and save
-        self.save()
+        self._save()
         self._start_logger()
 
         # finally, attach universe to object
@@ -554,7 +562,7 @@ class Sim(ContainerCore):
         self.metadata['basedir'] = basedir
         
         # get metadata (overwrites basedir metadata)
-        self.refresh()
+        self._refresh()
         
         # update location of object if changed
         self.metadata['basedir'] = basedir
@@ -562,7 +570,7 @@ class Sim(ContainerCore):
         # finish up and save
         self._build_metadata(**kwargs)
         self._start_logger()
-        self.save()
+        self._save()
 
         # attach universe, if desired
         if attach:
@@ -599,7 +607,7 @@ class Sim(ContainerCore):
         except AttributeError:
             self.metadata['universes'][name]['trajectory'] = [os.path.abspath(system.trajectory.filename)]
     
-        self.save()
+        self._save()
 
     def remove(self, *universe):
         """Remove a universe from Sim.
@@ -616,7 +624,7 @@ class Sim(ContainerCore):
             self.metadata['universes'].pop(n)
             if n == self._uname:
                 self.detach()
-        self.save()
+        self._save()
 
     def attach(self, universe, **kwargs):
         """Attach universe.
@@ -827,7 +835,7 @@ class Group(ContainerCore):
                                              'basedir': system.metadata['basedir']
                                             })
             self.members.append(system)
-        self.save()
+        self._save()
 
     def remove(self, *args):
         """Remove a member from the Group.
@@ -839,7 +847,7 @@ class Group(ContainerCore):
         for uuid in args:
             self.metadata['members'].pop(uuid)
             self.members.pop(uuid)
-        self.save()
+        self._save()
 
     def _update_members(self):
         """Update member attributes.
@@ -848,7 +856,7 @@ class Group(ContainerCore):
         for container in self.members:
             self.metadata['members'][container]['name'] = self.members[container].metadata['name']
 
-        self.save()
+        self._save()
             
     def _generate(self, *args, **kwargs):
         """Generate new Group.
@@ -874,7 +882,7 @@ class Group(ContainerCore):
         self.members = args
 
         # finish up and save
-        self.save()
+        self._save()
         self._start_logger()
     
     def _regenerate(self, *args, **kwargs):
@@ -885,7 +893,7 @@ class Group(ContainerCore):
         self.metadata['basedir'] = basedir
         
         # get metadata (overwrites basedir metadata)
-        self.refresh()
+        self._refresh()
 
         # update location of object if changed
         self.metadata['basedir'] = basedir
@@ -893,7 +901,7 @@ class Group(ContainerCore):
         # finish up and save
         self._build_metadata(**kwargs)
         self._start_logger()
-        self.save()
+        self._save()
 
         # attach members to object
         self._attach_members(**kwargs)

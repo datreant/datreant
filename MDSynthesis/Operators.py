@@ -15,15 +15,47 @@ class Decorators(object):
 
     """
     def parallel(self, f):
+        """Apply the method, f, to all Containers in parallel.
+
+        Uses the ``multiprocessing`` builtin module for separate processes.
+
+        The method `f` must not alter any attributes of the Operator; otherwise,
+        expect race conditions.
+
+        """
+        def wrapper(*args, **kwargs):
+            for container in self.containers:
+                if (not self._datacheck(container)) or force:
+                    p = (Process(target=self._run_container, args=(container,), kwargs=kwargs))
+                    p.start()
+                    joblist.append(p)
+                else:
+                    container._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
+
+            for p in joblist:
+                p.join()
+
+        return wrapper
+
+    def save(self, f):
+        """
+
+        """
+        def wrapper(*args, **kwargs):
+
+
 
 
     def series(self, f):
-        """Apply the method, f, to all Containers loaded into Operator in series.
+        """Apply the method, f, to all Containers in series.
 
         """
-        for container in self.containers:
-            self._run_container(container, **kwargs)
+        def wrapper(*args, **kwargs):
+            con_results = dict()
+            for container in self.containers:
+                con_results[container.name] f(container, *args, **kwargs)
 
+        return wrapper
 
 class OperatorCore(ObjectCore):
     """Core class for all Operators.
@@ -63,16 +95,6 @@ class OperatorCore(ObjectCore):
 
         # run analysis on each container as a separate process
         if parallel:
-            for container in self.containers:
-                if (not self._datacheck(container)) or force:
-                    p = (Process(target=self._run_container, args=(container,), kwargs=kwargs))
-                    p.start()
-                    joblist.append(p)
-                else:
-                    container._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
-
-            for p in joblist:
-                p.join()
         else:
     
         # finish up
