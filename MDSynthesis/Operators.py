@@ -8,7 +8,7 @@ import numpy as np
 import MDAnalysis
 from MDAnalysis.core.log import ProgressMeter
 
-from Core import ObjectCore
+from Core import *
 
 class Decorators(object):
     """Decorators for use by Operators.
@@ -21,6 +21,8 @@ class Decorators(object):
         """Apply the method, f, to all Containers loaded into Operator in series.
 
         """
+        for container in self.containers:
+            self._run_container(container, **kwargs)
 
 
 class OperatorCore(ObjectCore):
@@ -72,8 +74,6 @@ class OperatorCore(ObjectCore):
             for p in joblist:
                 p.join()
         else:
-            for container in self.containers:
-                self._run_container(container, **kwargs)
     
         # finish up
         for container in self.containers:

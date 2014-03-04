@@ -1,3 +1,13 @@
+"""
+MDSynthesis Database
+
+The Database object stores information on all Containers it is made aware of.
+This centralized storage allows Containers to find each other when necessary;
+this is especially important for Groups.
+"""
+
+from Core import *
+
 class Database(ObjectCore):
     """Database object for tracking and coordinating Containers.
     

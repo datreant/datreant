@@ -9,7 +9,7 @@ import pdb
 import shutil
 import MDAnalysis
 
-from Core import ObjectCore
+from Core import *
 
 class ContainerCore(ObjectCore):
     """Core class for all Containers.
