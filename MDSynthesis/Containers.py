@@ -483,11 +483,34 @@ class Sim(ContainerCore):
         else:
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
+
     def __repr__(self):
-        if self._uname in self._cache:
-            out = "{}(Sim): '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
-        else:
-            out = "{}(Sim): '{}' | universe: '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+        #if self._uname in self._cache:
+        #    out = "{}(Sim): '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+        #else:
+        #    out = "{}(Sim): '{}' | universe: '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+
+        title = "{}: '{}'".format(self.__class__.__name__, self.metadata['name'])
+
+        universes = "universes: "
+        for universe in self.metadata['universes'].sort():
+            attached = cached = " "
+            if universe in self._cache:
+                cached = "(cached)"
+            if self._uname == universe:
+                attached = "*"
+
+            universes = universes + "\t\t{} {} {}\n".format(universe, attached, cached)
+
+        data = "data: "
+        for datum in self.metadata['data'].sort():
+            loaded = " "
+            if datum in self.data:
+                loaded = "*"
+
+            data = data + "\t\t{} {} {}\n".format(datum, loaded)
+
+        out = "{}\n{}\n{}".format(title, universes, data)
 
         return out
 
