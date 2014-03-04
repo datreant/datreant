@@ -32,6 +32,7 @@ Core
 
 Containers
 ==========
+Add `notes` metadata item for user-notes.
 
 
 Containers.Sim

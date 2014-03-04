@@ -8,7 +8,178 @@ import numpy as np
 import MDAnalysis
 from MDAnalysis.core.log import ProgressMeter
 
-from Core import *
+from Core import ObjectCore
+
+class Decorators(object):
+    """Decorators for use by Operators.
+
+    """
+    def parallel(self, f):
+
+
+    def series(self, f):
+        """Apply the method, f, to all Containers loaded into Operator in series.
+
+        """
+
+
+class OperatorCore(ObjectCore):
+    """Core class for all Operators.
+
+    The OperatorCore object is not intended to be useful on its own, but
+    instead contains methods and attributes common to all Operator objects.
+
+    """
+    _datafile = datafile
+
+    def __init__(self, *args, **kwargs):
+        """
+        
+        """
+        super(OperatorCore, self).__init__()
+        self.containers = list(args)
+
+    def run(self, **kwargs):
+        """Obtain compute-intensive data, usually timeseries.
+
+        This operation is performed on each Container in series by default. 
+        Use the keyword *parallel* to operate on each Container as a separate
+        process.
+
+        kwargs passed to `:meth:self._run_container()`
+
+        :Keywords:
+            *force*
+                If True, force recollection of data [``False``]
+            *parallel*
+                If True, operate on each Container in parallel as 
+                separate processes [``False``]
+        """
+        joblist = []
+        force = kwargs.pop('force', False)
+        parallel = kwargs.pop('parallel', False)
+
+        # run analysis on each container as a separate process
+        if parallel:
+            for container in self.containers:
+                if (not self._datacheck(container)) or force:
+                    p = (Process(target=self._run_container, args=(container,), kwargs=kwargs))
+                    p.start()
+                    joblist.append(p)
+                else:
+                    container._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
+
+            for p in joblist:
+                p.join()
+        else:
+            for container in self.containers:
+                self._run_container(container, **kwargs)
+    
+        # finish up
+        for container in self.containers:
+            # update analysis list in each object
+            if not self.__class__.__name__ in container.metadata['data']:
+                container.metadata['data'].append(self.__class__.__name__)
+                container.save()
+
+    def analyze(self, **kwargs):
+        """Perform analysis of compute-intensive data.
+
+        Does not require stepping through any trajectories.
+
+        """
+        # make sure data loaded into each container; should use try/catch here
+        self._load()
+
+    def _class(self):
+        """Return class name.
+
+        """
+        return self.__class__.__name__
+
+    def _save(self, container, cont_results):
+        """Save results to main data file.
+
+        :Arguments:
+            *container*
+                container to save data for
+            *cont_results*
+                results for container
+        """
+        outputdir = self._make_savedir(container)
+        datafile = self._datapath(container)
+
+        with self.util.open(datafile, 'wb') as f:
+            cPickle.dump(cont_results, f)
+
+    def _make_savedir(self, container):
+        """Make directory where all output files are placed.
+
+        :Arguments:
+            *container*
+                Container for which to save data 
+
+        :Returns:
+            *outputdir*
+                full path to output directory
+
+        """
+        outputdir = self._outputdir(container)
+        self.util.makedirs(outputdir)
+        return outputdir
+    
+    def _load(self, **kwargs):
+        """Load data for each container if not already loaded.
+
+        :Keywords:
+            *force*
+                If True, force reload of data; default False
+        """
+        force = kwargs.pop('force', False)
+
+        # make sure data loaded into each system; should use try/catch here
+        for container in self.containers:
+            if (not self.__class__.__name__ in container.data.keys()) or force:
+                container.load(self.__class__.__name__)
+    
+    def _datacheck(self, container):
+        """Check if data file already present.
+
+        :Arguments:
+            *container*
+                Container object to check
+                
+        :Returns:
+            *present*
+                True if data is already present; False otherwise
+        """
+        return os.path.isfile(self._datapath(container))
+
+    def _outputdir(self, container):
+        """Return path to output directory for a particular Container.
+
+        :Arguments:
+            *container*
+                Container object
+
+        :Returns:
+            *analysis_path*
+                path to output directory
+        """
+        return os.path.join(container.metadata['basedir'], self.__class__.__name__)
+    
+    def _datapath(self, container):
+        """Return path to main output datafile for a particular Container.
+
+        :Arguments:
+            *container*
+                Container object
+
+        :Returns:
+            *datafile_path*
+                path to datafile
+        """
+        return os.path.join(self._outputdir(container), self._datafile)
 
 class Analysis(OperatorCore):
     """Base class for analysis on individual Sim objects.
