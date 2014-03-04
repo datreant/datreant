@@ -461,7 +461,7 @@ class Sim(ContainerCore):
                 useful if only loadable analysis data are needed or
                 trajectories are unavailable; default False
 
-        :Keywords used on object generation:
+        :Keywords used on object re-generation:
             *attach*
                 name of universe to attach
             *load*
@@ -472,9 +472,10 @@ class Sim(ContainerCore):
         """
         super(Sim, self).__init__()
         
-        self.universe = None                     # universe 'dock'
-        self.selections = dict()                 # AtomGroup selections
-        self._cache = dict()                     # cache path storage
+        self.universe = None      # universe 'dock'
+        self._uname = None        # attached universe name 
+        self.selections = dict()  # AtomGroup selections
+        self._cache = dict()      # cache path storage
 
         if (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
@@ -482,7 +483,14 @@ class Sim(ContainerCore):
         else:
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
-    
+    def __repr__(self):
+        if self._uname in self._cache:
+            out = "{}(Sim): '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+        else:
+            out = "{}(Sim): '{}' | universe: '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+
+        return out
+
     def _generate(self, *args, **kwargs):
         """Generate new Sim object.
          
@@ -647,7 +655,7 @@ class Sim(ContainerCore):
             
         # build and store location so we can delete it later
         location = os.path.abspath(location)
-        loc = os.path.join(location, "{}.{}".format(self.metadata['uuid'], universe))
+        loc = os.path.join(location, "{}.{}".format(self.metadata['uuid'], self._uname))
 
         i = 1
         location = "{}.{}".format(loc, i)
@@ -655,13 +663,11 @@ class Sim(ContainerCore):
             i += 1
             location = "{}.{}".format(loc, i)
 
-        self._cache[universe] = dict()
-        self._cache[universe]['location'] = location
         self.util.makedirs(location)
 
         # build cached structure and trajectory filenames
-        structure = self.metadata['universes'][universe]['structure']
-        trajectory = self.metadata['universes'][universe]['trajectory']
+        structure = self.metadata['universes'][self._uname]['structure']
+        trajectory = self.metadata['universes'][self._uname]['trajectory']
 
         structure_c = os.path.join(location, os.path.basename(structure))
         trajectory_c = [ os.path.join(location, os.path.basename(x)) for x in trajectory ]
@@ -671,17 +677,19 @@ class Sim(ContainerCore):
             self._logger.warning("Aborting cache; cache location same as storage!")
             return
 
-        self._cache[universe]['structure'] = structure_c
-        self._cache[universe]['trajectory'] = trajectory_c
-
         # copy to cache
         self._logger.info("Caching trajectory to {}\nThis may take some time...".format(location))
         shutil.copy2(structure, structure_c)
         for traj, traj_c in zip(trajectory, trajectory_c):
             shutil.copy2(traj, traj_c)
 
+        self._cache[self._uname] = dict()
+        self._cache[self._uname]['location'] = location
+        self._cache[self._uname]['structure'] = structure_c
+        self._cache[self._uname]['trajectory'] = trajectory_c
+
         self.universe = MDAnalysis.Universe(structure_c, *trajectory_c)
-        self._logger.info("Universe '{}' now cached.".format(universe))
+        self._logger.info("Universe '{}' now cached.".format(self._uname))
     
     def decache(self):
         """Remove cached trajectory from cache; re-attach universe to original.
@@ -694,14 +702,15 @@ class Sim(ContainerCore):
             self._logger.info("Universe '{}' not cached.".format(universe))
             return
 
-        self.attach(self._uname, force=True)
-
-        structure = self.metadata['universes'][universe]['structure']
-        trajectory = self.metadata['universes'][universe]['trajectory']
+        structure = self.metadata['universes'][self._uname]['structure']
+        trajectory = self.metadata['universes'][self._uname]['trajectory']
         
-        structure_c = self._cache[universe]['structure']
-        trajectory_c = self._cache[universe]['trajectory']
-        location_c = self._cache[universe]['location']
+        structure_c = self._cache[self._uname]['structure']
+        trajectory_c = self._cache[self._uname]['trajectory']
+        location_c = self._cache[self._uname]['location']
+
+        self._cache.pop(self._uname)
+        self.attach(self._uname, force=True)
 
         # final safety feature before delete
         if (structure_c == structure) or (trajectory_c == trajectory):
@@ -709,8 +718,7 @@ class Sim(ContainerCore):
         else:
             shutil.rmtree(location_c)
 
-        del self._cache[universe]
-        self._logger.info("Universe '{}' de-cached.".format(universe))
+        self._logger.info("Universe '{}' de-cached.".format(self._uname))
         
 class Group(ContainerCore):
     """Base class for a grouping of simulation objects.
