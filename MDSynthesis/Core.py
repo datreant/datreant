@@ -52,7 +52,12 @@ class Attributes(object):
     def __init__(self):
         pass
 
-class Info(object):
+class Aggregator(object)
+    """Core functionality for information aggregators.
+
+    """
+
+class Info(Aggregator):
     """Interface for accessing metadata and status information.
 
     """
@@ -61,17 +66,13 @@ class Info(object):
         """
         self.name = 
 
-class Data(object):
+class Data(Aggregator):
     """Interface for accessing Operator-generated data.
 
     Combines the results from multiple files, since data for a given Operator
     can be split across many pickled files.
 
     """
-
-
-
-
 
 class Bunch(object):
     def __init__(self, odict):
