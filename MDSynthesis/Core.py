@@ -1,5 +1,5 @@
 """
-Base classes for :mod:`MDSynthesis` objects.
+Under-the-hood classes.
 
 """
 import os, sys
@@ -18,7 +18,7 @@ datafile = 'data.pkl'
 dbfile = 'MDSdatabase.yaml'
 
 class ObjectCore(object):
-    """Lowest-level mixin; functionality common to all MDSynthesis objects.
+    """Lowest-level mixin; functionality common to all MDSynthesis user objects.
     
     """
     def __init__(self):
@@ -52,32 +52,10 @@ class Attributes(object):
     def __init__(self):
         pass
 
-class Aggregator(object)
-    """Core functionality for information aggregators.
+class Finder(object):
+    """A Finder has methods for locating specified objects based on attributes.
+
+    This object is used by Databases to find Containers, and vice-versa.
 
     """
 
-class Info(Aggregator):
-    """Interface for accessing metadata and status information.
-
-    """
-    def __init__(self):
-        """
-        """
-        self.name = 
-
-class Data(Aggregator):
-    """Interface for accessing Operator-generated data.
-
-    Combines the results from multiple files, since data for a given Operator
-    can be split across many pickled files.
-
-    """
-
-class Bunch(object):
-    def __init__(self, odict):
-        adict = dict(odict)
-        for key in adict:
-            if type(adict[key]) is dict:
-                adict[key] = RwBunch(adict[key])
-        self.__dict__ = adict
