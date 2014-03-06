@@ -12,12 +12,8 @@ import glob
 from uuid import uuid4
 from multiprocessing import Process
 
-from Files import *
-
-metafile = 'metadata.yaml'
-logfile = 'logfile.log'
-datafile = 'data.pkl'
-dbfile = 'MDSdatabase.yaml'
+import Aggregators
+import Files
 
 class ObjectCore(object):
     """Lowest-level mixin; functionality common to all MDSynthesis user objects.

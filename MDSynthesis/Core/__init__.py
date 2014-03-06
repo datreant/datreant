@@ -13,9 +13,15 @@ by users, but some may be used as interfaces in user-level objects.
 
 """
 
+containerfile = 'container.yaml'
+containerlog = 'container.log'
+
+operatorfile = 'operator.yaml'
+databasefile = 'database.yaml'
+
 __all__ = ['Database', 'Sim', 'Group', 'Analysis', 'MetaAnalysis']
 
 # Bring everything into the Core namespace
-from Aggregators import *
-from Files import *
-from Workers import *
+import Aggregators
+import Files
+import Workers

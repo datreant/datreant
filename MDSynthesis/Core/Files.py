@@ -3,6 +3,9 @@ Classes for datafile syncronization.
 
 """
 
+import Aggregators
+import Workers
+
 class File(object):
     """File object class. Implements needed file locking and syncronization.
 

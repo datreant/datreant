@@ -6,6 +6,8 @@ An Aggregator is designed to be user friendly on its own, but it can be used as
 a backend by a Container, too.
 
 """
+import Files
+import Workers
 
 class Aggregator(object):
     """Core functionality for information aggregators.
