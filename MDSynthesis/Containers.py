@@ -12,19 +12,17 @@ from uuid import uuid4
 import MDAnalysis
 
 import Core
-from Database import Database
+import Database
 
-class ContainerCore(Core.ObjectCore):
+class ContainerCore(Core.Workers.ObjectCore):
     """Core class for all Containers.
 
     The ContainerCore object is not intended to be useful on its own, but
     instead contains methods and attributes common to all Container objects.
 
     """
-    _metafile = Core.metafile
-    _logfile = Core.logfile
-    _datafile = Core.datafile
-    _dbfile = Core.dbfile
+    _containerfile = Core.containerfile
+    _containerlog = Core.containerlog
 
     def __init__(self):
         """
@@ -58,7 +56,7 @@ class ContainerCore(Core.ObjectCore):
         """
         self.util.makedirs(self.metadata['basedir'])
 
-        with self.util.open(os.path.join(self.metadata['basedir'], self._metafile), 'w') as f:
+        with self.util.open(os.path.join(self.metadata['basedir'], self._containerfile), 'w') as f:
             yaml.dump(self.metadata, f)
 
         # update database
@@ -82,7 +80,7 @@ class ContainerCore(Core.ObjectCore):
         """Reloads metadata from file.
 
         """
-        metafile = os.path.join(self.metadata['basedir'], self._metafile)
+        metafile = os.path.join(self.metadata['basedir'], self._containerfile)
         with self.util.open(metafile, 'r') as f:
             self.metadata = yaml.load(f)
 
@@ -183,7 +181,7 @@ class ContainerCore(Core.ObjectCore):
     
             # file handler
             if 'basedir' in self.metadata:
-                logfile = os.path.join(self.metadata['basedir'], self._logfile)
+                logfile = os.path.join(self.metadata['basedir'], self._containerlog)
                 fh = logging.FileHandler(logfile)
                 ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
                 fh.setFormatter(ff)
@@ -309,8 +307,8 @@ class ContainerCore(Core.ObjectCore):
 
         # attempt to open existing database
         database = os.path.abspath(database)
-        if os.path.exists(os.path.join(database, self._dbfile)):
-            db = Database(database)
+        if os.path.exists(os.path.join(database, self._databasefile)):
+            db = Database.Database(database)
         
             if db._handshake():
                 self._logger.info("Handshake success; database in {}".format(db.database['basedir']))
@@ -322,7 +320,7 @@ class ContainerCore(Core.ObjectCore):
                 dbname = None
         # make a new database in location
         elif new:
-            db = Database(database)
+            db = Database.Database(database)
             self.metadata['database'] = db.database['basedir']
             db.add(self)
             self._logger.info("Created new database in {}".format(db.database['basedir']))
@@ -365,12 +363,12 @@ class ContainerCore(Core.ObjectCore):
 
         while (directory != '/') and (not found):
             directory, tail = os.path.split(directory)
-            candidates = glob.glob(os.path.join(directory, self._dbfile))
+            candidates = glob.glob(os.path.join(directory, self._databasefile))
             
             if candidates:
                 self._logger.info("Database candidate located: {}".format(candidates[0]))
                 basedir = os.path.dirname(candidates[0])
-                db = Database(basedir)
+                db = Database.Database(basedir)
                 found = db._handshake()
         
         if not found:

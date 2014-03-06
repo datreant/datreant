@@ -9,7 +9,6 @@ import MDAnalysis
 from MDAnalysis.core.log import ProgressMeter
 
 import Core
-from Database import Database
 
 class Decorators(object):
     """Decorators for use by Operators.
@@ -59,14 +58,14 @@ class Decorators(object):
 
         return wrapper
 
-class OperatorCore(Core.ObjectCore):
+class OperatorCore(Core.Workers.ObjectCore):
     """Core class for all Operators.
 
     The OperatorCore object is not intended to be useful on its own, but
     instead contains methods and attributes common to all Operator objects.
 
     """
-    _datafile = Core.datafile
+    _operatorfile = Core.operatorfile
 
     def __init__(self, *args, **kwargs):
         """
@@ -201,7 +200,7 @@ class OperatorCore(Core.ObjectCore):
             *datafile_path*
                 path to datafile
         """
-        return os.path.join(self._outputdir(container), self._datafile)
+        return os.path.join(self._outputdir(container), self._operatorfile)
 
 class Analysis(OperatorCore):
     """Base class for analysis on individual Sim objects.

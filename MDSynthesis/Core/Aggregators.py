@@ -39,6 +39,8 @@ class Data(Aggregator):
     Combines the results from multiple files, since data for a given Operator
     can be split across many pickled files.
 
+    Used by Operators to save data associated with a Container.
+
     """
 
 class Bunch(object):

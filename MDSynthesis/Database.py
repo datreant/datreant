@@ -6,7 +6,7 @@ this is especially important for Groups.
 """
 import Core
 
-class Database(Core.ObjectCore):
+class Database(Core.Workers.ObjectCore):
     """Database object for tracking and coordinating Containers.
 
     The Database object stores information on all Containers it is made aware of.
@@ -14,9 +14,9 @@ class Database(Core.ObjectCore):
     this is especially important for Groups.
     
     """
-    _metafile = Core.metafile
-    _dbfile = Core.dbfile
-    _logfile = Core.logfile
+    _containerfile = Core.containerfile
+    _databasefile = Core.databasefile
+    _containerlog = Core.containerlog
 
     def __init__(self, database, **kwargs):
         """Generate Database object for the first time, or interface with an existing one.
@@ -31,7 +31,7 @@ class Database(Core.ObjectCore):
         self.database = dict()              # the database data itself
 
         database = os.path.abspath(database)
-        dbfile = os.path.join(database, self._dbfile)
+        dbfile = os.path.join(database, self._databasefile)
         if os.path.exists(dbfile):
             self._regenerate(database, **kwargs)
         else:
@@ -106,12 +106,12 @@ class Database(Core.ObjectCore):
         """
         for container in containers:
             if isinstance(container, basestring) and os.path.isdir(container):
-                with self.util.open(os.path.join(container, self._metafile), 'r') as f:
+                with self.util.open(os.path.join(container, self._containerfile), 'r') as f:
                     meta = yaml.load(f)
                 uuid = meta['uuid']
                 meta['basedir'] = os.path.abspath(container)
                 self.database['containers'][uuid] = meta
-                with self.util.open(os.path.join(container, self._metafile), 'w') as f:
+                with self.util.open(os.path.join(container, self._containerfile), 'w') as f:
                     yaml.dump(meta, f)
             else:
                 uuid = container.metadata['uuid']
@@ -124,7 +124,7 @@ class Database(Core.ObjectCore):
             if not ('basedir' in self.database['containers'][uuid]):
                 container.metadata['basedir'] = self._build_basedir(uuid)
                 self.database['containers'][uuid]['basedir'] = container.metadata['basedir']
-                with self.util.open(os.path.join(container.metadata['basedir'], self._metafile), 'w') as f:
+                with self.util.open(os.path.join(container.metadata['basedir'], self._containerfile), 'w') as f:
                     yaml.dump(self.database['containers'][uuid], f)
                 self.commit()
             else:
@@ -189,14 +189,14 @@ class Database(Core.ObjectCore):
         
         """
         self.util.makedirs(self.database['basedir'])
-        with self.util.open(os.path.join(self.database['basedir'], self._dbfile), 'w') as f:
+        with self.util.open(os.path.join(self.database['basedir'], self._databasefile), 'w') as f:
             yaml.dump(self.database, f)
 
     def refresh(self):
         """Reload contents of database file.
 
         """
-        dbfile = os.path.join(self.database['basedir'], self._dbfile)
+        dbfile = os.path.join(self.database['basedir'], self._databasefile)
         with self.util.open(dbfile, 'r') as f:
             self.database = yaml.load(f)
 
@@ -238,7 +238,7 @@ class Database(Core.ObjectCore):
 
         for i in xrange(len(matches)):
             if basedirs[i]:
-                with self.util.open(os.path.join(basedirs[i], self._metafile), 'r') as f:
+                with self.util.open(os.path.join(basedirs[i], self._containerfile), 'r') as f:
                     self.database['containers'][matches[i]] = yaml.load(f)
         self.commit()
 
@@ -287,7 +287,7 @@ class Database(Core.ObjectCore):
 
         for i in xrange(len(matches)):
             if basedirs[i]:
-                with self.util.open(os.path.join(basedirs[i], self._metafile), 'w') as f:
+                with self.util.open(os.path.join(basedirs[i], self._containerfile), 'w') as f:
                     yaml.dump(self.database['containers'][matches[i]], f)
         self.commit()
 
@@ -311,8 +311,8 @@ class Database(Core.ObjectCore):
             if not self.database['containers'][uuids[i]]['basedir']:
                 continue
 
-            if os.path.exists(os.path.join(self.database['containers'][uuids[i]]['basedir'], self._metafile)):
-                with self.util.open(os.path.join(self.database['containers'][uuids[i]]['basedir'], self._metafile), 'r') as f:
+            if os.path.exists(os.path.join(self.database['containers'][uuids[i]]['basedir'], self._containerfile)):
+                with self.util.open(os.path.join(self.database['containers'][uuids[i]]['basedir'], self._containerfile), 'r') as f:
                     meta = yaml.load(f)
                 if meta['uuid'] == uuids[i]:
                     containers[i] = self.database['containers'][uuids[i]]['basedir']
@@ -338,7 +338,7 @@ class Database(Core.ObjectCore):
         
         """
         for root, dirs, files in os.walk(self.database['basedir']):
-            if self._metafile in files:
+            if self._containerfile in files:
                 dirs = []
                 self.add(root)
         self.commit()
@@ -416,9 +416,9 @@ class Database(Core.ObjectCore):
         self._logger.info("Searching for {} Containers.".format(len(uuids) - uuids.count(None)))
         containers = [None]*len(uuids)
         for root, dirs, files in os.walk(self.database['basedir']):
-            if self._metafile in files:
+            if self._containerfile in files:
                 dirs = []
-                with self.util.open(os.path.join(root, self._metafile), 'r') as f:
+                with self.util.open(os.path.join(root, self._containerfile), 'r') as f:
                     meta = yaml.load(f)
                 try: 
                     i = uuids.index(meta['uuid'])
@@ -426,7 +426,7 @@ class Database(Core.ObjectCore):
                     meta['basedir'] = containers[i]
 
                     # update basedir in Container metadata and in Database
-                    with self.util.open(os.path.join(root, self._metafile), 'w') as f:
+                    with self.util.open(os.path.join(root, self._containerfile), 'w') as f:
                         yaml.dump(meta, f)
                     self.database['containers'][uuids[i]]['basedir'] = containers[i]
                     self._logger.info("Found: {} ({})\nLocation: {}".format(meta['name'], uuids[i], meta['basedir']))
@@ -476,7 +476,7 @@ class Database(Core.ObjectCore):
             self._logger.setLevel(logging.INFO)
 
             # file handler
-            logfile = os.path.join(basedir, self._logfile)
+            logfile = os.path.join(basedir, self._containerlog)
             fh = logging.FileHandler(logfile)
             ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
             fh.setFormatter(ff)
