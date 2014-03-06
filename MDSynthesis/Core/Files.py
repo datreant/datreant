@@ -44,14 +44,26 @@ class File(object):
         os.remove(self.lockname)
 
 class ContainerFile(File):
-    """Metadata file object; syncronized access to metadata files.
+    """Container file object; syncronized access to Container data.
 
     """
 
 class OperatorFile(File):
-    """Datafile file object; syncronized access to datafiles.
+    """Operator file object; syncronized access to Operator data.
 
     """
 
+class DatabaseFile(File):
+    """Database file object; syncronized access to Database data.
 
+    """
+
+class DataFile(object):
+    """Universal datafile interface.
+
+    Allows for safe reading and writing of datafiles, which can be of a wide
+    array of formats. Handles the details of conversion from pythonic data
+    structure to persistent file form.
+
+    """
 
