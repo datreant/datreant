@@ -7,7 +7,7 @@ a backend by a Container, too.
 
 """
 
-class Aggregator(object)
+class Aggregator(object):
     """Core functionality for information aggregators.
 
     """
@@ -19,7 +19,7 @@ class Info(Aggregator):
     def __init__(self):
         """
         """
-        self.name = 
+        self.name = None
 
 class SimInfo(Info):
     """Sim-specific bindings.

@@ -12,6 +12,8 @@ import glob
 from uuid import uuid4
 from multiprocessing import Process
 
+from Files import *
+
 metafile = 'metadata.yaml'
 logfile = 'logfile.log'
 datafile = 'data.pkl'
@@ -26,6 +28,13 @@ class ObjectCore(object):
 
         """
         self.util = Utilities()
+
+class Finder(object):
+    """A Finder has methods for locating specified objects based on attributes.
+
+    This object is used by Databases to find Containers, and vice-versa.
+
+    """
 
 class Utilities(object):
     """Lowest level utilities; contains all methods that are common to every 
@@ -51,11 +60,4 @@ class Attributes(object):
     """
     def __init__(self):
         pass
-
-class Finder(object):
-    """A Finder has methods for locating specified objects based on attributes.
-
-    This object is used by Databases to find Containers, and vice-versa.
-
-    """
 

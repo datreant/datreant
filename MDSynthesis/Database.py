@@ -1,20 +1,22 @@
 """
-MDSynthesis Database
-
 The Database object stores information on all Containers it is made aware of.
 This centralized storage allows Containers to find each other when necessary;
 this is especially important for Groups.
+
 """
+import Core
 
-from Core import *
-
-class Database(ObjectCore):
+class Database(Core.ObjectCore):
     """Database object for tracking and coordinating Containers.
+
+    The Database object stores information on all Containers it is made aware of.
+    This centralized storage allows Containers to find each other when necessary;
+    this is especially important for Groups.
     
     """
-    _metafile = metafile
-    _dbfile = dbfile
-    _logfile = logfile
+    _metafile = Core.metafile
+    _dbfile = Core.dbfile
+    _logfile = Core.logfile
 
     def __init__(self, database, **kwargs):
         """Generate Database object for the first time, or interface with an existing one.
@@ -485,4 +487,3 @@ class Database(ObjectCore):
             cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
-

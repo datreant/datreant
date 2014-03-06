@@ -8,7 +8,8 @@ import numpy as np
 import MDAnalysis
 from MDAnalysis.core.log import ProgressMeter
 
-from Core import *
+import Core
+from Database import Database
 
 class Decorators(object):
     """Decorators for use by Operators.
@@ -35,14 +36,15 @@ class Decorators(object):
             for p in joblist:
                 p.join()
 
-        return wrapper
-
+            return wrapper
+    
     def save(self, f):
         """
-
+        
         """
         def wrapper(*args, **kwargs):
-
+        
+            return
 
 
 
@@ -53,18 +55,18 @@ class Decorators(object):
         def wrapper(*args, **kwargs):
             con_results = dict()
             for container in self.containers:
-                con_results[container.name] f(container, *args, **kwargs)
+                con_results[container.name] = f(container, *args, **kwargs)
 
         return wrapper
 
-class OperatorCore(ObjectCore):
+class OperatorCore(Core.ObjectCore):
     """Core class for all Operators.
 
     The OperatorCore object is not intended to be useful on its own, but
     instead contains methods and attributes common to all Operator objects.
 
     """
-    _datafile = datafile
+    _datafile = Core.datafile
 
     def __init__(self, *args, **kwargs):
         """
@@ -94,8 +96,6 @@ class OperatorCore(ObjectCore):
         parallel = kwargs.pop('parallel', False)
 
         # run analysis on each container as a separate process
-        if parallel:
-        else:
     
         # finish up
         for container in self.containers:

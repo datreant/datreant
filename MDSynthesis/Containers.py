@@ -3,33 +3,37 @@ Basic Container objects: the organizational units for :mod:`MDSynthesis`.
 
 """
 
-import os
+import os, sys
 import yaml
-import pdb
 import shutil
+import logging
+from uuid import uuid4
+
 import MDAnalysis
 
-from Core import *
+import Core
+from Database import Database
 
-class ContainerCore(ObjectCore):
+class ContainerCore(Core.ObjectCore):
     """Core class for all Containers.
 
     The ContainerCore object is not intended to be useful on its own, but
     instead contains methods and attributes common to all Container objects.
 
     """
-    _metafile = metafile
-    _logfile = logfile
-    _datafile = datafile
-    _dbfile = dbfile
+    _metafile = Core.metafile
+    _logfile = Core.logfile
+    _datafile = Core.datafile
+    _dbfile = Core.dbfile
 
     def __init__(self):
         """
         
         """
         super(ContainerCore, self).__init__()
+
         self.metadata = dict()              # information about object; defines base object
-        self.data = dict()              # analysis data 'modular dock'
+        self.data = dict()                  # analysis data 'modular dock'
     
     def _save(self, *args):
         """Save Container metadata and, if desired, analysis data instances.
@@ -251,8 +255,12 @@ class ContainerCore(ObjectCore):
 
         if dbname:
             self._logger.info("Successfully connected to database {}.".format(dbname))
+            success = True
         else:
             self._logger.info("Could not connect to a database.".format(dbname))
+            success = False
+
+        return success
             
     def _restore_database(self, database, **kwargs):
         """When Database can't be reached, find or make a new one.
@@ -319,6 +327,9 @@ class ContainerCore(ObjectCore):
             db.add(self)
             self._logger.info("Created new database in {}".format(db.database['basedir']))
             dbname = db.database['name']
+        else:
+            self._logger.warning("Database not found in location.")
+            dbname = None
     
         return dbname
 
@@ -485,6 +496,10 @@ class Sim(ContainerCore):
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
 
+        # quick fix for the case in which Database not found on generation
+        if not 'database' in self.metadata:
+            return None
+
     def __repr__(self):
         if self._uname in self._cache:
             out = "{}(Sim): '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
@@ -532,24 +547,26 @@ class Sim(ContainerCore):
 
         # generate metadata items
         self._build_metadata(**kwargs)
-
         self._start_logger()
 
         # find or generate database
         database = kwargs.pop('database', None)
-        self._init_database(database, locate=True)
+        success = self._init_database(database, locate=True)
 
-        # record universe
-        self.metadata['universes'] = dict()
-        self.add('main', *args, **kwargs)
-            
-        # finish up and save
-        self._save()
-        self._start_logger()
+        if success:
+            # record universe
+            self.metadata['universes'] = dict()
+            self.add('main', *args, **kwargs)
+                
+            # finish up and save
+            self._save()
+            self._start_logger()
 
-        # finally, attach universe to object
-        if not detached:
-            self.attach(uname)
+            # finally, attach universe to object
+            if not detached:
+                self.attach(uname)
+        else:
+            self._logger.info("Terminating generation. Specify a database location.")
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.

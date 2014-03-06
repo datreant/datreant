@@ -96,7 +96,9 @@ in MDSynthesis are designed with easy inheritance in mind.
 
 __version__ = "0.1.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 
-__all__ = ['Sim', 'SimSet', 'Analysis', 'AnalySet']
+__all__ = ['Sim', 'Group', 'Analysis', 'MetaAnalysis']
 
 # Bring some often used objects into the current namespace
-from Containers import Sim, Group, Database
+from Database import Database
+from Containers import Sim, Group
+from Operators import Analysis, MetaAnalysis

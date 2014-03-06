@@ -2,7 +2,6 @@
 Classes for datafile syncronization. 
 
 """
-from Core import *
 
 class File(object):
     """File object class. Implements needed file locking and syncronization.
@@ -41,13 +40,12 @@ class File(object):
         self.lockfile.close()
         os.remove(self.lockname)
 
-class MetaFile(File):
+class ContainerFile(File):
     """Metadata file object; syncronized access to metadata files.
 
     """
 
-
-class DataFile(File):
+class OperatorFile(File):
     """Datafile file object; syncronized access to datafiles.
 
     """
