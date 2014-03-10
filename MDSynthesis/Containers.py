@@ -282,7 +282,7 @@ class Sim(ContainerCore):
             self._build_selections()
             self._logger.info("Atom selections generated.".format(self.metadata['name'], universe))
         else:
-            self._logger.info("Skipping re-attach of {}...".format(i))
+            self._logger.info("Skipping re-attach of {}...".format(universe))
 
     def detach(self):
         """Detach universe.

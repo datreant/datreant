@@ -433,7 +433,8 @@ class OperatorCore(ObjectCore):
                 p.join()
         else:
             for container in self.containers:
-                self._run_container(container, **kwargs)
+                if (not self._datacheck(container)) or force:
+                    self._run_container(container, **kwargs)
     
         # finish up
         for container in self.containers:
