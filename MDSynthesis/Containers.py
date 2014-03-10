@@ -133,6 +133,14 @@ class Sim(ContainerCore):
         else:
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
+
+    def __repr__(self):
+        if self._uname in self._cache:
+            out = "{}: '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+        else:
+            out = "{}: '{}' | universe: '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+
+        return out
     
     def _generate(self, *args, **kwargs):
         """Generate new Sim object.
@@ -377,8 +385,7 @@ class Sim(ContainerCore):
                     selection[key] = selection2atomGroup(selection[key])
             elif isinstance(selection, basestring):
                 agroup = self.universe.selectAtoms(selection)
-
-            return agroup
+                return agroup
 
         self.selections = selection2atomGroup(self.metadata['selections'])
 
@@ -392,7 +399,7 @@ class Sim(ContainerCore):
                 desired name of object, used for logging and referring to
                 object in some analyses; default None
         """
-        super(Sim, self).__init__(*args, **kwargs)
+        super(Sim, self)._build_metadata(**kwargs)
 
         # building core items
         uuid = self._generate_uuid()
