@@ -435,6 +435,8 @@ class OperatorCore(ObjectCore):
             for container in self.containers:
                 if (not self._datacheck(container)) or force:
                     self._run_container(container, **kwargs)
+                else:
+                    container._logger.info('{} data already present; skipping data collection.'.format(self.__class__.__name__))
     
         # finish up
         for container in self.containers:
