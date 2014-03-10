@@ -1086,5 +1086,5 @@ class Bunch(object):
         adict = dict(odict)
         for key in adict:
             if type(adict[key]) is dict:
-                adict[key] = RwBunch(adict[key])
+                adict[key] = Bunch(adict[key])
         self.__dict__ = adict

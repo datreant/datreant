@@ -94,6 +94,12 @@ class Sim(ContainerCore):
                 directory tree will be searched upward until one or none is found
             *universe*
                 desired name to associate with first universe [``main``]
+            *selections*
+                dictionary with selection strings to be applied to structure; 
+                these will be used to make persistent AtomGroups; the dictionary
+                may be recursive, i.e. items may be more dictionaries; the
+                structure of this dictionary will be reflected in the Sim's
+                selections attribute
             *category*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
@@ -105,7 +111,7 @@ class Sim(ContainerCore):
                 useful if only loadable analysis data are needed or
                 trajectories are unavailable; default False
 
-        :Keywords used on object generation:
+        :Keywords used on object re-generation:
             *attach*
                 name of universe to attach
             *load*
@@ -119,6 +125,7 @@ class Sim(ContainerCore):
         self.universe = None                     # universe 'dock'
         self.selections = dict()                 # AtomGroup selections
         self._cache = dict()                     # cache path storage
+        self._uname = None                       # name of loaded universe
 
         if (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
@@ -137,7 +144,6 @@ class Sim(ContainerCore):
 
         # generate metadata items
         self._build_metadata(**kwargs)
-
         self._start_logger()
 
         # find or generate database
@@ -147,6 +153,9 @@ class Sim(ContainerCore):
         # record universe
         self.metadata['universes'] = dict()
         self.add('main', *args, **kwargs)
+
+        # record selections
+        self.metadata['selections'] = kwargs.pop('selections', dict())
             
         # finish up and save
         self.save()
@@ -262,6 +271,8 @@ class Sim(ContainerCore):
 
             self._uname = universe
             self._logger.info("'{}' attached to universe '{}'.".format(self.metadata['name'], universe))
+            self._build_selections()
+            self._logger.info("Atom selections generated.".format(self.metadata['name'], universe))
         else:
             self._logger.info("Skipping re-attach of {}...".format(i))
 
@@ -355,6 +366,42 @@ class Sim(ContainerCore):
 
         del self._cache[universe]
         self._logger.info("Universe '{}' de-cached.".format(universe))
+
+    def _build_selections(self):
+        """Build selections attribute from selection strings stored in metadata.
+
+        """
+        def selection2atomGroup(selection):
+            if isinstance(selection, dict):
+                for key in selection:
+                    selection[key] = selection2atomGroup(selection[key])
+            elif isinstance(selection, basestring):
+                agroup = self.universe.selectAtoms(selection)
+
+            return agroup
+
+        self.selections = selection2atomGroup(self.metadata['selections'])
+
+    def _build_metadata(self, **kwargs):
+        """Build metadata. Runs each time object is generated.
+        
+        Only adds keys; never modifies existing ones.
+
+        :Keywords:
+            *name*
+                desired name of object, used for logging and referring to
+                object in some analyses; default None
+        """
+        super(Sim, self).__init__(*args, **kwargs)
+
+        # building core items
+        uuid = self._generate_uuid()
+        attributes = {'selections': kwargs.pop('selections', dict()),
+                      }
+
+        for key in attributes:
+            if not key in self.metadata:
+                self.metadata[key] = attributes[key]
         
 class Group(ContainerCore):
     """Base class for a grouping of simulation objects.
