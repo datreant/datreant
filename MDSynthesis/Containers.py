@@ -464,7 +464,7 @@ class Group(ContainerCore):
             *all*
                 if True, unload all data instances [``False``]
         """
-        for member in self.members.values():
+        for member in self.members:
             member.load(*args)
 
     def unload_members(self, *args):
@@ -478,7 +478,7 @@ class Group(ContainerCore):
             *all*
                 if True, unload all data instances from each member [``False``]
         """
-        for member in self.members.values():
+        for member in self.members:
             member.unload(*args)
 
     def add(self, *args): 
@@ -490,8 +490,9 @@ class Group(ContainerCore):
         """
         for container in args:
             self.metadata['members'].append({'name': system.metadata['name'],
-                                             'type': system.metadata['type'],
-                                             'basedir': system.metadata['basedir']
+                                             'class': system.metadata['class'],
+                                             'basedir': system.metadata['basedir'],
+                                             'uuid': system.metadata['uuid']
                                             })
             self.members.append(system)
         self.save()
@@ -501,19 +502,19 @@ class Group(ContainerCore):
 
         :Arguments:
             *args*
-                uuid of member in self.members to be removed from Group
+                index of member in self.members to be removed from Group
         """
-        for uuid in args:
-            self.metadata['members'].pop(uuid)
-            self.members.pop(uuid)
+        for index in args:
+            self.metadata['members'].pop(index)
+            self.members.pop(index)
         self.save()
 
     def _update_members(self):
         """Update member attributes.
 
         """
-        for container in self.members:
-            self.metadata['members'][container]['name'] = self.members[container].metadata['name']
+        for i in xrange(len(self.members)):
+            self.metadata['members'][i]['name'] = self.members[i].metadata['name']
 
         self.save()
             
@@ -530,15 +531,8 @@ class Group(ContainerCore):
         self._init_database(database, locate=True)
 
         # build list of Group members
-        self.metadata['members'] = dict()
-        for container in args:
-            self.metadata['members'][container.metadata['uuid']] = {'name': container.metadata['name'],
-                                                                    'class': container.metadata['class'],
-                                                                    'basedir': container.metadata['basedir']
-                                                                   }
-
-        # attach members to object
-        self.members = args
+        self.metadata['members'] = list()
+        self.add(*args)
 
         # finish up and save
         self.save()
@@ -572,11 +566,10 @@ class Group(ContainerCore):
         Keyword arguments passed to Sim-derived object __init__().
 
         """
-        self.members = dict()
-        for key in self.metadata['members']:
-            entry = self.metadata['members'][key]
-            Simtype = self._simtype(entry['class'])
-            self.members[key] = Simtype(entry['basedir'], **kwargs)
+        self.members = list()
+        for member in self.metadata['members']:
+            Simtype = self._simtype(member['class'])
+            self.members.append(Simtype(member['basedir'], **kwargs))
     
     def _simtype(self, typestring):
         """Return Sim or Sim-derived object based on type recorded in object
