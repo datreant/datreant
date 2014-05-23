@@ -19,6 +19,7 @@ Core
       metadata, it refreshes its copy first
 
 + add class `DBFile` for database.
+    + every time database calls for attribute, gets re-read.
 
 + add class `Datafile` for individual datafiles.
 
