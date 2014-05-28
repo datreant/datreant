@@ -89,12 +89,12 @@ The Sim class can also be used as a base class for a container that is more
 specific to the type of simulations one is working with. All classes
 in MDSynthesis are designed with easy inheritance in mind.
 
-.. SeeAlso:: :class:`MDAnalysis.core.AtomGroup.Universe` for details
+.. SeeAlso:: :class:`MDSynthesis.Containers.Sim` for details
 
 
 """
 
-__version__ = "0.1.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
+__version__ = "0.2.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 
 __all__ = ['Sim', 'Group', 'Analysis', 'MetaAnalysis']
 
