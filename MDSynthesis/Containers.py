@@ -198,7 +198,7 @@ class Sim(ContainerCore):
         if attach:
             self.attach(attach)
     
-    def add(self, name, *args, **kwargs):
+    def add(self, uname, *args, **kwargs):
         """Add a universe to the Sim.
 
         It is often useful to convert a raw MD trajectory into forms that are
@@ -211,7 +211,7 @@ class Sim(ContainerCore):
         This method adds one universe at a time. 
 
         :Arguments:
-            *name*
+            *uname*
                 identifier to use for the new universe
             *args*
                 arguments normally given to ``MDAnalysis.Universe``
@@ -221,13 +221,13 @@ class Sim(ContainerCore):
 
         """
         system = MDAnalysis.Universe(*args, **kwargs)
-        self.metadata['universes'][name] = dict()
+        self.metadata['universes'][uname] = dict()
 
-        self.metadata['universes'][name]['structure'] = os.path.abspath(system.filename)
+        self.metadata['universes'][uname]['structure'] = os.path.abspath(system.filename)
         try:
-            self.metadata['universes'][name]['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
+            self.metadata['universes'][uname]['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
         except AttributeError:
-            self.metadata['universes'][name]['trajectory'] = [os.path.abspath(system.trajectory.filename)]
+            self.metadata['universes'][uname]['trajectory'] = [os.path.abspath(system.trajectory.filename)]
     
         self.save()
 
@@ -445,6 +445,7 @@ class Group(ContainerCore):
                 
         """
         super(Group, self).__init__()
+        self.members = list()           # member list
 
         if isinstance(args[0], basestring):
         # if first arg is a directory string, load existing object
@@ -489,12 +490,12 @@ class Group(ContainerCore):
                 Sim-derived objects to add to Group
         """
         for container in args:
-            self.metadata['members'].append({'name': system.metadata['name'],
-                                             'class': system.metadata['class'],
-                                             'basedir': system.metadata['basedir'],
-                                             'uuid': system.metadata['uuid']
+            self.metadata['members'].append({'name': container.metadata['name'],
+                                             'class': container.metadata['class'],
+                                             'basedir': container.metadata['basedir'],
+                                             'uuid': container.metadata['uuid']
                                             })
-            self.members.append(system)
+            self.members.append(container)
         self.save()
 
     def remove(self, *args):
@@ -566,7 +567,6 @@ class Group(ContainerCore):
         Keyword arguments passed to Sim-derived object __init__().
 
         """
-        self.members = list()
         for member in self.metadata['members']:
             Simtype = self._simtype(member['class'])
             self.members.append(Simtype(member['basedir'], **kwargs))
