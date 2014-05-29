@@ -10,8 +10,8 @@ For a basic installation just type the command::
 from setuptools import setup
 
 setup(name='MDSynthesis',
-      version='0.2.0-dev',
-      author='David Dotson',
+      version='0.3.0-dev',
+      author='David Dotson', 
       author_email='dotsdl@gmail.com',
       packages=['MDSynthesis'],
       license='GPL 2',

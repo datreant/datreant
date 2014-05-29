@@ -94,7 +94,7 @@ in MDSynthesis are designed with easy inheritance in mind.
 
 """
 
-__version__ = "0.2.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
+__version__ = "0.3.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 
 __all__ = ['Sim', 'Group', 'Analysis', 'MetaAnalysis']
 
