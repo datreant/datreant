@@ -352,3 +352,8 @@ class MetaAnalysis(OperatorCore):
                 Group (or Group-derived) objects to analyze
         """
         super(MetaAnalysis, self).__init__(*args, **kwargs)
+
+class MacroAnalysis(OperatorCore):
+    """Base class for analysis on SuperGroup objects.
+    
+    """

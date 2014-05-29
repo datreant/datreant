@@ -19,8 +19,6 @@ containerlog = 'container.log'
 operatorfile = 'operator.yaml'
 databasefile = 'database.yaml'
 
-__all__ = ['Database', 'Sim', 'Group', 'Analysis', 'MetaAnalysis']
-
 # Bring everything into the Core namespace
 import Aggregators
 import Files

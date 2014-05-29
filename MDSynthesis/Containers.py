@@ -767,7 +767,7 @@ class Sim(ContainerCore):
         self._logger.info("Universe '{}' de-cached.".format(self._uname))
         
 class Group(ContainerCore):
-    """Base class for a grouping of simulation objects.
+    """A grouping of Sim objects.
 
     """
     def __init__(self, *args, **kwargs):
@@ -954,3 +954,7 @@ class Group(ContainerCore):
 
         """
 
+class SuperGroup(ContainerCore):
+    """A grouping of Group objects.
+    
+    """

@@ -100,5 +100,5 @@ __all__ = ['Sim', 'Group', 'Analysis', 'MetaAnalysis']
 
 # Bring some often used objects into the current namespace
 from Database import Database
-from Containers import Sim, Group
-from Operators import Analysis, MetaAnalysis
+from Containers import Sim, Group, SuperGroup
+from Operators import Analysis, MetaAnalysis, MacroAnalysis
