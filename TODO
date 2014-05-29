@@ -2,6 +2,54 @@
 TODO List
 =============
 
+Overall scheme
+==============
+Sean Seyler and and I are collaborating to make this package work well as the
+lower-level infrastructure for two different purposes, and it will fucking rock.
+
+To make it easier to build, I propose we split the workload for now as follows:
+
+    + Containers: I will focus on Container functionality. This is the most 
+        well-developed at the moment, and there is a lot of existing code to
+        wade through to improve them.
+
+    + Operators: Sean is exceptional at optimization and algorithm design, and
+        the Operators need plenty of design TLC. They are mostly just skeletons at
+        present.  I suggest this be his area of expertise. Operators take in
+        Containers as input, efficiently perform work on them, then give the
+        Container the resulting data (in whatever form; python structures, plots,
+        etc.) to store away.
+
+    + Database: This is basically the highest level Container of the whole scheme.
+        It allows Containers to find each other when moved, and will allow the user
+        to summon whole sets of Containers using selection queries (not implemented
+        yet). I will focus on this, since it does not need to know anything about
+        Operators but works intimately with Containers.
+
+    + Core.Files: We will both need to brainstorm on building these file interfaces.
+        The idea is that any change to a file class is immediately reflected in the
+        file on disk, and vice-versa. The file class state should always
+        reflect the file on disk's state, even if the file on disk is being
+        altered by other instances of the file class at the same time. This
+        will require some special magick.
+
+    + Core.Aggregators: These classes serve as interfaces to file data, possibly
+        from multiple files at once. I will focus my efforts on the Container-specific
+        aggregators (Info and its derivatives), while Sean will need to consider how
+        the Data operator behaves given the form of Operator-generated data files.
+        This is a bit of a gray area, because in principle the Containers will "have
+        a" Data aggregator that serves as the interface to loaded data, and Operators
+        will interact with this in dumping their own results to the Container.
+
+    + Core.Workers: These are the grab-bag classes. The ObjectCore is a mixin for
+        all user-level objects (Containers and Operators). Finder will be a class
+        that specializes in finding missing Databases and Containers in the filesystem.
+        It will be called by these classes when a persistent object can't be found.
+        Utilities contains functions used frequently by higher-level class methods;
+        they should not ever be needed by a user; each object has one. Each
+        Container will also "have a" Attributes object, which is a safe space
+        for users to define their own attributes of a Container that guarantees
+        functionality won't be broken.
 
 Core
 ====
@@ -42,10 +90,11 @@ Containers.Sim
 Containers.Group
 ~~~~~~~~~~~~~~~~~
 
+Containers.SuperGroup
+~~~~~~~~~~~~~~~~~~~~~
 
 Operators
-~~~~~~~~~
-
+=========
 
 Operators.Anaysis
 ~~~~~~~~~~~~~~~~~
@@ -54,14 +103,22 @@ Operators.Anaysis
   in a meaningful way; current one is meant for serial use.
 
 + rethink the basic paradigm with decorators
-    + could decorators that corresponds to timeseries, parallelism, or
-      mix-n-match; basically, one only needs to write an analysis routine with
+    + could have decorators that corresponds to timeseries, parallelism, or
+    mix-n-match; basically, one only needs to write an analysis routine with
       minimal criteria, then decorate it!
     + will have to think hard on this to avoid too much magic that it
       obfuscates function.
 
-Ideastorm
-==========
+Operators.MetaAnaysis
+~~~~~~~~~~~~~~~~~~~~~
+
+Operators.MacroAnaysis
+~~~~~~~~~~~~~~~~~~~~~
+
+
+Ideastorm (anything from pie-in-sky to random musing)
+=====================================================
+
 Classes for handling md systems that are still being run?
 + integration with GromacsWrapper?
 + globus-toolkit methods and/or classes?
@@ -74,6 +131,7 @@ Markov analysis class?
 
 + Create VMD operator that can take multiple objects and load all of them
   at once.
+
 Globus Toolkit!
 + build an Operator that can perform globus tasks on container objects
 

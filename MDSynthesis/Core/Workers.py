@@ -1,5 +1,6 @@
 """
-Under-the-hood classes.
+Under-the-hood classes. Mostly a grab-bag of needed functionality,
+and possibly a bit messy.
 
 """
 import os, sys
