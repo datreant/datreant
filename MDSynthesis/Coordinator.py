@@ -6,6 +6,11 @@ this is especially important for Groups.
 """
 import Core
 
+class Coordinator(Core.Workers.ObjectCore):
+    """User-level macrocontroller for all Containers in the database.
+    
+    """
+
 class Database(Core.Workers.ObjectCore):
     """Database object for tracking and coordinating Containers.
 
