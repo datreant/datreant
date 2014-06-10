@@ -44,7 +44,7 @@ class Utilities(object):
         Arguments and keywords are passed directly to the open() builtin.
     
         """
-        F = File(*args, **kwargs)
+        F = Files.File(*args, **kwargs)
         return F
     
     def makedirs(self, p):

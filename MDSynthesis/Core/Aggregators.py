@@ -9,7 +9,7 @@ a backend by a Container, too.
 import Files
 import Workers
 
-class Aggregator(object):
+class Aggregator(Core.Workers.ObjectCore):
     """Core functionality for information aggregators.
 
     """
@@ -20,6 +20,8 @@ class Database(Aggregator):
     The Database object stores information on all Containers it is made aware of.
     This centralized storage allows Containers to find each other when necessary;
     this is especially important for Groups.
+
+    This object is the interface of Container objects to the database file.
     
     """
     _containerfile = Core.containerfile
@@ -36,7 +38,7 @@ class Database(Aggregator):
 
         """
         super(Database, self).__init__()
-        self.database = dict()              # the database data itself
+        self._database = dict()              # the database data itself
 
         database = os.path.abspath(database)
         dbfile = os.path.join(database, self._databasefile)
@@ -49,7 +51,7 @@ class Database(Aggregator):
         """Generate a new database.
         
         """
-        self.database['basedir'] = database
+        self._database['basedir'] = database
         self._build_metadata()
         self._build_attributes()
 
