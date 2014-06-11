@@ -15,9 +15,9 @@ by users, but some may be used as interfaces in user-level objects.
 
 containerfile = 'container.yaml'
 containerlog = 'container.log'
+datafile = 'data.yaml'
 
-operatorfile = 'operator.yaml'
-databasefile = 'database.yaml'
+coordinatorfile = 'coordinator.yaml'
 
 # Bring everything into the Core namespace
 import Aggregators

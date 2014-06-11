@@ -188,14 +188,39 @@ class ContainerFile(File):
            *name*
               user-given name of Container object
            *categories*
-              user-given dictionary
-
+              user-given dictionary with custom keys and values; used to
+              give distinguishing characteristics to object for search
+           *tags*
+              user-given list with custom elements; used to give distinguishing
+              characteristics to object for search
+           *details*
+              user-given string for object notes
         """
+
+        filename = os.path.join(location, containerfile)
+
         super(ContainerFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger)
 
     def create(self):
         """Build common data structure elements.
 
+        :Arguments:
+           *location*
+              directory that represents the Container
+           *logger*
+              Container's logger instance
+           *classname*
+              Container's class name
+           *name*
+              user-given name of Container object
+           *categories*
+              user-given dictionary with custom keys and values; used to
+              give distinguishing characteristics to object for search
+           *tags*
+              user-given list with custom elements; used to give distinguishing
+              characteristics to object for search
+           *details*
+              user-given string for object notes
         """
         self.data = {}
 
@@ -225,13 +250,6 @@ class ContainerFile(File):
         else:
             self.data['details'] = str()
 
-
-    def _generate_uuid(self):
-        """Generate a 'unique' identifier.
-
-        """
-        return str(uuid4())
-
 class SimFile(ContainerFile):
     """Main Sim state file.
 
@@ -259,16 +277,6 @@ class SimFile(ContainerFile):
 
         """
         super(SimFile, self).create()
-
-        attributes = {'uuid': uuid,
-                      'name': kwargs.pop('name', self.__class__.__name__),
-                      'data': list(),
-                      'class': self.__class__.__name__,
-                      'categories': kwargs.pop('categories', dict()),
-                      'tags': kwargs.pop('tags', list()),
-                      'details': kwargs.pop('details', str())
-                      }
-
 
 
 
