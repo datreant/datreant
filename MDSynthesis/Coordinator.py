@@ -22,5 +22,14 @@ class Coordinator(Core.Workers.ObjectCore):
               found, a new one is generated
 
         """
-        pass
 
+        # initialize aggregators
+        self.add =
+        self.remove = 
+        self.move = 
+
+
+    def select(self)
+        """
+
+    

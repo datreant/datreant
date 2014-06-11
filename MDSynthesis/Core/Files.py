@@ -8,7 +8,7 @@ import Workers
 
 class File(object):
     """File object class. Implements file locking and syncronization.
-
+    
     """
     def __init__(self, filename, reader, writer, logger=None):
         """Create File instance for interacting with file on disk.
@@ -44,7 +44,7 @@ class File(object):
         self.read(self.filename)
 
     def read(self):
-        """Read contents of file into python representation.
+        """Read contents of file into data structure.
 
         :Returns:
            *success*
@@ -62,7 +62,7 @@ class File(object):
         return True
 
     def write(self):
-        """Write python representation to file.
+        """Write data structure to file.
     
         :Returns:
            *success*
@@ -105,7 +105,7 @@ class File(object):
     def unlock(self):
         """Remove exclusive lock on file.
 
-        Before removing the lock, checks that the python representation is
+        Before removing the lock, checks that the data structure is
         the same as what is on file.
 
         :Returns:
@@ -131,7 +131,6 @@ class File(object):
             datatemp = self.reader(f)
         
         return self.data == datatemp
-        
 
 class ContainerFile(File):
     """Container file object; syncronized access to Container data.
