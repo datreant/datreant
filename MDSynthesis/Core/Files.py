@@ -10,7 +10,7 @@ class File(object):
     """File object class. Implements file locking and syncronization.
 
     """
-    def __init__(self, filename, reader, writer):
+    def __init__(self, filename, reader, writer, logger=None):
         """Create File instance for interacting with file on disk.
 
         The File object keeps its own cached version of a data structure
@@ -31,6 +31,8 @@ class File(object):
               function used to translate file into data structure
            *writer*
               function used to tranlate data structure into file
+           *logger*
+              logger to send warnings and errors to
 
         """
         self.filename = filename
@@ -59,7 +61,7 @@ class File(object):
         
         return True
 
-    def write(self, writer):
+    def write(self):
         """Write python representation to file.
     
         :Returns:
@@ -118,15 +120,17 @@ class File(object):
 
         return success
 
-    def compare(self, reader):
+    def compare(self):
         """Compare data structure with file contents.
 
         :Returns:
            *same*
               True if file synchronized with data structure
         """
-        datatemp = 
-
+        with open(self.filename, 'r') as f:
+            datatemp = self.reader(f)
+        
+        return self.data == datatemp
         
 
 class ContainerFile(File):
