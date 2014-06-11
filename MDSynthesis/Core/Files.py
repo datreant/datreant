@@ -13,7 +13,7 @@ class File(object):
     """File object base class. Implements file locking and syncronization.
     
     """
-    def __init__(self, filename, reader, writer, datastruct=None, logger=None):
+    def __init__(self, filename, reader, writer, datastruct=None, logger=None, **kwargs):
         """Create File instance for interacting with file on disk.
 
         The File object keeps its own cached version of a data structure
@@ -44,6 +44,8 @@ class File(object):
            *logger*
               logger to send warnings and errors to
 
+        .. Note:: kwargs passed to :meth:`create`
+
         """
         self.filename = filename
         self.lockname = "{}.lock".format(self.file.name) 
@@ -63,7 +65,7 @@ class File(object):
             self.create()
             self.write()
 
-    def create(self):
+    def create(self, **kwargs):
         """Build data structure.
 
         This is a placeholder function, since each specific File use-case
@@ -171,8 +173,7 @@ class ContainerFile(File):
     """Container file object; syncronized access to Container data.
 
     """
-    def __init__(self, location, logger, classname, name=None, categories=None, tags=None,
-            details=None): 
+    def __init__(self, location, logger, classname, **kwargs): 
         """Initialize Container state file.
 
         This is the base class for all Container state files. It generates 
@@ -185,6 +186,8 @@ class ContainerFile(File):
               Container's logger instance
            *classname*
               Container's class name
+
+        :Keywords:
            *name*
               user-given name of Container object
            *categories*
@@ -199,16 +202,13 @@ class ContainerFile(File):
 
         filename = os.path.join(location, containerfile)
 
-        super(ContainerFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger)
+        super(ContainerFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger,
+                classname=classname)
 
-    def create(self):
+    def create(self, **kwargs):
         """Build common data structure elements.
 
-        :Arguments:
-           *location*
-              directory that represents the Container
-           *logger*
-              Container's logger instance
+        :Keywords:
            *classname*
               Container's class name
            *name*
@@ -227,27 +227,24 @@ class ContainerFile(File):
         self.data['location'] = 
         self.data['uuid'] = str(uuid4())
 
-        if name:
-            self.data['name'] = name
-        else:
-            self.data['name'] = classname
+        self.data['class'] = kwargs.pop('classname')
+        self.data['name'] = kwargs.pop('name', self.data['class'])
 
         self.data['data'] = list()
-        self.data['class'] = classname
 
-        if isinstance(categories, dict):
-            self.data['categories'] = categories
-        else:
+        # cumbersome, but if the given categories isn't a dictionary, we fix it
+        self.data['categories'] = kwargs.pop('categories', dict())
+        if not isinstance(self.data['categories'], dict):
             self.data['categories'] = dict()
-            
-        if isinstance(tags, list):
-            self.data['tags'] = tags
-        else:
+
+        # if given tags isn't a list, we fix it
+        self.data['tags'] = kwargs.pop('tags', list())
+        if not isinstance(self.data['tags'], list):
             self.data['tags'] = list()
 
-        if isinstance(details, basestring):
-            self.data['details'] = details
-        else:
+        # if the given details isn't a string, we fix it
+        self.data['details'] = kwargs.pop('details', str())
+        if not isinstance(self.data['details'], basestring):
             self.data['details'] = str()
 
 class SimFile(ContainerFile):
