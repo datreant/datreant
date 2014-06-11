@@ -190,6 +190,8 @@ class ContainerFile(File):
         :Keywords:
            *name*
               user-given name of Container object
+           *coordinator*
+              directory in which coordinator state file can be found [None]
            *categories*
               user-given dictionary with custom keys and values; used to
               give distinguishing characteristics to object for search
@@ -198,12 +200,15 @@ class ContainerFile(File):
               characteristics to object for search
            *details*
               user-given string for object notes
+
+        .. Note:: kwargs passed to :meth:`create`
+
         """
 
         filename = os.path.join(location, containerfile)
 
         super(ContainerFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger,
-                classname=classname)
+                classname=classname, location=location)
 
     def create(self, **kwargs):
         """Build common data structure elements.
@@ -213,6 +218,8 @@ class ContainerFile(File):
               Container's class name
            *name*
               user-given name of Container object
+           *coordinator*
+              directory in which coordinator state file can be found [None]
            *categories*
               user-given dictionary with custom keys and values; used to
               give distinguishing characteristics to object for search
@@ -224,13 +231,12 @@ class ContainerFile(File):
         """
         self.data = {}
 
-        self.data['location'] = 
+        self.data['location'] = kwargs.pop('location')
+        self.data['coordinator'] = kwargs.pop('coordinator', None)
         self.data['uuid'] = str(uuid4())
 
         self.data['class'] = kwargs.pop('classname')
         self.data['name'] = kwargs.pop('name', self.data['class'])
-
-        self.data['data'] = list()
 
         # cumbersome, but if the given categories isn't a dictionary, we fix it
         self.data['categories'] = kwargs.pop('categories', dict())
