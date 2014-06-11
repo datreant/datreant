@@ -56,12 +56,6 @@ class File(object):
         else:
             self.create()
 
-        # check existence of file to determine if it needs to be created
-        if self.check_existence():
-            self.read()
-        else:
-            self.create()
-
     def create(self):
         """Build data structure and create file.
 
