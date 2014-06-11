@@ -5,6 +5,9 @@ Classes for datafile syncronization.
 
 import Aggregators
 import Workers
+import yaml
+import pickle
+from uuid import uuid4
 
 class File(object):
     """File object base class. Implements file locking and syncronization.
@@ -28,9 +31,12 @@ class File(object):
            *filename*
               name of file on disk object synchronizes with
            *reader*
-              function used to translate file into data structure
+              function used to translate file into data structure;
+              must take one argument: file stream to read from
            *writer*
-              function used to tranlate data structure into file
+              function used to translate data structure into file;
+              must take two arguments: the data structure to write and the 
+              file stream to write to
            *datastruct*
               data structure to store; overrides definition in :meth:`create`
               this allows for custom data structures without a pre-defined
@@ -55,16 +61,16 @@ class File(object):
             self.read()
         else:
             self.create()
+            self.write()
 
     def create(self):
-        """Build data structure and create file.
+        """Build data structure.
 
         This is a placeholder function, since each specific File use-case
         will have a different data structure definition.
 
         """
         self.data = None
-        self.write()
 
     def read(self):
         """Read contents of file into data structure.
@@ -98,7 +104,7 @@ class File(object):
         # keep writing until unlock gives success (only if synchronized)
         while not self.unlock()
             with open(self.filename, 'w') as f:
-                self.data = self.writer(self.data)
+                self.writer(self.data, f)
 
         return True
 
@@ -165,18 +171,110 @@ class ContainerFile(File):
     """Container file object; syncronized access to Container data.
 
     """
+    def __init__(self, location, logger, classname, name=None, categories=None, tags=None,
+            details=None): 
+        """Initialize Container state file.
+
+        This is the base class for all Container state files. It generates 
+        data structure elements common to all Containers.
+
+        :Arguments:
+           *location*
+              directory that represents the Container
+           *logger*
+              Container's logger instance
+           *classname*
+              Container's class name
+           *name*
+              user-given name of Container object
+           *categories*
+              user-given dictionary
+
+        """
+        super(ContainerFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger)
+
+    def create(self):
+        """Build common data structure elements.
+
+        """
+        self.data = {}
+
+        self.data['location'] = 
+        self.data['uuid'] = str(uuid4())
+
+        if name:
+            self.data['name'] = name
+        else:
+            self.data['name'] = classname
+
+        self.data['data'] = list()
+        self.data['class'] = classname
+
+        if isinstance(categories, dict):
+            self.data['categories'] = categories
+        else:
+            self.data['categories'] = dict()
+            
+        if isinstance(tags, list):
+            self.data['tags'] = tags
+        else:
+            self.data['tags'] = list()
+
+        if isinstance(details, basestring):
+            self.data['details'] = details
+        else:
+            self.data['details'] = str()
+
+
+    def _generate_uuid(self):
+        """Generate a 'unique' identifier.
+
+        """
+        return str(uuid4())
 
 class SimFile(ContainerFile):
     """Main Sim state file.
+
+    This file contains all the information needed to store the state of a
+    Sim object. It includes accessors, setters, and modifiers for all
+    elements of the data structure, as well the data structure definition.
+    It also defines the format of the file, i.e. the writer and reader
+    used to manage it.
     
     """
+    def __init__(self, filename, logger):
+        """Initialize Sim state file.
+
+        :Arguments:
+           *filename*
+              name of file on disk object synchronizes with
+           *logger*
+              logger to send warnings and errors to
+
+        """
+        super(SimFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger)
+    
+    def create(self):
+        """Build Sim data structure.
+
+        """
+        super(SimFile, self).create()
+
+        attributes = {'uuid': uuid,
+                      'name': kwargs.pop('name', self.__class__.__name__),
+                      'data': list(),
+                      'class': self.__class__.__name__,
+                      'categories': kwargs.pop('categories', dict()),
+                      'tags': kwargs.pop('tags', list()),
+                      'details': kwargs.pop('details', str())
+                      }
 
 
 
-class OperatorFile(File):
-    """Operator file object; syncronized access to Operator data.
 
-    """
+
+        self.data
+
 
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
