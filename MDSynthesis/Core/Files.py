@@ -7,10 +7,10 @@ import Aggregators
 import Workers
 
 class File(object):
-    """File object class. Implements file locking and syncronization.
+    """File object base class. Implements file locking and syncronization.
     
     """
-    def __init__(self, filename, reader, writer, logger=None):
+    def __init__(self, filename, reader, writer, datastruct=None, logger=None):
         """Create File instance for interacting with file on disk.
 
         The File object keeps its own cached version of a data structure
@@ -31,6 +31,10 @@ class File(object):
               function used to translate file into data structure
            *writer*
               function used to tranlate data structure into file
+           *datastruct*
+              data structure to store; overrides definition in :meth:`create`
+              this allows for custom data structures without a pre-defined
+              definition 
            *logger*
               logger to send warnings and errors to
 
@@ -41,7 +45,32 @@ class File(object):
         self.reader = reader
         self.writer = writer
 
-        self.read(self.filename)
+        # if given, use data structure and write to file
+        # if none given, check existence of file and read it in if present
+        # else create a new data structure and file from definition
+        if datastruct:
+            self.data = datastruct
+            self.write()
+        elif self.check_existence():
+            self.read()
+        else:
+            self.create()
+
+        # check existence of file to determine if it needs to be created
+        if self.check_existence():
+            self.read()
+        else:
+            self.create()
+
+    def create(self):
+        """Build data structure and create file.
+
+        This is a placeholder function, since each specific File use-case
+        will have a different data structure definition.
+
+        """
+        self.data = None
+        self.write()
 
     def read(self):
         """Read contents of file into data structure.
@@ -131,11 +160,24 @@ class File(object):
             datatemp = self.reader(f)
         
         return self.data == datatemp
+    
+    def check_existence(self):
+        """Check for existence of file.
+    
+        """
+        return os.path.exists(self.filename)
 
 class ContainerFile(File):
     """Container file object; syncronized access to Container data.
 
     """
+
+class SimFile(ContainerFile):
+    """Main Sim state file.
+    
+    """
+
+
 
 class OperatorFile(File):
     """Operator file object; syncronized access to Operator data.
