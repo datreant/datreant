@@ -77,38 +77,31 @@ class File(object):
     def read(self):
         """Read contents of file into data structure.
 
+        .. Note:: file not locked in this method. Must be done externally.
+
         :Returns:
            *success*
-              True if write successful
+              True if read successful
         """
-        # keep attempting lock until successful (failsafe)
-        while not self.lock():
-            continue
 
-        # keep reading until unlock gives success (only if synchronized)
-        while not self.unlock()
-            with open(self.filename, 'r') as f:
-                self.data = self.reader(f)
+        with open(self.filename, 'r') as f:
+            self.data = self.reader(f)
         
-        return True
+        return self.compare()
 
     def write(self):
         """Write data structure to file.
     
+        .. Note:: file not locked in this method. Must be done externally.
+
         :Returns:
            *success*
               True if write successful
         """
-        # keep attempting lock until successful (failsafe)
-        while not self.lock():
-            continue
+        with open(self.filename, 'w') as f:
+            self.writer(self.data, f)
 
-        # keep writing until unlock gives success (only if synchronized)
-        while not self.unlock()
-            with open(self.filename, 'w') as f:
-                self.writer(self.data, f)
-
-        return True
+        return self.compare()
 
     def lock(self):
         """Get exclusive lock on file.
