@@ -263,29 +263,42 @@ class SimFile(ContainerFile):
     used to manage it.
     
     """
-    def __init__(self, filename, logger):
+    def __init__(self, location, logger, **kwargs):
         """Initialize Sim state file.
 
         :Arguments:
-           *filename*
-              name of file on disk object synchronizes with
+           *location*
+              directory that represents the Container
            *logger*
               logger to send warnings and errors to
 
         """
-        super(SimFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger)
+        super(SimFile, self).__init__(location, logger=logger, classname='Sim', **kwargs)
     
-    def create(self):
+    def create(self, **kwargs):
         """Build Sim data structure.
 
+        :Keywords:
+           *name*
+              user-given name of Sim object
+           *coordinator*
+              directory in which Coordinator state file can be found [``None``]
+           *categories*
+              user-given dictionary with custom keys and values; used to
+              give distinguishing characteristics to object for search
+           *tags*
+              user-given list with custom elements; used to give distinguishing
+              characteristics to object for search
+           *details*
+              user-given string for object notes
+
+        .. Note:: kwargs passed to :meth:`create`
+
         """
-        super(SimFile, self).create()
+        super(SimFile, self).create(**kwargs)
 
-
-
-
-        self.data
-
+        self.data['universes'] = dict()
+        self.data['selections'] = dict()
 
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
