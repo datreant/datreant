@@ -7,7 +7,6 @@ import os, sys
 import yaml
 import shutil
 import logging
-from uuid import uuid4
 
 import MDAnalysis
 
