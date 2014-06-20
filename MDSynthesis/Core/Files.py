@@ -144,6 +144,21 @@ class File(object):
 
         return success
 
+    def lockit(self, func):
+        """Decorator for applying a lock around the given method.
+
+        Applying this decorator to a method will ensure that a file lock is
+        obtained before that method is executed. It also ensures that the
+        lock is removed after the method returns.
+
+        """
+        def inner(*args, **kwargs):
+            self.lock()
+            func(*args, **kwargs)
+            self.unlock()
+
+        return inner
+
     def compare(self):
         """Compare data structure with file contents.
 
