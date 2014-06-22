@@ -159,6 +159,20 @@ class File(object):
 
         return inner
 
+    @self.lockit
+    def locked_write(self):
+        """Lock file, write to file, unlock file.
+        
+        """
+        return self.write()
+
+    @self.lockit
+    def locked_read(self):
+        """Lock file, write to file, unlock file.
+
+        """
+        return self.read()
+
     def compare(self):
         """Compare data structure with file contents.
 
