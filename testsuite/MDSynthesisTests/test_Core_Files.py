@@ -44,17 +44,40 @@ class TestFile(unittest.TestCase):
         self.logger.addHandler(fh)
 
     def tearDown(self):
-        """
+        """Destroy File object references, and their associated files.
 
+        Also deletes lockfiles if present.
+        
         """
+        lockfile = self.testfile.lockname
+        testfile = self.testfile.filename
 
+        del self.testfile
+        
+        for item in (testfile, lockfile):
+            if os.path.exists(item):
+                os.remove(item)
 
     def test_lock(self):
         """Test the basic locking mechanism of the File class.
 
         """
+        self.assertFalse(os.path.exists(self.testfile.lockname))
         self.testfile.lock()
         self.assertTrue(os.path.exists(self.testfile.lockname))
+
+    def test_unlock(self):
+        """Test the unlock mechanism of the File class.
+
+        We just make the lock artificially, then remove it.
+
+        """
+        os.symlink(self.testfile.filename, self.testfile.lockname)
+        
+        self.assertTrue(os.path.exists(self.testfile.lockname))
+        self.testfile.unlock()
+        self.assertFalse(os.path.exists(self.testfile.lockname))
+        
 
 
 if __name__ == '__main__':
