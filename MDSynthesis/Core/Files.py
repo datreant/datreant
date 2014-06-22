@@ -58,12 +58,12 @@ class File(object):
         # else create a new data structure and file from definition
         if datastruct:
             self.data = datastruct
-            self.write()
+            self.locked_write()
         elif self.check_existence():
-            self.read()
+            self.locked_read()
         else:
             self.create()
-            self.write()
+            self.locked_write()
 
     def create(self, **kwargs):
         """Build data structure.
