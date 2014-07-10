@@ -1,7 +1,7 @@
 # -*- Mode: python; tab-width: 4; indent-tabs-mode:nil; -*-
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 #
-# MDSynthesis 
+# MDSynthesis
 
 """
 :mod:`MDSynthesis` --- an organizational framework using MDAnalysis
@@ -11,7 +11,7 @@ MDSynthesis is designed to address the logistical aspects of molecular dynamics
 trajectory analysis. Whereas MDAnalysis gives the computational tools to dissect
 trajectories, MDSynthesis provides a framework for automatically organizing the
 results. This allows you (the scientist) to focus on your science, letting the
-computer handle the lower-level logistical details. 
+computer handle the lower-level logistical details.
 
 Generating Sim objects
 ----------------------
@@ -49,10 +49,10 @@ timeseries analysis. If we built an analysis object called `Salt` that looked
 at ion interactions with a protein, we could then run this on our simulation object
 with::
 
-  >>> salt = Salt(s) 
+  >>> salt = Salt(s)
   >>> salt.run()
 
-For this Sim object, the resulting data is pickled and stored in 
+For this Sim object, the resulting data is pickled and stored in
 `./MDSynthesis/Sim/Salt/Salt.pkl`. It can be reloaded for immediate parsing
 with::
 
@@ -75,15 +75,15 @@ specify the project directory out of which we are working::
   >>> u = MDAnalysis.Universe(PSF, DCD)
   >>> s = MDSynthesis.Sim(u, projectdir="/home/monty/Projects/Spam/Eggs/")
 
-If the trajectory file is stored in `/home/monty/Projects/Spam/Eggs/WORK/system1`, 
-then the Sim object will be placed in 
+If the trajectory file is stored in `/home/monty/Projects/Spam/Eggs/WORK/system1`,
+then the Sim object will be placed in
 `/home/monty/Projects/Spam/Eggs/MDSynthesis/Sim/WORK/system1`. One can remove
 portions of the directory structure after the object name (`Sim`) using the
 `pluck_segment` keyword.
 
 The advantage with this is that, once created, the Sim object can be reloaded
 from the directory in which it is stored. You need never track down the
-structure file or trajectory file ever again. 
+structure file or trajectory file ever again.
 
 The Sim class can also be used as a base class for a container that is more
 specific to the type of simulations one is working with. All classes
@@ -99,6 +99,6 @@ __version__ = "0.3.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 __all__ = ['Sim', 'Group', 'Analysis', 'MetaAnalysis']
 
 # Bring some often used objects into the current namespace
-from Database import Database
+from Coordinator import Coordinator
 from Containers import Sim, Group, SuperGroup
 from Operators import Analysis, MetaAnalysis, MacroAnalysis
