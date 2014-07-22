@@ -1,6 +1,8 @@
 """
 Aggregators are user interfaces for accessing stored data, as well as querying
-the state of an object (data loaded, universe attached, etc.).
+the state of an object (data loaded, universe attached, etc.). They are also
+used to aggregate the functionality of higher level objects (such as Sim) in ways
+that are user-friendly.
 
 An Aggregator is designed to be user friendly on its own, but it can be used as
 a backend by a Container, too.
