@@ -1,6 +1,8 @@
 """
 Aggregators are user interfaces for accessing stored data, as well as querying
-the state of an object (data loaded, universe attached, etc.).
+the state of an object (data loaded, universe attached, etc.). They are also
+used to aggregate the functionality of higher level objects (such as Sim) in ways
+that are user-friendly.
 
 An Aggregator is designed to be user friendly on its own, but it can be used as
 a backend by a Container, too.
@@ -16,13 +18,13 @@ class Aggregator(Core.Workers.ObjectCore):
 
 class Database(Aggregator):
     """Database object for tracking and coordinating Containers.
-    
+
     The Database object stores information on all Containers it is made aware of.
     This centralized storage allows Containers to find each other when necessary;
     this is especially important for Groups.
 
     This object is the interface of Container objects to the database file.
-    
+
     """
     _containerfile = Core.containerfile
     _databasefile = Core.databasefile
@@ -46,10 +48,10 @@ class Database(Aggregator):
             self._regenerate(database, **kwargs)
         else:
             self._generate(database, **kwargs)
-    
+
     def _generate(self, database):
         """Generate a new database.
-        
+
         """
         self._database['basedir'] = database
         self._build_metadata()
@@ -61,12 +63,12 @@ class Database(Aggregator):
 
     def _regenerate(self, database):
         """Re-generate existing database.
-    
+
         """
         self.database['basedir'] = database
         self.refresh()
         self._start_logger(database)
-        
+
         self._check_location(database)
 
         # rebuild missing parts
@@ -112,7 +114,7 @@ class Database(Aggregator):
             *containers*
                 Containers to add, each given as a path to a Container directory
                 or as a generated Container object
-            
+
         """
         for container in containers:
             if isinstance(container, basestring) and os.path.isdir(container):
@@ -175,7 +177,7 @@ class Database(Aggregator):
                 for criteria in contype:
                     if entry[criteria] == container:
                         matches.append(entry['uuid'])
-    
+
             for match in matches:
                 self.database['containers'].pop(match, None)
 
@@ -185,9 +187,9 @@ class Database(Aggregator):
         """
         self._logger.info("Cleaning out entries that cannot be found.")
 
-        uuids = [ x for x in self.database['containers'] ] 
+        uuids = [ x for x in self.database['containers'] ]
         self._get_containers(*uuids)
-        
+
         for uuid in uuids:
             if not self.database['containers'][uuid]['basedir']:
                 self._logger.info("Removing: {} ({})".format(self.database['containers'][uuid]['name'], uuid))
@@ -196,7 +198,7 @@ class Database(Aggregator):
 
     def commit(self):
         """Save the current state of the database to its file.
-        
+
         """
         self.util.makedirs(self.database['basedir'])
         with self.util.open(os.path.join(self.database['basedir'], self._databasefile), 'w') as f:
@@ -229,7 +231,7 @@ class Database(Aggregator):
 
         if all_conts:
             containers = [ x for x in self.database['containers'] ]
-    
+
         matches = []
         for container in containers:
             if os.path.isdir(container):
@@ -285,13 +287,13 @@ class Database(Aggregator):
                 for criteria in contype:
                     if entry[criteria] == container:
                         matches.append(entry['uuid'])
-    
+
         # since this method is used for Container init, basedir may not
         # be defined in metadata yet
         for match in matches:
             if not ('basedir' in self.database['containers'][match]):
                 self.database['containers'][match]['basedir'] = self._build_basedir(match)
-                
+
         # ensure we are finding the right Container
         basedirs = self._get_containers(*matches)
 
@@ -345,17 +347,17 @@ class Database(Aggregator):
 
     def discover(self):
         """Traverse filesystem downward from Database directory and add all new Containers found.
-        
+
         """
         for root, dirs, files in os.walk(self.database['basedir']):
             if self._containerfile in files:
                 dirs = []
                 self.add(root)
         self.commit()
-    
+
     def merge(self, database):
         """Merge another database's contents into this one.
-        
+
         :Arguments:
             *database*
                 path to database or Database object
@@ -364,7 +366,7 @@ class Database(Aggregator):
 
     def split(self, database):
         """Split selected Containers off of database into another.
-        
+
         :Arguments:
             *database*
                 path to destination database or Database object
@@ -389,13 +391,13 @@ class Database(Aggregator):
 
             for entry in self.database['containers'].values():
                 entry['database'] = self.database['basedir']
-                            
+
             self.commit()
             self.push(all=True)
 
     def _build_metadata(self, **kwargs):
         """Build metadata. Runs each time object is generated.
-        
+
         Only adds keys; never modifies existing ones.
 
         """
@@ -403,7 +405,7 @@ class Database(Aggregator):
                       'name': kwargs.pop('name', os.path.basename(self.database['basedir'])),
                       'containers': dict(),
                       }
-    
+
         for key in attributes:
             if not key in self.database:
                 self.database[key] = attributes[key]
@@ -414,7 +416,7 @@ class Database(Aggregator):
         """
 
     def _locate_containers(self, *uuids):
-        """Find Containers by traversing downward through the filesystem. 
+        """Find Containers by traversing downward through the filesystem.
 
         Looks in each directory below the Database. If found, the basedir for the
         Container is updated in both metadata and the Database.
@@ -430,7 +432,7 @@ class Database(Aggregator):
                 dirs = []
                 with self.util.open(os.path.join(root, self._containerfile), 'r') as f:
                     meta = yaml.load(f)
-                try: 
+                try:
                     i = uuids.index(meta['uuid'])
                     containers[i] = os.path.abspath(root)
                     meta['basedir'] = containers[i]
@@ -448,7 +450,7 @@ class Database(Aggregator):
                 if not containers[i]:
                     self.database['containers'][uuids[i]]['basedir'] = None
                     self._logger.warning("Not found: {} ({})".format(self.database['containers'][uuids[i]]['name'], uuids[i]))
-                    
+
         self._logger.info("{} Containers not found.".format(containers.count(None) - uuids.count(None)))
         return containers
 
@@ -509,17 +511,17 @@ class Info(Aggregator):
 
 class SimInfo(Info):
     """Sim-specific bindings.
-    
+
     """
 
 class GroupInfo(Info):
     """Group-specific bindings.
-    
+
     """
 
 class SuperGroupInfo(Info):
     """SuperGroup-specific bindings.
-    
+
     """
 
 class Data(Aggregator):
