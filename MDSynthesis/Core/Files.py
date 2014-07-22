@@ -58,12 +58,12 @@ class File(object):
         # else create a new data structure and file from definition
         if datastruct:
             self.data = datastruct
-            self.write()
+            self.locked_write()
         elif self.check_existence():
-            self.read()
+            self.locked_read()
         else:
             self.create()
-            self.write()
+            self.locked_write()
 
     def create(self, **kwargs):
         """Build data structure.
@@ -143,6 +143,35 @@ class File(object):
             os.remove(self.lockname)
 
         return success
+
+    def lockit(self, func):
+        """Decorator for applying a lock around the given method.
+
+        Applying this decorator to a method will ensure that a file lock is
+        obtained before that method is executed. It also ensures that the
+        lock is removed after the method returns.
+
+        """
+        def inner(*args, **kwargs):
+            self.lock()
+            func(*args, **kwargs)
+            self.unlock()
+
+        return inner
+
+    @self.lockit
+    def locked_write(self):
+        """Lock file, write to file, unlock file.
+        
+        """
+        return self.write()
+
+    @self.lockit
+    def locked_read(self):
+        """Lock file, write to file, unlock file.
+
+        """
+        return self.read()
 
     def compare(self):
         """Compare data structure with file contents.
