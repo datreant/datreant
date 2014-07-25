@@ -22,10 +22,11 @@ class File(object):
         
         At all times, reading and modifying the data structure is the same as
         reading and writing to the file. Accessing an element of the data
-        structure results in locking, reading, and unlocking the file each
-        time. Modifying an element results in locking, reading, writing, and
-        unlocking. All operations are performed atomically to ensure unintended
-        overwrites are avoided.
+        structure results in obtaining a shared lock, reading, and releasing
+        the lock on the file each time. Modifying an element results in
+        obtaining an exclusive lock, reading, writing, and releasing the lock
+        on the file. All operations are performed atomically to ensure
+        unintended overwrites are avoided.
 
         :Arguments:
            *filename*
