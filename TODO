@@ -2,6 +2,91 @@
 TODO List
 =============
 
+Perhaps use PyTables directly for defining state files, and Pandas for handling
+data. Example Sim state file:
+
+HDF5 STRUCTURE
+/
+meta
+tags
+categories
+universes/
+    main
+selections/
+    main
+
+/
+-------
+COLUMNS
+meta : uuid, name, location, coordinator
+tags: tags
+categories: category, value
+
+universes/
+----------
+COLUMNS
+    main: topology, trajectory1, trajectory2...
+
+selections/
+-----------
+COLUMNS
+    main: name, selectionstring (later make explicit atom group)
+    
+We do not wish to store any information on user-generated data here, since this
+will be stored in its own directory/HDF5 file. This allows one to delete these
+directories without introducing inconsistencies.
+
+Data aggregator will interface to individu
+
+Be sure to use pytables flush method to ensure writes have finished before
+removing exclusive lock.
+
+For data access, will either need to wrap all access methods (including
+indexing) with lock decorator, or require Sim.data.DATAINSTANCE.load prior to
+use. Sim.data.DATAINSTANCE.unload will remove shared lock.
+    + problem: will need separate mechanism for obtaining exclusive lock.
+    + probably better to develop mechanism that applies shared lock before
+      access, then removes it afterward. Likewise for modifiers. Can ponder
+      this later; not necessary for usefulness when concurrent access not
+      needed.
+Need to play directly with pandas HDFStore interface. This will inform how we
+go about applying the lock mechanisms. Possibly consider inheriting from
+HDFStore and explicitly wrapping all functions appropriately.
+
+For state files, can easily apply shared and exclusive locks using a decorator
+on getters and setters, respectively. Access to these stored data will be
+integrated into the Sim class. We have no need for pyTables query
+functionality in this case (with perhaps exception of tags and categories).
+    
+Sim::
+    add::
+        universe()
+        selection()
+        data()
+        tag()
+        category()
+        
+    remove::
+        universe()
+        selection()
+        data()
+        tag()
+        category()
+
+    info?::
+
+    attach::
+        universe1
+
+    universe -> Universe
+
+    selections::
+        selection1 -> atomgroup
+
+    data::
+        instance -> pandas HDFStore
+        insance2
+    
 Overall scheme
 ==============
 Sean Seyler and and I are collaborating to make this package work well as the
