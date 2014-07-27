@@ -8,6 +8,7 @@ import Workers
 import yaml
 import pickle
 from uuid import uuid4
+import tables
 
 class File(object):
     """File object base class. Implements file locking and syncronization.
@@ -196,6 +197,51 @@ class ContainerFile(File):
     """Container file object; syncronized access to Container data.
 
     """
+    class Meta(tables.IsDescription):
+        """Table definition for metadata.
+
+        All strings limited to hardcoded size for now.
+
+        """
+        # unique identifier for container
+        uuid = tables.StringCol(36)
+
+        # user-given name of container
+        name = tables.StringCol(36)
+
+        # eventually we would like this to be generated dynamically
+        # meaning, size of location string is size needed, and meta table
+        # is regenerated if any of its strings need to be (or smaller)
+        # When Coordinator generates its database, it uses largest string size
+        # needed
+        location = tables.StringCol(256)
+
+    class Coordinator(tables.IsDescription):
+        """Table definition for coordinator info.
+
+        This information is kept separate from other metadata to allow the
+        Coordinator to simply stack tables to populate its database. It doesn't
+        need entries that store its own path.
+
+        Path length fixed size for now.
+        """
+        # absolute path of coordinator
+        coordinator = tables.StringCol(256)
+
+        
+    class Tags(tables.IsDescription):
+        """Table definition for tags.
+
+        """
+        tag = tables.StringCol(36)
+
+    class Categories(tables.IsDescription):
+        """Table definition for categories.
+
+        """
+        category = tables.StringCol(36)
+        value = tables.StringCol(36)
+
     def __init__(self, location, logger, classname, **kwargs): 
         """Initialize Container state file.
 
