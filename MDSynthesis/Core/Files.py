@@ -227,7 +227,6 @@ class ContainerFile(File):
         """
         # absolute path of coordinator
         coordinator = tables.StringCol(256)
-
         
     class Tags(tables.IsDescription):
         """Table definition for tags.
@@ -332,6 +331,45 @@ class SimFile(ContainerFile):
     used to manage it.
     
     """
+
+    class UniverseTopology(tables.IsDescription):
+        """Table definition for storing universe topology paths.
+
+        Three versions of the path to a topology are stored: the absolute path
+        (abspath), the relative path from user's home directory (relhome), and the
+        relative path from the Sim object's directory (relSim). This allows the
+        Sim object to use some heuristically good starting points trying to find
+        missing files using Finder.
+        
+        """
+        abspath = tables.StringCol(255)
+        relhome = tables.StringCol(255)
+        relSim = tables.StringCol(255)
+
+    class UniverseTrajectory(tables.IsDescription):
+        """Table definition for storing universe trajectory paths.
+
+        The paths to trajectories used for generating the Universe
+        are stored in this table.
+
+        See UniverseTopology for path storage descriptions.
+
+        """
+        abspath = tables.StringCol(255)
+        relhome = tables.StringCol(255)
+        relSim = tables.StringCol(255)
+
+    class Selection(tables.IsDescription):
+        """Table definition for storing selections.
+
+        A single table corresponds to a single selection. Each row in the
+        column contains a selection string. This allows one to store a list
+        of selections so as to preserve selection order, which is often
+        required for structural alignments.
+
+        """
+        selection = tables.StringCol(255)
+
     def __init__(self, location, logger, **kwargs):
         """Initialize Sim state file.
 

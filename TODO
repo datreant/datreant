@@ -8,6 +8,7 @@ data. Example Sim state file:
 HDF5 STRUCTURE
 /
 meta
+coordinator
 tags
 categories
 universes/
@@ -17,20 +18,17 @@ selections/
 
 /
 -------
-COLUMNS
 meta : uuid, name, location, coordinator
 tags: tags
 categories: category, value
 
 universes/
 ----------
-COLUMNS
-    main: topology, trajectory1, trajectory2...
-
-selections/
------------
-COLUMNS
-    main: name, selectionstring (later make explicit atom group)
+    main/ 
+    -----
+    topology: abspath, relhome, relSim
+    trajectories: abspath, relhome, relSim
+    selections: selection
     
 We do not wish to store any information on user-generated data here, since this
 will be stored in its own directory/HDF5 file. This allows one to delete these
