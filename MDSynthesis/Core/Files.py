@@ -9,40 +9,24 @@ import yaml
 import pickle
 from uuid import uuid4
 import tables
+import fcntl
 
 class File(object):
-    """File object base class. Implements file locking and syncronization.
+    """File object base class. Implements file locking.
     
     """
-    def __init__(self, filename, reader, writer, datastruct=None, logger=None, **kwargs):
+    def __init__(self, filename, logger=None, **kwargs):
         """Create File instance for interacting with file on disk.
 
-        The File object keeps its own cached version of a data structure
-        written to file in sync with the file itself. It does this by
-        consistently applying locks to files before reading and writing. 
-        
-        At all times, reading and modifying the data structure is the same as
-        reading and writing to the file. Accessing an element of the data
-        structure results in obtaining a shared lock, reading, and releasing
-        the lock on the file each time. Modifying an element results in
-        obtaining an exclusive lock, reading, writing, and releasing the lock
-        on the file. All operations are performed atomically to ensure
-        unintended overwrites are avoided.
+        All files in MDSynthesis should be accessible by high-level
+        methods without having to worry about simultaneous reading and writing by
+        other processes. The File object includes methods and infrastructure
+        for ensuring shared and exclusive locks are consistently applied before
+        reads and writes, respectively.
 
         :Arguments:
            *filename*
               name of file on disk object synchronizes with
-           *reader*
-              function used to translate file into data structure;
-              must take one argument: file stream to read from
-           *writer*
-              function used to translate data structure into file;
-              must take two arguments: the data structure to write and the 
-              file stream to write to
-           *datastruct*
-              data structure to store; overrides definition in :meth:`create`
-              this allows for custom data structures without a pre-defined
-              definition 
            *logger*
               logger to send warnings and errors to
 
@@ -50,83 +34,24 @@ class File(object):
 
         """
         self.filename = filename
-        self.lockname = "{}.lock".format(self.file.name) 
 
-        self.reader = reader
-        self.writer = writer
+    def shlock(self):
+        """Get shared lock on file.
 
-        # if given, use data structure and write to file
-        # if none given, check existence of file and read it in if present
-        # else create a new data structure and file from definition
-        if datastruct:
-            self.data = datastruct
-            self.locked_write()
-        elif self.check_existence():
-            self.locked_read()
-        else:
-            self.create()
-            self.locked_write()
-
-    def create(self, **kwargs):
-        """Build data structure.
-
-        This is a placeholder function, since each specific File use-case
-        will have a different data structure definition.
-
-        """
-        self.data = None
-
-    def read(self):
-        """Read contents of file into data structure.
-
-        .. Note:: file not locked in this method. Must be done externally.
-
-        :Returns:
-           *success*
-              True if read successful
-        """
-
-        with open(self.filename, 'r') as f:
-            self.data = self.reader(f)
-        
-        return self.compare()
-
-    def write(self):
-        """Write data structure to file.
-    
-        .. Note:: file not locked in this method. Must be done externally.
-
-        :Returns:
-           *success*
-              True if write successful
-        """
-        with open(self.filename, 'w') as f:
-            self.writer(self.data, f)
-
-        return self.compare()
-
-    def lock(self):
-        """Get exclusive lock on file.
-
-        The lock is just a symlink of the target file, since making a symlink
-        appears to be an atomic operation on most platforms. This is important,
-        since creating a symlink also serves to check if one is already present
-        all in one operation.
+        Using fcntl.lockf, a shared lock on the file is obtained. If an
+        exclusive lock is already held on the file by another process,
+        then the method waits until it can obtain the lock.
 
         :Returns:
            *success*
               True if lockfile successfully created
         """
-        # if lockfile already present, wait until it disappears; make lock
-        while True:
-            try:
-                os.symlink(self.filename, self.lockname):
-                break
-            except OSError:
-                time.sleep(1)
 
-        # return lockfile existence
-        return os.path.exists(self.lockname)
+
+
+        return True
+
+    def exlock(self):
 
     def unlock(self):
         """Remove exclusive lock on file.
@@ -175,18 +100,6 @@ class File(object):
         """
         return self.read()
 
-    def compare(self):
-        """Compare data structure with file contents.
-
-        :Returns:
-           *same*
-              True if file synchronized with data structure
-        """
-        with open(self.filename, 'r') as f:
-            datatemp = self.reader(f)
-        
-        return self.data == datatemp
-    
     def check_existence(self):
         """Check for existence of file.
     
