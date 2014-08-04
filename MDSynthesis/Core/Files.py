@@ -26,11 +26,9 @@ class File(object):
 
         :Arguments:
            *filename*
-              name of file on disk object synchronizes with
+              name of file on disk object corresponds to 
            *logger*
               logger to send warnings and errors to
-
-        .. Note:: kwargs passed to :meth:`create`
 
         """
         self.filename = filename
@@ -44,10 +42,9 @@ class File(object):
 
         :Returns:
            *success*
-              True if lockfile successfully created
+              True if shared lock successfully obtained
         """
-
-
+        fcntl.lockf(
 
         return True
 
