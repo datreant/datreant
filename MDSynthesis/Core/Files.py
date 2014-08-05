@@ -12,7 +12,7 @@ import tables
 import fcntl
 
 class File(object):
-    """File object base class. Implements file locking.
+    """File object base class. Implements file locking and reloading methods.
     
     """
     def __init__(self, filename, logger=None, **kwargs):
@@ -32,6 +32,7 @@ class File(object):
 
         """
         self.filename = filename
+        self.handle = None
 
     def shlock(self):
         """Get shared lock on file.
@@ -44,58 +45,38 @@ class File(object):
            *success*
               True if shared lock successfully obtained
         """
-        fcntl.lockf(
+        fcntl.lockf(self.handle, fcntl.LOCK_SH)
 
         return True
 
     def exlock(self):
-
-    def unlock(self):
-        """Remove exclusive lock on file.
-
-        Before removing the lock, checks that the data structure is
-        the same as what is on file.
+        """Get exclusive lock on file.
+    
+        Using fcntl.lockf, an exclusive lock on the file is obtained. If a
+        shared or exclusive lock is already held on the file by another
+        process, then the method waits until it can obtain the lock.
 
         :Returns:
            *success*
-              True if comparison successful 
+              True if exclusive lock successfully obtained
         """
-        # check that python representation matches file
-        success = self.compare()
+        # first obtain shared lock; may help to avoid race conditions between
+        # exclusive locks (REQUIRES THOROUGH TESTING)
+        if self.shlock():
+            fcntl.lockf(self.handle, fcntl.LOCK_EX)
+    
+        return True
 
-        if success:
-            os.remove(self.lockname)
+    def unlock(self):
+        """Remove exclusive or shared lock on file.
 
-        return success
-
-    def lockit(self, func):
-        """Decorator for applying a lock around the given method.
-
-        Applying this decorator to a method will ensure that a file lock is
-        obtained before that method is executed. It also ensures that the
-        lock is removed after the method returns.
-
+        :Returns:
+           *success*
+              True if lock removed
         """
-        def inner(*args, **kwargs):
-            self.lock()
-            func(*args, **kwargs)
-            self.unlock()
+        fcntl.lockf(self.handle, fcntl.LOCK_UN)
 
-        return inner
-
-    @self.lockit
-    def locked_write(self):
-        """Lock file, write to file, unlock file.
-        
-        """
-        return self.write()
-
-    @self.lockit
-    def locked_read(self):
-        """Lock file, write to file, unlock file.
-
-        """
-        return self.read()
+        return True
 
     def check_existence(self):
         """Check for existence of file.
@@ -155,7 +136,8 @@ class ContainerFile(File):
         """Initialize Container state file.
 
         This is the base class for all Container state files. It generates 
-        data structure elements common to all Containers.
+        data structure elements common to all Containers. It also implements
+        low-level I/O functionality.
 
         :Arguments:
            *location*
@@ -185,8 +167,7 @@ class ContainerFile(File):
 
         filename = os.path.join(location, containerfile)
 
-        super(ContainerFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger,
-                classname=classname, location=location)
+        super(ContainerFile, self).__init__(filename, logger=logger)
 
     def create(self, **kwargs):
         """Build common data structure elements.
@@ -230,6 +211,22 @@ class ContainerFile(File):
         self.data['details'] = kwargs.pop('details', str())
         if not isinstance(self.data['details'], basestring):
             self.data['details'] = str()
+    
+    def read(self, func):
+        """Decorator for opening file for reading and applying shared lock.
+
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        def inner(*args, **kwargs):
+            self.lock()
+            func(*args, **kwargs)
+            self.unlock()
+
+        return inner
 
 class SimFile(ContainerFile):
     """Main Sim state file.
@@ -330,4 +327,5 @@ class DataFile(object):
     structure to persistent file form.
 
     """
+    file.flush(fsync=True)
 
