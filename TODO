@@ -12,13 +12,14 @@ coordinator
 tags
 categories
 universes/
-    main
-selections/
-    main
+    main/
+        topology
+        trajectories
+        selections
 
 /
 -------
-meta : uuid, name, class, location, coordinator 
+meta : uuid, name, class, location
 tags: tags
 categories: category, value
 

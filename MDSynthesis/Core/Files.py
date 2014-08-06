@@ -280,18 +280,18 @@ class ContainerFile(File):
 
     def _open_w(self):
         """Open file with intention to write.
-
+    
         Not to be used except for debugging files.
-
+        
         """
         self.handle = tables.open_file(self.filename, 'a')
         self.exlock()
-
+    
     def _close(self):
         """Close file.
-
+    
         Not to be used except for debugging files.
-
+    
         """
         self.handle.close()
 
@@ -344,20 +344,24 @@ class SimFile(ContainerFile):
         """
         selection = tables.StringCol(255)
 
-    def __init__(self, location, logger, **kwargs):
+    def __init__(self, filename, logger, **kwargs):
         """Initialize Sim state file.
 
         :Arguments:
-           *location*
-              directory that represents the Container
+           *filename*
+              path to file
            *logger*
               logger to send warnings and errors to
 
         """
         super(SimFile, self).__init__(location, logger=logger, classname='Sim', **kwargs)
     
-    def create(self, **kwargs):
+    def create(self, classname, **kwargs):
         """Build Sim data structure.
+
+        :Arguments:
+           *classname*
+              Container's class name
 
         :Keywords:
            *name*
@@ -370,16 +374,21 @@ class SimFile(ContainerFile):
            *tags*
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
-           *details*
-              user-given string for object notes
 
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(SimFile, self).create(**kwargs)
+        super(SimFile, self).create(classname, **kwargs)
 
-        self.data['universes'] = dict()
-        self.data['selections'] = dict()
+        self.handle = tables.open_file(self.filename, 'a')
+        self.exlock()
+
+        # universes group
+        universes_group = self.handle.create_group('/', 'universes', 'universes')
+
+        # remove lock and close
+        self.unlock()
+        self.handle.close()
 
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
