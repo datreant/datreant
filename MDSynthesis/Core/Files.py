@@ -31,8 +31,9 @@ class File(object):
               logger to send warnings and errors to
 
         """
-        self.filename = filename
+        self.filename = os.path.abspath(filename)
         self.handle = None
+        self.logger = logger
 
     def shlock(self):
         """Get shared lock on file.
@@ -100,6 +101,8 @@ class ContainerFile(File):
         # user-given name of container
         name = tables.StringCol(36)
 
+        class = tables.StringCol(36)
+
         # eventually we would like this to be generated dynamically
         # meaning, size of location string is size needed, and meta table
         # is regenerated if any of its strings need to be (or smaller)
@@ -117,7 +120,7 @@ class ContainerFile(File):
         Path length fixed size for now.
         """
         # absolute path of coordinator
-        coordinator = tables.StringCol(256)
+        abspath = tables.StringCol(256)
         
     class Tags(tables.IsDescription):
         """Table definition for tags.
@@ -132,7 +135,7 @@ class ContainerFile(File):
         category = tables.StringCol(36)
         value = tables.StringCol(36)
 
-    def __init__(self, location, logger, classname, **kwargs): 
+    def __init__(self, filename, logger, classname, **kwargs): 
         """Initialize Container state file.
 
         This is the base class for all Container state files. It generates 
@@ -140,8 +143,8 @@ class ContainerFile(File):
         low-level I/O functionality.
 
         :Arguments:
-           *location*
-              directory that represents the Container
+           *filename*
+              path to file
            *logger*
               Container's logger instance
            *classname*
@@ -164,17 +167,20 @@ class ContainerFile(File):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-
-        filename = os.path.join(location, containerfile)
-
         super(ContainerFile, self).__init__(filename, logger=logger)
+        
+        # if file does not exist, it is created
+        if not self.check_existence():
+            self.create(classname, **kwargs)
 
-    def create(self, **kwargs):
-        """Build common data structure elements.
+    def create(self, classname, **kwargs):
+        """Build state file and common data structure elements.
 
-        :Keywords:
+        :Arguments:
            *classname*
               Container's class name
+
+        :Keywords:
            *name*
               user-given name of Container object
            *coordinator*
@@ -185,36 +191,53 @@ class ContainerFile(File):
            *tags*
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
-           *details*
-              user-given string for object notes
         """
-        self.data = {}
+        self.handle = tables.open_file(self.filename, 'w')
+        self.exlock()
 
-        self.data['location'] = kwargs.pop('location')
-        self.data['coordinator'] = kwargs.pop('coordinator', None)
-        self.data['uuid'] = str(uuid4())
+        # metadata table
+        meta_table = self.handle.create_table('/', 'meta', self.Meta, 'metadata')
+        container = meta.row
 
-        self.data['class'] = kwargs.pop('classname')
-        self.data['name'] = kwargs.pop('name', self.data['class'])
+        container['uuid'] = str(uuid4())
+        container['name'] = kwargs.pop('name', classname)
+        container['class'] = classname
+        container['location'] = os.path.dirname(self.filename)
+        container.append()
 
-        # cumbersome, but if the given categories isn't a dictionary, we fix it
-        self.data['categories'] = kwargs.pop('categories', dict())
-        if not isinstance(self.data['categories'], dict):
-            self.data['categories'] = dict()
+        # coordinator table
+        coordinator_table = self.handle.create_table('/', 'coordinator', self.Coordinator, 'coordinator information')
+        container = coordinator.row
+        
+        container['abspath'] = kwargs.pop('coordinator', None)
+        container.append()
 
-        # if given tags isn't a list, we fix it
-        self.data['tags'] = kwargs.pop('tags', list())
-        if not isinstance(self.data['tags'], list):
-            self.data['tags'] = list()
+        # tags table
+        tags_table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+        container = tags.row
+        
+        tags = kwargs.pop('tags', list())
+        for tag in tags:
+            container['tag'] = str(tag)
+            container.append()
 
-        # if the given details isn't a string, we fix it
-        self.data['details'] = kwargs.pop('details', str())
-        if not isinstance(self.data['details'], basestring):
-            self.data['details'] = str()
+        # categories table
+        categories_table = self.handle.create_table('/', 'categories', self.Tags, 'categories')
+        container = categories.row
+        
+        categories = kwargs.pop('categories', dict())
+        for key in categories.keys():
+            container['category'] = str(key)
+            container['value'] = str(categories[key])
+            container.append()
+
+        # remove lock and close
+        self.unlock()
+        self.handle.close()
     
     def read(self, func):
         """Decorator for opening file for reading and applying shared lock.
-
+        
         Applying this decorator to a method will ensure that the file is opened
         for reading and that a shared lock is obtained before that method is
         executed. It also ensures that the lock is removed and the file closed
@@ -222,7 +245,25 @@ class ContainerFile(File):
 
         """
         def inner(*args, **kwargs):
-            self.lock()
+            self.handle = tables.open_file(self.filename, 'r')
+            self.shlock()
+            func(*args, **kwargs)
+            self.unlock()
+
+        return inner
+    
+    def write(self, func):
+        """Decorator for opening file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        def inner(*args, **kwargs):
+            self.handle = tables.open_file(self.filename, 'a')
+            self.exlock()
             func(*args, **kwargs)
             self.unlock()
 

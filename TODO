@@ -18,7 +18,7 @@ selections/
 
 /
 -------
-meta : uuid, name, location, coordinator
+meta : uuid, name, class, location, coordinator 
 tags: tags
 categories: category, value
 
