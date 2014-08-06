@@ -269,6 +269,32 @@ class ContainerFile(File):
 
         return inner
 
+    def _open_r(self):
+        """Open file with intention to write.
+
+        Not to be used except for debugging files.
+
+        """
+        self.handle = tables.open_file(self.filename, 'r')
+        self.shlock()
+
+    def _open_w(self):
+        """Open file with intention to write.
+
+        Not to be used except for debugging files.
+
+        """
+        self.handle = tables.open_file(self.filename, 'a')
+        self.exlock()
+
+    def _close(self):
+        """Close file.
+
+        Not to be used except for debugging files.
+
+        """
+        self.handle.close()
+
 class SimFile(ContainerFile):
     """Main Sim state file.
 
