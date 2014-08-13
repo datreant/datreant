@@ -9,6 +9,46 @@ Threads share the advisory lock of their process, which means that if an object
 is using threads and these need to update the state file, the locks will mean
 nothing.
 
+Perhaps build an undo option into objects?
+    - basically, revert to previous version of state file, since operations
+      atomic
+    - will need extra machinery in the case of changes to filesystem outside of
+      state file
+
+Thoughts for Groups:
+
+Group takes any combination of Groups and Sims.
+
+Items in a group have an order, and can be accessed via index like a list. Can
+be rearranged by user.
+
+Groups can be queried for members.
+    - allows for generation of new groups or generation of data on members or
+      within members. User is advised to structure their Groups, because this
+      feature can encourage confusing practices.
+
+Group has method to Group members. This will:
+    - create the sub-Group's persistent form inside the Group. Won't be scraped
+    by Data aggregator since no data file will be found immediately inside this
+    directory.
+    - add the Group to the list of members.
+    - remove the given members from the list of members.
+This will work fine so long as Finder knows that objects can live inside object
+directory structures. The benefit is that manual labor is not needed to
+structure a Group after it has been defined.
+
+Groups can be flattened. Order number given to determine how much to flatten. 0
+for Sim, 1 for Group, 2 for Group^2, etc. Flatten value is highest order object
+present in group after flattenning.
+
+Objects should be able to transfer data somehow (hopefully unnecessary, but
+when needed, good to have). Add method could handle DataFile objects as well as
+Data aggregators appropriately. It would then copy data through filesystem.
+
+Store dataset data instances in single table in state file. Reprobe for these
+on each load. This will allow queries based on existing data in Coordinator
+and Groups.
+
 2014.07.31
 ----------
 Perhaps use PyTables directly for defining state files, and Pandas for handling
