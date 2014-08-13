@@ -2,6 +2,15 @@
 TODO List
 =============
 
+2014.08.12
+----------
+We will avoid multithreading at all costs. Instead, use separate processes.
+Threads share the advisory lock of their process, which means that if an object
+is using threads and these need to update the state file, the locks will mean
+nothing.
+
+2014.07.31
+----------
 Perhaps use PyTables directly for defining state files, and Pandas for handling
 data. Example Sim state file:
 
