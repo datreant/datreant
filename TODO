@@ -2,6 +2,17 @@
 TODO List
 =============
 
+2014.08.13
+----------
+Because the ideas come faster than the implementation, I've come to jotting
+down my ideas about various aspects of this project here. Better than nowhere.
+
+Group object
+    - can include a mechanism for forking a process for each member in ipython,
+      allowing one to operate on multiple Sim objects simultaneously as if
+      working on only one. Ipython may have built in mechanisms for
+      communication between processes: http://ipython.org/ipython-doc/dev/parallel/
+
 2014.08.12
 ----------
 We will avoid multithreading at all costs. Instead, use separate processes.
