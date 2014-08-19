@@ -2,6 +2,21 @@
 TODO List
 =============
 
+2014.08.19
+----------
+Mental vomit:
+    - store MDS version in state files; this allows us to write conversion code
+      to ensure state files are updated for new releases.
+    - instead of storing data files separately, why not store all Container
+      data in state file? This would allow us to avoid problems with file
+      renaming and eschew the directory structure of Containers. Sims, Groups,
+      and Coordinators will now be single files.
+        - does not remove any flexibility on the part of the user.
+        - ensures loaded Containers do not have stale data handles when data is
+          deleted; avoids requiring machinery for detection of this.
+        - Reduces number of files to deal with; perhaps therefore introduces
+          file locking congestion in high throughput situations.
+
 2014.08.13
 ----------
 Because the ideas come faster than the implementation, I've come to jotting
