@@ -2,6 +2,26 @@
 TODO List
 =============
 
+2014.08.20
+----------
+Cons to merging data into state files:
+    - when writing large data to file, this makes it impossible to get read
+      lock on state information. This will slow down all processes making
+      use of that Container, including Coordinator and Group actions.
+
+Keeping files separate
+    - can still keep information on data present in Sims and Groups in
+      database, since this is updated by the Sims and Groups themselves when
+      run
+    - what if data deleted by user, then queries database for Sims that have
+      data? Database will have stale entries; will need to add checker to
+      ensure query results actually have data requested, and remove those that
+      don't. Will have to optimize later.
+
+In general I prefer keeping data files separate, as it retains the advantage
+that MDS mimics much of what we already do manually. This is familiar, and
+allows for work in the filesystem instead of in some obfuscating file format.
+
 2014.08.19
 ----------
 Mental vomit:
