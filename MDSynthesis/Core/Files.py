@@ -101,6 +101,7 @@ class ContainerFile(File):
         # user-given name of container
         name = tables.StringCol(36)
 
+        # container type; Sim or Group
         class = tables.StringCol(36)
 
         # eventually we would like this to be generated dynamically
