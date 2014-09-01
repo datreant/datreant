@@ -4,15 +4,14 @@ Unit tests for MDSynthesis
 """
 
 import unittest
-import test_Core_Files
-
+import Core
 
 def suite():
     """Gather every test from package into a test suite.
 
     """
     test_suite = unittest.TestSuite()
-    test_suite.addTest(test_Core_Files.suite())
+    test_suite.addTest(Core.test_Files.suite())
 
     return test_suite
 

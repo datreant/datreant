@@ -22,7 +22,8 @@ class File(object):
         methods without having to worry about simultaneous reading and writing by
         other processes. The File object includes methods and infrastructure
         for ensuring shared and exclusive locks are consistently applied before
-        reads and writes, respectively.
+        reads and writes, respectively. It handles any other low-level tasks
+        for maintaining file integrity.
 
         :Arguments:
            *filename*
@@ -270,6 +271,21 @@ class ContainerFile(File):
 
         return inner
 
+    @self.write
+    def add_tag(*tags):
+        """Add any number of tags to the Container.
+
+        Tags are individual strings that serve to differentiate Containers from
+        one another.
+
+        :Arguments:
+           *tags*
+              Tags to add. Must be convertable to strings using the str() builtin.
+
+        """
+
+
+
     def _open_r(self):
         """Open file with intention to write.
 
@@ -283,7 +299,7 @@ class ContainerFile(File):
         """Open file with intention to write.
     
         Not to be used except for debugging files.
-        
+         
         """
         self.handle = tables.open_file(self.filename, 'a')
         self.exlock()
@@ -295,6 +311,8 @@ class ContainerFile(File):
     
         """
         self.handle.close()
+
+
 
 class SimFile(ContainerFile):
     """Main Sim state file.

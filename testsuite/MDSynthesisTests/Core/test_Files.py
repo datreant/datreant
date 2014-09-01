@@ -46,17 +46,13 @@ class TestFile(unittest.TestCase):
     def tearDown(self):
         """Destroy File object references, and their associated files.
 
-        Also deletes lockfiles if present.
-        
         """
-        lockfile = self.testfile.lockname
         testfile = self.testfile.filename
 
         del self.testfile
         
-        for item in (testfile, lockfile):
-            if os.path.exists(item):
-                os.remove(item)
+        if os.path.exists(testfile)
+            os.remove(testfile)
 
     def test_lock(self):
         """Test the basic locking mechanism of the File class.
