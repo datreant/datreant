@@ -2,6 +2,12 @@
 TODO List
 =============
 
+2014.08.31
+----------
+Lazy loading of Group members and DataSet instances will allow us to avoid
+requiring explicit load machinery, and avoid slow speeds of full
+initialization. The same can be done for universes in Sims.
+
 2014.08.20
 ----------
 Cons to merging data into state files:
