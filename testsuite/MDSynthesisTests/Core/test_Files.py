@@ -22,11 +22,8 @@ class TestFile(unittest.TestCase):
 
     """
     def setUp(self):
-        """Create test File objects. 
+        """Create test File object. 
             
-        We wish to test using multiple readers and writers at the same time. 
-        For now we just test with yaml.
-
         """
 
         # data structure used for test Files
@@ -35,8 +32,9 @@ class TestFile(unittest.TestCase):
                            'tags': ['little', 'big'],
                            'number': 256}
         
-        self.testfile = MDSynthesis.Core.Files.File(filename='testsite/TestFile.yaml',
-                             reader=yaml.load, writer=yaml.dump, datastruct=self.datastruct}
+        f = open('testsite/TestFile.txt', 'w')
+        yaml.dump(self.datastruct, f)
+        f.close()
         
         self.logger = logging.getLogger('TestFile')
         logfile = 'testsite/TestFile.log'
@@ -54,8 +52,8 @@ class TestFile(unittest.TestCase):
         if os.path.exists(testfile)
             os.remove(testfile)
 
-    def test_lock(self):
-        """Test the basic locking mechanism of the File class.
+    def test_shlock(self):
+        """Test the shared locking mechanism of the File class.
 
         """
         self.assertFalse(os.path.exists(self.testfile.lockname))
@@ -65,14 +63,7 @@ class TestFile(unittest.TestCase):
     def test_unlock(self):
         """Test the unlock mechanism of the File class.
 
-        We just make the lock artificially, then remove it.
-
         """
-        os.symlink(self.testfile.filename, self.testfile.lockname)
-        
-        self.assertTrue(os.path.exists(self.testfile.lockname))
-        self.testfile.unlock()
-        self.assertFalse(os.path.exists(self.testfile.lockname))
         
 
 

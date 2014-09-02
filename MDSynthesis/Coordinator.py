@@ -24,12 +24,15 @@ class Coordinator(Core.Workers.ObjectCore):
         """
 
         # initialize aggregators
-        self.add =
-        self.remove = 
-        self.move = 
+       # self.add =
+       # self.remove = 
+       # self.move = 
+        pass
 
 
-    def select(self)
+    def select(self):
         """
+        """
+        pass
 
     

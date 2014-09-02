@@ -5,8 +5,6 @@ Classes for datafile syncronization.
 
 import Aggregators
 import Workers
-import yaml
-import pickle
 from uuid import uuid4
 import tables
 import fcntl
