@@ -2,6 +2,9 @@
 TODO List
 =============
 
+MDS integrates only as much as it needs for its core functionality (easy logistics). It
+leaves other functionality to external modules.
+
 2014.08.31
 ----------
 Lazy loading of Group members and DataSet instances will allow us to avoid
