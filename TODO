@@ -2,8 +2,16 @@
 TODO List
 =============
 
+2014.09.30
+----------
+Need to make it easy to add more data later for a trajectory that later becomes
+extended.
+
+Statement
+---------
 MDS integrates only as much as it needs for its core functionality (easy logistics). It
-leaves other functionality to external modules.
+leaves other functionality to external modules. It will include conveniences
+for the modules it requires as dependencies (e.g. pytables, pandas)
 
 2014.08.31
 ----------
