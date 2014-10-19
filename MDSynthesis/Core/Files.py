@@ -255,7 +255,6 @@ class ContainerFile(File):
             self.handle = tables.open_file(self.filename, 'r')
             self.shlock()
             func(*args, **kwargs)
-            self.unlock()
             self.handle.close()
 
         return inner
@@ -274,7 +273,6 @@ class ContainerFile(File):
             self.handle = tables.open_file(self.filename, 'a')
             self.exlock()
             func(self, *args, **kwargs)
-            #self.unlock()
             self.handle.close()
 
         return inner
