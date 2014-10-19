@@ -301,14 +301,14 @@ class ContainerFile(File):
         tags_present = list()
         for row in tags_table:
             for tag in tags:
-                if (row['tag'] == str(tag)):
+                if (row['tag'] == tag):
                     tags_present.append(tag)
 
         tags = list(tags - set(tags_present))
 
         # add new tags
         for tag in tags:
-            tags_table.row['tag'] = str(tag)
+            tags_table.row['tag'] = tag
             tags_table.row.append()
 
     @write
@@ -332,7 +332,7 @@ class ContainerFile(File):
         rowlist = list()
         for row in tags_table:
             for tag in tags:
-                if (row['tag'] == str(tag)):
+                if (row['tag'] == tag):
                     rowlist.append(row.nrow)
 
         rowlist.sort()
@@ -360,13 +360,12 @@ class ContainerFile(File):
 
         """
         categories_table = self.handle.get_node('/', 'categories')
-        pdb.set_trace()
 
         # remove categories already present in metadata from dictionary 
         #TODO: more efficient way to do this?
         for row in categories_table:
             for key in categories.keys():
-                if (row['category'] == str(key)):
+                if (row['category'] == key):
                     row['value'] = str(categories[key])
                     row.update()
                     # dangerous? or not since we are iterating through
@@ -375,7 +374,7 @@ class ContainerFile(File):
         
         # add new categories
         for key in categories.keys():
-            categories_table.row['category'] = str(key)
+            categories_table.row['category'] = key
             categories_table.row['value'] = str(categories[key])
             categories_table.row.append()
 
@@ -400,7 +399,7 @@ class ContainerFile(File):
         rowlist = list()
         for row in categories_table:
             for category in categories:
-                if (row['category'] == str(category)):
+                if (row['category'] == category):
                     rowlist.append(row.nrow)
 
         rowlist.sort()
