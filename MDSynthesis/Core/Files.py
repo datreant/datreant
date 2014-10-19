@@ -292,7 +292,6 @@ class ContainerFile(File):
 
         """
         tags_table = self.handle.get_node('/', 'tags')
-        container = tags_table.row
 
         # ensure tags are unique (we don't care about order)
         tags = set(tags)
@@ -309,8 +308,36 @@ class ContainerFile(File):
 
         # add new tags
         for tag in tags:
-            container['tag'] = str(tag)
-            container.append()
+            tags_table.row['tag'] = str(tag)
+            tags_table.row.append()
+
+    @write
+    def del_tags(self, *tags):
+        """Delete tags from Container.
+
+        Any number of tags can be given as arguments, and these will be
+        deleted.
+
+        :Arguments:
+            *tags*
+                Tags to delete.
+
+        """
+        tags_table = self.handle.get_node('/', 'tags')
+
+        # remove redundant tags from given list if present
+        tags = set(tags)
+
+        # get matching rows
+        rowlist = list()
+        for row in tags_table:
+            for tag in tags:
+                if (row['tag'] == str(tag)):
+                    rowlist.append(row.nrow)
+
+        # delete matching rows
+        for i in rowlist:
+            tags_table.remove_row(i)
 
     @write
     def add_categories(self, **categories):
@@ -329,7 +356,6 @@ class ContainerFile(File):
 
         """
         categories_table = self.handle.get_node('/', 'categories')
-        container = categories_table.row
 
         # remove categories already present in metadata from dictionary 
         #TODO: more efficient way to do this?
@@ -344,10 +370,43 @@ class ContainerFile(File):
         
         # add new categories
         for key in categories.keys():
-            container['category'] = str(key)
-            container['value'] = str(categories[key])
-            container.append()
+            categories_table.row['category'] = str(key)
+            categories_table.row['value'] = str(categories[key])
+            categories_table.row.append()
 
+    @write
+    def del_categories(self, *categories):
+        """Delete categories from Container.
+
+        Any number of categories (keys) can be given as arguments, and these
+        keys (with their values) will be deleted.
+
+        :Arguments:
+            *categories*
+                Categories to delete.
+
+        """
+        categories_table = self.handle.get_node('/', 'categories')
+
+        # remove redundant tags from given list if present
+        categories = set(categories)
+
+        # get matching rows
+        rowlist = list()
+        for row in categories_table:
+            for category in categories:
+                if (row['category'] == str(category)):
+                    rowlist.append(row.nrow)
+
+        rowlist.sort()
+        j = 0
+        # delete matching rows; have to use j to shift the register as we
+        # delete rows
+        for i in rowlist:
+            pdb.set_trace()
+            categories_table.remove_row(i-j)
+            j=j+1
+    
     def _open_r(self):
         """Open file with intention to write.
 
