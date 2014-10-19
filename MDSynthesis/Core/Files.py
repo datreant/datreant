@@ -256,6 +256,7 @@ class ContainerFile(File):
             self.shlock()
             func(*args, **kwargs)
             self.unlock()
+            self.handle.close()
 
         return inner
     
@@ -274,6 +275,7 @@ class ContainerFile(File):
             self.exlock()
             func(self, *args, **kwargs)
             self.unlock()
+            self.handle.close()
 
         return inner
 
