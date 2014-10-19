@@ -243,7 +243,6 @@ class ContainerFile(File):
             container.append()
 
         # remove lock and close
-        self.unlock()
         self.handle.close()
     
     def read(self, func):
@@ -537,7 +536,6 @@ class SimFile(ContainerFile):
         universes_group = self.handle.create_group('/', 'universes', 'universes')
 
         # remove lock and close
-        self.unlock()
         self.handle.close()
 
 class DatabaseFile(File):
