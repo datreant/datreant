@@ -9,6 +9,9 @@ from uuid import uuid4
 import tables
 import fcntl
 import os
+from functools import wraps
+
+import pdb
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
@@ -262,10 +265,11 @@ class ContainerFile(File):
         after the method returns.
 
         """
-        def inner(*args, **kwargs):
+        @wraps(func)
+        def inner(self, *args, **kwargs):
             self.handle = tables.open_file(self.filename, 'a')
             self.exlock()
-            func(*args, **kwargs)
+            func(self, *args, **kwargs)
             self.unlock()
 
         return inner
@@ -282,6 +286,23 @@ class ContainerFile(File):
               Tags to add. Must be convertable to strings using the str() builtin.
 
         """
+        tags_table = self.handle.get_node('/', 'tags')
+        container = tags_table.row
+
+        # ensure tags are unique (we don't care about order)
+        tags = set(tags)
+
+        # remove tags already present in metadata from list
+        #TODO: more efficient way to do this?
+        tags_present = list()
+        for tag in tags:
+            for row in tags_table:
+                if (row['tag'] == str(tag)):
+                    tags_present.append(tag)
+        pdb.set_trace()
+
+        tags = list(tags - set(tags_present))
+
         for tag in tags:
             container['tag'] = str(tag)
             container.append()
@@ -299,6 +320,9 @@ class ContainerFile(File):
                 must be convertible to strings using the str() builtin.
 
         """
+        categories_table = self.handle.get_node('/', 'categories')
+        container = categories_table.row
+        
         for key in categories.keys():
             container['category'] = str(key)
             container['value'] = str(categories[key])
