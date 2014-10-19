@@ -5,8 +5,6 @@ and possibly a bit messy.
 """
 import os, sys
 import time
-import yaml
-import cPickle
 import logging
 import pdb
 import glob

@@ -98,10 +98,10 @@ class ContainerFile(File):
         uuid = tables.StringCol(36)
 
         # user-given name of container
-        name = tables.StringCol(36)
+        name = tables.StringCol(128)
 
         # container type; Sim or Group
-        class = tables.StringCol(36)
+        container = tables.StringCol(36)
 
         # eventually we would like this to be generated dynamically
         # meaning, size of location string is size needed, and meta table
