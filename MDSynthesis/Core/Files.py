@@ -274,7 +274,7 @@ class ContainerFile(File):
             self.handle = tables.open_file(self.filename, 'a')
             self.exlock()
             func(self, *args, **kwargs)
-            self.unlock()
+            #self.unlock()
             self.handle.close()
 
         return inner
@@ -335,13 +335,19 @@ class ContainerFile(File):
                 if (row['tag'] == tag):
                     rowlist.append(row.nrow)
 
-        rowlist.sort()
-        j = 0
-        # delete matching rows; have to use j to shift the register as we
-        # delete rows
-        for i in rowlist:
-            tags_table.remove_row(i-j)
-            j=j+1
+        # must include a separate condition in case all rows will be removed
+        # due to a limitation of PyTables
+        if len(rowlist) == tags_table.nrows:
+            tags_table.remove()
+            tags_table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+        else:
+            rowlist.sort()
+            j = 0
+            # delete matching rows; have to use j to shift the register as we
+            # delete rows
+            for i in rowlist:
+                tags_table.remove_row(i-j)
+                j=j+1
 
     @write
     def add_categories(self, **categories):
