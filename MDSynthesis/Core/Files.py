@@ -294,13 +294,13 @@ class ContainerFile(File):
         tags_table = self.handle.get_node('/', 'tags')
 
         # ensure tags are unique (we don't care about order)
-        tags = set(tags)
+        tags = set([ str(tag) for tag in tags ])
 
         # remove tags already present in metadata from list
         #TODO: more efficient way to do this?
         tags_present = list()
-        for tag in tags:
-            for row in tags_table:
+        for row in tags_table:
+            for tag in tags:
                 if (row['tag'] == str(tag)):
                     tags_present.append(tag)
 
@@ -326,7 +326,7 @@ class ContainerFile(File):
         tags_table = self.handle.get_node('/', 'tags')
 
         # remove redundant tags from given list if present
-        tags = set(tags)
+        tags = set([ str(tag) for tag in tags ])
 
         # get matching rows
         rowlist = list()
@@ -335,9 +335,13 @@ class ContainerFile(File):
                 if (row['tag'] == str(tag)):
                     rowlist.append(row.nrow)
 
-        # delete matching rows
+        rowlist.sort()
+        j = 0
+        # delete matching rows; have to use j to shift the register as we
+        # delete rows
         for i in rowlist:
-            tags_table.remove_row(i)
+            tags_table.remove_row(i-j)
+            j=j+1
 
     @write
     def add_categories(self, **categories):
@@ -356,11 +360,12 @@ class ContainerFile(File):
 
         """
         categories_table = self.handle.get_node('/', 'categories')
+        pdb.set_trace()
 
         # remove categories already present in metadata from dictionary 
         #TODO: more efficient way to do this?
-        for key in categories.keys():
-            for row in categories_table:
+        for row in categories_table:
+            for key in categories.keys():
                 if (row['category'] == str(key)):
                     row['value'] = str(categories[key])
                     row.update()
@@ -388,8 +393,8 @@ class ContainerFile(File):
         """
         categories_table = self.handle.get_node('/', 'categories')
 
-        # remove redundant tags from given list if present
-        categories = set(categories)
+        # remove redundant categories from given list if present
+        categories = set([ str(category) for category in categories ])
 
         # get matching rows
         rowlist = list()
@@ -403,7 +408,6 @@ class ContainerFile(File):
         # delete matching rows; have to use j to shift the register as we
         # delete rows
         for i in rowlist:
-            pdb.set_trace()
             categories_table.remove_row(i-j)
             j=j+1
     
