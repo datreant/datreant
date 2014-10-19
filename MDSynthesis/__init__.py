@@ -99,6 +99,7 @@ __version__ = "0.3.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 __all__ = ['Sim', 'Group', 'Analysis', 'MetaAnalysis']
 
 # Bring some often used objects into the current namespace
-from Coordinator import Coordinator
-from Containers import Sim, Group, SuperGroup
-from Operators import Analysis, MetaAnalysis, MacroAnalysis
+#from Coordinator import Coordinator
+#from Containers import Sim, Group, SuperGroup
+#from Operators import Analysis, MetaAnalysis, MacroAnalysis
+import Core

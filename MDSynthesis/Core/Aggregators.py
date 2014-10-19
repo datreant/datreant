@@ -11,7 +11,7 @@ a backend by a Container, too.
 import Files
 import Workers
 
-class Aggregator(Core.Workers.ObjectCore):
+class Aggregator(Workers.ObjectCore):
     """Core functionality for information aggregators.
 
     """
@@ -26,9 +26,6 @@ class Database(Aggregator):
     This object is the interface of Container objects to the database file.
 
     """
-    _containerfile = Core.containerfile
-    _databasefile = Core.databasefile
-    _containerlog = Core.containerlog
 
     def __init__(self, database, **kwargs):
         """Generate Database object for the first time, or interface with an existing one.

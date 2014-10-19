@@ -8,6 +8,7 @@ import Workers
 from uuid import uuid4
 import tables
 import fcntl
+import os
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
@@ -197,24 +198,24 @@ class ContainerFile(File):
 
         # metadata table
         meta_table = self.handle.create_table('/', 'meta', self.Meta, 'metadata')
-        container = meta.row
+        container = meta_table.row
 
         container['uuid'] = str(uuid4())
         container['name'] = kwargs.pop('name', classname)
-        container['class'] = classname
+        container['container'] = classname
         container['location'] = os.path.dirname(self.filename)
         container.append()
 
         # coordinator table
         coordinator_table = self.handle.create_table('/', 'coordinator', self.Coordinator, 'coordinator information')
-        container = coordinator.row
+        container = coordinator_table.row
         
         container['abspath'] = kwargs.pop('coordinator', None)
         container.append()
 
         # tags table
         tags_table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
-        container = tags.row
+        container = tags_table.row
         
         tags = kwargs.pop('tags', list())
         for tag in tags:
@@ -222,8 +223,8 @@ class ContainerFile(File):
             container.append()
 
         # categories table
-        categories_table = self.handle.create_table('/', 'categories', self.Tags, 'categories')
-        container = categories.row
+        categories_table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+        container = categories_table.row
         
         categories = kwargs.pop('categories', dict())
         for key in categories.keys():
@@ -252,7 +253,7 @@ class ContainerFile(File):
 
         return inner
     
-    def write(self, func):
+    def write(func):
         """Decorator for opening file for writing and applying exclusive lock.
         
         Applying this decorator to a method will ensure that the file is opened
@@ -269,8 +270,8 @@ class ContainerFile(File):
 
         return inner
 
-    @self.write
-    def add_tag(*tags):
+    @write
+    def add_tag(self, *tags):
         """Add any number of tags to the Container.
 
         Tags are individual strings that serve to differentiate Containers from
@@ -309,8 +310,6 @@ class ContainerFile(File):
     
         """
         self.handle.close()
-
-
 
 class SimFile(ContainerFile):
     """Main Sim state file.
@@ -420,5 +419,4 @@ class DataFile(object):
     structure to persistent file form.
 
     """
-    file.flush(fsync=True)
 
