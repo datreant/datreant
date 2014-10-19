@@ -74,6 +74,11 @@ class File(object):
     def unlock(self):
         """Remove exclusive or shared lock on file.
 
+        WARNING: It is very rare that this is necessary, since a file must be unlocked
+        before it is closed. Furthermore, locks disappear when a file is closed anyway.
+        This method will remain here for now, but may be removed in the future if
+        not needed (likely).
+
         :Returns:
            *success*
               True if lock removed
