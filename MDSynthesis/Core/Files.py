@@ -217,6 +217,8 @@ class ContainerFile(File):
         container.append()
 
         # tags table
+        #TODO: make use of add_tags methods, but must be wary of multiple opens to file
+        # previous opens are only closed when the interpreter exits
         tags_table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
         container = tags_table.row
         
@@ -248,6 +250,7 @@ class ContainerFile(File):
         after the method returns.
 
         """
+        @wraps(func)
         def inner(*args, **kwargs):
             self.handle = tables.open_file(self.filename, 'r')
             self.shlock()
