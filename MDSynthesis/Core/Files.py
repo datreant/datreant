@@ -302,10 +302,10 @@ class ContainerFile(File):
             for row in tags_table:
                 if (row['tag'] == str(tag)):
                     tags_present.append(tag)
-        pdb.set_trace()
 
         tags = list(tags - set(tags_present))
 
+        # add new tags
         for tag in tags:
             container['tag'] = str(tag)
             container.append()
@@ -325,7 +325,18 @@ class ContainerFile(File):
         """
         categories_table = self.handle.get_node('/', 'categories')
         container = categories_table.row
+
+        # remove categories already present in metadata from dictionary 
+        #TODO: more efficient way to do this?
+        for key in categories.keys():
+            for row in categories_table:
+                if (row['category'] == str(key)):
+                    row['value'] = str(categories[key])
+                    # dangerous? or not since we are iterating through
+                    # categories.keys() and not categories?
+                    categories.pop(key)
         
+        # add new categories
         for key in categories.keys():
             container['category'] = str(key)
             container['value'] = str(categories[key])
