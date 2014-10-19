@@ -271,19 +271,38 @@ class ContainerFile(File):
         return inner
 
     @write
-    def add_tag(self, *tags):
+    def add_tags(self, *tags):
         """Add any number of tags to the Container.
 
         Tags are individual strings that serve to differentiate Containers from
-        one another.
+        one another. Sometimes preferable to categories.
 
         :Arguments:
            *tags*
               Tags to add. Must be convertable to strings using the str() builtin.
 
         """
+        for tag in tags:
+            container['tag'] = str(tag)
+            container.append()
 
+    @write
+    def add_categories(self, **categories):
+        """Add any number of categories to the Container.
 
+        Categories are key-value pairs of strings that serve to differentiate
+        Containers from one another. Sometimes preferable to tags.
+
+        :Keywords:
+            *categories*
+                Categories to add. Keyword used as key, value used as value. Both
+                must be convertible to strings using the str() builtin.
+
+        """
+        for key in categories.keys():
+            container['category'] = str(key)
+            container['value'] = str(categories[key])
+            container.append()
 
     def _open_r(self):
         """Open file with intention to write.
