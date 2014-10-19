@@ -319,6 +319,9 @@ class ContainerFile(File):
         Categories are key-value pairs of strings that serve to differentiate
         Containers from one another. Sometimes preferable to tags.
 
+        If a given category already exists (same key), the value given will replace
+        the value for that category.
+
         :Keywords:
             *categories*
                 Categories to add. Keyword used as key, value used as value. Both
@@ -334,6 +337,7 @@ class ContainerFile(File):
             for row in categories_table:
                 if (row['category'] == str(key)):
                     row['value'] = str(categories[key])
+                    row.update()
                     # dangerous? or not since we are iterating through
                     # categories.keys() and not categories?
                     categories.pop(key)
