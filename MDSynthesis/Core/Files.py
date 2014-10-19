@@ -389,14 +389,14 @@ class ContainerFile(File):
     @write
     def del_categories(self, *categories):
         """Delete categories from Container.
-
+    
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
-
+         
         :Arguments:
             *categories*
                 Categories to delete.
-
+    
         """
         categories_table = self.handle.get_node('/', 'categories')
 
@@ -410,13 +410,19 @@ class ContainerFile(File):
                 if (row['category'] == category):
                     rowlist.append(row.nrow)
 
-        rowlist.sort()
-        j = 0
-        # delete matching rows; have to use j to shift the register as we
-        # delete rows
-        for i in rowlist:
-            categories_table.remove_row(i-j)
-            j=j+1
+        # must include a separate condition in case all rows will be removed
+        # due to a limitation of PyTables
+        if len(rowlist) == categories_table.nrows:
+            categories_table.remove()
+            categories_table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+        else:
+            rowlist.sort()
+            j = 0
+            # delete matching rows; have to use j to shift the register as we
+            # delete rows
+            for i in rowlist:
+                categories_table.remove_row(i-j)
+                j=j+1
     
     def _open_r(self):
         """Open file with intention to write.
