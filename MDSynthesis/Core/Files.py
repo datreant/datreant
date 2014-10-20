@@ -383,7 +383,7 @@ class ContainerFile(File):
                 dictionary of all categories 
         """
         table = self.handle.get_node('/', 'categories')
-        return { key: value for (key, value) in iterable.iterrows() }
+        return { x['category']: x['value'] for x in table.iterrows() }
 
     @write
     def add_categories(self, **categories):
