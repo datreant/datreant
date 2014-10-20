@@ -245,7 +245,7 @@ class ContainerFile(File):
         # remove lock and close
         self.handle.close()
     
-    def read(self, func):
+    def read(func):
         """Decorator for opening file for reading and applying shared lock.
         
         Applying this decorator to a method will ensure that the file is opened
@@ -255,11 +255,12 @@ class ContainerFile(File):
 
         """
         @wraps(func)
-        def inner(*args, **kwargs):
+        def inner(self, *args, **kwargs):
             self.handle = tables.open_file(self.filename, 'r')
             self.shlock()
-            func(*args, **kwargs)
+            out = func(self, *args, **kwargs)
             self.handle.close()
+            return out
 
         return inner
     
@@ -276,11 +277,23 @@ class ContainerFile(File):
         def inner(self, *args, **kwargs):
             self.handle = tables.open_file(self.filename, 'a')
             self.exlock()
-            func(self, *args, **kwargs)
+            out = func(self, *args, **kwargs)
             self.handle.close()
+            return out
 
         return inner
 
+    @read
+    def get_tags(self):
+        """Get all tags as a list.
+
+        :Returns:
+            *tags*
+                list of all tags
+        """
+        table = self.handle.get_node('/', 'tags')
+        return [ x['tag'] for x in table.iterrows() ]
+        
     @write
     def add_tags(self, *tags):
         """Add any number of tags to the Container.
@@ -293,7 +306,7 @@ class ContainerFile(File):
               Tags to add. Must be convertable to strings using the str() builtin.
 
         """
-        tags_table = self.handle.get_node('/', 'tags')
+        table = self.handle.get_node('/', 'tags')
 
         # ensure tags are unique (we don't care about order)
         tags = set([ str(tag) for tag in tags ])
@@ -301,7 +314,7 @@ class ContainerFile(File):
         # remove tags already present in metadata from list
         #TODO: more efficient way to do this?
         tags_present = list()
-        for row in tags_table:
+        for row in table:
             for tag in tags:
                 if (row['tag'] == tag):
                     tags_present.append(tag)
@@ -310,8 +323,8 @@ class ContainerFile(File):
 
         # add new tags
         for tag in tags:
-            tags_table.row['tag'] = tag
-            tags_table.row.append()
+            table.row['tag'] = tag
+            table.row.append()
 
     @write
     def del_tags(self, *tags, **kwargs):
@@ -329,12 +342,12 @@ class ContainerFile(File):
                 When True, delete all tags [``False``]
 
         """
-        tags_table = self.handle.get_node('/', 'tags')
+        table = self.handle.get_node('/', 'tags')
         purge = kwargs.pop('all', False)
 
         if purge:
-            tags_table.remove()
-            tags_table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+            table.remove()
+            table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
             
         else:
             # remove redundant tags from given list if present
@@ -342,24 +355,35 @@ class ContainerFile(File):
 
             # get matching rows
             rowlist = list()
-            for row in tags_table:
+            for row in table:
                 for tag in tags:
                     if (row['tag'] == tag):
                         rowlist.append(row.nrow)
 
             # must include a separate condition in case all rows will be removed
             # due to a limitation of PyTables
-            if len(rowlist) == tags_table.nrows:
-                tags_table.remove()
-                tags_table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+            if len(rowlist) == table.nrows:
+                table.remove()
+                table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
             else:
                 rowlist.sort()
                 j = 0
                 # delete matching rows; have to use j to shift the register as we
                 # delete rows
                 for i in rowlist:
-                    tags_table.remove_row(i-j)
+                    table.remove_row(i-j)
                     j=j+1
+
+    @read
+    def get_categories(self):
+        """Get all categories as a dictionary.
+
+        :Returns:
+            *categories*
+                dictionary of all categories 
+        """
+        table = self.handle.get_node('/', 'categories')
+        return { key: value for (key, value) in iterable.iterrows() }
 
     @write
     def add_categories(self, **categories):
@@ -377,11 +401,11 @@ class ContainerFile(File):
                 must be convertible to strings using the str() builtin.
 
         """
-        categories_table = self.handle.get_node('/', 'categories')
+        table = self.handle.get_node('/', 'categories')
 
         # remove categories already present in metadata from dictionary 
         #TODO: more efficient way to do this?
-        for row in categories_table:
+        for row in table:
             for key in categories.keys():
                 if (row['category'] == key):
                     row['value'] = str(categories[key])
@@ -392,9 +416,9 @@ class ContainerFile(File):
         
         # add new categories
         for key in categories.keys():
-            categories_table.row['category'] = key
-            categories_table.row['value'] = str(categories[key])
-            categories_table.row.append()
+            table.row['category'] = key
+            table.row['value'] = str(categories[key])
+            table.row.append()
 
     @write
     def del_categories(self, *categories, **kwargs):
@@ -412,35 +436,35 @@ class ContainerFile(File):
                 When True, delete all categories [``False``]
     
         """
-        categories_table = self.handle.get_node('/', 'categories')
+        table = self.handle.get_node('/', 'categories')
         purge = kwargs.pop('all', False)
 
         if purge:
-            categories_table.remove()
-            categories_table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+            table.remove()
+            table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
         else:
             # remove redundant categories from given list if present
             categories = set([ str(category) for category in categories ])
 
             # get matching rows
             rowlist = list()
-            for row in categories_table:
+            for row in table:
                 for category in categories:
                     if (row['category'] == category):
                         rowlist.append(row.nrow)
 
             # must include a separate condition in case all rows will be removed
             # due to a limitation of PyTables
-            if len(rowlist) == categories_table.nrows:
-                categories_table.remove()
-                categories_table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+            if len(rowlist) == table.nrows:
+                table.remove()
+                table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
             else:
                 rowlist.sort()
                 j = 0
                 # delete matching rows; have to use j to shift the register as we
                 # delete rows
                 for i in rowlist:
-                    categories_table.remove_row(i-j)
+                    table.remove_row(i-j)
                     j=j+1
     
     def _open_r(self):
