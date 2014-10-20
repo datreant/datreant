@@ -38,7 +38,7 @@ class File(object):
         self.handle = None
         self.logger = logger
 
-    def shlock(self):
+    def _shlock(self):
         """Get shared lock on file.
 
         Using fcntl.lockf, a shared lock on the file is obtained. If an
@@ -53,7 +53,7 @@ class File(object):
 
         return True
 
-    def exlock(self):
+    def _exlock(self):
         """Get exclusive lock on file.
     
         Using fcntl.lockf, an exclusive lock on the file is obtained. If a
@@ -66,12 +66,12 @@ class File(object):
         """
         # first obtain shared lock; may help to avoid race conditions between
         # exclusive locks (REQUIRES THOROUGH TESTING)
-        if self.shlock():
+        if self._shlock():
             fcntl.lockf(self.handle, fcntl.LOCK_EX)
     
         return True
 
-    def unlock(self):
+    def _unlock(self):
         """Remove exclusive or shared lock on file.
 
         WARNING: It is very rare that this is necessary, since a file must be unlocked
@@ -87,7 +87,7 @@ class File(object):
 
         return True
 
-    def check_existence(self):
+    def _check_existence(self):
         """Check for existence of file.
     
         """
@@ -179,7 +179,7 @@ class ContainerFile(File):
         super(ContainerFile, self).__init__(filename, logger=logger)
         
         # if file does not exist, it is created
-        if not self.check_existence():
+        if not self._check_existence():
             self.create(classname, **kwargs)
 
     def create(self, classname, **kwargs):
@@ -202,7 +202,7 @@ class ContainerFile(File):
               characteristics to object for search
         """
         self.handle = tables.open_file(self.filename, 'w')
-        self.exlock()
+        self._exlock()
 
         # metadata table
         meta_table = self.handle.create_table('/', 'meta', self.Meta, 'metadata')
@@ -257,7 +257,7 @@ class ContainerFile(File):
         @wraps(func)
         def inner(self, *args, **kwargs):
             self.handle = tables.open_file(self.filename, 'r')
-            self.shlock()
+            self._shlock()
             out = func(self, *args, **kwargs)
             self.handle.close()
             return out
@@ -276,7 +276,7 @@ class ContainerFile(File):
         @wraps(func)
         def inner(self, *args, **kwargs):
             self.handle = tables.open_file(self.filename, 'a')
-            self.exlock()
+            self._exlock()
             out = func(self, *args, **kwargs)
             self.handle.close()
             return out
