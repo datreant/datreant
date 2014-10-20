@@ -3,8 +3,8 @@ Tests for File classes.
 
 """
 
-import unittest
-import MDSynthesis.Core.Files
+from unittest import TestCase
+import MDSynthesis.Core.Files as Files
 import yaml
 import os
 
@@ -17,7 +17,7 @@ def suite():
 
     return test_suite
 
-class TestFile(unittest.TestCase):
+class TestFile(TestCase):
     """Test class for the File class.
 
     """
@@ -65,6 +65,33 @@ class TestFile(unittest.TestCase):
 
         """
         
+
+class TestContainerFile(TestCase):
+    """Test class for ContainerFile.
+
+    """
+    def setUp(self):
+        """Create test ContainerFile.
+
+        """
+        self.test = Files.ContainerFile('testcont.hdf', None, 'Sim', name='test')
+
+    def test_add_tags(self):
+        """Test out the adding of tags.
+
+        """
+        test.add_tags('mark', 932, 'mark', 'luke', '932', 8400.321)
+
+    def test_del_tags(self):
+        """Test out the deletion of tags.
+
+        """
+        test.add_tags('mark', 932, 'mark', 'luke', '932', 8400.321)
+
+
+    def test_add_categories(self):
+
+
 
 
 if __name__ == '__main__':
