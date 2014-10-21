@@ -14,6 +14,7 @@ def suite():
     """
     test_suite = unittest.TestSuite()
     test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestFile))
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestContainerFile))
 
     return test_suite
 
