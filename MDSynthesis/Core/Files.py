@@ -11,8 +11,6 @@ import fcntl
 import os
 from functools import wraps
 
-import pdb
-
 class File(object):
     """File object base class. Implements file locking and reloading methods.
     
@@ -97,7 +95,7 @@ class ContainerFile(File):
     """Container file object; syncronized access to Container data.
 
     """
-    class Meta(tables.IsDescription):
+    class _Meta(tables.IsDescription):
         """Table definition for metadata.
 
         All strings limited to hardcoded size for now.
@@ -119,7 +117,7 @@ class ContainerFile(File):
         # needed
         location = tables.StringCol(256)
 
-    class Coordinator(tables.IsDescription):
+    class _Coordinator(tables.IsDescription):
         """Table definition for coordinator info.
 
         This information is kept separate from other metadata to allow the
@@ -131,13 +129,13 @@ class ContainerFile(File):
         # absolute path of coordinator
         abspath = tables.StringCol(256)
         
-    class Tags(tables.IsDescription):
+    class _Tags(tables.IsDescription):
         """Table definition for tags.
 
         """
         tag = tables.StringCol(36)
 
-    class Categories(tables.IsDescription):
+    class _Categories(tables.IsDescription):
         """Table definition for categories.
 
         """
@@ -205,7 +203,7 @@ class ContainerFile(File):
         self._exlock()
 
         # metadata table
-        meta_table = self.handle.create_table('/', 'meta', self.Meta, 'metadata')
+        meta_table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
         container = meta_table.row
 
         container['uuid'] = str(uuid4())
@@ -215,7 +213,7 @@ class ContainerFile(File):
         container.append()
 
         # coordinator table
-        coordinator_table = self.handle.create_table('/', 'coordinator', self.Coordinator, 'coordinator information')
+        coordinator_table = self.handle.create_table('/', 'coordinator', self._Coordinator, 'coordinator information')
         container = coordinator_table.row
         
         container['abspath'] = kwargs.pop('coordinator', None)
@@ -224,7 +222,7 @@ class ContainerFile(File):
         # tags table
         #TODO: make use of add_tags methods, but must be wary of multiple opens to file
         # previous opens are only closed when the interpreter exits
-        tags_table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+        tags_table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
         container = tags_table.row
         
         tags = kwargs.pop('tags', list())
@@ -233,7 +231,7 @@ class ContainerFile(File):
             container.append()
 
         # categories table
-        categories_table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+        categories_table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
         container = categories_table.row
         
         categories = kwargs.pop('categories', dict())
@@ -245,7 +243,7 @@ class ContainerFile(File):
         # remove lock and close
         self.handle.close()
     
-    def read(func):
+    def _read(func):
         """Decorator for opening file for reading and applying shared lock.
         
         Applying this decorator to a method will ensure that the file is opened
@@ -264,7 +262,7 @@ class ContainerFile(File):
 
         return inner
     
-    def write(func):
+    def _write(func):
         """Decorator for opening file for writing and applying exclusive lock.
         
         Applying this decorator to a method will ensure that the file is opened
@@ -283,7 +281,7 @@ class ContainerFile(File):
 
         return inner
 
-    @read
+    @_read
     def get_tags(self):
         """Get all tags as a list.
 
@@ -294,7 +292,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'tags')
         return [ x['tag'] for x in table.iterrows() ]
         
-    @write
+    @_write
     def add_tags(self, *tags):
         """Add any number of tags to the Container.
 
@@ -326,7 +324,7 @@ class ContainerFile(File):
             table.row['tag'] = tag
             table.row.append()
 
-    @write
+    @_write
     def del_tags(self, *tags, **kwargs):
         """Delete tags from Container.
 
@@ -347,7 +345,7 @@ class ContainerFile(File):
 
         if purge:
             table.remove()
-            table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+            table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
             
         else:
             # remove redundant tags from given list if present
@@ -364,7 +362,7 @@ class ContainerFile(File):
             # due to a limitation of PyTables
             if len(rowlist) == table.nrows:
                 table.remove()
-                table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+                table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
             else:
                 rowlist.sort()
                 j = 0
@@ -374,7 +372,7 @@ class ContainerFile(File):
                     table.remove_row(i-j)
                     j=j+1
 
-    @read
+    @_read
     def get_categories(self):
         """Get all categories as a dictionary.
 
@@ -385,7 +383,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'categories')
         return { x['category']: x['value'] for x in table.iterrows() }
 
-    @write
+    @_write
     def add_categories(self, **categories):
         """Add any number of categories to the Container.
 
@@ -420,7 +418,7 @@ class ContainerFile(File):
             table.row['value'] = str(categories[key])
             table.row.append()
 
-    @write
+    @_write
     def del_categories(self, *categories, **kwargs):
         """Delete categories from Container.
     
@@ -441,7 +439,7 @@ class ContainerFile(File):
 
         if purge:
             table.remove()
-            table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+            table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
         else:
             # remove redundant categories from given list if present
             categories = set([ str(category) for category in categories ])
@@ -457,7 +455,7 @@ class ContainerFile(File):
             # due to a limitation of PyTables
             if len(rowlist) == table.nrows:
                 table.remove()
-                table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+                table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
             else:
                 rowlist.sort()
                 j = 0
