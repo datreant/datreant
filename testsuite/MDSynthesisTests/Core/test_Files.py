@@ -95,9 +95,26 @@ class TestContainerFile(TestCase):
         test.add_categories(**inputs)
         test.del_categories('jesus', 'xenu', 'masc', 'xenu')
 
+        test._open_r()
+        table = test.handle.root.categories
         result = { x['category']: x['value'] for x in table.iterrows() }
+        test._close()
 
         self.assertEqual(result, {'sudo': 'bark'})
+
+    def test_update_name(self):
+        """Test rename of Container.
+
+        """
+        newname = 'blark'
+        test.update_name(newname)
+
+        test._open_r()
+        table = test.handle.root.meta
+        result = table.cols.name[0]
+        test._close()
+
+        self.assertEqual(newname, result)
 
 if __name__ == '__main__':
     unittest.main()
