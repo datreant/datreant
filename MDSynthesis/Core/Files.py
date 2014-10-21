@@ -333,6 +333,26 @@ class ContainerFile(File):
         if (containertype == 'Sim') or (containertype == 'Group'):
             table = self.handle.get_node('/', 'meta')
             table.cols.containertype[0] = containertype
+
+    @_read
+    def get_location(self):
+        """Get Container location.
+
+        :Returns:
+            *location*
+                absolute path to Container directory
+    
+        """
+        table = self.handle.get_node('/', 'meta')
+        return table.cols.location[0]
+
+    @_write
+    def update_location(self):
+        """Update Container location.
+
+        """
+        table = self.handle.get_node('/', 'meta')
+        table.cols.location[0] = os.path.dirname(self.filename)
     
     @_read
     def get_tags(self):
