@@ -8,15 +8,13 @@ molecular dynamics simulations. It is built around MDAnalysis
 dissection of simulation trajectories, MDSynthesis is designed to perform the
 logistics of large-scale analysis of many trajectories, individually and as
 entire groups. It allows the scientist to operate at a high level when
-working with the data, while MDSynthesis handles the details according to an
-understandable scheme.
+working with the data, while MDSynthesis handles the details of storing and
+recalling this data.
 
 The code at present is at the beginning of development. Documentation can be found
-for all objects and methods in-code. The code itself is limited to distribution
-to within the Beckstein Lab until adequate for official release.
+for all objects and methods in-code.
 
 This software is copyright
 (c) 2013 David Dotson
 
-MDSynthesis is released under the GPL software license, version 2, with the 
-temporary proviso noted above.
+MDSynthesis is released under the GPL software license, version 2.

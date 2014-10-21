@@ -5,187 +5,89 @@ Classes for datafile syncronization.
 
 import Aggregators
 import Workers
-import yaml
-import pickle
 from uuid import uuid4
+import tables
+import fcntl
+import os
+from functools import wraps
+
+import pdb
 
 class File(object):
-    """File object base class. Implements file locking and syncronization.
+    """File object base class. Implements file locking and reloading methods.
     
     """
-    def __init__(self, filename, reader, writer, datastruct=None, logger=None, **kwargs):
+    def __init__(self, filename, logger=None, **kwargs):
         """Create File instance for interacting with file on disk.
 
-        The File object keeps its own cached version of a data structure
-        written to file in sync with the file itself. It does this by
-        consistently applying locks to files before reading and writing. 
-        
-        At all times, reading and modifying the data structure is the same as
-        reading and writing to the file. Accessing an element of the data
-        structure results in locking, reading, and unlocking the file each
-        time. Modifying an element results in locking, reading, writing, and
-        unlocking. All operations are performed atomically to ensure unintended
-        overwrites are avoided.
+        All files in MDSynthesis should be accessible by high-level
+        methods without having to worry about simultaneous reading and writing by
+        other processes. The File object includes methods and infrastructure
+        for ensuring shared and exclusive locks are consistently applied before
+        reads and writes, respectively. It handles any other low-level tasks
+        for maintaining file integrity.
 
         :Arguments:
            *filename*
-              name of file on disk object synchronizes with
-           *reader*
-              function used to translate file into data structure;
-              must take one argument: file stream to read from
-           *writer*
-              function used to translate data structure into file;
-              must take two arguments: the data structure to write and the 
-              file stream to write to
-           *datastruct*
-              data structure to store; overrides definition in :meth:`create`
-              this allows for custom data structures without a pre-defined
-              definition 
+              name of file on disk object corresponds to 
            *logger*
               logger to send warnings and errors to
 
-        .. Note:: kwargs passed to :meth:`create`
-
         """
-        self.filename = filename
-        self.lockname = "{}.lock".format(self.file.name) 
+        self.filename = os.path.abspath(filename)
+        self.handle = None
+        self.logger = logger
 
-        self.reader = reader
-        self.writer = writer
+    def _shlock(self):
+        """Get shared lock on file.
 
-        # if given, use data structure and write to file
-        # if none given, check existence of file and read it in if present
-        # else create a new data structure and file from definition
-        if datastruct:
-            self.data = datastruct
-            self.locked_write()
-        elif self.check_existence():
-            self.locked_read()
-        else:
-            self.create()
-            self.locked_write()
-
-    def create(self, **kwargs):
-        """Build data structure.
-
-        This is a placeholder function, since each specific File use-case
-        will have a different data structure definition.
-
-        """
-        self.data = None
-
-    def read(self):
-        """Read contents of file into data structure.
-
-        .. Note:: file not locked in this method. Must be done externally.
+        Using fcntl.lockf, a shared lock on the file is obtained. If an
+        exclusive lock is already held on the file by another process,
+        then the method waits until it can obtain the lock.
 
         :Returns:
            *success*
-              True if read successful
+              True if shared lock successfully obtained
         """
+        fcntl.lockf(self.handle, fcntl.LOCK_SH)
 
-        with open(self.filename, 'r') as f:
-            self.data = self.reader(f)
-        
-        return self.compare()
+        return True
 
-    def write(self):
-        """Write data structure to file.
-    
-        .. Note:: file not locked in this method. Must be done externally.
-
-        :Returns:
-           *success*
-              True if write successful
-        """
-        with open(self.filename, 'w') as f:
-            self.writer(self.data, f)
-
-        return self.compare()
-
-    def lock(self):
+    def _exlock(self):
         """Get exclusive lock on file.
-
-        The lock is just a symlink of the target file, since making a symlink
-        appears to be an atomic operation on most platforms. This is important,
-        since creating a symlink also serves to check if one is already present
-        all in one operation.
-
-        :Returns:
-           *success*
-              True if lockfile successfully created
-        """
-        # if lockfile already present, wait until it disappears; make lock
-        while True:
-            try:
-                os.symlink(self.filename, self.lockname):
-                break
-            except OSError:
-                time.sleep(1)
-
-        # return lockfile existence
-        return os.path.exists(self.lockname)
-
-    def unlock(self):
-        """Remove exclusive lock on file.
-
-        Before removing the lock, checks that the data structure is
-        the same as what is on file.
-
-        :Returns:
-           *success*
-              True if comparison successful 
-        """
-        # check that python representation matches file
-        success = self.compare()
-
-        if success:
-            os.remove(self.lockname)
-
-        return success
-
-    def lockit(self, func):
-        """Decorator for applying a lock around the given method.
-
-        Applying this decorator to a method will ensure that a file lock is
-        obtained before that method is executed. It also ensures that the
-        lock is removed after the method returns.
-
-        """
-        def inner(*args, **kwargs):
-            self.lock()
-            func(*args, **kwargs)
-            self.unlock()
-
-        return inner
-
-    @self.lockit
-    def locked_write(self):
-        """Lock file, write to file, unlock file.
-        
-        """
-        return self.write()
-
-    @self.lockit
-    def locked_read(self):
-        """Lock file, write to file, unlock file.
-
-        """
-        return self.read()
-
-    def compare(self):
-        """Compare data structure with file contents.
-
-        :Returns:
-           *same*
-              True if file synchronized with data structure
-        """
-        with open(self.filename, 'r') as f:
-            datatemp = self.reader(f)
-        
-        return self.data == datatemp
     
-    def check_existence(self):
+        Using fcntl.lockf, an exclusive lock on the file is obtained. If a
+        shared or exclusive lock is already held on the file by another
+        process, then the method waits until it can obtain the lock.
+
+        :Returns:
+           *success*
+              True if exclusive lock successfully obtained
+        """
+        # first obtain shared lock; may help to avoid race conditions between
+        # exclusive locks (REQUIRES THOROUGH TESTING)
+        if self._shlock():
+            fcntl.lockf(self.handle, fcntl.LOCK_EX)
+    
+        return True
+
+    def _unlock(self):
+        """Remove exclusive or shared lock on file.
+
+        WARNING: It is very rare that this is necessary, since a file must be unlocked
+        before it is closed. Furthermore, locks disappear when a file is closed anyway.
+        This method will remain here for now, but may be removed in the future if
+        not needed (likely).
+
+        :Returns:
+           *success*
+              True if lock removed
+        """
+        fcntl.lockf(self.handle, fcntl.LOCK_UN)
+
+        return True
+
+    def _check_existence(self):
         """Check for existence of file.
     
         """
@@ -195,15 +97,63 @@ class ContainerFile(File):
     """Container file object; syncronized access to Container data.
 
     """
-    def __init__(self, location, logger, classname, **kwargs): 
+    class Meta(tables.IsDescription):
+        """Table definition for metadata.
+
+        All strings limited to hardcoded size for now.
+
+        """
+        # unique identifier for container
+        uuid = tables.StringCol(36)
+
+        # user-given name of container
+        name = tables.StringCol(128)
+
+        # container type; Sim or Group
+        container = tables.StringCol(36)
+
+        # eventually we would like this to be generated dynamically
+        # meaning, size of location string is size needed, and meta table
+        # is regenerated if any of its strings need to be (or smaller)
+        # When Coordinator generates its database, it uses largest string size
+        # needed
+        location = tables.StringCol(256)
+
+    class Coordinator(tables.IsDescription):
+        """Table definition for coordinator info.
+
+        This information is kept separate from other metadata to allow the
+        Coordinator to simply stack tables to populate its database. It doesn't
+        need entries that store its own path.
+
+        Path length fixed size for now.
+        """
+        # absolute path of coordinator
+        abspath = tables.StringCol(256)
+        
+    class Tags(tables.IsDescription):
+        """Table definition for tags.
+
+        """
+        tag = tables.StringCol(36)
+
+    class Categories(tables.IsDescription):
+        """Table definition for categories.
+
+        """
+        category = tables.StringCol(36)
+        value = tables.StringCol(36)
+
+    def __init__(self, filename, logger, classname, **kwargs): 
         """Initialize Container state file.
 
         This is the base class for all Container state files. It generates 
-        data structure elements common to all Containers.
+        data structure elements common to all Containers. It also implements
+        low-level I/O functionality.
 
         :Arguments:
-           *location*
-              directory that represents the Container
+           *filename*
+              path to file
            *logger*
               Container's logger instance
            *classname*
@@ -226,18 +176,20 @@ class ContainerFile(File):
         .. Note:: kwargs passed to :meth:`create`
 
         """
+        super(ContainerFile, self).__init__(filename, logger=logger)
+        
+        # if file does not exist, it is created
+        if not self._check_existence():
+            self.create(classname, **kwargs)
 
-        filename = os.path.join(location, containerfile)
+    def create(self, classname, **kwargs):
+        """Build state file and common data structure elements.
 
-        super(ContainerFile, self).__init__(filename, reader=yaml.load, writer=yaml.dump, logger=logger,
-                classname=classname, location=location)
-
-    def create(self, **kwargs):
-        """Build common data structure elements.
-
-        :Keywords:
+        :Arguments:
            *classname*
               Container's class name
+
+        :Keywords:
            *name*
               user-given name of Container object
            *coordinator*
@@ -248,32 +200,298 @@ class ContainerFile(File):
            *tags*
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
-           *details*
-              user-given string for object notes
         """
-        self.data = {}
+        self.handle = tables.open_file(self.filename, 'w')
+        self._exlock()
 
-        self.data['location'] = kwargs.pop('location')
-        self.data['coordinator'] = kwargs.pop('coordinator', None)
-        self.data['uuid'] = str(uuid4())
+        # metadata table
+        meta_table = self.handle.create_table('/', 'meta', self.Meta, 'metadata')
+        container = meta_table.row
 
-        self.data['class'] = kwargs.pop('classname')
-        self.data['name'] = kwargs.pop('name', self.data['class'])
+        container['uuid'] = str(uuid4())
+        container['name'] = kwargs.pop('name', classname)
+        container['container'] = classname
+        container['location'] = os.path.dirname(self.filename)
+        container.append()
 
-        # cumbersome, but if the given categories isn't a dictionary, we fix it
-        self.data['categories'] = kwargs.pop('categories', dict())
-        if not isinstance(self.data['categories'], dict):
-            self.data['categories'] = dict()
+        # coordinator table
+        coordinator_table = self.handle.create_table('/', 'coordinator', self.Coordinator, 'coordinator information')
+        container = coordinator_table.row
+        
+        container['abspath'] = kwargs.pop('coordinator', None)
+        container.append()
 
-        # if given tags isn't a list, we fix it
-        self.data['tags'] = kwargs.pop('tags', list())
-        if not isinstance(self.data['tags'], list):
-            self.data['tags'] = list()
+        # tags table
+        #TODO: make use of add_tags methods, but must be wary of multiple opens to file
+        # previous opens are only closed when the interpreter exits
+        tags_table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+        container = tags_table.row
+        
+        tags = kwargs.pop('tags', list())
+        for tag in tags:
+            container['tag'] = str(tag)
+            container.append()
 
-        # if the given details isn't a string, we fix it
-        self.data['details'] = kwargs.pop('details', str())
-        if not isinstance(self.data['details'], basestring):
-            self.data['details'] = str()
+        # categories table
+        categories_table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+        container = categories_table.row
+        
+        categories = kwargs.pop('categories', dict())
+        for key in categories.keys():
+            container['category'] = str(key)
+            container['value'] = str(categories[key])
+            container.append()
+
+        # remove lock and close
+        self.handle.close()
+    
+    def read(func):
+        """Decorator for opening file for reading and applying shared lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = tables.open_file(self.filename, 'r')
+            self._shlock()
+            out = func(self, *args, **kwargs)
+            self.handle.close()
+            return out
+
+        return inner
+    
+    def write(func):
+        """Decorator for opening file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = tables.open_file(self.filename, 'a')
+            self._exlock()
+            out = func(self, *args, **kwargs)
+            self.handle.close()
+            return out
+
+        return inner
+
+    @read
+    def get_tags(self):
+        """Get all tags as a list.
+
+        :Returns:
+            *tags*
+                list of all tags
+        """
+        table = self.handle.get_node('/', 'tags')
+        return [ x['tag'] for x in table.iterrows() ]
+        
+    @write
+    def add_tags(self, *tags):
+        """Add any number of tags to the Container.
+
+        Tags are individual strings that serve to differentiate Containers from
+        one another. Sometimes preferable to categories.
+
+        :Arguments:
+           *tags*
+              Tags to add. Must be convertable to strings using the str() builtin.
+
+        """
+        table = self.handle.get_node('/', 'tags')
+
+        # ensure tags are unique (we don't care about order)
+        tags = set([ str(tag) for tag in tags ])
+
+        # remove tags already present in metadata from list
+        #TODO: more efficient way to do this?
+        tags_present = list()
+        for row in table:
+            for tag in tags:
+                if (row['tag'] == tag):
+                    tags_present.append(tag)
+
+        tags = list(tags - set(tags_present))
+
+        # add new tags
+        for tag in tags:
+            table.row['tag'] = tag
+            table.row.append()
+
+    @write
+    def del_tags(self, *tags, **kwargs):
+        """Delete tags from Container.
+
+        Any number of tags can be given as arguments, and these will be
+        deleted.
+
+        :Arguments:
+            *tags*
+                Tags to delete.
+
+        :Keywords:
+            *all*
+                When True, delete all tags [``False``]
+
+        """
+        table = self.handle.get_node('/', 'tags')
+        purge = kwargs.pop('all', False)
+
+        if purge:
+            table.remove()
+            table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+            
+        else:
+            # remove redundant tags from given list if present
+            tags = set([ str(tag) for tag in tags ])
+
+            # get matching rows
+            rowlist = list()
+            for row in table:
+                for tag in tags:
+                    if (row['tag'] == tag):
+                        rowlist.append(row.nrow)
+
+            # must include a separate condition in case all rows will be removed
+            # due to a limitation of PyTables
+            if len(rowlist) == table.nrows:
+                table.remove()
+                table = self.handle.create_table('/', 'tags', self.Tags, 'tags')
+            else:
+                rowlist.sort()
+                j = 0
+                # delete matching rows; have to use j to shift the register as we
+                # delete rows
+                for i in rowlist:
+                    table.remove_row(i-j)
+                    j=j+1
+
+    @read
+    def get_categories(self):
+        """Get all categories as a dictionary.
+
+        :Returns:
+            *categories*
+                dictionary of all categories 
+        """
+        table = self.handle.get_node('/', 'categories')
+        return { x['category']: x['value'] for x in table.iterrows() }
+
+    @write
+    def add_categories(self, **categories):
+        """Add any number of categories to the Container.
+
+        Categories are key-value pairs of strings that serve to differentiate
+        Containers from one another. Sometimes preferable to tags.
+
+        If a given category already exists (same key), the value given will replace
+        the value for that category.
+
+        :Keywords:
+            *categories*
+                Categories to add. Keyword used as key, value used as value. Both
+                must be convertible to strings using the str() builtin.
+
+        """
+        table = self.handle.get_node('/', 'categories')
+
+        # remove categories already present in metadata from dictionary 
+        #TODO: more efficient way to do this?
+        for row in table:
+            for key in categories.keys():
+                if (row['category'] == key):
+                    row['value'] = str(categories[key])
+                    row.update()
+                    # dangerous? or not since we are iterating through
+                    # categories.keys() and not categories?
+                    categories.pop(key)
+        
+        # add new categories
+        for key in categories.keys():
+            table.row['category'] = key
+            table.row['value'] = str(categories[key])
+            table.row.append()
+
+    @write
+    def del_categories(self, *categories, **kwargs):
+        """Delete categories from Container.
+    
+        Any number of categories (keys) can be given as arguments, and these
+        keys (with their values) will be deleted.
+         
+        :Arguments:
+            *categories*
+                Categories to delete.
+
+        :Keywords:
+            *all*
+                When True, delete all categories [``False``]
+    
+        """
+        table = self.handle.get_node('/', 'categories')
+        purge = kwargs.pop('all', False)
+
+        if purge:
+            table.remove()
+            table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+        else:
+            # remove redundant categories from given list if present
+            categories = set([ str(category) for category in categories ])
+
+            # get matching rows
+            rowlist = list()
+            for row in table:
+                for category in categories:
+                    if (row['category'] == category):
+                        rowlist.append(row.nrow)
+
+            # must include a separate condition in case all rows will be removed
+            # due to a limitation of PyTables
+            if len(rowlist) == table.nrows:
+                table.remove()
+                table = self.handle.create_table('/', 'categories', self.Categories, 'categories')
+            else:
+                rowlist.sort()
+                j = 0
+                # delete matching rows; have to use j to shift the register as we
+                # delete rows
+                for i in rowlist:
+                    table.remove_row(i-j)
+                    j=j+1
+    
+    def _open_r(self):
+        """Open file with intention to write.
+
+        Not to be used except for debugging files.
+
+        """
+        self.handle = tables.open_file(self.filename, 'r')
+        self.shlock()
+
+    def _open_w(self):
+        """Open file with intention to write.
+    
+        Not to be used except for debugging files.
+         
+        """
+        self.handle = tables.open_file(self.filename, 'a')
+        self.exlock()
+    
+    def _close(self):
+        """Close file.
+    
+        Not to be used except for debugging files.
+    
+        """
+        self.handle.close()
 
 class SimFile(ContainerFile):
     """Main Sim state file.
@@ -285,20 +503,63 @@ class SimFile(ContainerFile):
     used to manage it.
     
     """
-    def __init__(self, location, logger, **kwargs):
+
+    class UniverseTopology(tables.IsDescription):
+        """Table definition for storing universe topology paths.
+
+        Three versions of the path to a topology are stored: the absolute path
+        (abspath), the relative path from user's home directory (relhome), and the
+        relative path from the Sim object's directory (relSim). This allows the
+        Sim object to use some heuristically good starting points trying to find
+        missing files using Finder.
+        
+        """
+        abspath = tables.StringCol(255)
+        relhome = tables.StringCol(255)
+        relSim = tables.StringCol(255)
+
+    class UniverseTrajectory(tables.IsDescription):
+        """Table definition for storing universe trajectory paths.
+
+        The paths to trajectories used for generating the Universe
+        are stored in this table.
+
+        See UniverseTopology for path storage descriptions.
+
+        """
+        abspath = tables.StringCol(255)
+        relhome = tables.StringCol(255)
+        relSim = tables.StringCol(255)
+
+    class Selection(tables.IsDescription):
+        """Table definition for storing selections.
+
+        A single table corresponds to a single selection. Each row in the
+        column contains a selection string. This allows one to store a list
+        of selections so as to preserve selection order, which is often
+        required for structural alignments.
+
+        """
+        selection = tables.StringCol(255)
+
+    def __init__(self, filename, logger, **kwargs):
         """Initialize Sim state file.
 
         :Arguments:
-           *location*
-              directory that represents the Container
+           *filename*
+              path to file
            *logger*
               logger to send warnings and errors to
 
         """
         super(SimFile, self).__init__(location, logger=logger, classname='Sim', **kwargs)
     
-    def create(self, **kwargs):
+    def create(self, classname, **kwargs):
         """Build Sim data structure.
+
+        :Arguments:
+           *classname*
+              Container's class name
 
         :Keywords:
            *name*
@@ -311,16 +572,20 @@ class SimFile(ContainerFile):
            *tags*
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
-           *details*
-              user-given string for object notes
 
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(SimFile, self).create(**kwargs)
+        super(SimFile, self).create(classname, **kwargs)
 
-        self.data['universes'] = dict()
-        self.data['selections'] = dict()
+        self.handle = tables.open_file(self.filename, 'a')
+        self.exlock()
+
+        # universes group
+        universes_group = self.handle.create_group('/', 'universes', 'universes')
+
+        # remove lock and close
+        self.handle.close()
 
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.

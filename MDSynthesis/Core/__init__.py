@@ -12,14 +12,7 @@ and Databases of MDSynthesis. These classes are not intended for direct use
 by users, but some may be used as interfaces in user-level objects.
 
 """
-
-containerfile = 'container.yaml'
-containerlog = 'container.log'
-datafile = 'data.yaml'
-
-coordinatorfile = 'coordinator.yaml'
-
 # Bring everything into the Core namespace
-import Aggregators
+import Aggregators 
 import Files
 import Workers
