@@ -201,16 +201,12 @@ class ContainerFile(File):
         """
         # metadata table
         self.update_uuid()
-        self.update_name(kwargs.pop('name', classname))
+        self.update_name(kwargs.pop('name', containertype))
         self.update_containertype(containertype)
         self.update_location()
 
         # coordinator table
-        coordinator_table = self.handle.create_table('/', 'coordinator', self._Coordinator, 'coordinator information')
-        container = coordinator_table.row
-        
-        container['abspath'] = kwargs.pop('coordinator', None)
-        container.append()
+        self.update_coordinator(kwargs.pop('coordinator', None))
 
         # tags table
         tags = kwargs.pop('tags', list())
@@ -276,10 +272,11 @@ class ContainerFile(File):
         """
         try:
             table = self.handle.get_node('/', 'meta')
+            table.cols.uuid[0] = str(uuid4())
         except tables.NoSuchNodeError:
             table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
-
-        table.cols.uuid[0] = str(uuid4())
+            table.row['uuid'] = str(uuid4())
+            table.row.append()
 
     @_read
     def get_name(self):
@@ -304,10 +301,11 @@ class ContainerFile(File):
         """
         try:
             table = self.handle.get_node('/', 'meta')
+            table.cols.name[0] = name
         except tables.NoSuchNodeError:
             table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
-
-        table.cols.name[0] = name
+            table.row['name'] = name
+            table.row.append()
 
     @_read
     def get_containertype(self):
@@ -328,13 +326,14 @@ class ContainerFile(File):
                 type of Container: Sim or Group
 
         """
-        try:
-            table = self.handle.get_node('/', 'meta')
-        except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
-
         if (containertype == 'Sim') or (containertype == 'Group'):
-            table.cols.containertype[0] = containertype
+            try:
+                table = self.handle.get_node('/', 'meta')
+                table.cols.containertype[0] = containertype
+            except tables.NoSuchNodeError:
+                table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+                table.row['containertype'] = containertype
+                table.row.append()
 
     @_read
     def get_location(self):
@@ -355,10 +354,45 @@ class ContainerFile(File):
         """
         try:
             table = self.handle.get_node('/', 'meta')
+            table.cols.location[0] = os.path.dirname(self.filename)
         except tables.NoSuchNodeError:
             table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+            table.row['location'] = os.path.dirname(self.filename)
 
-        table.cols.location[0] = os.path.dirname(self.filename)
+    @_read
+    def get_coordinator(self):
+        """Get absolute path to Coordinator.
+
+        :Returns:
+            *coordinator*
+                absolute path to Coordinator directory
+    
+        """
+        table = self.handle.get_node('/', 'coordinator')
+        return table.cols.abspath[0]
+
+    @_write
+    def update_coordinator(self, coordinator):
+        """Update Container location.
+
+        :Arguments:
+            *coordinator*
+                absolute path to Coordinator directory
+        """
+        try:
+            table = self.handle.get_node('/', 'coordinator')
+            if coordinator:
+                table.cols.abspath[0] = os.path.abspath(coordinator)
+            else:
+                table.cols.abspath[0] = None
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'coordinator', self._Coordinator, 'coordinator information')
+            if coordinator:
+                table.row['abspath'] = os.path.abspath(coordinator)
+            else:
+                table.row['abspath'] = None
+            table.row.append()
+
     
     @_read
     def get_tags(self):
