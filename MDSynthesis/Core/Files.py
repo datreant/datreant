@@ -108,7 +108,7 @@ class ContainerFile(File):
         name = tables.StringCol(128)
 
         # container type; Sim or Group
-        container = tables.StringCol(36)
+        containertype = tables.StringCol(36)
 
         # eventually we would like this to be generated dynamically
         # meaning, size of location string is size needed, and meta table
@@ -208,7 +208,7 @@ class ContainerFile(File):
 
         container['uuid'] = str(uuid4())
         container['name'] = kwargs.pop('name', classname)
-        container['container'] = classname
+        container['containertype'] = classname
         container['location'] = os.path.dirname(self.filename)
         container.append()
 
@@ -223,8 +223,6 @@ class ContainerFile(File):
         self.handle.close()
 
         # tags table
-        #TODO: make use of add_tags methods, but must be wary of multiple opens to file
-        # previous opens are only closed when the interpreter exits
         tags = kwargs.pop('tags', list())
         tags_table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
         self.add_tags(*tags)
@@ -233,7 +231,6 @@ class ContainerFile(File):
         categories = kwargs.pop('categories', dict())
         categories_table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
         self.add_categories(**categories)
-
     
     def _read(func):
         """Decorator for opening file for reading and applying shared lock.
@@ -274,6 +271,25 @@ class ContainerFile(File):
         return inner
 
     @_read
+    def get_uuid(self):
+        """Get Container uuid.
+    
+        :Returns:
+            *uuid*
+                unique string for this Container
+        """
+        table = self.handle.get_node('/', 'meta')
+        return table.cols.uuid[0]
+
+    @_write
+    def update_uuid(self):
+        """Generate new uuid for Container.
+
+        """
+        table = self.handle.get_node('/', 'meta')
+        table.cols.uuid[0] = str(uuid4())
+
+    @_read
     def get_name(self):
         """Get Container name.
 
@@ -297,6 +313,29 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'meta')
         table.cols.name[0] = name
 
+    @_read
+    def get_containertype(self):
+        """Get Container type: Sim or Group.
+
+        """
+        table = self.handle.get_node('/', 'meta')
+        return table.cols.containertype[0]
+
+    @_write
+    def update_containertype(self, containertype):
+        """Update Container type: Sim or Group.
+
+        Note: will only take 'Sim' or 'Group' as values.
+
+        :Arugments:
+            *containertype*
+                type of Container: Sim or Group
+
+        """
+        if (containertype == 'Sim') or (containertype == 'Group'):
+            table = self.handle.get_node('/', 'meta')
+            table.cols.containertype[0] = name
+    
     @_read
     def get_tags(self):
         """Get all tags as a list.
