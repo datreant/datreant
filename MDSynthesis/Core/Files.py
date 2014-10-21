@@ -219,29 +219,21 @@ class ContainerFile(File):
         container['abspath'] = kwargs.pop('coordinator', None)
         container.append()
 
+        # remove lock and close
+        self.handle.close()
+
         # tags table
         #TODO: make use of add_tags methods, but must be wary of multiple opens to file
         # previous opens are only closed when the interpreter exits
-        tags_table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
-        container = tags_table.row
-        
         tags = kwargs.pop('tags', list())
-        for tag in tags:
-            container['tag'] = str(tag)
-            container.append()
+        tags_table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
+        self.add_tags(*tags)
 
         # categories table
-        categories_table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
-        container = categories_table.row
-        
         categories = kwargs.pop('categories', dict())
-        for key in categories.keys():
-            container['category'] = str(key)
-            container['value'] = str(categories[key])
-            container.append()
+        categories_table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
+        self.add_categories(**categories)
 
-        # remove lock and close
-        self.handle.close()
     
     def _read(func):
         """Decorator for opening file for reading and applying shared lock.
