@@ -282,6 +282,31 @@ class ContainerFile(File):
         return inner
 
     @_read
+    def get_name(self):
+        """Get Container name.
+
+        :Returns:
+            *name*
+                name of Container
+
+        """
+        table = self.handle.get_node('/', 'meta')
+        return table[0]['name']
+
+    @_write
+    def update_name(self, name):
+        """Rename Container.
+
+        :Arugments:
+            *name*
+                new name of Container
+
+        """
+        table = self.handle.get_node('/', 'meta')
+        table.row['name'] = name
+        table.row.update()
+
+    @_read
     def get_tags(self):
         """Get all tags as a list.
 
@@ -472,7 +497,7 @@ class ContainerFile(File):
 
         """
         self.handle = tables.open_file(self.filename, 'r')
-        self.shlock()
+        self._shlock()
 
     def _open_w(self):
         """Open file with intention to write.
@@ -481,7 +506,7 @@ class ContainerFile(File):
          
         """
         self.handle = tables.open_file(self.filename, 'a')
-        self.exlock()
+        self._exlock()
     
     def _close(self):
         """Close file.
