@@ -392,7 +392,6 @@ class ContainerFile(File):
             else:
                 table.row['abspath'] = None
             table.row.append()
-
     
     @_read
     def get_tags(self):
