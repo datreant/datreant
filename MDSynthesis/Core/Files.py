@@ -180,12 +180,12 @@ class ContainerFile(File):
         if not self._check_existence():
             self.create(classname, **kwargs)
 
-    def create(self, classname, **kwargs):
+    def create(self, containertype, **kwargs):
         """Build state file and common data structure elements.
 
         :Arguments:
-           *classname*
-              Container's class name
+           *containertype*
+              Container type: Sim or Group
 
         :Keywords:
            *name*
@@ -199,18 +199,11 @@ class ContainerFile(File):
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
         """
-        self.handle = tables.open_file(self.filename, 'w')
-        self._exlock()
-
         # metadata table
-        meta_table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
-        container = meta_table.row
-
-        container['uuid'] = str(uuid4())
-        container['name'] = kwargs.pop('name', classname)
-        container['containertype'] = classname
-        container['location'] = os.path.dirname(self.filename)
-        container.append()
+        self.update_uuid()
+        self.update_name(kwargs.pop('name', classname))
+        self.update_containertype(containertype)
+        self.update_location()
 
         # coordinator table
         coordinator_table = self.handle.create_table('/', 'coordinator', self._Coordinator, 'coordinator information')
@@ -218,9 +211,6 @@ class ContainerFile(File):
         
         container['abspath'] = kwargs.pop('coordinator', None)
         container.append()
-
-        # remove lock and close
-        self.handle.close()
 
         # tags table
         tags = kwargs.pop('tags', list())
@@ -284,7 +274,11 @@ class ContainerFile(File):
         """Generate new uuid for Container.
 
         """
-        table = self.handle.get_node('/', 'meta')
+        try:
+            table = self.handle.get_node('/', 'meta')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+
         table.cols.uuid[0] = str(uuid4())
 
     @_read
@@ -308,7 +302,11 @@ class ContainerFile(File):
                 new name of Container
 
         """
-        table = self.handle.get_node('/', 'meta')
+        try:
+            table = self.handle.get_node('/', 'meta')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+
         table.cols.name[0] = name
 
     @_read
@@ -330,8 +328,12 @@ class ContainerFile(File):
                 type of Container: Sim or Group
 
         """
-        if (containertype == 'Sim') or (containertype == 'Group'):
+        try:
             table = self.handle.get_node('/', 'meta')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+
+        if (containertype == 'Sim') or (containertype == 'Group'):
             table.cols.containertype[0] = containertype
 
     @_read
@@ -351,7 +353,11 @@ class ContainerFile(File):
         """Update Container location.
 
         """
-        table = self.handle.get_node('/', 'meta')
+        try:
+            table = self.handle.get_node('/', 'meta')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+
         table.cols.location[0] = os.path.dirname(self.filename)
     
     @_read
