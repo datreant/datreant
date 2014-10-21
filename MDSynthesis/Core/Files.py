@@ -291,7 +291,7 @@ class ContainerFile(File):
 
         """
         table = self.handle.get_node('/', 'meta')
-        return table[0]['name']
+        return table.cols.name[0]
 
     @_write
     def update_name(self, name):
@@ -303,8 +303,7 @@ class ContainerFile(File):
 
         """
         table = self.handle.get_node('/', 'meta')
-        table.row['name'] = name
-        table.row.update()
+        table.cols.name[0] = name
 
     @_read
     def get_tags(self):
