@@ -2,6 +2,12 @@
 TODO List
 =============
 
+2014.10.21
+----------
+Possibility for compressed Containers? They would need some kind of naming
+rule in order to be discoverable by Finder. Could be useful if space is an
+issue but performance is not.
+
 2014.09.30
 ----------
 Need to make it easy to add more data later for a trajectory that later becomes
