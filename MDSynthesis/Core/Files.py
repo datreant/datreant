@@ -224,12 +224,10 @@ class ContainerFile(File):
 
         # tags table
         tags = kwargs.pop('tags', list())
-        tags_table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
         self.add_tags(*tags)
 
         # categories table
         categories = kwargs.pop('categories', dict())
-        categories_table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
         self.add_categories(**categories)
     
     def _read(func):
@@ -316,7 +314,7 @@ class ContainerFile(File):
     @_read
     def get_containertype(self):
         """Get Container type: Sim or Group.
-
+    
         """
         table = self.handle.get_node('/', 'meta')
         return table.cols.containertype[0]
@@ -334,7 +332,7 @@ class ContainerFile(File):
         """
         if (containertype == 'Sim') or (containertype == 'Group'):
             table = self.handle.get_node('/', 'meta')
-            table.cols.containertype[0] = name
+            table.cols.containertype[0] = containertype
     
     @_read
     def get_tags(self):
@@ -359,7 +357,10 @@ class ContainerFile(File):
               Tags to add. Must be convertable to strings using the str() builtin.
 
         """
-        table = self.handle.get_node('/', 'tags')
+        try:
+            table = self.handle.get_node('/', 'tags')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
 
         # ensure tags are unique (we don't care about order)
         tags = set([ str(tag) for tag in tags ])
@@ -454,6 +455,11 @@ class ContainerFile(File):
                 must be convertible to strings using the str() builtin.
 
         """
+        try:
+            table = self.handle.get_node('/', 'categories')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
+
         table = self.handle.get_node('/', 'categories')
 
         # remove categories already present in metadata from dictionary 
