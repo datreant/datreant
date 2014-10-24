@@ -147,7 +147,7 @@ class ContainerFile(File):
         category = tables.StringCol(36)
         value = tables.StringCol(36)
 
-    def __init__(self, filename, logger, classname, **kwargs): 
+    def __init__(self, filename, logger, containertype, **kwargs): 
         """Initialize Container state file.
 
         This is the base class for all Container state files. It generates 
@@ -159,8 +159,8 @@ class ContainerFile(File):
               path to file
            *logger*
               Container's logger instance
-           *classname*
-              Container's class name
+           *containertype*
+              Container type: Sim or Group
 
         :Keywords:
            *name*
@@ -183,7 +183,7 @@ class ContainerFile(File):
         
         # if file does not exist, it is created
         if not self._check_existence():
-            self.create(classname, **kwargs)
+            self.create(containertype, **kwargs)
 
     def create(self, containertype, **kwargs):
         """Build state file and common data structure elements.
@@ -656,21 +656,21 @@ class SimFile(ContainerFile):
     
     """
 
-    class UniverseTopology(tables.IsDescription):
+    class _Topology(tables.IsDescription):
         """Table definition for storing universe topology paths.
 
         Three versions of the path to a topology are stored: the absolute path
         (abspath), the relative path from user's home directory (relhome), and the
         relative path from the Sim object's directory (relSim). This allows the
-        Sim object to use some heuristically good starting points trying to find
-        missing files using Finder.
+        Sim object to use some heuristically good starting points when trying
+        to find missing files using Finder.
         
         """
         abspath = tables.StringCol(255)
         relhome = tables.StringCol(255)
         relSim = tables.StringCol(255)
 
-    class UniverseTrajectory(tables.IsDescription):
+    class _Trajectory(tables.IsDescription):
         """Table definition for storing universe trajectory paths.
 
         The paths to trajectories used for generating the Universe
@@ -683,13 +683,13 @@ class SimFile(ContainerFile):
         relhome = tables.StringCol(255)
         relSim = tables.StringCol(255)
 
-    class Selection(tables.IsDescription):
+    class _Selection(tables.IsDescription):
         """Table definition for storing selections.
 
         A single table corresponds to a single selection. Each row in the
         column contains a selection string. This allows one to store a list
         of selections so as to preserve selection order, which is often
-        required for structural alignments.
+        required for e.g. structural alignments.
 
         """
         selection = tables.StringCol(255)
@@ -706,7 +706,7 @@ class SimFile(ContainerFile):
         """
         super(SimFile, self).__init__(location, logger=logger, classname='Sim', **kwargs)
     
-    def create(self, classname, **kwargs):
+    def create(self, **kwargs):
         """Build Sim data structure.
 
         :Arguments:
@@ -728,17 +728,56 @@ class SimFile(ContainerFile):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(SimFile, self).create(classname, **kwargs)
+        super(SimFile, self).create('Sim', **kwargs)
 
-        self.handle = tables.open_file(self.filename, 'a')
-        self.exlock()
+    @write
+    def add_universe(self, name, topology, *trajectory):
+        """Add a universe definition to the Sim object.
 
-        # universes group
-        universes_group = self.handle.create_group('/', 'universes', 'universes')
+        A Universe is an MDAnalysis object that gives access to the details
+        of a simulation trajectory. A Sim object can contain multiple universe
+        definitions (topology and trajectory pairs), since it is often
+        convenient to have different post-processed versions of the same
+        raw trajectory.
 
-        # remove lock and close
-        self.handle.close()
+        :Arguments:
+            *name*
+                given name for selecting the universe
+            *topology*
+                path to the topology file
+            *trajectory*
+                path to the trajectory file; multiple files may be given
+                and these will be used in order as frames for the trajectory
 
+        """
+
+        # build this universe's group if it doesn't exist
+        try:
+            group = self.handle.get_node('/universes', name)
+        except tables.NoSuchNodeError:
+            group = self.handle.create_group('/universes', name, name, createparents=True)
+
+        # construct topology table if it doesn't exist
+        try:
+            table = self.handle.get_node('/universes/{}'.format(name), 'topology')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
+
+        # construct trajectory table if it doesn't exist
+        try:
+            table = self.handle.get_node('/universes/{}'.format(name), 'trajectory')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/universes/{}'.format(name), 'trajectory', self._Trajectory, 'trajectory')
+
+        # store topology
+        ## generate paths
+        
+
+        
+
+
+
+        
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
 
