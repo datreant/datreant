@@ -117,6 +117,11 @@ class ContainerFile(File):
         # needed
         location = tables.StringCol(256)
 
+        # version of MDSynthesis object file data corresponds to 
+        # allows future-proofing of old objects so that formats of new releases
+        # can be automatically built from old ones
+        version = tables.StringCol(36)
+
     class _Coordinator(tables.IsDescription):
         """Table definition for coordinator info.
 
@@ -204,6 +209,7 @@ class ContainerFile(File):
         self.update_name(kwargs.pop('name', containertype))
         self.update_containertype(containertype)
         self.update_location()
+        self.update_version()
 
         # coordinator table
         self.update_coordinator(kwargs.pop('coordinator', None))
@@ -359,6 +365,34 @@ class ContainerFile(File):
             table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
             table.row['location'] = os.path.dirname(self.filename)
 
+    @_read
+    def get_version(self):
+        """Get Container version.
+
+        :Returns:
+            *version*
+                version of Container
+
+        """
+        table = self.handle.get_node('/', 'meta')
+        return table.cols.version[0]
+
+    @_write
+    def update_name(self, name):
+        """Update version of Container.
+
+        :Arugments:
+            *version*
+                new version of Container
+
+        """
+        try:
+            table = self.handle.get_node('/', 'meta')
+            table.cols.version[0] = version
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+            table.row['version'] = version
+            table.row.append()
     @_read
     def get_coordinator(self):
         """Get absolute path to Coordinator.
