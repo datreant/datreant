@@ -701,7 +701,7 @@ class SimFile(ContainerFile):
               logger to send warnings and errors to
 
         """
-        super(SimFile, self).__init__(location, logger=logger, classname='Sim', **kwargs)
+        super(SimFile, self).__init__(filename, logger=logger, containertype='Sim', **kwargs)
     
     def create(self, **kwargs):
         """Build Sim data structure.
@@ -727,7 +727,7 @@ class SimFile(ContainerFile):
         """
         super(SimFile, self).create('Sim', **kwargs)
 
-    @write
+    #@_write
     def add_universe(self, name, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
@@ -749,10 +749,9 @@ class SimFile(ContainerFile):
         """
 
         # build this universe's group; if it exists, do nothing 
-        try:
-            group = self.handle.create_group('/universes', name, name, createparents=True)
-        except:
-            
+        #try:
+        #    group = self.handle.create_group('/universes', name, name, createparents=True)
+        #except:
 
         # construct topology table 
         table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
@@ -771,7 +770,7 @@ class SimFile(ContainerFile):
             table.row['relSim'] = os.path.relpath(segment, self.get_location())
             table.row.append()
 
-    @write
+    #@_write
     def del_universe(self, name):
         """Delete a universe definition.
 
@@ -781,6 +780,7 @@ class SimFile(ContainerFile):
             *name*
                 name of universe to delete
         """
+        pass
         
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
