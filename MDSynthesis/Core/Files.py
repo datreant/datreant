@@ -761,8 +761,7 @@ class SimFile(ContainerFile):
             table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
 
         table.row['abspath'] = os.path.abspath(topology)
-        table.row['relhome'] = os.path.abspath(topology)
-        table.row['relSim'] = os.path.abspath(topology)
+        table.row['relSim'] = os.path.relpath(topology, self.get_location())
         table.row.append()
 
         # construct trajectory table if it doesn't exist
@@ -770,6 +769,11 @@ class SimFile(ContainerFile):
             table = self.handle.get_node('/universes/{}'.format(name), 'trajectory')
         except tables.NoSuchNodeError:
             table = self.handle.create_table('/universes/{}'.format(name), 'trajectory', self._Trajectory, 'trajectory')
+
+        for segment in trajectory:
+            table.row['abspath'] = os.path.abspath(segment)
+            table.row['relSim'] = os.path.relpath(segment, self.get_location())
+            table.row.append()
 
         # store topology
         ## generate paths
