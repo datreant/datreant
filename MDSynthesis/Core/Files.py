@@ -748,39 +748,39 @@ class SimFile(ContainerFile):
 
         """
 
-        # build this universe's group if it doesn't exist
+        # build this universe's group; if it exists, do nothing 
         try:
-            group = self.handle.get_node('/universes', name)
-        except tables.NoSuchNodeError:
             group = self.handle.create_group('/universes', name, name, createparents=True)
+        except:
+            
 
-        # construct topology table if it doesn't exist
-        try:
-            table = self.handle.get_node('/universes/{}'.format(name), 'topology')
-        except tables.NoSuchNodeError:
-            table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
+        # construct topology table 
+        table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
 
+        # add topology paths to table
         table.row['abspath'] = os.path.abspath(topology)
         table.row['relSim'] = os.path.relpath(topology, self.get_location())
         table.row.append()
 
-        # construct trajectory table if it doesn't exist
-        try:
-            table = self.handle.get_node('/universes/{}'.format(name), 'trajectory')
-        except tables.NoSuchNodeError:
-            table = self.handle.create_table('/universes/{}'.format(name), 'trajectory', self._Trajectory, 'trajectory')
+        # construct trajectory table
+        table = self.handle.create_table('/universes/{}'.format(name), 'trajectory', self._Trajectory, 'trajectory')
 
+        # add trajectory paths to table
         for segment in trajectory:
             table.row['abspath'] = os.path.abspath(segment)
             table.row['relSim'] = os.path.relpath(segment, self.get_location())
             table.row.append()
 
-        # store topology
-        ## generate paths
+    @write
+    def del_universe(self, name):
+        """Delete a universe definition.
 
+        Deletes any selections associated with the universe.
 
-
-
+        :Arguments:
+            *name*
+                name of universe to delete
+        """
         
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
