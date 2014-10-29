@@ -763,6 +763,9 @@ class SimFile(ContainerFile):
         except tables.NoSuchNodeError:
             table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
 
+        table.row['name'] = name
+        table.row.append()
+
         # construct trajectory table if it doesn't exist
         try:
             table = self.handle.get_node('/universes/{}'.format(name), 'trajectory')
@@ -771,9 +774,7 @@ class SimFile(ContainerFile):
 
         # store topology
         ## generate paths
-        
 
-        
 
 
 
