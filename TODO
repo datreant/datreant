@@ -2,6 +2,12 @@
 TODO List
 =============
 
+2014.10.29
+----------
+Perhaps add a decorator to File (or modify the write decorator) that stores
+the method call before execution. This might allow recovery in the instance
+that a write operation is disrupted.
+
 2014.10.21
 ----------
 Possibility for compressed Containers? They would need some kind of naming
