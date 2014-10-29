@@ -659,15 +659,13 @@ class SimFile(ContainerFile):
     class _Topology(tables.IsDescription):
         """Table definition for storing universe topology paths.
 
-        Three versions of the path to a topology are stored: the absolute path
-        (abspath), the relative path from user's home directory (relhome), and the
-        relative path from the Sim object's directory (relSim). This allows the
-        Sim object to use some heuristically good starting points when trying
-        to find missing files using Finder.
+        Two versions of the path to a topology are stored: the absolute path
+        (abspath) and the relative path from the Sim object's directory
+        (relSim). This allows the Sim object to use some heuristically good
+        starting points when trying to find missing files using Finder.
         
         """
         abspath = tables.StringCol(255)
-        relhome = tables.StringCol(255)
         relSim = tables.StringCol(255)
 
     class _Trajectory(tables.IsDescription):
@@ -680,7 +678,6 @@ class SimFile(ContainerFile):
 
         """
         abspath = tables.StringCol(255)
-        relhome = tables.StringCol(255)
         relSim = tables.StringCol(255)
 
     class _Selection(tables.IsDescription):
@@ -763,7 +760,9 @@ class SimFile(ContainerFile):
         except tables.NoSuchNodeError:
             table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
 
-        table.row['name'] = name
+        table.row['abspath'] = os.path.abspath(topology)
+        table.row['relhome'] = os.path.abspath(topology)
+        table.row['relSim'] = os.path.abspath(topology)
         table.row.append()
 
         # construct trajectory table if it doesn't exist
