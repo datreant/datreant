@@ -9,6 +9,8 @@ from uuid import uuid4
 import tables
 import fcntl
 import os
+import sys
+import logging
 from functools import wraps
 
 class File(object):
@@ -34,7 +36,42 @@ class File(object):
         """
         self.filename = os.path.abspath(filename)
         self.handle = None
-        self.logger = logger
+
+        # log to standard out if no logger given
+        if not logger:
+            self.logger = logging.getLogger('{}'.format(self.__class__.__name__))
+            self.logger.setLevel(logging.INFO)
+
+            ch = logging.StreamHandler(sys.stdout)
+            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+            ch.setFormatter(cf)
+            self.logger.addHandler(ch)
+        else:
+            self.logger = logger
+
+    def _start_logger(self):
+        """Start up the logger.
+
+        """
+        # set up logging
+        self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
+
+        if not self._logger.handlers:
+            self._logger.setLevel(logging.INFO)
+    
+            # file handler
+            if 'basedir' in self.metadata:
+                logfile = os.path.join(self.metadata['basedir'], self._containerlog)
+                fh = logging.FileHandler(logfile)
+                ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+                fh.setFormatter(ff)
+                self._logger.addHandler(fh)
+    
+            # output handler
+            ch = logging.StreamHandler(sys.stdout)
+            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+            ch.setFormatter(cf)
+            self._logger.addHandler(ch)
 
     def _shlock(self):
         """Get shared lock on file.
@@ -187,7 +224,7 @@ class ContainerFile(File):
         category = tables.StringCol(36)
         value = tables.StringCol(36)
 
-    def __init__(self, filename, logger, containertype, **kwargs): 
+    def __init__(self, filename, logger=None, containertype, **kwargs): 
         """Initialize Container state file.
 
         This is the base class for all Container state files. It generates 
@@ -693,7 +730,7 @@ class SimFile(ContainerFile):
         """
         selection = tables.StringCol(255)
 
-    def __init__(self, filename, logger, **kwargs):
+    def __init__(self, filename, logger=None, **kwargs):
         """Initialize Sim state file.
 
         :Arguments:
@@ -729,7 +766,7 @@ class SimFile(ContainerFile):
         """
         super(SimFile, self).create('Sim', **kwargs)
 
-    #@File._write_state
+    @File._write_state
     def add_universe(self, name, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
@@ -751,9 +788,10 @@ class SimFile(ContainerFile):
         """
 
         # build this universe's group; if it exists, do nothing 
-        #try:
-        #    group = self.handle.create_group('/universes', name, name, createparents=True)
-        #except:
+        try:
+            group = self.handle.create_group('/universes', name, name, createparents=True)
+        except NodeError:
+
 
         # construct topology table 
         table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
@@ -772,7 +810,7 @@ class SimFile(ContainerFile):
             table.row['relSim'] = os.path.relpath(segment, self.get_location())
             table.row.append()
 
-    #@File._write_state
+    @File._write_state
     def del_universe(self, name):
         """Delete a universe definition.
 
