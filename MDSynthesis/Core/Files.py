@@ -140,14 +140,27 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
+            # need try for the case in which handle hasn't been opened yet
             try:
-                self.handle.isopen
-                out = func(self, *args, **kwargs)
+                if self.handle.isopen:
+                    try:
+                        out = func(self, *args, **kwargs)
+                    finally:
+                        self.handle.close()
+                else:
+                    self.handle = tables.open_file(self.filename, 'r')
+                    self._shlock()
+                    try:
+                        out = func(self, *args, **kwargs)
+                    finally:
+                        self.handle.close()
             except AttributeError:
                 self.handle = tables.open_file(self.filename, 'r')
                 self._shlock()
-                out = func(self, *args, **kwargs)
-                self.handle.close()
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
             return out
 
         return inner
@@ -166,8 +179,10 @@ class File(object):
         def inner(self, *args, **kwargs):
             self.handle = tables.open_file(self.filename, 'a')
             self._exlock()
-            out = func(self, *args, **kwargs)
-            self.handle.close()
+            try:
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
             return out
 
         return inner
@@ -826,7 +841,7 @@ class SimFile(ContainerFile):
             *name*
                 name of universe to delete
         """
-        self.handle.remove_node('/universes', name)
+        self.handle.remove_node('/universes', name, recursive=True)
         
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
