@@ -224,7 +224,7 @@ class ContainerFile(File):
         category = tables.StringCol(36)
         value = tables.StringCol(36)
 
-    def __init__(self, filename, logger=None, containertype, **kwargs): 
+    def __init__(self, filename, containertype, logger=None, **kwargs): 
         """Initialize Container state file.
 
         This is the base class for all Container state files. It generates 
@@ -234,10 +234,10 @@ class ContainerFile(File):
         :Arguments:
            *filename*
               path to file
-           *logger*
-              Container's logger instance
            *containertype*
               Container type: Sim or Group
+           *logger*
+              Container's logger instance
 
         :Keywords:
            *name*
@@ -432,6 +432,7 @@ class ContainerFile(File):
             table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
             table.row['version'] = version
             table.row.append()
+
     @File._read_state
     def get_coordinator(self):
         """Get absolute path to Coordinator.
@@ -791,7 +792,8 @@ class SimFile(ContainerFile):
         try:
             group = self.handle.create_group('/universes', name, name, createparents=True)
         except NodeError:
-
+            self.logger.info("Universe definition '{}' already exists. Remove it first.".format(name))
+            return
 
         # construct topology table 
         table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
@@ -820,7 +822,7 @@ class SimFile(ContainerFile):
             *name*
                 name of universe to delete
         """
-        pass
+        self.handle.remove_node('/universes', name)
         
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
