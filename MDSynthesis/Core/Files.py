@@ -140,10 +140,14 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            self.handle = tables.open_file(self.filename, 'r')
-            self._shlock()
-            out = func(self, *args, **kwargs)
-            self.handle.close()
+            try:
+                self.handle.isopen
+                out = func(self, *args, **kwargs)
+            except AttributeError:
+                self.handle = tables.open_file(self.filename, 'r')
+                self._shlock()
+                out = func(self, *args, **kwargs)
+                self.handle.close()
             return out
 
         return inner
