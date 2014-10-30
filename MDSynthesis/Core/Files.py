@@ -786,6 +786,30 @@ class SimFile(ContainerFile):
         """
         super(SimFile, self).create('Sim', **kwargs)
 
+    @File._read_state
+    def get_universe(self, name):
+        """Get topology and trajectory paths for the desired universe.
+
+        :Arguments:
+            *name*
+                given name for selecting the universe
+
+        :Returns:
+            *topology*
+                path to the topology file
+            *trajectory*
+                list of paths to trajectory files
+                
+        """
+        # get topology file
+        table = self.handle.get_node('/universes/{}'.format(name), 'topology')
+        topology = table.cols.abspath[0]
+
+        table = self.handle.get_node('/universes/{}'.format(name), 'trajectory')
+        trajectory = [ x['abspath'] for x in table.iterrows() ]
+
+        return (topology, trajectory)
+
     @File._write_state
     def add_universe(self, name, topology, *trajectory):
         """Add a universe definition to the Sim object.
