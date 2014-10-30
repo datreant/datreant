@@ -787,12 +787,15 @@ class SimFile(ContainerFile):
         super(SimFile, self).create('Sim', **kwargs)
 
     @File._read_state
-    def get_universe(self, name):
+    def get_universe(self, name, path='abspath'):
         """Get topology and trajectory paths for the desired universe.
 
         :Arguments:
             *name*
                 given name for selecting the universe
+            *path*
+                type of paths to return; either absolute paths (abspath) or
+                paths relative to the Sim object (relSim) ['abspath']
 
         :Returns:
             *topology*
@@ -803,10 +806,10 @@ class SimFile(ContainerFile):
         """
         # get topology file
         table = self.handle.get_node('/universes/{}'.format(name), 'topology')
-        topology = table.cols.abspath[0]
+        topology = table.cols.__getattribute__[path][0]
 
         table = self.handle.get_node('/universes/{}'.format(name), 'trajectory')
-        trajectory = [ x['abspath'] for x in table.iterrows() ]
+        trajectory = [ x[path] for x in table.iterrows() ]
 
         return (topology, trajectory)
 
