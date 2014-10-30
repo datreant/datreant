@@ -91,6 +91,46 @@ class File(object):
         """
         return os.path.exists(self.filename)
 
+    @staticmethod
+    def _read_state(func):
+        """Decorator for opening file for reading and applying shared lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = tables.open_file(self.filename, 'r')
+            self._shlock()
+            out = func(self, *args, **kwargs)
+            self.handle.close()
+            return out
+
+        return inner
+    
+    @staticmethod
+    def _write_state(func):
+        """Decorator for opening file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = tables.open_file(self.filename, 'a')
+            self._exlock()
+            out = func(self, *args, **kwargs)
+            self.handle.close()
+            return out
+
+        return inner
+
 class ContainerFile(File):
     """Container file object; syncronized access to Container data.
 
@@ -222,45 +262,7 @@ class ContainerFile(File):
         categories = kwargs.pop('categories', dict())
         self.add_categories(**categories)
     
-    def _read(func):
-        """Decorator for opening file for reading and applying shared lock.
-        
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self.handle = tables.open_file(self.filename, 'r')
-            self._shlock()
-            out = func(self, *args, **kwargs)
-            self.handle.close()
-            return out
-
-        return inner
-    
-    def _write(func):
-        """Decorator for opening file for writing and applying exclusive lock.
-        
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self.handle = tables.open_file(self.filename, 'a')
-            self._exlock()
-            out = func(self, *args, **kwargs)
-            self.handle.close()
-            return out
-
-        return inner
-
-    @_read
+    @File._read_state
     def get_uuid(self):
         """Get Container uuid.
     
@@ -271,7 +273,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'meta')
         return table.cols.uuid[0]
 
-    @_write
+    @File._write_state
     def update_uuid(self):
         """Generate new uuid for Container.
 
@@ -284,7 +286,7 @@ class ContainerFile(File):
             table.row['uuid'] = str(uuid4())
             table.row.append()
 
-    @_read
+    @File._read_state
     def get_name(self):
         """Get Container name.
 
@@ -296,7 +298,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'meta')
         return table.cols.name[0]
 
-    @_write
+    @File._write_state
     def update_name(self, name):
         """Rename Container.
 
@@ -313,7 +315,7 @@ class ContainerFile(File):
             table.row['name'] = name
             table.row.append()
 
-    @_read
+    @File._read_state
     def get_containertype(self):
         """Get Container type: Sim or Group.
     
@@ -321,7 +323,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'meta')
         return table.cols.containertype[0]
 
-    @_write
+    @File._write_state
     def update_containertype(self, containertype):
         """Update Container type: Sim or Group.
 
@@ -341,7 +343,7 @@ class ContainerFile(File):
                 table.row['containertype'] = containertype
                 table.row.append()
 
-    @_read
+    @File._read_state
     def get_location(self):
         """Get Container location.
 
@@ -353,7 +355,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'meta')
         return table.cols.location[0]
 
-    @_write
+    @File._write_state
     def update_location(self):
         """Update Container location.
 
@@ -365,7 +367,7 @@ class ContainerFile(File):
             table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
             table.row['location'] = os.path.dirname(self.filename)
 
-    @_read
+    @File._read_state
     def get_version(self):
         """Get Container version.
 
@@ -377,7 +379,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'meta')
         return table.cols.version[0]
 
-    @_write
+    @File._write_state
     def update_name(self, name):
         """Update version of Container.
 
@@ -393,7 +395,7 @@ class ContainerFile(File):
             table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
             table.row['version'] = version
             table.row.append()
-    @_read
+    @File._read_state
     def get_coordinator(self):
         """Get absolute path to Coordinator.
 
@@ -405,7 +407,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'coordinator')
         return table.cols.abspath[0]
 
-    @_write
+    @File._write_state
     def update_coordinator(self, coordinator):
         """Update Container location.
 
@@ -427,7 +429,7 @@ class ContainerFile(File):
                 table.row['abspath'] = None
             table.row.append()
     
-    @_read
+    @File._read_state
     def get_tags(self):
         """Get all tags as a list.
 
@@ -438,7 +440,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'tags')
         return [ x['tag'] for x in table.iterrows() ]
         
-    @_write
+    @File._write_state
     def add_tags(self, *tags):
         """Add any number of tags to the Container.
 
@@ -473,7 +475,7 @@ class ContainerFile(File):
             table.row['tag'] = tag
             table.row.append()
 
-    @_write
+    @File._write_state
     def del_tags(self, *tags, **kwargs):
         """Delete tags from Container.
 
@@ -521,7 +523,7 @@ class ContainerFile(File):
                     table.remove_row(i-j)
                     j=j+1
 
-    @_read
+    @File._read_state
     def get_categories(self):
         """Get all categories as a dictionary.
 
@@ -532,7 +534,7 @@ class ContainerFile(File):
         table = self.handle.get_node('/', 'categories')
         return { x['category']: x['value'] for x in table.iterrows() }
 
-    @_write
+    @File._write_state
     def add_categories(self, **categories):
         """Add any number of categories to the Container.
 
@@ -572,7 +574,7 @@ class ContainerFile(File):
             table.row['value'] = str(categories[key])
             table.row.append()
 
-    @_write
+    @File._write_state
     def del_categories(self, *categories, **kwargs):
         """Delete categories from Container.
     
@@ -727,7 +729,7 @@ class SimFile(ContainerFile):
         """
         super(SimFile, self).create('Sim', **kwargs)
 
-    #@_write
+    #@File._write_state
     def add_universe(self, name, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
@@ -770,7 +772,7 @@ class SimFile(ContainerFile):
             table.row['relSim'] = os.path.relpath(segment, self.get_location())
             table.row.append()
 
-    #@_write
+    #@File._write_state
     def del_universe(self, name):
         """Delete a universe definition.
 
