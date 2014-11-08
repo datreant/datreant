@@ -706,9 +706,7 @@ class SimFile(ContainerFile):
 
     This file contains all the information needed to store the state of a
     Sim object. It includes accessors, setters, and modifiers for all
-    elements of the data structure, as well the data structure definition.
-    It also defines the format of the file, i.e. the writer and reader
-    used to manage it.
+    elements of the data structure, as well as the data structure definition.
     
     """
 
@@ -792,7 +790,6 @@ class SimFile(ContainerFile):
                 list giving names of all defined universes
 
         """
-        # get topology file
         group = self.handle.get_node('/', 'universes')
 
         return group.__members__
@@ -899,7 +896,6 @@ class SimFile(ContainerFile):
                 universe
 
         """
-        # get topology file
         group = self.handle.get_node('/universes/{}'.format(universe), 'selections')
 
         return group.__members__
@@ -969,6 +965,111 @@ class SimFile(ContainerFile):
 
         """
         self.handle.remove_node('/universes/{}/selections'.format(universe), handle)
+
+class GroupFile(ContainerFile):
+    """Main Group state file.
+
+    This file contains all the information needed to store the state of a
+    Group object. It includes accessors, setters, and modifiers for all
+    elements of the data structure, as well as the data structure definition.
+    
+    """
+
+    class _Members(tables.IsDescription):
+        """Table definition for the members of the Group.
+
+        Stores for each member its container type, uuid, and two versions of
+        the path to the member container: the absolute path (abspath) and the
+        relative path from the Group object's directory (relGroup). This allows
+        the Group object to use some heuristically good starting points when
+        trying to find missing files using Finder.
+        
+        """
+        # unique identifier for container
+        uuid = tables.StringCol(36)
+
+        # container type; Sim or Group
+        containertype = tables.StringCol(36)
+
+        abspath = tables.StringCol(255)
+        relGroup = tables.StringCol(255)
+
+    def __init__(self, filename, logger=None, **kwargs):
+        """Initialize Group state file.
+
+        :Arguments:
+           *filename*
+              path to file
+           *logger*
+              logger to send warnings and errors to
+
+        """
+        super(GroupFile, self).__init__(filename, logger=logger, containertype='Group', **kwargs)
+    
+    def create(self, **kwargs):
+        """Build Group data structure.
+
+        :Arguments:
+           *classname*
+              Container's class name
+
+        :Keywords:
+           *name*
+              user-given name of Sim object
+           *coordinator*
+              directory in which Coordinator state file can be found [``None``]
+           *categories*
+              user-given dictionary with custom keys and values; used to
+              give distinguishing characteristics to object for search
+           *tags*
+              user-given list with custom elements; used to give distinguishing
+              characteristics to object for search
+
+        .. Note:: kwargs passed to :meth:`create`
+
+        """
+        super(Group, self).create('Group', **kwargs)
+
+    @File._read_state
+    def get_members_uuid(self):
+        """List uuid for each member.
+
+        :Returns:
+            *uuids*
+                list giving uuids of all members, in order
+
+        """
+        table = self.handle.get_node('/', 'members')
+        return [ x['uuid'] for x in table.iterrows() ]
+
+    @File._read_state
+    def get_members_containertype(self):
+        """List containertype for each member.
+
+        :Returns:
+            *containertypes*
+                list giving containertypes of all members, in order
+
+        """
+        table = self.handle.get_node('/', 'members')
+        return [ x['containertype'] for x in table.iterrows() ]
+
+    @File._read_state
+    def get_members_location(self, path='abspath'):
+        """List stored location for each member. 
+
+        :Arguments:
+            *path*
+                type of paths to return; either absolute paths (abspath) or
+                paths relative to the Group object (relGroup) ['abspath']
+
+        :Returns:
+            *locations*
+                list giving locations of all members, in order
+
+        """
+        table = self.handle.get_node('/', 'members')
+        return [ x[path] for x in table.iterrows() ]
 
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
