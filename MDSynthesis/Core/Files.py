@@ -886,6 +886,25 @@ class SimFile(ContainerFile):
         self.handle.remove_node('/universes', universe, recursive=True)
 
     @File._read_state
+    def list_selections(self, universe):
+        """List universe names.
+
+        :Arguments:
+            *universe*
+                name of universe the selections apply to
+
+        :Returns:
+            *selections*
+                list giving names of all defined selections for the given
+                universe
+
+        """
+        # get topology file
+        group = self.handle.get_node('/universes/{}'.format(universe), 'selections')
+
+        return group.__members__
+
+    @File._read_state
     def get_selection(self, universe, handle):
         """Get a stored atom selection for the given universe.
 
