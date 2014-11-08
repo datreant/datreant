@@ -787,11 +787,11 @@ class SimFile(ContainerFile):
         super(SimFile, self).create('Sim', **kwargs)
 
     @File._read_state
-    def get_universe(self, name, path='abspath'):
+    def get_universe(self, universe, path='abspath'):
         """Get topology and trajectory paths for the desired universe.
 
         :Arguments:
-            *name*
+            *universe*
                 given name for selecting the universe
             *path*
                 type of paths to return; either absolute paths (abspath) or
@@ -805,10 +805,11 @@ class SimFile(ContainerFile):
                 
         """
         # get topology file
-        table = self.handle.get_node('/universes/{}'.format(name), 'topology')
+        table = self.handle.get_node('/universes/{}'.format(universe), 'topology')
         topology = table.cols.__getattribute__[path][0]
 
-        table = self.handle.get_node('/universes/{}'.format(name), 'trajectory')
+        # get trajectory files
+        table = self.handle.get_node('/universes/{}'.format(universe), 'trajectory')
         trajectory = [ x[path] for x in table.iterrows() ]
 
         return (topology, trajectory)
@@ -873,6 +874,25 @@ class SimFile(ContainerFile):
         """
         self.handle.remove_node('/universes', universe, recursive=True)
 
+    @File._read_state
+    def get_selection(self, universe, handle):
+        """Get a stored atom selection for the given universe.
+
+        :Arguments:
+            *universe*
+                name of universe the selection applies to
+            *handle*
+                name to use for the selection
+
+        :Returns:
+            *selection*
+                list of the selection strings making up the atom selection
+        """
+        table = self.handle.get_node('/universes/{}/selections'.format(universe), handle)
+        selection = [ x['selection'] for x in table.iterrows() ]
+
+        return selection
+
     @File._write_state
     def add_selection(self, universe, handle, *selection):
         """Add an atom selection definition for the named Universe definition.
@@ -906,7 +926,7 @@ class SimFile(ContainerFile):
         for item in selection:
             table.row['selection'] = item
             table.row.append()
-
+    
     @File._write_state
     def del_selection(self, universe, handle):
         """Delete an atom selection from the specified universe.
