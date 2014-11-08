@@ -841,7 +841,6 @@ class SimFile(ContainerFile):
             self.logger.info("Universe definition '{}' already exists. Remove it first.".format(universe))
             return
 
-
         # construct topology table 
         table = self.handle.create_table('/universes/{}'.format(universe), 'topology', self._Topology, 'topology')
 
@@ -873,7 +872,7 @@ class SimFile(ContainerFile):
                 name of universe to delete
         """
         self.handle.remove_node('/universes', universe, recursive=True)
-        
+
     def add_selection(self, universe, handle, *selection):
         """Add an atom selection definition for the named Universe definition.
 
@@ -892,23 +891,17 @@ class SimFile(ContainerFile):
                 alignments
 
         """
-        # construct selection table 
-        table = self.handle.create_table('/universes/{}/{}'.format(universe, handle), 'topology', self._Topology, 'topology')
-
-        # add topology paths to table
-        table.row['abspath'] = os.path.abspath(topology)
-        table.row['relSim'] = os.path.relpath(topology, self.get_location())
-        table.row.append()
-
-        # construct trajectory table
-        table = self.handle.create_table('/universes/{}'.format(name), 'trajectory', self._Trajectory, 'trajectory')
+        # construct selection table
+        try:
+            table = self.handle.create_table('/universes/{}/{}'.format(universe, 'selections'), handle, self._Selection, handle)
+        except tables.NoSuchNodeError:
+            self.logger.info("Universe definition '{}' does not exist. Add it first.".format(universe))
+            return
 
         # add trajectory paths to table
-        for segment in trajectory:
-            table.row['abspath'] = os.path.abspath(segment)
-            table.row['relSim'] = os.path.relpath(segment, self.get_location())
+        for item in selection:
+            table.row['selection'] = item
             table.row.append()
-
 
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
