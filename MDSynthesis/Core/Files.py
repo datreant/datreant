@@ -814,7 +814,7 @@ class SimFile(ContainerFile):
         return (topology, trajectory)
 
     @File._write_state
-    def add_universe(self, name, topology, *trajectory):
+    def add_universe(self, universe, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
         A Universe is an MDAnalysis object that gives access to the details
@@ -824,7 +824,7 @@ class SimFile(ContainerFile):
         raw trajectory.
 
         :Arguments:
-            *name*
+            *universe*
                 given name for selecting the universe
             *topology*
                 path to the topology file
@@ -836,13 +836,64 @@ class SimFile(ContainerFile):
 
         # build this universe's group; if it exists, do nothing 
         try:
-            group = self.handle.create_group('/universes', name, name, createparents=True)
+            group = self.handle.create_group('/universes', universe, universe, createparents=True)
         except NodeError:
-            self.logger.info("Universe definition '{}' already exists. Remove it first.".format(name))
+            self.logger.info("Universe definition '{}' already exists. Remove it first.".format(universe))
             return
 
+
         # construct topology table 
-        table = self.handle.create_table('/universes/{}'.format(name), 'topology', self._Topology, 'topology')
+        table = self.handle.create_table('/universes/{}'.format(universe), 'topology', self._Topology, 'topology')
+
+        # add topology paths to table
+        table.row['abspath'] = os.path.abspath(topology)
+        table.row['relSim'] = os.path.relpath(topology, self.get_location())
+        table.row.append()
+
+        # construct trajectory table
+        table = self.handle.create_table('/universes/{}'.format(universe), 'trajectory', self._Trajectory, 'trajectory')
+
+        # add trajectory paths to table
+        for segment in trajectory:
+            table.row['abspath'] = os.path.abspath(segment)
+            table.row['relSim'] = os.path.relpath(segment, self.get_location())
+            table.row.append()
+
+        # construct selection group
+        group = self.handle.create_group('/universes/{}'.format(universe), 'selections', 'selections')
+
+    @File._write_state
+    def del_universe(self, universe):
+        """Delete a universe definition.
+
+        Deletes any selections associated with the universe.
+
+        :Arguments:
+            *universe*
+                name of universe to delete
+        """
+        self.handle.remove_node('/universes', universe, recursive=True)
+        
+    def add_selection(self, universe, handle, *selection):
+        """Add an atom selection definition for the named Universe definition.
+
+        AtomGroups are needed to obtain useful information from raw coordinate
+        data. It is useful to store AtomGroup selections for later use, since
+        they can be complex and atom order may matter.
+
+        :Arguments:
+            *universe*
+                name of universe the selection applies to
+            *handle*
+                name to use for the selection
+            *selection*
+                selection string; multiple strings may be given and their
+                order will be preserved, which is useful for e.g. structural 
+                alignments
+
+        """
+        # construct selection table 
+        table = self.handle.create_table('/universes/{}/{}'.format(universe, handle), 'topology', self._Topology, 'topology')
 
         # add topology paths to table
         table.row['abspath'] = os.path.abspath(topology)
@@ -858,18 +909,7 @@ class SimFile(ContainerFile):
             table.row['relSim'] = os.path.relpath(segment, self.get_location())
             table.row.append()
 
-    @File._write_state
-    def del_universe(self, name):
-        """Delete a universe definition.
 
-        Deletes any selections associated with the universe.
-
-        :Arguments:
-            *name*
-                name of universe to delete
-        """
-        self.handle.remove_node('/universes', name, recursive=True)
-        
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
 
