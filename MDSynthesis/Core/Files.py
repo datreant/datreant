@@ -12,7 +12,6 @@ import os
 import sys
 import logging
 from functools import wraps
-import pdb
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
@@ -178,7 +177,6 @@ class File(object):
             self.handle = tables.open_file(self.filename, 'a')
             self._exlock()
             try:
-                pdb.set_trace()
                 out = func(self, *args, **kwargs)
             finally:
                 self.handle.close()
@@ -797,7 +795,7 @@ class SimFile(ContainerFile):
         # get topology file
         group = self.handle.get_node('/', 'universes')
 
-        return universes
+        return group.__members__
 
     @File._read_state
     def get_universe(self, universe, path='abspath'):
@@ -859,7 +857,6 @@ class SimFile(ContainerFile):
         table = self.handle.create_table('/universes/{}'.format(universe), 'topology', self._Topology, 'topology')
 
         # add topology paths to table
-        pdb.set_trace()
         table.row['abspath'] = os.path.abspath(topology)
         table.row['relSim'] = os.path.relpath(topology, self.get_location())
         table.row.append()
