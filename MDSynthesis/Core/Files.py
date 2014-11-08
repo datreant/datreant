@@ -787,6 +787,20 @@ class SimFile(ContainerFile):
         super(SimFile, self).create('Sim', **kwargs)
 
     @File._read_state
+    def list_universes(self):
+        """List universe names.
+
+        :Returns:
+            *universes*
+                list giving names of all defined universes
+
+        """
+        # get topology file
+        group = self.handle.get_node('/', 'universes')
+
+        return universes
+
+    @File._read_state
     def get_universe(self, universe, path='abspath'):
         """Get topology and trajectory paths for the desired universe.
 
@@ -838,7 +852,7 @@ class SimFile(ContainerFile):
         # build this universe's group; if it exists, do nothing 
         try:
             group = self.handle.create_group('/universes', universe, universe, createparents=True)
-        except NodeError:
+        except tables.NodeError:
             self.logger.info("Universe definition '{}' already exists. Remove it first.".format(universe))
             return
 
