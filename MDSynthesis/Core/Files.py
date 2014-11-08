@@ -12,6 +12,7 @@ import os
 import sys
 import logging
 from functools import wraps
+import pdb
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
@@ -143,10 +144,7 @@ class File(object):
             # need try for the case in which handle hasn't been opened yet
             try:
                 if self.handle.isopen:
-                    try:
-                        out = func(self, *args, **kwargs)
-                    finally:
-                        self.handle.close()
+                    out = func(self, *args, **kwargs)
                 else:
                     self.handle = tables.open_file(self.filename, 'r')
                     self._shlock()
@@ -180,6 +178,7 @@ class File(object):
             self.handle = tables.open_file(self.filename, 'a')
             self._exlock()
             try:
+                pdb.set_trace()
                 out = func(self, *args, **kwargs)
             finally:
                 self.handle.close()
@@ -860,6 +859,7 @@ class SimFile(ContainerFile):
         table = self.handle.create_table('/universes/{}'.format(universe), 'topology', self._Topology, 'topology')
 
         # add topology paths to table
+        pdb.set_trace()
         table.row['abspath'] = os.path.abspath(topology)
         table.row['relSim'] = os.path.relpath(topology, self.get_location())
         table.row.append()
