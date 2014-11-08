@@ -873,6 +873,7 @@ class SimFile(ContainerFile):
         """
         self.handle.remove_node('/universes', universe, recursive=True)
 
+    @File._write_state
     def add_selection(self, universe, handle, *selection):
         """Add an atom selection definition for the named Universe definition.
 
@@ -891,9 +892,12 @@ class SimFile(ContainerFile):
                 alignments
 
         """
+        #TODO: add check for existence of selection table
+        #TODO: add check for selections as strings; use finally statements
+        # to delete table in case of failure
         # construct selection table
         try:
-            table = self.handle.create_table('/universes/{}/{}'.format(universe, 'selections'), handle, self._Selection, handle)
+            table = self.handle.create_table('/universes/{}/selections'.format(universe), handle, self._Selection, handle)
         except tables.NoSuchNodeError:
             self.logger.info("Universe definition '{}' does not exist. Add it first.".format(universe))
             return
@@ -902,6 +906,19 @@ class SimFile(ContainerFile):
         for item in selection:
             table.row['selection'] = item
             table.row.append()
+
+    @File._write_state
+    def del_selection(self, universe, handle):
+        """Delete an atom selection from the specified universe.
+
+        :Arguments:
+            *universe*
+                name of universe the selection applies to
+            *handle*
+                name of the selection
+
+        """
+        self.handle.remove_node('/universes/{}/selections'.format(universe), handle)
 
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
