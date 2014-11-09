@@ -7,6 +7,7 @@ import Aggregators
 import Workers
 from uuid import uuid4
 import tables
+import pandas
 import fcntl
 import os
 import sys
@@ -130,7 +131,7 @@ class File(object):
 
     @staticmethod
     def _read_state(func):
-        """Decorator for opening file for reading and applying shared lock.
+        """Decorator for opening state file for reading and applying shared lock.
         
         Applying this decorator to a method will ensure that the file is opened
         for reading and that a shared lock is obtained before that method is
@@ -164,7 +165,7 @@ class File(object):
     
     @staticmethod
     def _write_state(func):
-        """Decorator for opening file for writing and applying exclusive lock.
+        """Decorator for opening state file for writing and applying exclusive lock.
         
         Applying this decorator to a method will ensure that the file is opened
         for appending and that an exclusive lock is obtained before that method is
@@ -175,6 +176,62 @@ class File(object):
         @wraps(func)
         def inner(self, *args, **kwargs):
             self.handle = tables.open_file(self.filename, 'a')
+            self._exlock()
+            try:
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
+            return out
+
+        return inner
+
+    @staticmethod
+    def _read_data(func):
+        """Decorator for opening data file for reading and applying shared lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            # need try for the case in which handle hasn't been opened yet
+            try:
+                if self.handle.isopen:
+                    out = func(self, *args, **kwargs)
+                else:
+                    self.handle = pandas.HDFStore(self.filename, 'r')
+                    self._shlock()
+                    try:
+                        out = func(self, *args, **kwargs)
+                    finally:
+                        self.handle.close()
+            except AttributeError:
+                self.handle = pandas.HDFStore(self.filename, 'r')
+                self._shlock()
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
+            return out
+
+        return inner
+    
+    @staticmethod
+    def _write_state(func):
+        """Decorator for opening data file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = pandas.HDFStore(self.filename, 'a')
             self._exlock()
             try:
                 out = func(self, *args, **kwargs)
@@ -1076,7 +1133,7 @@ class DatabaseFile(File):
 
     """
 
-class DataFile(object):
+class DataFile(File):
     """Universal datafile interface.
 
     Allows for safe reading and writing of datafiles, which can be of a wide
@@ -1085,3 +1142,89 @@ class DataFile(object):
 
     """
 
+    @File._write_data
+    def add_data(self, key, data):
+        """Add a pandas data object (Series, DataFrame, Panel) to the data file.
+    
+        :Arguments:
+            *key*
+                name given to the data; used as the index for retrieving
+                the data later
+            *data*
+                the data object to store; should be either a Series, DataFrame,
+                or Panel
+        """
+        self.handle.put(key, data, format='table')
+
+    @File._write_data
+    def append_data(self, key, data):
+        """Append rows to an existing pandas data object stored in the data file.
+
+        Note that column names of new data must match those of the existing
+        data. Columns cannot be appended due to the technical details of the
+        HDF5 standard. To add new columns, store as a new dataset.
+    
+        :Arguments:
+            *key*
+                name of existing data object to append to
+            *data*
+                the data object whose rows are to be appended to the existing
+                stored data; must have same columns (with names) as existing
+                data 
+
+        """
+        self.handle.append(key, data)
+
+    @File._read_data
+    def get_data(self, key, **kwargs):
+        """Retrieve pandas object stored in file, optionally based on where criteria.
+
+        :Arguments:
+            *key*
+                name of data to retrieve
+        
+        :Keywords:
+            *where*
+                list of Term (or convertable) objects, optional
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
+            *columns*
+                list of columns to return; all columns returned by default
+            *iterator* 
+                if True, return an iterator [``False``]
+            *chunksize*
+                number of rows to include in iteration; implies
+                ``iterator=True`` 
+
+        :Returns:
+            *data*
+                the selected data
+        """
+        return self.handle.select(key, **kwargs)
+
+    @File._write_data
+    def del_data(self, key):
+        """Delete a stored data object.
+
+        :Arguments:
+            *key*
+                name of data to delete
+        
+        """
+        self.handle.remove(key)
+
+    @File._read_data
+    def list_data(self):
+        """List names of all stored datasets.
+
+        Although the true names start with '\' indicating the root of the
+        HDF5 data tree, we wish to abstract this away. We remove the leading
+        '\' from the output. This shouldn't cause any problems since the
+        leading '\' can be neglected when referring to stored objects by name
+        using all of pandas.HDFStore's methods anyway.
+
+        """
+        keys = self.handle.keys()
+        return [ i.lstrip('/') for i in keys ]
