@@ -74,27 +74,35 @@ class File(object):
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
 
-    def _shlock(self):
+    def _shlock(self, f):
         """Get shared lock on file.
 
         Using fcntl.lockf, a shared lock on the file is obtained. If an
         exclusive lock is already held on the file by another process,
         then the method waits until it can obtain the lock.
 
+        :Arguments:
+            *f*
+              file handle
+
         :Returns:
            *success*
               True if shared lock successfully obtained
         """
-        fcntl.lockf(self.handle, fcntl.LOCK_SH)
+        fcntl.lockf(f, fcntl.LOCK_SH)
 
         return True
 
-    def _exlock(self):
+    def _exlock(self, f):
         """Get exclusive lock on file.
     
         Using fcntl.lockf, an exclusive lock on the file is obtained. If a
         shared or exclusive lock is already held on the file by another
         process, then the method waits until it can obtain the lock.
+
+        :Arguments:
+            *f*
+                file handle
 
         :Returns:
            *success*
@@ -102,12 +110,12 @@ class File(object):
         """
         # first obtain shared lock; may help to avoid race conditions between
         # exclusive locks (REQUIRES THOROUGH TESTING)
-        if self._shlock():
-            fcntl.lockf(self.handle, fcntl.LOCK_EX)
+        if self._shlock(f):
+            fcntl.lockf(f, fcntl.LOCK_EX)
     
         return True
 
-    def _unlock(self):
+    def _unlock(self, f):
         """Remove exclusive or shared lock on file.
 
         WARNING: It is very rare that this is necessary, since a file must be unlocked
@@ -115,11 +123,15 @@ class File(object):
         This method will remain here for now, but may be removed in the future if
         not needed (likely).
 
+        :Arguments:
+            *f*
+              file handle
+
         :Returns:
            *success*
               True if lock removed
         """
-        fcntl.lockf(self.handle, fcntl.LOCK_UN)
+        fcntl.lockf(f, fcntl.LOCK_UN)
 
         return True
 
@@ -147,14 +159,14 @@ class File(object):
                     out = func(self, *args, **kwargs)
                 else:
                     self.handle = tables.open_file(self.filename, 'r')
-                    self._shlock()
+                    self._shlock(self.handle)
                     try:
                         out = func(self, *args, **kwargs)
                     finally:
                         self.handle.close()
             except AttributeError:
                 self.handle = tables.open_file(self.filename, 'r')
-                self._shlock()
+                self._shlock(self.handle)
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
@@ -184,7 +196,7 @@ class File(object):
             return out
 
         return inner
-
+    
     @staticmethod
     def _read_data(func):
         """Decorator for opening data file for reading and applying shared lock.
@@ -199,18 +211,18 @@ class File(object):
         def inner(self, *args, **kwargs):
             # need try for the case in which handle hasn't been opened yet
             try:
-                if self.handle.isopen:
+                if self.handle.is_open:
                     out = func(self, *args, **kwargs)
                 else:
                     self.handle = pandas.HDFStore(self.filename, 'r')
-                    self._shlock()
+                    self._shlock(self.handle._handle)
                     try:
                         out = func(self, *args, **kwargs)
                     finally:
                         self.handle.close()
             except AttributeError:
                 self.handle = pandas.HDFStore(self.filename, 'r')
-                self._shlock()
+                self._shlock(self.handle._handle)
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
@@ -220,7 +232,7 @@ class File(object):
         return inner
     
     @staticmethod
-    def _write_state(func):
+    def _write_data(func):
         """Decorator for opening data file for writing and applying exclusive lock.
         
         Applying this decorator to a method will ensure that the file is opened
@@ -232,7 +244,7 @@ class File(object):
         @wraps(func)
         def inner(self, *args, **kwargs):
             self.handle = pandas.HDFStore(self.filename, 'a')
-            self._exlock()
+            self._exlock(self.handle._handle)
             try:
                 out = func(self, *args, **kwargs)
             finally:
@@ -1154,7 +1166,7 @@ class DataFile(File):
                 the data object to store; should be either a Series, DataFrame,
                 or Panel
         """
-        self.handle.put(key, data, format='table')
+        self.handle.put(key, data, format='table', data_columns=True)
 
     @File._write_data
     def append_data(self, key, data):
@@ -1173,7 +1185,7 @@ class DataFile(File):
                 data 
 
         """
-        self.handle.append(key, data)
+        self.handle.append(key, data, data_columns=True)
 
     @File._read_data
     def get_data(self, key, **kwargs):
@@ -1185,7 +1197,7 @@ class DataFile(File):
         
         :Keywords:
             *where*
-                list of Term (or convertable) objects, optional
+                conditions for what rows/columns to return
             *start* 
                 row number to start selection
             *stop*  
@@ -1214,7 +1226,7 @@ class DataFile(File):
         
         """
         self.handle.remove(key)
-
+    
     @File._read_data
     def list_data(self):
         """List names of all stored datasets.
