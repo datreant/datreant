@@ -502,7 +502,7 @@ class ContainerFile(File):
         return table.cols.version[0]
 
     @File._write_state
-    def update_name(self, name):
+    def update_version(self, name):
         """Update version of Container.
 
         :Arugments:
@@ -751,7 +751,7 @@ class ContainerFile(File):
 
         """
         self.handle = tables.open_file(self.filename, 'r')
-        self._shlock()
+        self._shlock(self.handle)
 
     def _open_w(self):
         """Open file with intention to write.
@@ -760,7 +760,7 @@ class ContainerFile(File):
          
         """
         self.handle = tables.open_file(self.filename, 'a')
-        self._exlock()
+        self._exlock(self.handle)
     
     def _close(self):
         """Close file.
@@ -828,10 +828,6 @@ class SimFile(ContainerFile):
     
     def create(self, **kwargs):
         """Build Sim data structure.
-
-        :Arguments:
-           *classname*
-              Container's class name
 
         :Keywords:
            *name*
@@ -1078,10 +1074,6 @@ class GroupFile(ContainerFile):
     def create(self, **kwargs):
         """Build Group data structure.
 
-        :Arguments:
-           *classname*
-              Container's class name
-
         :Keywords:
            *name*
               user-given name of Sim object
@@ -1099,6 +1091,85 @@ class GroupFile(ContainerFile):
         """
         super(Group, self).create('Group', **kwargs)
 
+    @File._write_state
+    def add_member(self, uuid, containertype, location):
+        """Add a member to the Group.
+
+        :Arguments:
+            *uuid*
+                the uuid of the new member
+            *containertype*
+                the container type of the new member (Sim or Group)
+            *location*
+                location of the new member in the filesystem
+    
+        """
+        try:
+            table = self.handle.get_node('/', 'members')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'members', self._Members, 'members')
+
+        # check if uuid already present
+        rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
+        if rownum:
+            self.logger.info('Member already present. Updating with new location.')
+            table.cols.abspath[rownum] = os.path.abspath(location)
+            table.cols.relGroup[rownum] = os.path.relpath(location, self.get_location())
+        else:
+            table.row['uuid'] = uuid
+            table.row['containertype'] = containertype
+            table.row['abspath'] = os.path.abspath(location)
+            table.row['relGroup'] = os.path.relpath(location, self.get_location())
+            table.row.append()
+
+    @File._write_state
+    def del_tags(self, *tags, **kwargs):
+        """Delete tags from Container.
+
+        Any number of tags can be given as arguments, and these will be
+        deleted.
+
+        :Arguments:
+            *tags*
+                Tags to delete.
+
+        :Keywords:
+            *all*
+                When True, delete all tags [``False``]
+
+        """
+        table = self.handle.get_node('/', 'tags')
+        purge = kwargs.pop('all', False)
+
+        if purge:
+            table.remove()
+            table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
+            
+        else:
+            # remove redundant tags from given list if present
+            tags = set([ str(tag) for tag in tags ])
+
+            # get matching rows
+            rowlist = list()
+            for row in table:
+                for tag in tags:
+                    if (row['tag'] == tag):
+                        rowlist.append(row.nrow)
+
+            # must include a separate condition in case all rows will be removed
+            # due to a limitation of PyTables
+            if len(rowlist) == table.nrows:
+                table.remove()
+                table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
+            else:
+                rowlist.sort()
+                j = 0
+                # delete matching rows; have to use j to shift the register as we
+                # delete rows
+                for i in rowlist:
+                    table.remove_row(i-j)
+                    j=j+1
+    
     @File._read_state
     def get_members_uuid(self):
         """List uuid for each member.
@@ -1146,11 +1217,12 @@ class DatabaseFile(File):
     """
 
 class DataFile(File):
-    """Universal datafile interface.
+    """Interface to data files.
 
-    Allows for safe reading and writing of datafiles, which can be of a wide
-    array of formats. Handles the details of conversion from pythonic data
-    structure to persistent file form.
+    Data is stored as pandas data structures (Series, DataFrame, Panel) in
+    the HDF5 format. This class gives the needed components for storing
+    and retrieving stored data. It uses pandas' HDFStore object as its
+    backend.
 
     """
 
