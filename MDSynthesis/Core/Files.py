@@ -1123,44 +1123,42 @@ class GroupFile(ContainerFile):
             table.row.append()
 
     @File._write_state
-    def del_tags(self, *tags, **kwargs):
-        """Delete tags from Container.
-
-        Any number of tags can be given as arguments, and these will be
-        deleted.
-
+    def del_member(self, *uuid):
+        """Remove a member from the Group.
+    
         :Arguments:
-            *tags*
-                Tags to delete.
+            *uuid*
+                the uuid(s) of the member(s) to remove
 
         :Keywords:
             *all*
-                When True, delete all tags [``False``]
+                When True, remove all members [``False``]
 
         """
-        table = self.handle.get_node('/', 'tags')
+        table = self.handle.get_node('/', 'members')
         purge = kwargs.pop('all', False)
 
         if purge:
             table.remove()
-            table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
+            table = self.handle.create_table('/', 'members', self._Members, 'members')
             
         else:
-            # remove redundant tags from given list if present
-            tags = set([ str(tag) for tag in tags ])
+            # remove redundant uuids from given list if present
+            uuids = set([ str(tag) for uuid in uuids ])
 
             # get matching rows
+            #TODO: possibly faster to use table.where
             rowlist = list()
             for row in table:
-                for tag in tags:
-                    if (row['tag'] == tag):
+                for uuid in uuids:
+                    if (row['uuid'] == uuid):
                         rowlist.append(row.nrow)
 
             # must include a separate condition in case all rows will be removed
             # due to a limitation of PyTables
             if len(rowlist) == table.nrows:
                 table.remove()
-                table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
+                table = self.handle.create_table('/', 'members', self._Members, 'members')
             else:
                 rowlist.sort()
                 j = 0
@@ -1169,7 +1167,7 @@ class GroupFile(ContainerFile):
                 for i in rowlist:
                     table.remove_row(i-j)
                     j=j+1
-    
+
     @File._read_state
     def get_members_uuid(self):
         """List uuid for each member.
