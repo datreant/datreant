@@ -366,11 +366,16 @@ class ContainerFile(File):
 
         """
         super(ContainerFile, self).__init__(filename, logger=logger)
-        
+
         # if file does not exist, it is created
         if not self._check_existence():
             self.create(**kwargs)
+        else:
+            # open file for the first time to initialize handle
+            self.handle = tables.open_file(self.filename, 'r')
+            self.handle.close()
 
+    @File._write_state
     def create(self, **kwargs):
         """Build state file and common data structure elements.
 
@@ -850,6 +855,7 @@ class SimFile(ContainerFile):
         """
         super(SimFile, self).__init__(filename, logger=logger, **kwargs)
     
+    @File._write_state
     def create(self, **kwargs):
         """Build Sim data structure.
 
@@ -1095,6 +1101,7 @@ class GroupFile(ContainerFile):
         """
         super(GroupFile, self).__init__(filename, logger=logger, **kwargs)
     
+    @File._write_state
     def create(self, **kwargs):
         """Build Group data structure.
 
@@ -1114,6 +1121,9 @@ class GroupFile(ContainerFile):
 
         """
         super(GroupFile, self).create(containertype='Group', **kwargs)
+
+        # make member table
+        self.handle.create_table('/', 'members', self._Members, 'members')
 
     @File._write_state
     def add_member(self, uuid, containertype, location):
