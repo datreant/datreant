@@ -153,18 +153,9 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            # need try for the case in which handle hasn't been opened yet
-            try:
-                if self.handle.isopen:
-                    out = func(self, *args, **kwargs)
-                else:
-                    self.handle = tables.open_file(self.filename, 'r')
-                    self._shlock(self.handle)
-                    try:
-                        out = func(self, *args, **kwargs)
-                    finally:
-                        self.handle.close()
-            except AttributeError:
+            if self.handle.isopen:
+                out = func(self, *args, **kwargs)
+            else:
                 self.handle = tables.open_file(self.filename, 'r')
                 self._shlock(self.handle)
                 try:
@@ -209,18 +200,9 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            # need try for the case in which handle hasn't been opened yet
-            try:
-                if self.handle.is_open:
-                    out = func(self, *args, **kwargs)
-                else:
-                    self.handle = pandas.HDFStore(self.filename, 'r')
-                    self._shlock(self.handle._handle)
-                    try:
-                        out = func(self, *args, **kwargs)
-                    finally:
-                        self.handle.close()
-            except AttributeError:
+            if self.handle.is_open:
+                out = func(self, *args, **kwargs)
+            else:
                 self.handle = pandas.HDFStore(self.filename, 'r')
                 self._shlock(self.handle._handle)
                 try:
