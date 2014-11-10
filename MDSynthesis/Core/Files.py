@@ -375,7 +375,6 @@ class ContainerFile(File):
             self.handle = tables.open_file(self.filename, 'r')
             self.handle.close()
 
-    @File._write_state
     def create(self, **kwargs):
         """Build state file and common data structure elements.
 
@@ -400,7 +399,7 @@ class ContainerFile(File):
         self.update_containertype(containertype)
         self.update_name(kwargs.pop('name', containertype))
         self.update_location()
-        self.update_version()
+        self.update_version(kwargs.pop('version', None))
 
         # coordinator table
         self.update_coordinator(kwargs.pop('coordinator', None))
@@ -531,7 +530,7 @@ class ContainerFile(File):
         return table.cols.version[0]
 
     @File._write_state
-    def update_version(self, name):
+    def update_version(self, version):
         """Update version of Container.
 
         :Arugments:
@@ -855,7 +854,6 @@ class SimFile(ContainerFile):
         """
         super(SimFile, self).__init__(filename, logger=logger, **kwargs)
     
-    @File._write_state
     def create(self, **kwargs):
         """Build Sim data structure.
 
@@ -875,6 +873,20 @@ class SimFile(ContainerFile):
 
         """
         super(SimFile, self).create(containertype='Sim', **kwargs)
+
+        self._make_universegroup()
+
+    @File._write_state
+    def _make_universegroup(self):
+        """Make universes group.
+
+        Used only on file creation.
+
+        """
+        try:
+            group = self.handle.get_node('/', 'universes')
+        except tables.NoSuchNodeError:
+            group = self.handle.create_group('/', 'universes', 'universes')
 
     @File._read_state
     def list_universes(self):
@@ -1101,7 +1113,6 @@ class GroupFile(ContainerFile):
         """
         super(GroupFile, self).__init__(filename, logger=logger, **kwargs)
     
-    @File._write_state
     def create(self, **kwargs):
         """Build Group data structure.
 
@@ -1122,8 +1133,19 @@ class GroupFile(ContainerFile):
         """
         super(GroupFile, self).create(containertype='Group', **kwargs)
 
-        # make member table
-        self.handle.create_table('/', 'members', self._Members, 'members')
+        self._make_membertable()
+
+    @File._write_state
+    def _make_membertable(self):
+        """Make member table.
+
+        Used only on file creation.
+
+        """
+        try:
+            table = self.handle.get_node('/', 'members')
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'members', self._Members, 'members')
 
     @File._write_state
     def add_member(self, uuid, containertype, location):
