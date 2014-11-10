@@ -187,24 +187,12 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            # need try for the case in which handle hasn't been opened yet
+            self.handle = tables.open_file(self.filename, 'a')
+            self._exlock(self.handle)
             try:
-                if self.handle.isopen:
-                    out = func(self, *args, **kwargs)
-                else:
-                    self.handle = tables.open_file(self.filename, 'a')
-                    self._exlock(self.handle)
-                    try:
-                        out = func(self, *args, **kwargs)
-                    finally:
-                        self.handle.close()
-            except AttributeError:
-                self.handle = tables.open_file(self.filename, 'a')
-                self._exlock(self.handle)
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
             return out
 
         return inner
@@ -255,25 +243,14 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            # need try for the case in which handle hasn't been opened yet
+            self.handle = pandas.HDFStore(self.filename, 'a')
+            self._exlock(self.handle._handle)
             try:
-                if self.handle.is_open:
-                    out = func(self, *args, **kwargs)
-                else:
-                    self.handle = pandas.HDFStore(self.filename, 'a')
-                    self._exlock(self.handle._handle)
-                    try:
-                        out = func(self, *args, **kwargs)
-                    finally:
-                        self.handle.close()
-            except AttributeError:
-                self.handle = pandas.HDFStore(self.filename, 'a')
-                self._exlock(self.handle._handle)
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
             return out
+
 
         return inner
 
