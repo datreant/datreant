@@ -2,6 +2,14 @@
 TODO List
 =============
 
+2014.11.09
+----------
+Revisiting the idea that Groups have a concept of order with respect to their
+members. The way member information is stored inherently has order (they are
+rows in a table), but should ordering and re-ordering be handled at the file
+level or by higher level functionality? I'm leaning more toward it being
+handled by higher level methods, if at all.
+
 2014.10.29
 ----------
 Perhaps add a decorator to File (or modify the write decorator) that stores

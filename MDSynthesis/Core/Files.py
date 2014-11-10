@@ -1095,6 +1095,8 @@ class GroupFile(ContainerFile):
     def add_member(self, uuid, containertype, location):
         """Add a member to the Group.
 
+        If the member is already present, its known location will be updated.
+
         :Arguments:
             *uuid*
                 the uuid of the new member
@@ -1167,6 +1169,34 @@ class GroupFile(ContainerFile):
                 for i in rowlist:
                     table.remove_row(i-j)
                     j=j+1
+
+    @File._read_state
+    def get_member(self, uuid):
+        """Get all stored information on the specified member.
+        
+        Returns a dictionary whose keys are column names and values the
+        corresponding values for the member.
+
+        :Arguments:
+            *uuid*
+                uuid of the member to retrieve information for
+
+        :Returns:
+            *memberinfo*
+                a dictionary containing all information stored for the
+                specified member
+        """
+        table = self.handle.get_node('/', 'members')
+
+        # check if uuid present
+        rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
+        if rownum:
+            memberinfo = { x.name: x[rownum] for x in table.cols }
+        else:
+            self.logger.info('No such member in this Group.')
+            memberinfo = None
+
+        return memberinfo
 
     @File._read_state
     def get_members_uuid(self):
