@@ -878,7 +878,7 @@ class SimFile(ContainerFile):
         """
         # get topology file
         table = self.handle.get_node('/universes/{}'.format(universe), 'topology')
-        topology = table.cols.__getattribute__[path][0]
+        topology = table.colinstances[path][0]
 
         # get trajectory files
         table = self.handle.get_node('/universes/{}'.format(universe), 'trajectory')
@@ -1108,7 +1108,8 @@ class GroupFile(ContainerFile):
     def add_member(self, uuid, containertype, location):
         """Add a member to the Group.
 
-        If the member is already present, its known location will be updated.
+        If the member is already present, its location will be updated with
+        the given location.
 
         :Arguments:
             *uuid*
@@ -1128,8 +1129,8 @@ class GroupFile(ContainerFile):
         rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
         if rownum:
             self.logger.info('Member already present. Updating with new location.')
-            table.cols.abspath[rownum] = os.path.abspath(location)
-            table.cols.relGroup[rownum] = os.path.relpath(location, self.get_location())
+            table.cols.abspath[rownum[0]] = os.path.abspath(location)
+            table.cols.relGroup[rownum[0]] = os.path.relpath(location, self.get_location())
         else:
             table.row['uuid'] = uuid
             table.row['containertype'] = containertype
@@ -1204,7 +1205,7 @@ class GroupFile(ContainerFile):
         # check if uuid present
         rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
         if rownum:
-            memberinfo = { x.name: x[rownum] for x in table.cols }
+            memberinfo = { x: table.colinstances[x][rownum[0]] for x in table.colinstances.keys() }
         else:
             self.logger.info('No such member in this Group.')
             memberinfo = None
