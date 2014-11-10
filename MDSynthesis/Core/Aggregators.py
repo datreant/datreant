@@ -516,10 +516,15 @@ class GroupInfo(Info):
 
     """
 
-class SuperGroupInfo(Info):
-    """SuperGroup-specific bindings.
+class Add(Aggregator)
 
-    """
+class Remove(Aggregator)
+
+class Modify(Aggregator)
+
+class Selections(Aggregator)
+
+class Members(Aggregator)
 
 class Data(Aggregator):
     """Interface for accessing Operator-generated data.
