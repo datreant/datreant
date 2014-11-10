@@ -336,8 +336,6 @@ class ContainerFile(File):
            *tags*
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
-           *details*
-              user-given string for object notes
 
         .. Note:: kwargs passed to :meth:`create`
 
@@ -1286,6 +1284,21 @@ class DataFile(File):
     backend.
 
     """
+    def __init__(self, filename, logger=None, **kwargs): 
+        """Initialize data file.
+
+        :Arguments:
+           *filename*
+              path to file
+           *logger*
+              Container's logger instance
+
+        """
+        super(DataFile, self).__init__(filename, logger=logger)
+
+        # open file for the first time to initialize handle
+        self.handle = pandas.HDFStore(self.filename, 'r')
+        self.handle.close()
 
     @File._write_data
     def add_data(self, key, data):
