@@ -188,7 +188,7 @@ class File(object):
         @wraps(func)
         def inner(self, *args, **kwargs):
             self.handle = tables.open_file(self.filename, 'a')
-            self._exlock()
+            self._exlock(self.handle)
             try:
                 out = func(self, *args, **kwargs)
             finally:
@@ -309,7 +309,7 @@ class ContainerFile(File):
         category = tables.StringCol(36)
         value = tables.StringCol(36)
 
-    def __init__(self, filename, containertype, logger=None, **kwargs): 
+    def __init__(self, filename, logger=None, **kwargs): 
         """Initialize Container state file.
 
         This is the base class for all Container state files. It generates 
@@ -319,12 +319,12 @@ class ContainerFile(File):
         :Arguments:
            *filename*
               path to file
-           *containertype*
-              Container type: Sim or Group
            *logger*
               Container's logger instance
 
         :Keywords:
+           *containertype*
+              Container type: Sim or Group
            *name*
               user-given name of Container object
            *coordinator*
@@ -345,16 +345,14 @@ class ContainerFile(File):
         
         # if file does not exist, it is created
         if not self._check_existence():
-            self.create(containertype, **kwargs)
+            self.create(**kwargs)
 
-    def create(self, containertype, **kwargs):
+    def create(self, **kwargs):
         """Build state file and common data structure elements.
 
-        :Arguments:
+        :Keywords:
            *containertype*
               Container type: Sim or Group
-
-        :Keywords:
            *name*
               user-given name of Container object
            *coordinator*
@@ -366,10 +364,12 @@ class ContainerFile(File):
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
         """
+        containertype = kwargs.pop('containertype', None)
+
         # metadata table
         self.update_uuid()
-        self.update_name(kwargs.pop('name', containertype))
         self.update_containertype(containertype)
+        self.update_name(kwargs.pop('name', containertype))
         self.update_location()
         self.update_version()
 
@@ -824,7 +824,7 @@ class SimFile(ContainerFile):
               logger to send warnings and errors to
 
         """
-        super(SimFile, self).__init__(filename, logger=logger, containertype='Sim', **kwargs)
+        super(SimFile, self).__init__(filename, logger=logger, **kwargs)
     
     def create(self, **kwargs):
         """Build Sim data structure.
@@ -844,7 +844,7 @@ class SimFile(ContainerFile):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(SimFile, self).create('Sim', **kwargs)
+        super(SimFile, self).create(containertype='Sim', **kwargs)
 
     @File._read_state
     def list_universes(self):
@@ -1069,7 +1069,7 @@ class GroupFile(ContainerFile):
               logger to send warnings and errors to
 
         """
-        super(GroupFile, self).__init__(filename, logger=logger, containertype='Group', **kwargs)
+        super(GroupFile, self).__init__(filename, logger=logger, **kwargs)
     
     def create(self, **kwargs):
         """Build Group data structure.
@@ -1089,7 +1089,7 @@ class GroupFile(ContainerFile):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(Group, self).create('Group', **kwargs)
+        super(GroupFile, self).create(containertype='Group', **kwargs)
 
     @File._write_state
     def add_member(self, uuid, containertype, location):
