@@ -16,3 +16,15 @@ by users, but some may be used as interfaces in user-level objects.
 import Aggregators 
 import Files
 import Workers
+
+# Sim state file
+simfile = "Sim.h5"
+
+# Group state file
+groupfile = "Group.h5"
+
+# Container log
+containerlog = "log.out"
+
+# Datafile
+datafile = "Data.h5"
