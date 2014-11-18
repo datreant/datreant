@@ -52,8 +52,6 @@ class Sim(ContainerCore):
 
     The Sim object contains all the machinery required to handle trajectories
     and the data generated from them in an organized and object-oriented fashion.
-    It is built to be used as a parent class, expanded upon for specific use
-    cases as needed for specific simulation systems.
 
     To generate a Sim object from scratch, provide a topology and a trajectory
     in the same way you would for a Universe (:class:`MDAnalysis.Universe`). 
@@ -69,44 +67,17 @@ class Sim(ContainerCore):
     an object from scratch stores the information needed to re-generate it in the
     filesystem. By default, this is the current working directory::
 
-        ./MDSynthesis/Sim/name
+        ./Sim
 
-    The object name can be specified as a keyword, or generated automatically.
-
-    This directory contains a metadata file (Sim.yaml) with all the information
-    needed by the object to find its trajectories and other generated data. To
-    alter it, you need only open it in a text editor. This file is the same
-    dictionary as in::
-
-        s.metadata
-
-    You can reload the metadata from the file with ``s.refresh()``. If you make
-    changes to the metadata attribute interactively, you can write to the file
-    using ``s.save()``.
+    This directory contains a state file with all the information needed by the
+    object to find its trajectories and other generated data.
 
     To regenerate an existing Sim object, give a directory that contains a Sim
-    object metadata file (self.__class__.__name__ + ".yaml") instead of a topology::
+    object state file instead of a topology::
 
-        s = Sim('./MDSynthesis/Sim/name')
+        s = Sim('path/to/sim/directory')
 
     The Sim object will be back as it was before.
-
-    Data from Analysis objects are stored in the object directory. Having generated
-    data from an Analysis called 'Foo', one would reload it with::
-
-        s.load('Foo')
-
-    and access it with::
-
-        s.analysis['Foo']
-
-    The data can be unloaded with::
-
-        s.unload('Foo')
-
-    This is beneficial if the data is rather large, freeing up memory. See the
-    documentation for :class:`MDSynthesis.Operators.Analysis` for more details
-    on how this scheme works.
 
     """
 
