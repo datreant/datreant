@@ -23,6 +23,8 @@ class Aggregator(Workers.ObjectCore):
         self._containerfile = containerfile
         self._logger = logger
 
+        self.create()
+
 class Info(Aggregator):
     """Interface for accessing metadata and status information.
 
@@ -144,8 +146,18 @@ class Selections(Aggregator):
     way, changes in the universe topology are reflected in the selections.
 
     """
-    
-        
+    def __getitem__(self, handle):
+        """Get AtomGroup corresponding to the given named selection.
+
+        """
+        selstring = self._containerfile.get_selection(self._container._uname, handle)
+        return self._container.universe.selectAtoms(*selstring)
+
+    def __setitem__(self, handle, selection):
+        """Selection for the given handle and the active universe.
+
+        """
+        self._containerfile.add_selection(self._container._uname, handle, *selection)
 
 class Members(Aggregator):
     """Member manager for Groups.
@@ -163,7 +175,6 @@ class Data(Aggregator):
     Used by Operators to save data associated with a Container.
 
     """
-    def __init__(
 
 class Bunch(object):
     def __init__(self, odict):
