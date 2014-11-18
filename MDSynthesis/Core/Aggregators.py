@@ -95,7 +95,6 @@ class SimAdd(Add):
                 alignments
         """
         self._containerfile.add_selection(self._container._uname, handle, *selection)
-        self._container._generate_selections()
     
     def universe(self, handle, topology, *trajectory):
         """Add a universe definition to the Sim object.
