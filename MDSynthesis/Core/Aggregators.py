@@ -15,12 +15,13 @@ class Aggregator(Workers.ObjectCore):
     """Core functionality for information aggregators.
 
     """
-    def __init__(self, container, containerfile):
+    def __init__(self, container, containerfile, logger):
         """Initialize thin class with references it needs to perform its function.
 
         """
         self._container = container
         self._containerfile = containerfile
+        self._logger = logger
 
 class Info(Aggregator):
     """Interface for accessing metadata and status information.
@@ -121,13 +122,15 @@ class GroupAdd(Add):
     """Adders for Groups.
     
     """
-    def member(self, container):
-        """Add a member to the Group.
+    def member(self, *containers):
+        """Add any number of members to the Group.
 
         :Arguments:
-            *container*
-                Sim or Group to be added
+            *containers*
+                Sims and/or Groups to be added
         """
+        for container in containers:
+            self._containerfile.add_member(container.info.uuid, container.info.containertype, container.info.location)
 
 class Remove(Aggregator)
 
@@ -141,9 +144,15 @@ class Selections(Aggregator):
     way, changes in the universe topology are reflected in the selections.
 
     """
+    
         
 
-class Members(Aggregator)
+class Members(Aggregator):
+    """Member manager for Groups.
+
+
+
+    """
 
 class Data(Aggregator):
     """Interface for accessing Operator-generated data.
@@ -154,6 +163,7 @@ class Data(Aggregator):
     Used by Operators to save data associated with a Container.
 
     """
+    def __init__(
 
 class Bunch(object):
     def __init__(self, odict):
