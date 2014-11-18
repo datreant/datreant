@@ -2,6 +2,11 @@
 TODO List
 =============
 
+2014.11.18
+----------
+Should atom selections be regenerated every time they are called? Advantages?
+Disadvantages? What would be the clearest and most useful implementation?
+
 2014.11.09
 ----------
 Revisiting the idea that Groups have a concept of order with respect to their

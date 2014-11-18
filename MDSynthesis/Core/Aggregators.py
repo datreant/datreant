@@ -15,6 +15,139 @@ class Aggregator(Workers.ObjectCore):
     """Core functionality for information aggregators.
 
     """
+    def __init__(self, container, containerfile):
+        """Initialize thin class with references it needs to perform its function.
+
+        """
+        self._container = container
+        self._containerfile = containerfile
+
+class Info(Aggregator):
+    """Interface for accessing metadata and status information.
+
+    """
+    def __init__(self):
+        """
+        """
+        self.name = None
+
+class SimInfo(Info):
+    """Sim-specific bindings.
+
+    """
+
+class GroupInfo(Info):
+    """Group-specific bindings.
+
+    """
+
+class Add(Aggregator):
+    """Adders for Sims and Groups.
+    
+    """
+    def tags(self, *tags):
+        """Add any number of tags to the Container.
+    
+        Tags are individual strings that serve to differentiate Containers from
+        one another. Sometimes preferable to categories.
+    
+        :Arguments:
+           *tags*
+              Tags to add. Must be convertable to strings using the str() builtin.
+
+        """
+        self._containerfile.add_tags(*tags)
+
+    def categories(self, *tags):
+        """Add any number of categories to the Container.
+
+        Categories are key-value pairs of strings that serve to differentiate
+        Containers from one another. Sometimes preferable to tags.
+
+        If a given category already exists (same key), the value given will replace
+        the value for that category.
+
+        :Keywords:
+            *categories*
+                Categories to add. Keyword used as key, value used as value. Both
+                must be convertible to strings using the str() builtin.
+        
+        """
+        self._containerfile.add_categories(**categories)
+
+class SimAdd(Add):
+    """Adders for Sims.
+    
+    """
+    def selection(self, handle, *selection):
+        """Add an atom selection for the current universe.
+        
+        AtomGroups are needed to obtain useful information from raw coordinate
+        data. It is useful to store AtomGroup selections for later use, since
+        they can be complex and atom order may matter.
+
+        :Arguments:
+            *handle*
+                name to use for the selection
+            *selection*
+                selection string; multiple strings may be given and their
+                order will be preserved, which is useful for e.g. structural 
+                alignments
+        """
+        self._containerfile.add_selection(self._container._uname, handle, *selection)
+        self._container._generate_selections()
+    
+    def universe(self, handle, topology, *trajectory):
+        """Add a universe definition to the Sim object.
+
+        A Universe is an MDAnalysis object that gives access to the details
+        of a simulation trajectory. A Sim object can contain multiple universe
+        definitions (topology and trajectory pairs), since it is often
+        convenient to have different post-processed versions of the same
+        raw trajectory.
+
+        :Arguments:
+            *handle*
+                given name for selecting the universe
+            *topology*
+                path to the topology file
+            *trajectory*
+                path to the trajectory file; multiple files may be given
+                and these will be used in order as frames for the trajectory
+
+        """
+        self._containerfile.add_universe(handle, topology, *trajectory)
+
+class GroupAdd(Add):
+    """Adders for Groups.
+    
+    """
+
+class Remove(Aggregator)
+
+class Modify(Aggregator)
+
+class Selections(Aggregator)
+
+class Members(Aggregator)
+
+class Data(Aggregator):
+    """Interface for accessing Operator-generated data.
+
+    Combines the results from multiple files, since data for a given Operator
+    can be split across many pickled files.
+
+    Used by Operators to save data associated with a Container.
+
+    """
+
+class Bunch(object):
+    def __init__(self, odict):
+        adict = dict(odict)
+        for key in adict:
+            if type(adict[key]) is dict:
+                adict[key] = RwBunch(adict[key])
+        self.__dict__ = adict
 
 class Database(Aggregator):
     """Database object for tracking and coordinating Containers.
@@ -497,49 +630,3 @@ class Database(Aggregator):
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
 
-class Info(Aggregator):
-    """Interface for accessing metadata and status information.
-
-    """
-    def __init__(self):
-        """
-        """
-        self.name = None
-
-class SimInfo(Info):
-    """Sim-specific bindings.
-
-    """
-
-class GroupInfo(Info):
-    """Group-specific bindings.
-
-    """
-
-class Add(Aggregator)
-
-class Remove(Aggregator)
-
-class Modify(Aggregator)
-
-class Selections(Aggregator)
-
-class Members(Aggregator)
-
-class Data(Aggregator):
-    """Interface for accessing Operator-generated data.
-
-    Combines the results from multiple files, since data for a given Operator
-    can be split across many pickled files.
-
-    Used by Operators to save data associated with a Container.
-
-    """
-
-class Bunch(object):
-    def __init__(self, odict):
-        adict = dict(odict)
-        for key in adict:
-            if type(adict[key]) is dict:
-                adict[key] = RwBunch(adict[key])
-        self.__dict__ = adict
