@@ -136,8 +136,6 @@ class GroupAdd(Add):
 
 class Remove(Aggregator)
 
-class Modify(Aggregator)
-
 class Selections(Aggregator):
     """Selection manager for Sims.
 
@@ -148,16 +146,22 @@ class Selections(Aggregator):
     """
     def __getitem__(self, handle):
         """Get AtomGroup corresponding to the given named selection.
-
+        
         """
         selstring = self._containerfile.get_selection(self._container._uname, handle)
         return self._container.universe.selectAtoms(*selstring)
 
     def __setitem__(self, handle, selection):
         """Selection for the given handle and the active universe.
-
+    
         """
         self._containerfile.add_selection(self._container._uname, handle, *selection)
+
+    def __delitem__(self, handle):
+        """Remove stored selection for given handle and the active universe.
+    
+        """
+        self._containerfile.del_selection(self._container._uname, handle)
 
 class Members(Aggregator):
     """Member manager for Groups.
@@ -173,6 +177,13 @@ class Data(Aggregator):
     can be split across many pickled files.
 
     Used by Operators to save data associated with a Container.
+
+    """
+
+class DataInstance(object):
+    """Interface to instance of data.
+
+    May not be necessary. Not sure yet.
 
     """
 
