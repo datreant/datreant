@@ -23,8 +23,6 @@ class Aggregator(Workers.ObjectCore):
         self._containerfile = containerfile
         self._logger = logger
 
-        self.create()
-
 class Info(Aggregator):
     """Interface for accessing metadata and status information.
 

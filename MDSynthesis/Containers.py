@@ -123,11 +123,11 @@ class Sim(ContainerCore):
         """
         super(Sim, self).__init__()
 
-        self._state = Core.SimFile(Core.
+        self._containerfile = Core.Files.SimFile(Core.simfile)
         
         self.universe = None      # universe 'dock'
         self._uname = None        # attached universe name 
-        self.selections = dict()  # AtomGroup selections
+        self.selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
         self._cache = dict()      # cache path storage
 
         if (os.path.isdir(args[0])):
