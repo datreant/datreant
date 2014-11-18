@@ -121,12 +121,27 @@ class GroupAdd(Add):
     """Adders for Groups.
     
     """
+    def member(self, container):
+        """Add a member to the Group.
+
+        :Arguments:
+            *container*
+                Sim or Group to be added
+        """
 
 class Remove(Aggregator)
 
 class Modify(Aggregator)
 
-class Selections(Aggregator)
+class Selections(Aggregator):
+    """Selection manager for Sims.
+
+    Selections are accessible as items using their handles. Each time they are
+    called, they are regenerated from the universe that is currently active. In this
+    way, changes in the universe topology are reflected in the selections.
+
+    """
+        
 
 class Members(Aggregator)
 
