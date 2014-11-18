@@ -4,6 +4,12 @@ TODO List
 
 2014.11.18
 ----------
+What if a Sim or Group's own information is moved during the course of its use?
+Is there a way we can make Finder go looking? Perhaps as a wrapper to accessors?
+Or would this be too much padding?
+
+2014.11.18
+----------
 Should atom selections be regenerated every time they are called? Advantages?
 Disadvantages? What would be the clearest and most useful implementation?
 

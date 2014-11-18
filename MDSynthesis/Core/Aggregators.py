@@ -23,6 +23,14 @@ class Aggregator(Workers.ObjectCore):
         self._containerfile = containerfile
         self._logger = logger
 
+        self.create()
+
+    def create(self):
+        """Initialize object attributes.
+        
+        """
+        pass
+
 class Info(Aggregator):
     """Interface for accessing metadata and status information.
 
@@ -154,7 +162,7 @@ class Selections(Aggregator):
     
         """
         self._containerfile.add_selection(self._container._uname, handle, *selection)
-
+    
     def __delitem__(self, handle):
         """Remove stored selection for given handle and the active universe.
     
@@ -164,9 +172,18 @@ class Selections(Aggregator):
 class Members(Aggregator):
     """Member manager for Groups.
 
-
-
     """
+
+    def create(self):
+        """Load existing members.
+
+        """
+
+    def list():
+        """Return a list of members.
+
+        """
+
 
 class Data(Aggregator):
     """Interface for accessing Operator-generated data.
