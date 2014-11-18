@@ -10,6 +10,7 @@ a backend by a Container, too.
 """
 import Files
 import Workers
+import MDSynthesis.Containers
 
 class Aggregator(Workers.ObjectCore):
     """Core functionality for information aggregators.
@@ -178,11 +179,23 @@ class Members(Aggregator):
         """Load existing members.
 
         """
+        #TODO: need to route these through Finder.
+        self._members = list()
+        for uuid in self._containerfile.get_members_uuid():
+            member = self._containerfile.get_member(uuid)
+
+            if member['containertype'] == 'Sim':
+                self._members.append(MDSynthesis.Containers.Sim(member['abspath'])
+            elif member['containertype'] == 'Group':
+                self._members.append(MDSynthesis.Containers.Group(member['abspath'])
 
     def list():
         """Return a list of members.
 
+        Note: modifications of this list won't modify the members of the Group!
+
         """
+        return list(self._members)
 
 
 class Data(Aggregator):
