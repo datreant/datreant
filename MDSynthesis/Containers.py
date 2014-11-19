@@ -47,7 +47,7 @@ class _ContainerCore(Core.Workers.ObjectCore):
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
     
-class Sim(ContainerCore):
+class Sim(_ContainerCore):
     """The MDSynthesis Sim object is the base container for single simulations.
 
     The Sim object contains all the machinery required to handle trajectories
@@ -409,7 +409,7 @@ class Sim(ContainerCore):
 
         self._logger.info("Universe '{}' de-cached.".format(self._uname))
         
-class Group(ContainerCore):
+class Group(_ContainerCore):
     """A grouping of Sim objects.
 
     """

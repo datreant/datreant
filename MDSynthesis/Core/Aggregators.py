@@ -12,6 +12,7 @@ import Files
 import Workers
 import MDSynthesis.Containers
 from MDAnalysis import Universe
+import os
 
 class Aggregator(Workers.ObjectCore):
     """Core functionality for information aggregators.
@@ -301,9 +302,9 @@ class Members(Aggregator):
             member = self._containerfile.get_member(uuid)
 
             if member['containertype'] == 'Sim':
-                self._members.append(MDSynthesis.Containers.Sim(member['abspath'], detached=True)
+                self._members.append(MDSynthesis.Containers.Sim(member['abspath'], detached=True))
             elif member['containertype'] == 'Group':
-                self._members.append(MDSynthesis.Containers.Group(member['abspath'], detached=True)
+                self._members.append(MDSynthesis.Containers.Group(member['abspath'], detached=True))
 
     def list():
         """Return a list of members.
@@ -323,7 +324,7 @@ class Members(Aggregator):
         for container in containers:
             self._containerfile.add_member(container.info.uuid, container.info.containertype, container.info.location)
     
-    def remove(self, *uuids)
+    def remove(self, *uuids):
         """Remove any number of members from the Group.
     
         :Arguments:
@@ -338,14 +339,81 @@ class Members(Aggregator):
         self._containerfile.del_member(*uuids)
 
 class Data(Aggregator):
-    """Interface for accessing Operator-generated data.
-
-    Combines the results from multiple files, since data for a given Operator
-    can be split across many pickled files.
-
-    Used by Operators to save data associated with a Container.
+    """Interface to stored datasets.
 
     """
+    def _get_datafile(self, handle):
+        """Return a datafile corresponding to the given handle.
+
+        :Arguments:
+            *handle*
+                name of dataset whose data file to return
+
+        :Returns:
+            *datafile*
+                datafile handle
+
+        """
+        filename = os.path.join(self._containerfile.get_location(), 
+                                handle, Core.datafile) 
+
+        return Files.DataFile(filename, logger=self._logger)
+
+    def __getitem__(self, handle):
+        """Get dataset corresponding to given handle.
+        
+        :Arguments:
+            *handle*
+                name of data to retrieve
+        """
+        try:
+            datafile = self._get_datafile(handle)
+            data = datafile.get_data('main')
+        except IOError:
+            self._logger.warning("No dataset named '{}' present.".format(handle))
+            data = None
+
+        return data
+
+    def __setitem__(self, handle, selection):
+        """Add or update dataset with given handle.
+    
+        """
+        self._containerfile.add_selection(self._container._uname, handle, *selection)
+    
+    def __delitem__(self, handle):
+        """Remove stored selection for given handle and the active universe.
+    
+        """
+        self._containerfile.del_selection(self._container._uname, handle)
+
+    def add(self, handle, *selection):
+        """Add an atom selection for the attached Universe.
+        
+        AtomGroups are needed to obtain useful information from raw coordinate
+        data. It is useful to store AtomGroup selections for later use, since
+        they can be complex and atom order may matter.
+
+        :Arguments:
+            *handle*
+                name to use for the selection
+            *selection*
+                selection string; multiple strings may be given and their
+                order will be preserved, which is useful for e.g. structural 
+                alignments
+        """
+        self._containerfile.add_selection(self._container._uname, handle, *selection)
+        
+    def remove(self, handle):
+        """Remove an atom selection for the attached Universe.
+        
+        :Arguments:
+            *handle*
+                name of selection to remove
+        """
+        self._containerfile.del_selection(self._container._uname, handle)
+    
+
 
 class DataInstance(object):
     """Interface to instance of data.
