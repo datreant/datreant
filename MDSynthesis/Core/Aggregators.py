@@ -56,6 +56,24 @@ class Tags(Aggregator):
     """Interface to tags.
 
     """
+    def __call__(self):
+        """Get all tags for the Container as a list.
+    
+        :Returns:
+            *tags*
+                list of all tags
+        """
+        return self._containerfile.get_tags()
+
+    def list(self):
+        """Get all tags for the Container as a list.
+    
+        :Returns:
+            *tags*
+                list of all tags
+        """
+        return self._containerfile.get_tags()
+
     def add(self, *tags):
         """Add any number of tags to the Container.
     
@@ -89,6 +107,24 @@ class Categories(Aggregator):
     """Interface to categories.
 
     """
+    def __call__(self):
+        """Get all categories for the Container as a dictionary.
+
+        :Returns:
+            *categories*
+                dictionary of all categories 
+        """
+        return self._containerfile.get_categories()
+
+    def dict(self):
+        """Get all categories for the Container as a dictionary.
+
+        :Returns:
+            *categories*
+                dictionary of all categories 
+        """
+        return self._containerfile.get_categories()
+
     def add(self, *tags):
         """Add any number of categories to the Container.
 
@@ -247,6 +283,13 @@ class Members(Aggregator):
     """Member manager for Groups.
 
     """
+    def __call__(self):
+        """Return a list of members.
+
+        Note: modifications of this list won't modify the members of the Group!
+
+        """
+        return list(self._members)
 
     def _create(self):
         """Load existing members.
@@ -279,6 +322,20 @@ class Members(Aggregator):
         """
         for container in containers:
             self._containerfile.add_member(container.info.uuid, container.info.containertype, container.info.location)
+    
+    def remove(self, *uuids)
+        """Remove any number of members from the Group.
+    
+        :Arguments:
+            *uuids*
+                the uuids of the members to remove
+
+        :Keywords:
+            *all*
+                When True, remove all members [``False``]
+
+        """
+        self._containerfile.del_member(*uuids)
 
 class Data(Aggregator):
     """Interface for accessing Operator-generated data.
