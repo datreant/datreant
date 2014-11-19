@@ -27,7 +27,7 @@ class Aggregator(Workers.ObjectCore):
 
         self.create()
 
-    def create(self):
+    def _create(self):
         """Initialize object attributes.
         
         """
@@ -148,7 +148,7 @@ class Universes(Aggregator):
 
         """
         self._containerfile.add_universe(handle, topology, *trajectory)
-
+    
     def remove(self, handle):
         """Remove a universe definition.
     
@@ -162,7 +162,7 @@ class Universes(Aggregator):
     
         if self._container._uname == handle:
             self.detach()
-
+    
     def attach(self, handle):
         """Attach the given universe.
         
@@ -175,7 +175,7 @@ class Universes(Aggregator):
         """
         udef = self._containerfile.get_universe(handle)
         self._container.universe = MDAnalysis.Universe(udef[0], *udef[1])
-
+    
     def detach(self):
         """Detach from universe.
 
@@ -212,7 +212,7 @@ class Selections(Aggregator):
         self._containerfile.del_selection(self._container._uname, handle)
 
     def add(self, handle, *selection):
-        """Add an atom selection for the current universe.
+        """Add an atom selection for the attached Universe.
         
         AtomGroups are needed to obtain useful information from raw coordinate
         data. It is useful to store AtomGroup selections for later use, since
@@ -227,13 +227,28 @@ class Selections(Aggregator):
                 alignments
         """
         self._containerfile.add_selection(self._container._uname, handle, *selection)
+        
+    def remove(self, handle):
+        """Remove an atom selection for the attached Universe.
+        
+        :Arguments:
+            *handle*
+                name of selection to remove
+        """
+        self._containerfile.del_selection(self._container._uname, handle)
     
+    def keys(self):
+        """Return a list of all selection handles.
+    
+        """
+        return self._containerfile.list_selections(self._container._uname)
+
 class Members(Aggregator):
     """Member manager for Groups.
 
     """
 
-    def create(self):
+    def _create(self):
         """Load existing members.
 
         """
@@ -243,9 +258,9 @@ class Members(Aggregator):
             member = self._containerfile.get_member(uuid)
 
             if member['containertype'] == 'Sim':
-                self._members.append(MDSynthesis.Containers.Sim(member['abspath'])
+                self._members.append(MDSynthesis.Containers.Sim(member['abspath'], detached=True)
             elif member['containertype'] == 'Group':
-                self._members.append(MDSynthesis.Containers.Group(member['abspath'])
+                self._members.append(MDSynthesis.Containers.Group(member['abspath'], detached=True)
 
     def list():
         """Return a list of members.
