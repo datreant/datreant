@@ -948,7 +948,7 @@ class SimFile(ContainerFile):
 
     @File._read_state
     def list_selections(self, universe):
-        """List universe names.
+        """List selection names.
 
         :Arguments:
             *universe*

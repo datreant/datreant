@@ -339,7 +339,7 @@ class Members(Aggregator):
         self._containerfile.del_member(*uuids)
 
 class Data(Aggregator):
-    """Interface to stored datasets.
+    """Interface to stored data.
 
     """
     def _get_datafile(self, handle):
@@ -357,63 +357,81 @@ class Data(Aggregator):
         filename = os.path.join(self._containerfile.get_location(), 
                                 handle, Core.datafile) 
 
-        return Files.DataFile(filename, logger=self._logger)
+        try:
+            datafile = Files.DataFile(filename, logger=self._logger)
+        except IOError:
+            self._logger.warning("No data named '{}' present.".format(handle))
+            datafile = None
+
+        return datafile
+
+    def _check_existence(self, handle):
+        """Check for existence of data instance.
+
+        :Arguments:
+            *handle*
+                name of data instance to check
+
+        :Returns:
+            *existence*
+                True if data with given handle already exists; False otherwise
+
+        """
+
 
     def __getitem__(self, handle):
         """Get dataset corresponding to given handle.
+
+        If dataset doesn't exist, ``None`` is returned.
         
         :Arguments:
             *handle*
                 name of data to retrieve
+
+        :Returns:
+            *data*
+                stored data; ``None`` if nonexistent
         """
-        try:
-            datafile = self._get_datafile(handle)
+        datafile = self._get_datafile(handle)
+        if datafile:
             data = datafile.get_data('main')
-        except IOError:
-            self._logger.warning("No dataset named '{}' present.".format(handle))
+        else:
             data = None
 
         return data
 
     def __setitem__(self, handle, selection):
-        """Add or update dataset with given handle.
+        """
     
         """
-        self._containerfile.add_selection(self._container._uname, handle, *selection)
     
     def __delitem__(self, handle):
-        """Remove stored selection for given handle and the active universe.
+        """
     
         """
-        self._containerfile.del_selection(self._container._uname, handle)
 
-    def add(self, handle, *selection):
-        """Add an atom selection for the attached Universe.
-        
-        AtomGroups are needed to obtain useful information from raw coordinate
-        data. It is useful to store AtomGroup selections for later use, since
-        they can be complex and atom order may matter.
+    def add(self, handle, data):
+        """Store data in Container.
+
+        A data instance must be either a pandas Series, DataFrame, or Panel
+        object.
 
         :Arguments:
             *handle*
-                name to use for the selection
-            *selection*
-                selection string; multiple strings may be given and their
-                order will be preserved, which is useful for e.g. structural 
-                alignments
+                name given to data; needed for retrieval
+            *data*
+                data to store; must be a pandas Series, DataFrame, or Panel
+
         """
-        self._containerfile.add_selection(self._container._uname, handle, *selection)
         
     def remove(self, handle):
-        """Remove an atom selection for the attached Universe.
-        
-        :Arguments:
-            *handle*
-                name of selection to remove
         """
-        self._containerfile.del_selection(self._container._uname, handle)
-    
+        
+        """
 
+    def retrieve(self, handle, **kwargs):
+
+    def append(self, handle, data):
 
 class DataInstance(object):
     """Interface to instance of data.
