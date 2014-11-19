@@ -51,11 +51,12 @@ class GroupInfo(Info):
 
     """
 
-class Add(Aggregator):
-    """Adders for Sims and Groups.
-    
+class Tags(Aggregator):
+    """Interface to tags.
+
     """
-    def tags(self, *tags):
+
+    def add(self, *tags):
         """Add any number of tags to the Container.
     
         Tags are individual strings that serve to differentiate Containers from
@@ -68,7 +69,28 @@ class Add(Aggregator):
         """
         self._containerfile.add_tags(*tags)
 
-    def categories(self, *tags):
+    def remove(self, *tags, **kwargs):
+        """Remove tags from Container.
+        
+        Any number of tags can be given as arguments, and these will be
+        deleted.
+
+        :Arguments:
+            *tags*
+                Tags to delete.
+
+        :Keywords:
+            *all*
+                When True, delete all tags [``False``]
+        """
+        self._containerfile.del_tags(*tags, **kwargs)
+
+class Categories(Aggregator):
+    """Interface to categories.
+
+    """
+
+    def add(self, *tags):
         """Add any number of categories to the Container.
 
         Categories are key-value pairs of strings that serve to differentiate
@@ -85,28 +107,12 @@ class Add(Aggregator):
         """
         self._containerfile.add_categories(**categories)
 
-class SimAdd(Add):
-    """Adders for Sims.
-    
-    """
-    def selection(self, handle, *selection):
-        """Add an atom selection for the current universe.
-        
-        AtomGroups are needed to obtain useful information from raw coordinate
-        data. It is useful to store AtomGroup selections for later use, since
-        they can be complex and atom order may matter.
+class Universes(Aggregator):
+    """Interface to universes.
 
-        :Arguments:
-            *handle*
-                name to use for the selection
-            *selection*
-                selection string; multiple strings may be given and their
-                order will be preserved, which is useful for e.g. structural 
-                alignments
-        """
-        self._containerfile.add_selection(self._container._uname, handle, *selection)
-    
-    def universe(self, handle, topology, *trajectory):
+    """
+
+    def add(self, handle, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
         A Universe is an MDAnalysis object that gives access to the details
@@ -126,22 +132,6 @@ class SimAdd(Add):
 
         """
         self._containerfile.add_universe(handle, topology, *trajectory)
-
-class GroupAdd(Add):
-    """Adders for Groups.
-    
-    """
-    def member(self, *containers):
-        """Add any number of members to the Group.
-
-        :Arguments:
-            *containers*
-                Sims and/or Groups to be added
-        """
-        for container in containers:
-            self._containerfile.add_member(container.info.uuid, container.info.containertype, container.info.location)
-
-class Remove(Aggregator)
 
 class Selections(Aggregator):
     """Selection manager for Sims.
@@ -170,6 +160,23 @@ class Selections(Aggregator):
         """
         self._containerfile.del_selection(self._container._uname, handle)
 
+    def add(self, handle, *selection):
+        """Add an atom selection for the current universe.
+        
+        AtomGroups are needed to obtain useful information from raw coordinate
+        data. It is useful to store AtomGroup selections for later use, since
+        they can be complex and atom order may matter.
+
+        :Arguments:
+            *handle*
+                name to use for the selection
+            *selection*
+                selection string; multiple strings may be given and their
+                order will be preserved, which is useful for e.g. structural 
+                alignments
+        """
+        self._containerfile.add_selection(self._container._uname, handle, *selection)
+    
 class Members(Aggregator):
     """Member manager for Groups.
 
@@ -197,6 +204,15 @@ class Members(Aggregator):
         """
         return list(self._members)
 
+    def add(self, *containers):
+        """Add any number of members to the Group.
+
+        :Arguments:
+            *containers*
+                Sims and/or Groups to be added
+        """
+        for container in containers:
+            self._containerfile.add_member(container.info.uuid, container.info.containertype, container.info.location)
 
 class Data(Aggregator):
     """Interface for accessing Operator-generated data.
