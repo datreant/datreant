@@ -11,6 +11,7 @@ a backend by a Container, too.
 import Files
 import Workers
 import MDSynthesis.Containers
+from MDAnalysis import Universe
 
 class Aggregator(Workers.ObjectCore):
     """Core functionality for information aggregators.
@@ -55,7 +56,6 @@ class Tags(Aggregator):
     """Interface to tags.
 
     """
-
     def add(self, *tags):
         """Add any number of tags to the Container.
     
@@ -68,7 +68,7 @@ class Tags(Aggregator):
 
         """
         self._containerfile.add_tags(*tags)
-
+    
     def remove(self, *tags, **kwargs):
         """Remove tags from Container.
         
@@ -89,7 +89,6 @@ class Categories(Aggregator):
     """Interface to categories.
 
     """
-
     def add(self, *tags):
         """Add any number of categories to the Container.
 
@@ -106,6 +105,23 @@ class Categories(Aggregator):
         
         """
         self._containerfile.add_categories(**categories)
+    
+    def remove(self, *categories, **kwargs):
+        """Remove categories from  Container.
+        
+        Any number of categories (keys) can be given as arguments, and these
+        keys (with their values) will be deleted.
+         
+        :Arguments:
+            *categories*
+                Categories to delete.
+
+        :Keywords:
+            *all*
+                When True, delete all categories [``False``]
+    
+        """
+        self._containerfile.del_categories(*categories, **kwargs)
 
 class Universes(Aggregator):
     """Interface to universes.
@@ -132,6 +148,33 @@ class Universes(Aggregator):
 
         """
         self._containerfile.add_universe(handle, topology, *trajectory)
+
+    def remove(self, handle):
+        """Remove a universe definition.
+    
+        Also removes any selections associated with the universe.
+
+        :Arguments:
+            *handle*
+                name of universe to delete
+        """
+        self._containerfile.del_universe(handle)
+    
+        if self._container._uname == handle:
+            self.detach()
+
+    def attach(self, handle):
+        """Attach the given universe.
+        
+        Only one universe definition can be attached to a Sim at one time. The
+        attached universe can be accessed from ``Sim.universe``.
+    
+        :Arguments:
+            *handle*
+                given name for selecting the universe
+        """
+        udef = self._containerfile.get_universe(handle)
+        self._container.universe = MDAnalysis.Universe(udef[0], *udef[1])
 
 class Selections(Aggregator):
     """Selection manager for Sims.
