@@ -176,6 +176,14 @@ class Universes(Aggregator):
         udef = self._containerfile.get_universe(handle)
         self._container.universe = MDAnalysis.Universe(udef[0], *udef[1])
 
+    def detach(self):
+        """Detach from universe.
+
+        Deletes the currently attached Universe object from ``Sim.universe``.
+
+        """
+        self._container.universe = None
+
 class Selections(Aggregator):
     """Selection manager for Sims.
 
