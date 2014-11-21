@@ -445,6 +445,9 @@ class Data(Aggregator):
     """Interface to stored data.
 
     """
+    def __repr__(self):
+
+
     def _get_datafile(self, handle):
         """Return path to datafile corresponding to given handle.
 
@@ -480,7 +483,7 @@ class Data(Aggregator):
 
     #TODO: fundamentally flawed. File is generated if directory exists; revisit
     # immediately
-    def _generate(func):
+    def _read_datafile(func):
         """Decorator for generating DataFile instance for requested data.
 
         DataFile instance is generated and mounted at self._datafile. It
@@ -507,7 +510,9 @@ class Data(Aggregator):
 
         return inner
 
-    @_generate
+    def _write_datafile(func):
+
+    @_read_datafile
     def __getitem__(self, handle):
         """Get dataset corresponding to given handle.
 
@@ -523,7 +528,7 @@ class Data(Aggregator):
         """
         return self.retrieve(handle)
 
-    @_generate
+    @_write_datafile
     def __setitem__(self, handle, data):
         """Set dataset corresponding to given handle.
         
@@ -554,7 +559,7 @@ class Data(Aggregator):
         """
         self.remove(handle)
 
-    @_generate
+    @_write_datafile
     def add(self, handle, data):
         """Store data in Container.
 
@@ -594,7 +599,7 @@ class Data(Aggregator):
         else:
             self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
 
-    @_generate
+    @_read_datafile
     def retrieve(self, handle, **kwargs):
         """Retrieve stored data.
 
@@ -648,7 +653,7 @@ class Data(Aggregator):
         """
         return self._datafile.get_data('main', **kwargs)
 
-    @_generate
+    @_write_datafile
     def append(self, handle, data):
         """Append rows to an existing dataset.
     
