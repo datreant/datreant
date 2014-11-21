@@ -417,7 +417,7 @@ class Data(Aggregator):
             *data*
                 stored data; ``None`` if nonexistent
         """
-        return self._datafile.get_data('main')
+        return self.retrieve(handle)
 
     @_generate
     def __setitem__(self, handle, data):
@@ -490,12 +490,13 @@ class Data(Aggregator):
         else:
             self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
 
+    @_generate
     def retrieve(self, handle, **kwargs):
         """Retrieve stored data.
 
         The pandas object (Series, DataFrame, or Panel) for the given handle
         is returned.
-
+    
         If dataset doesn't exist, ``None`` is returned.
 
         Subsets of the whole dataset can be returned using keywords such as
@@ -514,6 +515,8 @@ class Data(Aggregator):
         one)::
 
             retrieve('mydata', where='index = 3')
+
+        See :meth:pandas.HDFStore.select() for more information.
         
         :Arguments:
             *handle*
@@ -539,8 +542,24 @@ class Data(Aggregator):
                 stored data; ``None`` if nonexistent
 
         """
+        return self._datafile.get_data('main', **kwargs)
 
+    @_generate
     def append(self, handle, data):
+        """Append rows to an existing dataset.
+    
+        The object must be of the same class (Series, DataFrame, Panel) as the
+        existing dataset, and it must have exactly the same columns (names
+        included).
+
+        :Arguments:
+            *handle*
+                name of data to append to
+            *data*
+                data to append
+
+        """
+        self._datafile.append_data('main', data)
 
 class DataInstance(object):
     """Interface to instance of data.
