@@ -332,6 +332,9 @@ class ContainerFile(File):
             self.handle = tables.open_file(self.filename, 'r')
             self.handle.close()
 
+            # update containerfile location
+            self.update_location()
+
     def create(self, **kwargs):
         """Build state file and common data structure elements.
 

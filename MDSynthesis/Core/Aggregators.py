@@ -13,8 +13,9 @@ import Workers
 import MDSynthesis.Containers
 from MDAnalysis import Universe
 import os
+from functools import wraps
 
-class Aggregator(Workers.ObjectCore):
+class Aggregator(object):
     """Core functionality for information aggregators.
 
     """
@@ -230,6 +231,13 @@ class Universes(Aggregator):
         if self._container._uname == handle:
             self.detach()
     
+    #TODO: implement in SimFile
+    def rename(self, handle, new_handle):
+        """Change the handle used for the specified Universe.
+    
+        """
+        pass
+
     def attach(self, handle):
         """Attach the given universe.
         
@@ -490,7 +498,6 @@ class Data(Aggregator):
     
         return os.path.exists(filename)
 
-    @staticmethod
     def _generate(func):
         """Decorator for generating DataFile instance for requested data.
 

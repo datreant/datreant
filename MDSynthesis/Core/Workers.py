@@ -14,16 +14,6 @@ from multiprocessing import Process
 import Aggregators
 import Files
 
-class ObjectCore(object):
-    """Lowest-level mixin; functionality common to all MDSynthesis user objects.
-    
-    """
-    def __init__(self):
-        """Low-level attribute initialization.
-
-        """
-        self.util = Utilities()
-
 class Finder(object):
     """A Finder has methods for locating specified objects based on attributes.
 
@@ -76,21 +66,6 @@ class Finder(object):
             basedir = None
 
         return basedir
-
-class Utilities(object):
-    """Lowest level utilities; contains all methods that are common to every 
-       MDSynthesis object.
-
-    """
-    def makedirs(self, p):
-        if not os.path.exists(p):
-            os.makedirs(p)
-    
-    def generate_uuid(self):
-        """Generate a 'unique' identifier.
-
-        """
-        return str(uuid4())
 
 class Attributes(object):
     """Class for user-defined attributes.

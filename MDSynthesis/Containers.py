@@ -9,7 +9,7 @@ import logging
 import MDAnalysis
 import Core
 
-class _ContainerCore(Core.Workers.ObjectCore):
+class _ContainerCore(object):
     """Core class for all Containers.
 
     The ContainerCore object is not intended to be useful on its own, but
@@ -21,27 +21,35 @@ class _ContainerCore(Core.Workers.ObjectCore):
         """
         
         """
-        super(ContainerCore, self).__init__()
+        super(_ContainerCore, self).__init__()
 
         #TODO: update location state
 
-    def _start_logger(self):
+    #TODO: needs updating!
+    def _start_logger(self, containertype, name, location):
         """Start up the logger.
+
+        :Arguments:
+            *containertype*
+                type of Container the logger is a part of; Sim or Group
+            *name*
+                name of Container
+            *location*
+                location of Container
 
         """
         # set up logging
-        self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
+        self._logger = logging.getLogger('{}.{}'.format(containertype, name))
 
         if not self._logger.handlers:
             self._logger.setLevel(logging.INFO)
     
             # file handler
-            if 'basedir' in self.metadata:
-                logfile = os.path.join(self.metadata['basedir'], self._containerlog)
-                fh = logging.FileHandler(logfile)
-                ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-                fh.setFormatter(ff)
-                self._logger.addHandler(fh)
+            logfile = os.path.join(location, self._containerlog)
+            fh = logging.FileHandler(logfile)
+            ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+            fh.setFormatter(ff)
+            self._logger.addHandler(fh)
     
             # output handler
             ch = logging.StreamHandler(sys.stdout)
@@ -92,41 +100,35 @@ class Sim(_ContainerCore):
                 metadata file, or the arguments normally given to an MDAnalysis
                 Universe
 
-        :Keywords used on object generation:
+        :Keywords available on object generation:
+            *location*
+                directory to place Sim object; default is current directory
             *name*
                 desired name for object, used for logging and referring to
                 object in some analyses; default will be the object's randomly
                 selected UUID
-            *database*
-                directory of the database to associate with this object; if the
-                database does not exist, it is created; if none given, the
-                directory tree will be searched upward until one or none is found
+            *coordinator*
+                directory of the Coordinator to associate with this object; if the
+                Coordinator does not exist, it is created [``None``] 
             *universe*
                 desired name to associate with first universe [``main``]
-            *category*
+            *categories*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
             *tags*
-                list with user-defined values; like category, but useful for
+                list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
             *detached*
-                if True, Sim will load WITHOUT attaching trajectory; this is
-                useful if only loadable analysis data are needed or
-                trajectories are unavailable; default False
+                if True, Sim will load WITHOUT attaching Universe; default
+                False 
 
-        :Keywords used on object re-generation:
+        :Keywords available on object re-generation:
             *attach*
                 name of universe to attach
-            *load*
-                list of data elements to load
-
-        :Keywords always available:
 
         """
         super(Sim, self).__init__()
 
-        self._containerfile = Core.Files.SimFile(Core.simfile)
-        
         self.universe = None      # universe 'dock'
         self._uname = None        # attached universe name 
         self.selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
@@ -139,6 +141,7 @@ class Sim(_ContainerCore):
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
 
+    #TODO: update this!
     def __repr__(self):
         if self._uname in self._cache:
             out = "{}(Sim): '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
@@ -147,62 +150,56 @@ class Sim(_ContainerCore):
 
         return out
 
+    #TODO: add explicit args, kwargs
     def _generate(self, *args, **kwargs):
         """Generate new Sim object.
          
         """
+        # process keywords
+        location = kwargs.pop('location', '.')
+        name = kwargs.pop('name', None)
+        coordinator = kwargs.pop('coordinator', None)
+        categories = kwargs.pop('categories', None)
+        tags = kwargs.pop('tags', None)
+        universe = kwargs.pop('universe', 'main')
         detached = kwargs.pop('detached', False)
-        uname = kwargs.pop('universe', 'main')
-        system = MDAnalysis.Universe(*args, **kwargs)
 
-        # generate metadata items
-        self._build_metadata(**kwargs)
-        self._start_logger()
+        # generate state file
+        #TODO: need try, except for case where Sim already exists
+        os.mkdir(os.path.join(location, 'Sim'))
+        statefile = os.path.join(location, 'Sim', Core.simfile)
 
-        # find or generate database
-        database = kwargs.pop('database', None)
-        success = self._init_database(database, locate=True)
+        self._containerfile = Core.Files.SimFile(statefile)
 
-        if success:
-            # record universe
-            self.metadata['universes'] = dict()
-            self.add('main', *args, **kwargs)
-                
-            # finish up and save
-            self._save()
-            self._start_logger()
+        # attach aggregators
+        self.info = Core.Aggregators.SimInfo()
+        self.tags = Core.Aggregators.Tags()
+        self.categories = Core.Aggregators.Categories()
+        self.universes = Core.Aggregators.Universes()
+        self.selections = Core.Aggregators.Selections()
 
-            # finally, attach universe to object
-            if not detached:
-                self.attach(uname)
-        else:
-            self._logger.info("Terminating generation. Specify a database location.")
+        # add universe
+        self.universes.add(universe, args[0], *args[1:])
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
         
         """
         attach = kwargs.pop('attach', None)
-        load = kwargs.pop('load', None)
 
-        basedir = os.path.abspath(args[0])
-        self.metadata['basedir'] = basedir
-        
-        # get metadata (overwrites basedir metadata)
-        self._refresh()
-        
-        # update location of object if changed
-        self.metadata['basedir'] = basedir
+        # load state file object
+        self._containerfile = Core.Files.SimFile(args[0])
 
-        # finish up and save
-        self._build_metadata(**kwargs)
-        self._start_logger()
-        self._save()
-
-        # attach universe, if desired
-        if attach:
-            self.attach(attach)
+        # attach aggregators
+        self.info = Core.Aggregators.SimInfo()
+        self.tags = Core.Aggregators.Tags()
+        self.categories = Core.Aggregators.Categories()
+        self.universes = Core.Aggregators.Universes()
+        self.selections = Core.Aggregators.Selections()
     
+        if attach:
+            self.universes.attach(attach)
+
 class Group(_ContainerCore):
     """A grouping of Sim objects.
 
@@ -224,11 +221,11 @@ class Group(_ContainerCore):
                 directory of the database to associate with this object; if the
                 database does not exist, it is created; if none is specified, a
                 database is created in the current directory
-            *category*
+            *categories*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
             *tags*
-                list with user-defined values; like category, but useful for
+                list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
             *detached*
                 if True, members will load WITHOUT attaching trajectories or
