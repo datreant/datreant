@@ -169,14 +169,11 @@ class Sim(_ContainerCore):
         os.mkdir(os.path.join(location, 'Sim'))
         statefile = os.path.join(location, 'Sim', Core.simfile)
 
-        self._containerfile = Core.Files.SimFile(statefile)
+        self._start_logger('Sim', name, location)
+        self._containerfile = Core.Files.SimFile(statefile, self._logger)
 
         # attach aggregators
-        self.info = Core.Aggregators.SimInfo()
-        self.tags = Core.Aggregators.Tags()
-        self.categories = Core.Aggregators.Categories()
-        self.universes = Core.Aggregators.Universes()
-        self.selections = Core.Aggregators.Selections()
+        self._init_aggregators()
 
         # add universe
         self.universes.add(universe, args[0], *args[1:])
@@ -186,6 +183,8 @@ class Sim(_ContainerCore):
         
         """
         attach = kwargs.pop('attach', None)
+
+        #TODO: load logger first!
 
         # load state file object
         self._containerfile = Core.Files.SimFile(args[0])
@@ -199,6 +198,16 @@ class Sim(_ContainerCore):
     
         if attach:
             self.universes.attach(attach)
+
+    def _init_aggregators(self):
+        """Initialize and attach aggregators.
+
+        """
+        self.info = Core.Aggregators.SimInfo(self, self._containerfile, )
+        self.tags = Core.Aggregators.Tags()
+        self.categories = Core.Aggregators.Categories()
+        self.universes = Core.Aggregators.Universes()
+        self.selections = Core.Aggregators.Selections()
 
 class Group(_ContainerCore):
     """A grouping of Sim objects.

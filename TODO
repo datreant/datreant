@@ -2,6 +2,12 @@
 TODO List
 =============
 
+2014.11.21
+----------
+Since logging does not really make sense to start up until AFTER a state file
+has been attached, perhaps we should make a method of File to replace its
+logger with another? This would avoid the current headache.
+
 2014.11.18
 ----------
 What if a Sim or Group's own information is moved during the course of its use?
