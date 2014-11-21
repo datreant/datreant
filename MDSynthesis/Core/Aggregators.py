@@ -238,29 +238,6 @@ class Universes(Aggregator):
         """
         pass
 
-    def attach(self, handle):
-        """Attach the given universe.
-        
-        Only one universe definition can be attached to a Sim at one time. The
-        attached universe can be accessed from ``Sim.universe``.
-    
-        :Arguments:
-            *handle*
-                given name for selecting the universe
-        """
-        udef = self._containerfile.get_universe(handle)
-        self._container.universe = Universe(udef[0], *udef[1])
-        self._container._uname = handle
-    
-    def detach(self):
-        """Detach from universe.
-
-        Deletes the currently attached Universe object from ``Sim.universe``.
-
-        """
-        self._container.universe = None
-        self._container._uname = None
-
     #TODO: not updated yet!
     def cache(self, handle, location):
         """Copy trajectory to a temporary location, and attach it as a universe.

@@ -6,7 +6,7 @@ Basic Container objects: the organizational units for :mod:`MDSynthesis`.
 import os, sys
 import shutil
 import logging
-import MDAnalysis
+from MDAnalysis import Universe
 import Core
 
 class _ContainerCore(object):
@@ -215,6 +215,29 @@ class Sim(_ContainerCore):
         self.universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
         self.selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
         self.data = Core.Aggregators.Data(self, self._containerfile, self._logger)
+
+    def attach(self, handle):
+        """Attach the given universe.
+        
+        Only one universe definition can be attached to a Sim at one time. The
+        attached universe can be accessed from ``Sim.universe``.
+    
+        :Arguments:
+            *handle*
+                given name for selecting the universe
+        """
+        udef = self._containerfile.get_universe(handle)
+        self.universe = Universe(udef[0], *udef[1])
+        self._uname = handle
+    
+    def detach(self):
+        """Detach from universe.
+
+        Deletes the currently attached Universe object from ``Sim.universe``.
+
+        """
+        self.universe = None
+        self._uname = None
 
 class Group(_ContainerCore):
     """A grouping of Sim objects.
