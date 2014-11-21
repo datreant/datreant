@@ -561,6 +561,16 @@ class Data(Aggregator):
         """
         self._datafile.append_data('main', data)
 
+    def list(self):
+        """List available datasets.
+
+        :Returns:
+            *handles*
+                list of handles to available datasets
+
+        """
+        pass
+
 class DataInstance(object):
     """Interface to instance of data.
 
