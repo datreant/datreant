@@ -23,6 +23,8 @@ class _ContainerCore(Core.Workers.ObjectCore):
         """
         super(ContainerCore, self).__init__()
 
+        #TODO: update location state
+
     def _start_logger(self):
         """Start up the logger.
 

@@ -377,8 +377,41 @@ class Data(Aggregator):
                 True if data with given handle already exists; False otherwise
 
         """
+        filename = os.path.join(self._containerfile.get_location(), 
+                                handle, Core.datafile) 
 
+        return os.path.exists(filename)
+        
 
+    @staticmethod
+    def _generate(func):
+        """Decorator for generating DataFile instance for requested data.
+
+        DataFile instance is generated and mounted at self._datafile. It
+        is then dereferenced after the method call. Since data files can be
+        deleted in the filesystem, this should handle cleanly the scenarios
+        in which data appears, goes missing, etc. while a Container is loaded.
+
+        ``Note``: methods wrapped with this decorator need to have *handle*
+        as the first argument.
+        
+        """
+        @wraps(func)
+        def inner(self, handle, *args, **kwargs):
+            filename = os.path.join(self._containerfile.get_location(), 
+                                    handle, Core.datafile) 
+            try:
+                self._datafile = Core.Files.DataFile(filename, logger=self._containerlog)
+                out = func(self, handle, *args, **kwargs)
+                return out
+            except IOError:
+                self._logger.warning("No data named '{}' present.".format(handle))
+            finally:
+                del self._datafile
+
+        return inner
+
+    @_generate
     def __getitem__(self, handle):
         """Get dataset corresponding to given handle.
 
@@ -392,29 +425,15 @@ class Data(Aggregator):
             *data*
                 stored data; ``None`` if nonexistent
         """
-        datafile = self._get_datafile(handle)
-        if datafile:
-            data = datafile.get_data('main')
-        else:
-            data = None
+        return self._datafile.get_data('main')
 
-        return data
-
-    def __setitem__(self, handle, selection):
-        """
-    
-        """
-    
-    def __delitem__(self, handle):
-        """
-    
-        """
-
-    def add(self, handle, data):
-        """Store data in Container.
-
+    @_generate
+    def __setitem__(self, handle, data):
+        """Set dataset corresponding to given handle.
+        
         A data instance must be either a pandas Series, DataFrame, or Panel
-        object.
+        object. If dataset doesn't exist, it is added. If a dataset already
+        exists for the given handle, it is replaced.
 
         :Arguments:
             *handle*
@@ -423,11 +442,49 @@ class Data(Aggregator):
                 data to store; must be a pandas Series, DataFrame, or Panel
 
         """
+        self._datafile.add_data('main', data)
+    
+    def __delitem__(self, handle):
+        """Remove a dataset.
+
+        Note: the directory containing the dataset file (``Data.h5``) will NOT
+        be removed if it still contains file after the removal of the dataset
+        file.
+
+        :Arguments:
+            *handle*
+                name of dataset to delete
+    
+        """
+        self._datafile.del_data('main')
+
+
+    def add(self, handle, data):
+        """Store data in Container.
+
+        A data instance must be either a pandas Series, DataFrame, or Panel
+        object. If dataset doesn't exist, it is added. If a dataset already
+        exists for the given handle, it is replaced.
+
+        :Arguments:
+            *handle*
+                name given to data; needed for retrieval
+            *data*
+                data to store; must be a pandas Series, DataFrame, or Panel
+
+        """
+        self._datafile.add_data('main', data)
         
     def remove(self, handle):
+        """Remove a dataset.
+
+        :Arguments:
+            *handle*
+                name of dataset to delete
+    
         """
+        self._datafile.del_data('main')
         
-        """
 
     def retrieve(self, handle, **kwargs):
 

@@ -1286,6 +1286,8 @@ class DataFile(File):
     @File._write_data
     def add_data(self, key, data):
         """Add a pandas data object (Series, DataFrame, Panel) to the data file.
+
+        If data already exists for the given key, then it is overwritten.
     
         :Arguments:
             *key*
