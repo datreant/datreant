@@ -46,7 +46,7 @@ class _ContainerCore(object):
             self._logger.setLevel(logging.INFO)
     
             # file handler
-            logfile = os.path.join(location, Core.containerlog)
+            logfile = os.path.join(location, Core.Files.containerlog)
             fh = logging.FileHandler(logfile)
             ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
             fh.setFormatter(ff)
@@ -159,8 +159,8 @@ class Sim(_ContainerCore):
         location = kwargs.pop('location', '.')
         name = kwargs.pop('name', None)
         coordinator = kwargs.pop('coordinator', None)
-        categories = kwargs.pop('categories', None)
-        tags = kwargs.pop('tags', None)
+        categories = kwargs.pop('categories', dict())
+        tags = kwargs.pop('tags', list())
         universe = kwargs.pop('universe', 'main')
         detached = kwargs.pop('detached', False)
 
