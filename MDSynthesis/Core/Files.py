@@ -14,6 +14,18 @@ import sys
 import logging
 from functools import wraps
 
+# Sim state file
+simfile = "Sim.h5"
+
+# Group state file
+groupfile = "Group.h5"
+
+# Container log
+containerlog = "log.out"
+
+# Datafile
+datafile = "Data.h5"
+
 class File(object):
     """File object base class. Implements file locking and reloading methods.
     

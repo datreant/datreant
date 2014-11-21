@@ -27,7 +27,7 @@ class Aggregator(object):
         self._containerfile = containerfile
         self._logger = logger
 
-        self.create()
+        self._create()
 
     def _create(self):
         """Initialize object attributes.
@@ -157,7 +157,7 @@ class Categories(Aggregator):
         """
         return self._containerfile.get_categories()
 
-    def add(self, *tags):
+    def add(self, **categories):
         """Add any number of categories to the Container.
 
         Categories are key-value pairs of strings that serve to differentiate
@@ -249,7 +249,8 @@ class Universes(Aggregator):
                 given name for selecting the universe
         """
         udef = self._containerfile.get_universe(handle)
-        self._container.universe = MDAnalysis.Universe(udef[0], *udef[1])
+        self._container.universe = Universe(udef[0], *udef[1])
+        self._container._uname = handle
     
     def detach(self):
         """Detach from universe.
@@ -258,6 +259,7 @@ class Universes(Aggregator):
 
         """
         self._container.universe = None
+        self._container._uname = None
 
     #TODO: not updated yet!
     def cache(self, handle, location):
@@ -311,7 +313,7 @@ class Universes(Aggregator):
         self._cache[self._uname]['structure'] = structure_c
         self._cache[self._uname]['trajectory'] = trajectory_c
 
-        self.universe = MDAnalysis.Universe(structure_c, *trajectory_c)
+        self.universe = Universe(structure_c, *trajectory_c)
         self._logger.info("Universe '{}' now cached.".format(self._uname))
     
     #TODO: not updated yet!
@@ -397,6 +399,7 @@ class Selections(Aggregator):
         """
         self._containerfile.del_selection(self._container._uname, handle)
     
+    #TODO: handle case where no universe is loaded
     def keys(self):
         """Return a list of all selection handles.
     
@@ -478,7 +481,7 @@ class Data(Aggregator):
 
         """
         datafile = os.path.join(self._containerfile.get_location(), 
-                                handle, Core.datafile) 
+                                handle, Files.datafile) 
         return datafile
 
     def _check_existence(self, handle):
@@ -494,10 +497,12 @@ class Data(Aggregator):
 
         """
         filename = os.path.join(self._containerfile.get_location(), 
-                                handle, Core.datafile) 
+                                handle, Files.datafile) 
     
         return os.path.exists(filename)
 
+    #TODO: fundamentally flawed. File is generated if directory exists; revisit
+    # immediately
     def _generate(func):
         """Decorator for generating DataFile instance for requested data.
 
@@ -513,9 +518,9 @@ class Data(Aggregator):
         @wraps(func)
         def inner(self, handle, *args, **kwargs):
             filename = os.path.join(self._containerfile.get_location(), 
-                                    handle, Core.datafile) 
+                                    handle, Files.datafile) 
             try:
-                self._datafile = Core.Files.DataFile(filename, logger=self._containerlog)
+                self._datafile = Files.DataFile(filename, logger=self._containerlog)
                 out = func(self, handle, *args, **kwargs)
                 return out
             except IOError:

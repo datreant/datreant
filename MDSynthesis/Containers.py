@@ -41,11 +41,12 @@ class _ContainerCore(object):
         # set up logging
         self._logger = logging.getLogger('{}.{}'.format(containertype, name))
 
+        location = os.path.abspath(location)
         if not self._logger.handlers:
             self._logger.setLevel(logging.INFO)
     
             # file handler
-            logfile = os.path.join(location, self._containerlog)
+            logfile = os.path.join(location, Core.containerlog)
             fh = logging.FileHandler(logfile)
             ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
             fh.setFormatter(ff)
@@ -131,7 +132,6 @@ class Sim(_ContainerCore):
 
         self.universe = None      # universe 'dock'
         self._uname = None        # attached universe name 
-        self.selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
         self._cache = dict()      # cache path storage
 
         if (os.path.isdir(args[0])):
@@ -144,9 +144,9 @@ class Sim(_ContainerCore):
     #TODO: update this!
     def __repr__(self):
         if self._uname in self._cache:
-            out = "{}(Sim): '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+            out = "Sim: '{}' | universe (cached): '{}'".format(self._containerfile.get_name(), self._uname)
         else:
-            out = "{}(Sim): '{}' | universe: '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+            out = "Sim: '{}' | universe: '{}'".format(self._containerfile.get_name(), self._uname)
 
         return out
 
@@ -167,9 +167,9 @@ class Sim(_ContainerCore):
         # generate state file
         #TODO: need try, except for case where Sim already exists
         os.mkdir(os.path.join(location, 'Sim'))
-        statefile = os.path.join(location, 'Sim', Core.simfile)
+        statefile = os.path.join(location, 'Sim', Core.Files.simfile)
 
-        self._start_logger('Sim', name, location)
+        self._start_logger('Sim', name, os.path.join(location, 'Sim'))
         self._containerfile = Core.Files.SimFile(statefile, self._logger)
 
         # attach aggregators
@@ -177,6 +177,9 @@ class Sim(_ContainerCore):
 
         # add universe
         self.universes.add(universe, args[0], *args[1:])
+
+        if not detached:
+            self.universes.attach(universe)
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
@@ -187,14 +190,12 @@ class Sim(_ContainerCore):
         #TODO: load logger first!
 
         # load state file object
-        self._containerfile = Core.Files.SimFile(args[0])
+        statefile = os.path.join(args[0], Core.Files.simfile)
+        self._containerfile = Core.Files.SimFile(statefile)
+        self._start_logger('Sim', self._containerfile.get_name(), args[0])
 
         # attach aggregators
-        self.info = Core.Aggregators.SimInfo()
-        self.tags = Core.Aggregators.Tags()
-        self.categories = Core.Aggregators.Categories()
-        self.universes = Core.Aggregators.Universes()
-        self.selections = Core.Aggregators.Selections()
+        self._init_aggregators()
     
         if attach:
             self.universes.attach(attach)
@@ -203,11 +204,13 @@ class Sim(_ContainerCore):
         """Initialize and attach aggregators.
 
         """
-        self.info = Core.Aggregators.SimInfo(self, self._containerfile, )
-        self.tags = Core.Aggregators.Tags()
-        self.categories = Core.Aggregators.Categories()
-        self.universes = Core.Aggregators.Universes()
-        self.selections = Core.Aggregators.Selections()
+        #TODO: INFO needs work
+        #self.info = Core.Aggregators.SimInfo(self, self._containerfile, self._logger)
+        self.tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
+        self.categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
+        self.universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
+        self.selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
+        self.data = Core.Aggregators.Data(self, self._containerfile, self._logger)
 
 class Group(_ContainerCore):
     """A grouping of Sim objects.
