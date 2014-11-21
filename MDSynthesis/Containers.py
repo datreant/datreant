@@ -17,14 +17,6 @@ class _ContainerCore(object):
 
     """
 
-    def __init__(self):
-        """
-        
-        """
-        super(_ContainerCore, self).__init__()
-
-        #TODO: update location state
-
     #TODO: needs updating!
     def _start_logger(self, containertype, name, location):
         """Start up the logger.
@@ -128,7 +120,6 @@ class Sim(_ContainerCore):
                 name of universe to attach
 
         """
-        super(Sim, self).__init__()
 
         self.universe = None      # universe 'dock'
         self._uname = None        # attached universe name 
@@ -141,7 +132,6 @@ class Sim(_ContainerCore):
         # if a structure and trajectory(s) are given, begin building new object
             self._generate(*args, **kwargs)
 
-    #TODO: update this!
     def __repr__(self):
         if self._uname in self._cache:
             out = "Sim: '{}' | universe (cached): '{}'".format(self._containerfile.get_name(), self._uname)
@@ -273,7 +263,6 @@ class Group(_ContainerCore):
                 default False
                 
         """
-        super(Group, self).__init__()
 
         if isinstance(args[0], basestring):
         # if first arg is a directory string, load existing object
