@@ -343,26 +343,19 @@ class Data(Aggregator):
 
     """
     def _get_datafile(self, handle):
-        """Return a datafile corresponding to the given handle.
+        """Return path to datafile corresponding to given handle.
 
         :Arguments:
             *handle*
-                name of dataset whose data file to return
+                name of dataset whose datafile path to return
 
         :Returns:
             *datafile*
-                datafile handle
+                datafile path
 
         """
-        filename = os.path.join(self._containerfile.get_location(), 
+        datafile = os.path.join(self._containerfile.get_location(), 
                                 handle, Core.datafile) 
-
-        try:
-            datafile = Files.DataFile(filename, logger=self._logger)
-        except IOError:
-            self._logger.warning("No data named '{}' present.".format(handle))
-            datafile = None
-
         return datafile
 
     def _check_existence(self, handle):
@@ -379,9 +372,8 @@ class Data(Aggregator):
         """
         filename = os.path.join(self._containerfile.get_location(), 
                                 handle, Core.datafile) 
-
+    
         return os.path.exists(filename)
-        
 
     @staticmethod
     def _generate(func):
@@ -442,7 +434,7 @@ class Data(Aggregator):
                 data to store; must be a pandas Series, DataFrame, or Panel
 
         """
-        self._datafile.add_data('main', data)
+        self.add(handle, data)
     
     def __delitem__(self, handle):
         """Remove a dataset.
@@ -456,9 +448,9 @@ class Data(Aggregator):
                 name of dataset to delete
     
         """
-        self._datafile.del_data('main')
+        self.remove(handle)
 
-
+    @_generate
     def add(self, handle, data):
         """Store data in Container.
 
@@ -478,15 +470,75 @@ class Data(Aggregator):
     def remove(self, handle):
         """Remove a dataset.
 
+        Note: the directory containing the dataset file (``Data.h5``) will NOT
+        be removed if it still contains file after the removal of the dataset
+        file.
+
         :Arguments:
             *handle*
                 name of dataset to delete
     
         """
-        self._datafile.del_data('main')
-        
+        datafile = self._get_datafile(handle)
+
+        if os.path.exists(datafile):
+            os.remove(datafile)
+            try: 
+                os.rmdir(os.path.dirname(datafile))
+            except OSError:
+                self._logger.info("Directory for '{}' not empty. Retaining directory.".format(handle))
+        else:
+            self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
 
     def retrieve(self, handle, **kwargs):
+        """Retrieve stored data.
+
+        The pandas object (Series, DataFrame, or Panel) for the given handle
+        is returned.
+
+        If dataset doesn't exist, ``None`` is returned.
+
+        Subsets of the whole dataset can be returned using keywords such as
+        *start* and *stop* for ranges of rows, and *columns* for selected
+        columns.
+
+        The *where* keyword takes a string as input and can be used to filter
+        out rows and columns without loading the full object into memory. For
+        example, given a DataFrame with handle 'mydata' with columns (A, B, C,
+        D), one could return all rows for columns A and C for which column D is
+        greater than .3 with::
+
+            retrieve('mydata', where='columns=[A,C] & D > .3')
+
+        Or, if I wanted all rows with index = 3 (there could be more than
+        one)::
+
+            retrieve('mydata', where='index = 3')
+        
+        :Arguments:
+            *handle*
+                name of data to retrieve
+
+        :Keywords:
+            *where*
+                conditions for what rows/columns to return
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
+            *columns*
+                list of columns to return; all columns returned by default
+            *iterator* 
+                if True, return an iterator [``False``]
+            *chunksize*
+                number of rows to include in iteration; implies
+                ``iterator=True`` 
+
+        :Returns:
+            *data*
+                stored data; ``None`` if nonexistent
+
+        """
 
     def append(self, handle, data):
 
