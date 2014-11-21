@@ -823,6 +823,18 @@ class SimFile(ContainerFile):
            *logger*
               logger to send warnings and errors to
 
+        :Keywords:
+           *name*
+              user-given name of Container object
+           *coordinator*
+              directory in which coordinator state file can be found [None]
+           *categories*
+              user-given dictionary with custom keys and values; used to
+              give distinguishing characteristics to object for search
+           *tags*
+              user-given list with custom elements; used to give distinguishing
+              characteristics to object for search
+
         """
         super(SimFile, self).__init__(filename, logger=logger, **kwargs)
     

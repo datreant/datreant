@@ -98,7 +98,7 @@ class Sim(_ContainerCore):
         :Arguments:
               *args*
                 either a string giving the path to a directory with a Sim object
-                metadata file, or the arguments normally given to an MDAnalysis
+                state file, or the arguments normally given to an MDAnalysis
                 Universe
 
         :Keywords available on object generation:
@@ -170,7 +170,11 @@ class Sim(_ContainerCore):
         statefile = os.path.join(location, 'Sim', Core.Files.simfile)
 
         self._start_logger('Sim', name, os.path.join(location, 'Sim'))
-        self._containerfile = Core.Files.SimFile(statefile, self._logger)
+        self._containerfile = Core.Files.SimFile(statefile, self._logger,
+                                                 name=name,
+                                                 coordinator=coordinator,
+                                                 categories=categories,
+                                                 tags=tags)
 
         # attach aggregators
         self._init_aggregators()
