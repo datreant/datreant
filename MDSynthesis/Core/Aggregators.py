@@ -536,7 +536,6 @@ class Data(Aggregator):
 
         return inner
 
-    @_read_datafile
     def __getitem__(self, handle):
         """Get dataset corresponding to given handle.
 
@@ -552,7 +551,6 @@ class Data(Aggregator):
         """
         return self.retrieve(handle)
 
-    @_write_datafile
     def __setitem__(self, handle, data):
         """Set dataset corresponding to given handle.
         
