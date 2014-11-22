@@ -294,6 +294,7 @@ class Universes(Aggregator):
         self._logger.info("Universe '{}' now cached.".format(self._uname))
     
     #TODO: not updated yet!
+    # ensure that trajectories are decached on object destruction
     def decache(self):
         """Remove cached trajectory from cache; re-attach universe to original.
 
@@ -446,7 +447,13 @@ class Data(Aggregator):
 
     """
     def __repr__(self):
-        pass
+        data = self.list()
+
+        out = "Data:"
+        count = 0
+        for datum in data:
+            out = out + "\t{}\n".format(datum)
+        return out
 
     def _makedirs(self, p):
         """Make directories and all parents necessary.
@@ -700,7 +707,14 @@ class Data(Aggregator):
                 list of handles to available datasets
 
         """
-        pass
+        datasets = list()
+        for root, dirs, files in os.walk(self._containerfile.get_location()):
+            if Files.datafile in files:
+                datasets.append(os.path.basename(root))
+
+        datasets.sort()
+    
+        return datasets
 
 class Bunch(object):
     def __init__(self, odict):
