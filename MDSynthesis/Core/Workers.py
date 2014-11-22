@@ -14,7 +14,7 @@ from multiprocessing import Process
 import Aggregators
 import Files
 
-class Finder(object):
+class Foxhound(object):
     """A Finder has methods for locating specified objects based on attributes.
 
     This object is used by Databases to find Containers, and vice-versa.
@@ -67,6 +67,10 @@ class Finder(object):
 
         return basedir
 
+#TODO: Perhaps attach to Containers as a way for users to store random
+# things without the expectation that they are indexable? Could pickle
+# this thing and then unpickle it when object is regenerated. Will
+# need its own file locks (which actually might be kind of hard)
 class Attributes(object):
     """Class for user-defined attributes.
 
