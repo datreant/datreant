@@ -446,7 +446,17 @@ class Data(Aggregator):
 
     """
     def __repr__(self):
+        pass
 
+    def _makedirs(self, p):
+        """Make directories and all parents necessary.
+
+        :Arguments:
+            *p*
+                directory path to make
+        """
+        if not os.path.exists(p):
+            os.makedirs(p)
 
     def _get_datafile(self, handle):
         """Return path to datafile corresponding to given handle.
@@ -464,27 +474,10 @@ class Data(Aggregator):
                                 handle, Files.datafile) 
         return datafile
 
-    def _check_existence(self, handle):
-        """Check for existence of data instance.
-
-        :Arguments:
-            *handle*
-                name of data instance to check
-
-        :Returns:
-            *existence*
-                True if data with given handle already exists; False otherwise
-
-        """
-        filename = os.path.join(self._containerfile.get_location(), 
-                                handle, Files.datafile) 
-    
-        return os.path.exists(filename)
-
     #TODO: fundamentally flawed. File is generated if directory exists; revisit
     # immediately
     def _read_datafile(func):
-        """Decorator for generating DataFile instance for requested data.
+        """Decorator for generating DataFile instance for reading data.
 
         DataFile instance is generated and mounted at self._datafile. It
         is then dereferenced after the method call. Since data files can be
@@ -499,18 +492,49 @@ class Data(Aggregator):
         def inner(self, handle, *args, **kwargs):
             filename = os.path.join(self._containerfile.get_location(), 
                                     handle, Files.datafile) 
-            try:
-                self._datafile = Files.DataFile(filename, logger=self._containerlog)
-                out = func(self, handle, *args, **kwargs)
-                return out
-            except IOError:
+
+            if os.path.exists(filename):
+                self._datafile = Files.DataFile(filename, logger=self._logger)
+                try:
+                    out = func(self, handle, *args, **kwargs)
+                finally:
+                    del self._datafile
+            else:
                 self._logger.warning("No data named '{}' present.".format(handle))
-            finally:
-                del self._datafile
+                out = None
+
+            return out
 
         return inner
 
     def _write_datafile(func):
+        """Decorator for generating DataFile instance for writing data.
+
+        DataFile instance is generated and mounted at self._datafile. It
+        is then dereferenced after the method call. Since data files can be
+        deleted in the filesystem, this should handle cleanly the scenarios
+        in which data appears, goes missing, etc. while a Container is loaded.
+
+        ``Note``: methods wrapped with this decorator need to have *handle*
+        as the first argument.
+        
+        """
+        @wraps(func)
+        def inner(self, handle, *args, **kwargs):
+            dirname = os.path.join(self._containerfile.get_location(), handle)
+            filename = os.path.join(dirname, Files.datafile) 
+
+            self._makedirs(dirname)
+            self._datafile = Files.DataFile(filename, logger=self._logger)
+
+            try:
+                out = func(self, handle, *args, **kwargs)
+            finally:
+                del self._datafile
+
+            return out
+
+        return inner
 
     @_read_datafile
     def __getitem__(self, handle):

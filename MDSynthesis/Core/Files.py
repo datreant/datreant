@@ -1318,7 +1318,7 @@ class DataFile(File):
         super(DataFile, self).__init__(filename, logger=logger)
 
         # open file for the first time to initialize handle
-        self.handle = pandas.HDFStore(self.filename, 'r')
+        self.handle = pandas.HDFStore(self.filename, 'a')
         self.handle.close()
 
     @File._write_data
