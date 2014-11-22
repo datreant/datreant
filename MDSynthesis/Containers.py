@@ -16,8 +16,6 @@ class _ContainerCore(object):
     instead contains methods and attributes common to all Container objects.
 
     """
-
-    #TODO: needs updating!
     def _start_logger(self, containertype, name, location):
         """Start up the logger.
 
@@ -49,7 +47,72 @@ class _ContainerCore(object):
             cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
+
+    def _makedirs(self, p):
+        """Make directories and all parents necessary.
+
+        :Arguments:
+            *p*
+                directory path to make
+        """
+        if not os.path.exists(p):
+            os.makedirs(p)
+
+    @property
+    def uuid(self):
+        """The uuid of the Container.
     
+        """
+        return self._containerfile.get_uuid()
+
+    @property
+    def name(self):
+        """The name of the Container.
+        
+        """
+        return self._containerfile.get_name()
+
+    @name.setter
+    def name(self, value):
+        """Set name of Container.
+
+        """
+        self._containerfile.update_name(value)
+
+    @property
+    def containertype(self):
+        """The type of the Container; either Group or Sim.
+    
+        """
+        return self._containerfile.get_containertype()
+
+    @property
+    def location(self):
+        """The location of the Container.
+    
+        """
+        return self._containerfile.get_location()
+
+    @location.setter
+    def location(self, value):
+        """Set location of Container. 
+        
+        Physically moves the Container to the given location.
+        Only works if the new location is an empty or nonexistent
+        directory.
+
+        """
+        self._makedirs(value)
+        os.rename(self._containerfile.get_location(), value)
+        self._regenerate(value)
+    
+    @property
+    def version(self):
+        """The MDSynthesis version of the Container.
+    
+        """
+        return self._containerfile.get_version()
+
 class Sim(_ContainerCore):
     """The MDSynthesis Sim object is the base container for single simulations.
 
@@ -173,7 +236,7 @@ class Sim(_ContainerCore):
         self.universes.add(universe, args[0], *args[1:])
 
         if not detached:
-            self.universes.attach(universe)
+            self.attach(universe)
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
@@ -192,7 +255,7 @@ class Sim(_ContainerCore):
         self._init_aggregators()
     
         if attach:
-            self.universes.attach(attach)
+            self.attach(attach)
 
     def _init_aggregators(self):
         """Initialize and attach aggregators.
