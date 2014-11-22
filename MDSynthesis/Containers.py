@@ -113,6 +113,25 @@ class _ContainerCore(object):
         """
         return self._containerfile.get_version()
 
+    @property
+    def coordinator(self):
+        """The location of the associated Coordinator.
+    
+        """
+        return self._containerfile.get_coordinator()
+
+    #TODO: implement with Coordinator checking
+    @coordinator.setter
+    def coordinator(self, value):
+        """Set location of Coordinator. 
+        
+        Setting this to ``None`` will dissociate the Container from any
+        Coordinator. 
+        
+        """
+        pass
+
+#TODO: include in documentation fgetter details
 class Sim(_ContainerCore):
     """The MDSynthesis Sim object is the base container for single simulations.
 
