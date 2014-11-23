@@ -220,14 +220,26 @@ class Universes(Aggregator):
     def __repr__(self):
         universes = self.list()
 
-        if not tags:
+        if not universes:
             out = "No Universes"
         else:
-            out = "Tags:"
-            for tag in tags:
-                out = out + "\t{}\n".format(tag)
+            out = "Universes:"
+            for universe in universes:
+                out = out + "\t{}".format(universe)
+                if self._container._uname == universe:
+                    out = out + '\t(attached)'
+                out = out + '\n\t'
         return out
 
+    def __call__(self):
+        """Get handles for all Universe definitions as a list.
+    
+        :Returns:
+            *handles*
+                list of all Universe handles
+        """
+        return self._containerfile.list_universes()
+    
     def add(self, handle, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
@@ -263,6 +275,15 @@ class Universes(Aggregator):
         if self._container._uname == handle:
             self.detach()
     
+    def list(self):
+        """Get handles for all Universe definitions as a list.
+    
+        :Returns:
+            *handles*
+                list of all Universe handles
+        """
+        return self._containerfile.list_universes()
+
     #TODO: implement in SimFile
     def rename(self, handle, new_handle):
         """Change the handle used for the specified Universe.
@@ -364,6 +385,26 @@ class Selections(Aggregator):
     way, changes in the universe topology are reflected in the selections.
 
     """
+    def __repr__(self):
+        selections = self.list()
+
+        if not selections:
+            out = "No Selections for Universe '{}'".format(self._container._uname)
+        else:
+            out = "Selections:"
+            for selection in selections:
+                out = out + "\t{}\n".format(selections)
+        return out
+
+    def __call__(self):
+        """Get handles for all Universe definitions as a list.
+    
+        :Returns:
+            *handles*
+                list of all Universe handles
+        """
+        return self.list()
+
     def __getitem__(self, handle):
         """Get AtomGroup corresponding to the given named selection.
         
@@ -409,12 +450,12 @@ class Selections(Aggregator):
         """
         self._containerfile.del_selection(self._container._uname, handle)
     
-    #TODO: handle case where no universe is loaded
-    def keys(self):
+    def list(self):
         """Return a list of all selection handles.
     
         """
-        return self._containerfile.list_selections(self._container._uname)
+        if self._container._uname:
+            return self._containerfile.list_selections(self._container._uname)
 
 class Members(Aggregator):
     """Member manager for Groups.

@@ -209,7 +209,10 @@ class Sim(_ContainerCore):
         self._uname = None        # attached universe name 
         self._cache = dict()      # cache path storage
 
-        if (os.path.isdir(args[0])):
+        if kwargs.pop('empty', False):
+        # if no universe desired, skip checks for arguments
+            self._generate(*args, empty=True, **kwargs)
+        elif (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
             self._regenerate(*args, **kwargs)
         else:
@@ -276,6 +279,7 @@ class Sim(_ContainerCore):
         statefile = os.path.join(args[0], Core.Files.simfile)
         self._containerfile = Core.Files.SimFile(statefile)
         self._start_logger('Sim', self._containerfile.get_name(), args[0])
+        self._containerfile._start_logger(self._logger)
 
         # attach aggregators
         self._init_aggregators()

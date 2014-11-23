@@ -50,6 +50,18 @@ class File(object):
         self.filename = os.path.abspath(filename)
         self.handle = None
 
+        self._start_logger(logger)
+
+    def _start_logger(self, logger):
+        """Start up the logger.
+
+        """
+        # delete current logger
+        try: 
+            del self.logger
+        except AttributeError:
+            pass
+
         # log to standard out if no logger given
         if not logger:
             self.logger = logging.getLogger('{}'.format(self.__class__.__name__))
@@ -61,30 +73,6 @@ class File(object):
             self.logger.addHandler(ch)
         else:
             self.logger = logger
-
-    def _start_logger(self):
-        """Start up the logger.
-
-        """
-        # set up logging
-        self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.metadata['name']))
-
-        if not self._logger.handlers:
-            self._logger.setLevel(logging.INFO)
-    
-            # file handler
-            if 'basedir' in self.metadata:
-                logfile = os.path.join(self.metadata['basedir'], self._containerlog)
-                fh = logging.FileHandler(logfile)
-                ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-                fh.setFormatter(ff)
-                self._logger.addHandler(fh)
-    
-            # output handler
-            ch = logging.StreamHandler(sys.stdout)
-            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-            ch.setFormatter(cf)
-            self._logger.addHandler(ch)
 
     def _shlock(self, f):
         """Get shared lock on file.
