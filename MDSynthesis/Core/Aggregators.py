@@ -96,7 +96,7 @@ class Tags(Aggregator):
         else:
             out = "Tags:"
             for tag in tags:
-                out = out + "\t{}\n".format(tag)
+                out = out + "\t\t{}\n".format(tag)
         return out
 
     def __call__(self):
