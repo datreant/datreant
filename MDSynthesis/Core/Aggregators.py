@@ -605,7 +605,6 @@ class Data(Aggregator):
         """
         self._datafile.add_data('main', data)
         
-    @_write_datafile
     def remove(self, handle, **kwargs):
         """Remove a dataset, or some subset of a dataset.
 
@@ -624,12 +623,55 @@ class Data(Aggregator):
                 row number to stop selection
     
         """
-        if kwargs:
-            self._datafile.del_data(handle, **kwargs)
+
+        if kwargs: 
+            if os.path.exists(self._get_datafile(handle)):
+                self._delete_data(handle, **kwargs)
+            else:
+                self._logger.info("No data named '{}' present".format(handle))
         else:
             datafile = self._get_datafile(handle)
 
-            if os.path.exists(datafile):
+            if os.path.exists(self._get_datafile(handle)):
+                os.remove(datafile)
+                try: 
+                    os.rmdir(os.path.dirname(datafile))
+                except OSError:
+                    self._logger.info("Directory for '{}' not empty. Retaining directory.".format(handle))
+            else:
+                self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
+
+    @_write_datafile
+    def _delete_data(self, handle, **kwargs):
+        """Remove a dataset, or some subset of a dataset.
+
+        This method loads the given data instance before doing anything,
+        and should generally not be used to remove data since it will create
+        a datafile object if one is not already present, which could have
+        side-effects for other instances of this Container.
+
+        Note: in the case the whole dataset is removed, the directory
+        containing the dataset file (``Data.h5``) will NOT be removed if it
+        still contains file(s) after the removal of the dataset file.
+
+        :Arguments:
+            *handle*
+                name of dataset to delete
+            *where*
+                conditions for what rows/columns to remove
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
+
+        """
+        try:
+            self._datafile.del_data('main', **kwargs)
+        except NotImplementedError:
+            self._logger.info("Dataset '{}' empty; removing.".format(handle))
+            datafile = self._get_datafile(handle)
+
+            if os.path.exists(self._get_datafile(handle)):
                 os.remove(datafile)
                 try: 
                     os.rmdir(os.path.dirname(datafile))
