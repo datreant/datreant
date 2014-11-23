@@ -1335,7 +1335,11 @@ class DataFile(File):
                 the data object to store; should be either a Series, DataFrame,
                 or Panel
         """
-        self.handle.put(key, data, format='table', data_columns=True)
+        # index all columns if possible
+        try:
+            self.handle.put(key, data, format='table', data_columns=True)
+        except AttributeError:
+            self.handle.put(key, data, format='table')
 
     @File._write_data
     def append_data(self, key, data):
@@ -1392,9 +1396,17 @@ class DataFile(File):
         :Arguments:
             *key*
                 name of data to delete
+
+        :Keywords:
+            *where*
+                conditions for what rows/columns to remove
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
         
         """
-        self.handle.remove(key)
+        self.handle.remove(key, **kwargs)
     
     @File._read_data
     def list_data(self):
