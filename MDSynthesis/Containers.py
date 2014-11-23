@@ -196,6 +196,9 @@ class Sim(_ContainerCore):
             *detached*
                 if True, Sim will load WITHOUT attaching Universe; default
                 False 
+            *empty*
+                if True, initialize Sim without Universe definition;
+                no arguments required; default False
 
         :Keywords available on object re-generation:
             *attach*
@@ -235,6 +238,7 @@ class Sim(_ContainerCore):
         tags = kwargs.pop('tags', list())
         universe = kwargs.pop('universe', 'main')
         detached = kwargs.pop('detached', False)
+        empty = kwargs.pop('empty', False)
 
         # generate state file
         #TODO: need try, except for case where Sim already exists
@@ -252,10 +256,11 @@ class Sim(_ContainerCore):
         self._init_aggregators()
 
         # add universe
-        self.universes.add(universe, args[0], *args[1:])
+        if not empty:
+            self.universes.add(universe, args[0], *args[1:])
+            if not detached:
+                self.attach(universe)
 
-        if not detached:
-            self.attach(universe)
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.

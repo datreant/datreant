@@ -88,6 +88,17 @@ class Tags(Aggregator):
     """Interface to tags.
 
     """
+    def __repr__(self):
+        tags = self.list()
+
+        if not tags:
+            out = "No Tags"
+        else:
+            out = "Tags:"
+            for tag in tags:
+                out = out + "\t{}\n".format(tag)
+        return out
+
     def __call__(self):
         """Get all tags for the Container as a list.
     
@@ -139,6 +150,17 @@ class Categories(Aggregator):
     """Interface to categories.
 
     """
+    def __repr__(self):
+        categories = self.dict()
+
+        if not categories:
+            out = "No Categories"
+        else:
+            out = "Categories:"
+            for key in categories.keys():
+                out = out + "\t{}\t: {}\n\t".format(key, categories[key])
+        return out
+
     def __call__(self):
         """Get all categories for the Container as a dictionary.
 
@@ -195,6 +217,16 @@ class Universes(Aggregator):
     """Interface to universes.
 
     """
+    def __repr__(self):
+        universes = self.list()
+
+        if not tags:
+            out = "No Universes"
+        else:
+            out = "Tags:"
+            for tag in tags:
+                out = out + "\t{}\n".format(tag)
+        return out
 
     def add(self, handle, topology, *trajectory):
         """Add a universe definition to the Sim object.
@@ -453,7 +485,6 @@ class Data(Aggregator):
             out = "No Data"
         else:
             out = "Data:"
-            count = 0
             for datum in data:
                 out = out + "\t{}\n".format(datum)
         return out
