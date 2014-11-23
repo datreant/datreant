@@ -179,9 +179,8 @@ class Sim(_ContainerCore):
             *location*
                 directory to place Sim object; default is current directory
             *name*
-                desired name for object, used for logging and referring to
-                object in some analyses; default will be the object's randomly
-                selected UUID
+                desired name for Sim; can be used to distinguish Sims, but need
+                not be unique; default is ``Sim``
             *coordinator*
                 directory of the Coordinator to associate with this object; if the
                 Coordinator does not exist, it is created [``None``] 
@@ -232,7 +231,7 @@ class Sim(_ContainerCore):
         """
         # process keywords
         location = kwargs.pop('location', '.')
-        name = kwargs.pop('name', None)
+        name = kwargs.pop('name', 'Sim')
         coordinator = kwargs.pop('coordinator', None)
         categories = kwargs.pop('categories', dict())
         tags = kwargs.pop('tags', list())
@@ -242,10 +241,14 @@ class Sim(_ContainerCore):
 
         # generate state file
         #TODO: need try, except for case where Sim already exists
-        os.mkdir(os.path.join(location, 'Sim'))
-        statefile = os.path.join(location, 'Sim', Core.Files.simfile)
 
-        self._start_logger('Sim', name, os.path.join(location, 'Sim'))
+        # name mangling to give a valid directory name
+        # TODO: is this robust? What other characters are problematic?
+        dirname = name.replace('/', '_')
+        os.makedirs(os.path.join(location, dirname))
+        statefile = os.path.join(location, dirname, Core.Files.simfile)
+
+        self._start_logger('Sim', name, os.path.join(location, dirname))
         self._containerfile = Core.Files.SimFile(statefile, self._logger,
                                                  name=name,
                                                  coordinator=coordinator,
@@ -260,7 +263,6 @@ class Sim(_ContainerCore):
             self.universes.add(universe, args[0], *args[1:])
             if not detached:
                 self.attach(universe)
-
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
