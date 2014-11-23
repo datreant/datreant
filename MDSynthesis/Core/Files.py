@@ -1390,7 +1390,7 @@ class DataFile(File):
         return self.handle.select(key, **kwargs)
 
     @File._write_data
-    def del_data(self, key):
+    def del_data(self, key, **kwargs):
         """Delete a stored data object.
 
         :Arguments:

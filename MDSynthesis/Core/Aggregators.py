@@ -605,28 +605,38 @@ class Data(Aggregator):
         """
         self._datafile.add_data('main', data)
         
-    def remove(self, handle):
-        """Remove a dataset.
+    @_write_datafile
+    def remove(self, handle, **kwargs):
+        """Remove a dataset, or some subset of a dataset.
 
-        Note: the directory containing the dataset file (``Data.h5``) will NOT
-        be removed if it still contains file after the removal of the dataset
-        file.
+        Note: in the case the whole dataset is removed, the directory
+        containing the dataset file (``Data.h5``) will NOT be removed if it
+        still contains file(s) after the removal of the dataset file.
 
         :Arguments:
             *handle*
                 name of dataset to delete
+            *where*
+                conditions for what rows/columns to remove
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
     
         """
-        datafile = self._get_datafile(handle)
-
-        if os.path.exists(datafile):
-            os.remove(datafile)
-            try: 
-                os.rmdir(os.path.dirname(datafile))
-            except OSError:
-                self._logger.info("Directory for '{}' not empty. Retaining directory.".format(handle))
+        if kwargs:
+            self._datafile.del_data(handle, **kwargs)
         else:
-            self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
+            datafile = self._get_datafile(handle)
+
+            if os.path.exists(datafile):
+                os.remove(datafile)
+                try: 
+                    os.rmdir(os.path.dirname(datafile))
+                except OSError:
+                    self._logger.info("Directory for '{}' not empty. Retaining directory.".format(handle))
+            else:
+                self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
 
     @_read_datafile
     def retrieve(self, handle, **kwargs):
