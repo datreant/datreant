@@ -449,10 +449,13 @@ class Data(Aggregator):
     def __repr__(self):
         data = self.list()
 
-        out = "Data:"
-        count = 0
-        for datum in data:
-            out = out + "\t{}\n".format(datum)
+        if not data:
+            out = "No Data"
+        else:
+            out = "Data:"
+            count = 0
+            for datum in data:
+                out = out + "\t{}\n".format(datum)
         return out
 
     def _makedirs(self, p):
