@@ -273,7 +273,7 @@ class Universes(Aggregator):
         self._containerfile.del_universe(handle)
     
         if self._container._uname == handle:
-            self.detach()
+            self._container.detach()
     
     def list(self):
         """Get handles for all Universe definitions as a list.
@@ -388,12 +388,18 @@ class Selections(Aggregator):
     def __repr__(self):
         selections = self.list()
 
-        if not selections:
+        if not self._container._uname:
+            out = "No Universe attached; no Selections to show"
+        elif not selections:
             out = "No Selections for Universe '{}'".format(self._container._uname)
         else:
             out = "Selections:"
             for selection in selections:
-                out = out + "\t{}\n".format(selections)
+                out = out + "\t{}\n\t".format(selection)
+                for item in self.define(selection):
+                    out = out + "\t| '{}'\n\t".format(item)
+                out = out + "\t---------\n\t"
+
         return out
 
     def __call__(self):
@@ -456,6 +462,33 @@ class Selections(Aggregator):
         """
         if self._container._uname:
             return self._containerfile.list_selections(self._container._uname)
+
+    def define(self, handle):
+        """Get selection definition for given handle and the active universe.
+    
+        :Arguments:
+            *handle*
+                name of selection to get definition of
+
+        :Returns:
+            *definition*
+                list of strings defining the atom selection
+        """
+        return self._containerfile.get_selection(self._container._uname, handle)
+    
+    def copy(self, universe):
+        """Copy defined selections of another Universe to the attached Universe.
+    
+        :Arguments:
+            *universe*
+                name of universe definition to copy selections from
+        """
+        if self._container._uname:
+            selections = self._containerfile.list_selections(universe)
+    
+            for sel in selections:
+                seldef = self._containerfile.get_selection(universe, sel)
+                self._containerfile.add_selection(self._container._uname, sel, *seldef)
 
 class Members(Aggregator):
     """Member manager for Groups.

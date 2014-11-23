@@ -13,6 +13,7 @@ import os
 import sys
 import logging
 from functools import wraps
+import MDSynthesis
 
 # Sim state file
 simfile = "Sim.h5"
@@ -318,6 +319,8 @@ class ContainerFile(File):
            *tags*
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
+           *version*
+              version of MDSynthesis file was generated with
 
         .. Note:: kwargs passed to :meth:`create`
 
@@ -351,6 +354,8 @@ class ContainerFile(File):
            *tags*
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
+           *version*
+              version of MDSynthesis file was generated with
         """
         containertype = kwargs.pop('containertype', None)
 
@@ -359,7 +364,7 @@ class ContainerFile(File):
         self.update_containertype(containertype)
         self.update_name(kwargs.pop('name', containertype))
         self.update_location()
-        self.update_version(kwargs.pop('version', None))
+        self.update_version(kwargs.pop('version', MDSynthesis.__version__))
 
         # coordinator table
         self.update_coordinator(kwargs.pop('coordinator', None))

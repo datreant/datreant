@@ -59,7 +59,7 @@ class _ContainerCore(object):
             os.makedirs(p)
 
     @property
-    def uuid(self):
+    def _uuid(self):
         """The uuid of the Container.
     
         """
@@ -80,7 +80,7 @@ class _ContainerCore(object):
         self._containerfile.update_name(value)
 
     @property
-    def containertype(self):
+    def _containertype(self):
         """The type of the Container; either Group or Sim.
     
         """
@@ -106,13 +106,6 @@ class _ContainerCore(object):
         os.rename(self._containerfile.get_location(), value)
         self._regenerate(value)
     
-    @property
-    def version(self):
-        """The MDSynthesis version of the Container.
-    
-        """
-        return self._containerfile.get_version()
-
     @property
     def coordinator(self):
         """The location of the associated Coordinator.
