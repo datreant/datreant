@@ -198,7 +198,7 @@ class Sim(_ContainerCore):
 
         """
 
-        self.universe = None      # universe 'dock'
+        self._universe = None     # universe 'dock'
         self._uname = None        # attached universe name 
         self._cache = dict()      # cache path storage
 
@@ -219,6 +219,19 @@ class Sim(_ContainerCore):
             out = "Sim: '{}' | universe: '{}'".format(self._containerfile.get_name(), self._uname)
 
         return out
+
+    @property
+    def universe(self):
+        """The active Universe of the Sim.
+    
+        """
+        if self._uname in self._containerfile.list_universes():
+            return self._universe
+        elif not self._universe:
+            self._logger.info('No Universe attached.')
+        else:
+            self.detach()
+            self._logger.info('This Universe is no longer defined. It has been detached')
 
     #TODO: add explicit args, kwargs
     def _generate(self, *args, **kwargs):
@@ -303,7 +316,7 @@ class Sim(_ContainerCore):
                 given name for selecting the universe
         """
         udef = self._containerfile.get_universe(handle)
-        self.universe = Universe(udef[0], *udef[1])
+        self._universe = Universe(udef[0], *udef[1])
         self._uname = handle
     
     def detach(self):
@@ -312,11 +325,11 @@ class Sim(_ContainerCore):
         Deletes the currently attached Universe object from ``Sim.universe``.
 
         """
-        self.universe = None
+        self._universe = None
         self._uname = None
 
 class Group(_ContainerCore):
-    """A grouping of Sim objects.
+    """
 
     """
     def __init__(self, *args, **kwargs):
