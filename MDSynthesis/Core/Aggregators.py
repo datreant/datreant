@@ -387,18 +387,24 @@ class Selections(Aggregator):
     """
     def __repr__(self):
         selections = self.list()
+        agg = "Selections"
+        majsep = "="
+        minsep = "-"
+        subsep = "| "
+        seplength = len(agg)
 
         if not self._container._uname:
             out = "No Universe attached; no Selections to show"
         elif not selections:
             out = "No Selections for Universe '{}'".format(self._container._uname)
         else:
-            out = "Selections:"
+            out = agg +'\n'
+            out = out + majsep*seplength + '\n'
             for selection in selections:
-                out = out + "\t{}\n\t".format(selection)
+                out = out + "{}\n".format(selection)
                 for item in self.define(selection):
-                    out = out + "\t| '{}'\n\t".format(item)
-                out = out + "\t---------\n\t"
+                    out = out + subsep + "'{}'\n".format(item)
+                out = out + minsep*seplength + '\n'
 
         return out
 
