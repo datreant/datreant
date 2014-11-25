@@ -90,13 +90,17 @@ class Tags(Aggregator):
     """
     def __repr__(self):
         tags = self.list()
+        agg = "Tags"
+        majsep = "="
+        seplength = len(agg)
 
         if not tags:
             out = "No Tags"
         else:
-            out = "Tags:"
+            out = agg +'\n'
+            out = out + majsep*seplength + '\n'
             for tag in tags:
-                out = out + "\t\t{}\n".format(tag)
+                out = out + "{}\n".format(tag)
         return out
 
     def __call__(self):
@@ -152,13 +156,17 @@ class Categories(Aggregator):
     """
     def __repr__(self):
         categories = self.dict()
+        agg = "Categories"
+        majsep = "="
+        seplength = len(agg)
 
         if not categories:
             out = "No Categories"
         else:
-            out = "Categories:"
+            out = agg +'\n'
+            out = out + majsep*seplength + '\n'
             for key in categories.keys():
-                out = out + "\t{}\t: {}\n\t".format(key, categories[key])
+                out = out + "{}: {}\n".format(key, categories[key])
         return out
 
     def __call__(self):
@@ -219,16 +227,20 @@ class Universes(Aggregator):
     """
     def __repr__(self):
         universes = self.list()
+        agg = "Universes"
+        majsep = "="
+        seplength = len(agg)
 
         if not universes:
             out = "No Universes"
         else:
-            out = "Universes:"
+            out = agg +'\n'
+            out = out + majsep*seplength + '\n'
             for universe in universes:
-                out = out + "\t{}".format(universe)
+                out = out + "{}".format(universe)
                 if self._container._uname == universe:
                     out = out + '\t(attached)'
-                out = out + '\n\t'
+                out = out + '\n'
         return out
 
     def __call__(self):
@@ -560,13 +572,17 @@ class Data(Aggregator):
     """
     def __repr__(self):
         data = self.list()
+        agg = "Data"
+        majsep = "="
+        seplength = len(agg)
 
         if not data:
             out = "No Data"
         else:
-            out = "Data:"
+            out = agg +'\n'
+            out = out + majsep*seplength + '\n'
             for datum in data:
-                out = out + "\t{}\n".format(datum)
+                out = out + "{}\n".format(datum)
         return out
 
     def _makedirs(self, p):
