@@ -99,8 +99,8 @@ class Tags(Aggregator):
         else:
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
-            for tag in tags:
-                out = out + "{}\n".format(tag)
+            for i in xrange(len(tags)):
+                out = out + "{} '{}'\n".format(i, tags[i])
         return out
 
     def __call__(self):
@@ -166,7 +166,7 @@ class Categories(Aggregator):
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
             for key in categories.keys():
-                out = out + "{}: {}\n".format(key, categories[key])
+                out = out + "'{}': '{}'\n".format(key, categories[key])
         return out
 
     def __call__(self):
@@ -237,7 +237,7 @@ class Universes(Aggregator):
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
             for universe in universes:
-                out = out + "{}".format(universe)
+                out = out + "'{}'".format(universe)
                 if self._container._uname == universe:
                     out = out + '\t(attached)'
                 out = out + '\n'
@@ -252,6 +252,21 @@ class Universes(Aggregator):
         """
         return self._containerfile.list_universes()
     
+    def __getitem__(self, handle):
+        """Attach Universe and return a reference to it.
+
+        :Arguments:
+            *handle*
+                given name for selecting the universe
+        
+        :Returns:
+            *universe*
+                a reference to the newly attached universe
+        """
+        self._container.attach(handle)
+
+        return self._container.universe
+
     def add(self, handle, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
@@ -413,7 +428,7 @@ class Selections(Aggregator):
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
             for selection in selections:
-                out = out + "{}\n".format(selection)
+                out = out + "'{}'\n".format(selection)
                 for item in self.define(selection):
                     out = out + subsep + "'{}'\n".format(item)
                 out = out + minsep*seplength + '\n'
@@ -512,7 +527,22 @@ class Members(Aggregator):
     """Member manager for Groups.
 
     """
-    
+    def __repr__(self):
+        members = self.list()
+        agg = "Members"
+        majsep = "="
+        seplength = len(agg)
+
+        if not members:
+            out = "No Members"
+        else:
+            out = agg +'\n'
+            out = out + majsep*seplength + '\n'
+            for i in xrange(len(members)):
+                out = out + "{} '{}' ({})\n".format(i, members[i].name,
+                                                    members[i]._containertype)
+
+        return out
 
     def __call__(self):
         """Return a list of members.
@@ -577,7 +607,7 @@ class Members(Aggregator):
                 When True, remove all members [``False``]
 
         """
-        uuids = self._containerfile.list_members_uuid()
+        uuids = self._containerfile.get_members_uuid()
         uuids = [ uuids[x] for x in indices ]
 
         self._containerfile.del_member(*uuids)
@@ -598,7 +628,7 @@ class Data(Aggregator):
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
             for datum in data:
-                out = out + "{}\n".format(datum)
+                out = out + "'{}'\n".format(datum)
         return out
 
     def _makedirs(self, p):

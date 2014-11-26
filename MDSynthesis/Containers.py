@@ -134,10 +134,10 @@ class _ContainerCore(object):
 
 #TODO: include in documentation fgetter details
 class Sim(_ContainerCore):
-    """The MDSynthesis Sim object is the base container for single simulations.
+    """The Sim object is an interface to data for single simulations.
 
-    The Sim object contains all the machinery required to handle trajectories
-    and the data generated from them in an organized and object-oriented fashion.
+    A Sim object contains all the machinery required to handle trajectories and
+    the data generated from them in an organized and object-oriented fashion.
 
     To generate a Sim object from scratch, provide a topology and a trajectory
     in the same way you would for a Universe (:class:`MDAnalysis.Universe`). 
@@ -334,7 +334,30 @@ class Sim(_ContainerCore):
         self._uname = None
 
 class Group(_ContainerCore):
-    """
+    """The Group object is a collection of Sims and Groups.
+
+    A Group object keeps track of any number of Sims and Groups added to it as
+    members, and it can store datasets derived from these objects in the same
+    way as Sims.
+
+    To generate a Group object from scratch, give as arguments any number of Sim
+    and/or Groups.
+
+    Generating an object from scratch stores the information needed to
+    re-generate it in the filesystem. By default, this is the current working
+    directory::
+
+        ./Group
+
+    This directory contains a state file with all the information needed by the
+    object to find its members and other generated data.
+
+    To regenerate an existing Group object, give a directory that contains a Group
+    object state file as the first argument:
+
+        g = Group('path/to/sim/directory')
+
+    The Group object will be back as it was before.
 
     """
     def __init__(self, *args, **kwargs):
@@ -375,6 +398,23 @@ class Group(_ContainerCore):
         else:
         # if a number of Sim-derived objects are given, build a new group 
             self._generate(*args, **kwargs)
+
+    def __repr__(self):
+        members = self._containerfile.get_members_containertype()
+
+        sims = members.count('Sim')
+        groups = members.count('Group')
+
+        out = "Group: '{}' | {} Members: ".format(self._containerfile.get_name(), 
+                                                len(members))
+        if sims:
+            out = out + "{} Sim".format(sims)
+            if groups:
+                out = out + ", {} Group".format(groups)
+        elif groups:
+            out = out + "{} Group".format(groups)
+
+        return out
 
     def _generate(self, *args, **kwargs):
         """Generate new Group.
@@ -420,7 +460,7 @@ class Group(_ContainerCore):
 
         # attach aggregators
         self._init_aggregators()
-
+    
     def _init_aggregators(self):
         """Initialize and attach aggregators.
 

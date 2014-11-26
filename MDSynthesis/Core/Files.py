@@ -1170,7 +1170,7 @@ class GroupFile(ContainerFile):
             table.row.append()
 
     @File._write_state
-    def del_member(self, *uuid):
+    def del_member(self, *uuid, **kwargs):
         """Remove a member from the Group.
     
         :Arguments:
@@ -1191,7 +1191,7 @@ class GroupFile(ContainerFile):
             
         else:
             # remove redundant uuids from given list if present
-            uuids = set([ str(tag) for uuid in uuids ])
+            uuids = set([ str(uid) for uid in uuid ])
 
             # get matching rows
             #TODO: possibly faster to use table.where
