@@ -4,6 +4,16 @@ TODO List
 
 2014.11.25
 ----------
+Although pandas is great, I think it would be very good if datasets can be
+numpy arrays as well as pandas objects. Currently this is not implemented, but
+one way of doing it might be to use the netcdf4-python module and build a
+DataFile object specific to that format. If we make this DataFile object have
+the same API as the existing one, then the only modification we'd need to the
+Data aggregator is choosing which to use for a given dataset. Could be done by
+extension of the datafile.
+
+2014.11.25
+----------
 Been thinking about use of logging vs. exceptions to indicate something is
 amiss with user input. My current thought is that exceptions should occur in
 low-level objects (such as files), and logging should only happen in high-level
