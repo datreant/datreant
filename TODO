@@ -2,6 +2,14 @@
 TODO List
 =============
 
+2014.11.25
+----------
+Been thinking about use of logging vs. exceptions to indicate something is
+amiss with user input. My current thought is that exceptions should occur in
+low-level objects (such as files), and logging should only happen in high-level
+objects. This also removes the possibility of having duplicate log outputs from
+low-level methods and higher-level wrappers.
+
 2014.11.21
 ----------
 Since logging does not really make sense to start up until AFTER a state file

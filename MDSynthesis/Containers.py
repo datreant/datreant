@@ -58,6 +58,14 @@ class _ContainerCore(object):
         if not os.path.exists(p):
             os.makedirs(p)
 
+    def _init_aggregators(self):
+        """Initialize and attach aggregators.
+
+        """
+        self.tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
+        self.categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
+        self.data = Core.Aggregators.Data(self, self._containerfile, self._logger)
+
     @property
     def _uuid(self):
         """The uuid of the Container.
@@ -189,7 +197,7 @@ class Sim(_ContainerCore):
                 if True, Sim will load WITHOUT attaching Universe; default
                 False 
             *empty*
-                if True, initialize Sim without Universe definition;
+                if True, initialize Sim without any Universe definition;
                 no arguments required; default False
 
         :Keywords available on object re-generation:
@@ -297,13 +305,10 @@ class Sim(_ContainerCore):
         """Initialize and attach aggregators.
 
         """
-        #TODO: INFO needs work
-        #self.info = Core.Aggregators.SimInfo(self, self._containerfile, self._logger)
-        self.tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
-        self.categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
+        super(Sim, self)._init_aggregators()
+
         self.universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
         self.selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
-        self.data = Core.Aggregators.Data(self, self._containerfile, self._logger)
 
     def attach(self, handle):
         """Attach the given universe.
@@ -338,32 +343,33 @@ class Group(_ContainerCore):
         :Arguments:
               *args*
                 either a string giving the path to a directory with a Group object
-                metadata file, or any number of re-generated Sim-derived
-                objects 
+                state file, or any number of Sim or Group objects 
 
-        :Keywords:
+        :Keywords available on object generation:
+            *location*
+                directory to place Group object; default is current directory
             *name*
-                desired name for object, used for logging and referring to
-                object in some analyses; default is class name
-            *database*
-                directory of the database to associate with this object; if the
-                database does not exist, it is created; if none is specified, a
-                database is created in the current directory
+                desired name for Group; can be used to distinguish Groups, but need
+                not be unique; default is ``Group``
+            *coordinator*
+                directory of the Coordinator to associate with this object; if the
+                Coordinator does not exist, it is created [``None``] 
             *categories*
                 dictionary with user-defined keys and values; basically used to
-                give Sims distinguishing characteristics
+                give Groups distinguishing characteristics
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *detached*
-                if True, members will load WITHOUT attaching trajectories or
-                loading additional attributes; this is useful if only loadable
-                analysis data are needed or trajectories are unavailable;
-                default False
-                
+            *empty*
+                if True, initialize Group without any members;
+                no arguments required; default False
+
         """
 
-        if isinstance(args[0], basestring):
+        if kwargs.pop('empty', False):
+        # if no members desired, skip checks for arguments
+            self._generate(*args, empty=True, **kwargs)
+        elif isinstance(args[0], basestring):
         # if first arg is a directory string, load existing object
             self._regenerate(*args, **kwargs)
         else:
@@ -374,48 +380,51 @@ class Group(_ContainerCore):
         """Generate new Group.
          
         """
-        # generate metadata items
-        self._build_metadata(**kwargs)
-        self._start_logger()
+        # process keywords
+        location = kwargs.pop('location', '.')
+        name = kwargs.pop('name', 'Group')
+        coordinator = kwargs.pop('coordinator', None)
+        categories = kwargs.pop('categories', dict())
+        tags = kwargs.pop('tags', list())
+        empty = kwargs.pop('empty', False)
 
-        # find or generate database
-        database = kwargs.pop('database', None)
-        self._init_database(database, locate=True)
+        # name mangling to give a valid directory name
+        # TODO: is this robust? What other characters are problematic?
+        dirname = name.replace('/', '_')
+        os.makedirs(os.path.join(location, dirname))
+        statefile = os.path.join(location, dirname, Core.Files.groupfile)
 
-        # build list of Group members
-        self.metadata['members'] = dict()
-        for container in args:
-            self.metadata['members'][container.metadata['uuid']] = {'name': container.metadata['name'],
-                                                                    'class': container.metadata['class'],
-                                                                    'basedir': container.metadata['basedir']
-                                                                   }
+        self._start_logger('Group', name, os.path.join(location, dirname))
+        self._containerfile = Core.Files.GroupFile(statefile, self._logger,
+                                                 name=name,
+                                                 coordinator=coordinator,
+                                                 categories=categories,
+                                                 tags=tags)
 
-        # attach members to object
-        self.members = args
+        # attach aggregators
+        self._init_aggregators()
 
-        # finish up and save
-        self._save()
-        self._start_logger()
+        # add members
+        if not empty:
+            self.members.add(*args)
     
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing object.
         
         """
-        basedir = os.path.abspath(args[0])
-        self.metadata['basedir'] = basedir
-        
-        # get metadata (overwrites basedir metadata)
-        self._refresh()
+        # load state file object
+        statefile = os.path.join(args[0], Core.Files.groupfile)
+        self._containerfile = Core.Files.GroupFile(statefile)
+        self._start_logger('Group', self._containerfile.get_name(), args[0])
+        self._containerfile._start_logger(self._logger)
 
-        # update location of object if changed
-        self.metadata['basedir'] = basedir
+        # attach aggregators
+        self._init_aggregators()
 
-        # finish up and save
-        self._build_metadata(**kwargs)
-        self._start_logger()
-        self._save()
+    def _init_aggregators(self):
+        """Initialize and attach aggregators.
 
-        # attach members to object
-        self._attach_members(**kwargs)
-        self._update_members()
+        """
+        super(Group, self)._init_aggregators()
 
+        self.members = Core.Aggregators.Members(self, self._containerfile, self._logger)

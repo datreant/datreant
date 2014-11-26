@@ -512,35 +512,48 @@ class Members(Aggregator):
     """Member manager for Groups.
 
     """
+    
+
     def __call__(self):
         """Return a list of members.
 
         Note: modifications of this list won't modify the members of the Group!
 
         """
-        return list(self._members)
+        return self.list()
 
-    def _create(self):
-        """Load existing members.
-
+    def __getitem__(self, index):
+        """Get member corresponding to the given index.
+        
         """
-        #TODO: need to route these through Finder.
-        self._members = list()
-        for uuid in self._containerfile.get_members_uuid():
-            member = self._containerfile.get_member(uuid)
+        uuids = self._containerfile.get_members_uuid()
+        uuid = uuids[index] 
+        memberdet = self._containerfile.get_member(uuid)
 
-            if member['containertype'] == 'Sim':
-                self._members.append(MDSynthesis.Containers.Sim(member['abspath'], detached=True))
-            elif member['containertype'] == 'Group':
-                self._members.append(MDSynthesis.Containers.Group(member['abspath'], detached=True))
+        if memberdet['containertype'] == 'Sim':
+            member = MDSynthesis.Containers.Sim(memberdet['abspath'])
+        elif memberdet['containertype'] == 'Group':
+            member = MDSynthesis.Containers.Group(memberdet['abspath'])
 
-    def list():
+        return member
+
+    def list(self):
         """Return a list of members.
 
         Note: modifications of this list won't modify the members of the Group!
 
         """
-        return list(self._members)
+        #TODO: need to route these through Finder.
+        members = list()
+        for uuid in self._containerfile.get_members_uuid():
+            member = self._containerfile.get_member(uuid)
+
+            if member['containertype'] == 'Sim':
+                members.append(MDSynthesis.Containers.Sim(member['abspath'], detached=True))
+            elif member['containertype'] == 'Group':
+                members.append(MDSynthesis.Containers.Group(member['abspath'], detached=True))
+        
+        return members
 
     def add(self, *containers):
         """Add any number of members to the Group.
@@ -550,20 +563,23 @@ class Members(Aggregator):
                 Sims and/or Groups to be added
         """
         for container in containers:
-            self._containerfile.add_member(container.info.uuid, container.info.containertype, container.info.location)
+            self._containerfile.add_member(container._uuid, container._containertype, container.location)
     
-    def remove(self, *uuids):
+    def remove(self, *indices):
         """Remove any number of members from the Group.
     
         :Arguments:
-            *uuids*
-                the uuids of the members to remove
+            *indices*
+                the indices of the members to remove
 
         :Keywords:
             *all*
                 When True, remove all members [``False``]
 
         """
+        uuids = self._containerfile.list_members_uuid()
+        uuids = [ uuids[x] for x in indices ]
+
         self._containerfile.del_member(*uuids)
 
 class Data(Aggregator):

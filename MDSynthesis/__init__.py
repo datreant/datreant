@@ -100,5 +100,5 @@ __all__ = ['Sim', 'Group', 'Analysis', 'MetaAnalysis']
 
 # Bring some often used objects into the current namespace
 #from Coordinator import Coordinator
-from Containers import Sim
+from Containers import Sim, Group
 import Core
