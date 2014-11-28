@@ -221,10 +221,12 @@ class Sim(_ContainerCore):
             self._generate(*args, **kwargs)
 
     def __repr__(self):
-        if self._uname in self._cache:
-            out = "Sim: '{}' | universe (cached): '{}'".format(self._containerfile.get_name(), self._uname)
+        if not self._uname:
+            out = "Sim: '{}'".format(self._containerfile.get_name())
+        elif self._uname in self._cache:
+            out = "Sim: '{}' | active universe (cached): '{}'".format(self._containerfile.get_name(), self._uname)
         else:
-            out = "Sim: '{}' | universe: '{}'".format(self._containerfile.get_name(), self._uname)
+            out = "Sim: '{}' | active universe: '{}'".format(self._containerfile.get_name(), self._uname)
 
         return out
 
@@ -236,7 +238,7 @@ class Sim(_ContainerCore):
         if self._uname in self._containerfile.list_universes():
             return self._universe
         elif not self._universe:
-            self._logger.info('No Universe attached.')
+            self.universes.activate()
         else:
             self.detach()
             self._logger.info('This Universe is no longer defined. It has been detached')
