@@ -771,6 +771,13 @@ class SimFile(ContainerFile):
     elements of the data structure, as well as the data structure definition.
     
     """
+    class _Universe(tables.IsDescription):
+        """Table definition for storing universe preferences.
+
+        Stores, for example, which universe is marked as default.
+
+        """
+        default = tables.StringCol(255)
 
     class _Topology(tables.IsDescription):
         """Table definition for storing universe topology paths.
@@ -864,6 +871,34 @@ class SimFile(ContainerFile):
             group = self.handle.get_node('/', 'universes')
         except tables.NoSuchNodeError:
             group = self.handle.create_group('/', 'universes', 'universes')
+
+    @File._write_state
+    def update_default(self, universe):
+        """Mark the given universe as the default.
+
+        :Arguments:
+            *universe*
+                name of universe to mark as default
+        """
+        try:
+            table = self.handle.get_node('/', 'universe')
+            table.cols.default[0] = universe
+        except tables.NoSuchNodeError:
+            table = self.handle.create_table('/', 'universe', self._Universe, 'universe')
+            table.row['default'] = universe
+            table.row.append()
+
+    @File._read_state
+    def get_default(self):
+        """Get default universe.
+
+        :Returns:
+            *default*
+                name of default universe 
+
+        """
+        table = self.handle.get_node('/', 'universe')
+        return table.cols.default[0]
 
     @File._read_state
     def list_universes(self):

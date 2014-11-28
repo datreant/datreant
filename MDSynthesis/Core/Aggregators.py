@@ -238,8 +238,10 @@ class Universes(Aggregator):
             out = out + majsep*seplength + '\n'
             for universe in universes:
                 out = out + "'{}'".format(universe)
+                if self.get_default() == universe:
+                    out = out + ' (default)'
                 if self._container._uname == universe:
-                    out = out + '\t(attached)'
+                    out = out + ' (active)'
                 out = out + '\n'
         return out
 
@@ -263,7 +265,7 @@ class Universes(Aggregator):
             *universe*
                 a reference to the newly attached universe
         """
-        self._container.attach(handle)
+        self.make_active(handle)
 
         return self._container.universe
 
@@ -310,6 +312,59 @@ class Universes(Aggregator):
                 list of all Universe handles
         """
         return self._containerfile.list_universes()
+
+    def activate(self, handle=None):
+        """Make the selected Universe active.
+        
+        Only one Universe definition can be active in a Sim at one time. The
+        active Universe can be accessed from ``Sim.universe``. Stored
+        selections for the active Universe can be accessed as items in
+        ``Sim.selections``.
+
+        If no handle given, the default Universe is loaded.
+    
+        :Arguments:
+            *handle*
+                given name for selecting the Universe; if ``None``, default
+                Universe selected
+        """
+        if handle:
+            udef = self._containerfile.get_universe(handle)
+            self._container._universe = Universe(udef[0], *udef[1])
+            self._container._uname = handle
+        else:
+            default = self._containerfile.get_default()
+            udef = self._containerfile.get_universe(default)
+            self._container._universe = Universe(udef[0], *udef[1])
+            self._container._uname = default
+    
+    def default(self, handle=None):
+        """Mark the selected Universe as the default, or get the default Universe.
+
+        The default Universe is loaded on calls to ``Sim.universe`` or
+        ``Sim.selections`` when no other Universe is attached.
+
+        If no handle given, returns the current default Universe.
+
+        :Arguments:
+            *handle*
+                given name for selecting the universe; if ``None``, default
+                Universe is unchanged
+
+        :Returns:
+            *default*
+                handle of the default Universe
+        """
+        if handle:
+            self._containerfile.update_default(handle)
+        
+        return self._containerfile.get_default()
+
+    def get_default(self):
+        """Get the handle for default Universe.
+    
+        """
+        return self._containerfile.get_default()
 
     #TODO: implement in SimFile
     def rename(self, handle, new_handle):

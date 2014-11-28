@@ -222,11 +222,11 @@ class Sim(_ContainerCore):
 
     def __repr__(self):
         if not self._uname:
-            out = "Sim: '{}'".format(self._containerfile.get_name())
+            out = "<Sim: '{}'>".format(self._containerfile.get_name())
         elif self._uname in self._cache:
-            out = "Sim: '{}' | active universe (cached): '{}'".format(self._containerfile.get_name(), self._uname)
+            out = "<Sim: '{}' | active universe (cached): '{}'>".format(self._containerfile.get_name(), self._uname)
         else:
-            out = "Sim: '{}' | active universe: '{}'".format(self._containerfile.get_name(), self._uname)
+            out = "<Sim: '{}' | active universe: '{}'>".format(self._containerfile.get_name(), self._uname)
 
         return out
 
@@ -235,13 +235,13 @@ class Sim(_ContainerCore):
         """The active Universe of the Sim.
     
         """
-        if self._uname in self._containerfile.list_universes():
-            return self._universe
-        elif not self._universe:
+        if not self._universe:
             self.universes.activate()
-        else:
-            self.detach()
-            self._logger.info('This Universe is no longer defined. It has been detached')
+        elif not (self._uname in self._containerfile.list_universes()):
+            self.universes.activate()
+            self._logger.info('This Universe is no longer defined. Activating default universe.')
+    
+        return self._universe
 
     #TODO: add explicit args, kwargs
     def _generate(self, *args, **kwargs):
@@ -280,8 +280,7 @@ class Sim(_ContainerCore):
         # add universe
         if not empty:
             self.universes.add(universe, args[0], *args[1:])
-            if not detached:
-                self.attach(universe)
+            self.universes.mark_default(universe)
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
@@ -311,29 +310,6 @@ class Sim(_ContainerCore):
 
         self.universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
         self.selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
-
-    def attach(self, handle):
-        """Attach the given universe.
-        
-        Only one universe definition can be attached to a Sim at one time. The
-        attached universe can be accessed from ``Sim.universe``.
-    
-        :Arguments:
-            *handle*
-                given name for selecting the universe
-        """
-        udef = self._containerfile.get_universe(handle)
-        self._universe = Universe(udef[0], *udef[1])
-        self._uname = handle
-    
-    def detach(self):
-        """Detach from universe.
-
-        Deletes the currently attached Universe object from ``Sim.universe``.
-
-        """
-        self._universe = None
-        self._uname = None
 
 class Group(_ContainerCore):
     """The Group object is a collection of Sims and Groups.
