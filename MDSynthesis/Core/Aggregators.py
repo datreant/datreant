@@ -303,15 +303,6 @@ class Universes(Aggregator):
                 out = out + '\n'
         return out
 
-    def __call__(self):
-        """Get handles for all Universe definitions as a list.
-    
-        :Returns:
-            *handles*
-                list of all Universe handles
-        """
-        return self._containerfile.list_universes()
-    
     def __getitem__(self, handle):
         """Attach Universe and return a reference to it.
 
@@ -545,15 +536,6 @@ class Selections(Aggregator):
 
         return out
 
-    def __call__(self):
-        """Get handles for all Universe definitions as a list.
-    
-        :Returns:
-            *handles*
-                list of all Universe handles
-        """
-        return self.list()
-
     def __getitem__(self, handle):
         """Get AtomGroup corresponding to the given named selection.
         
@@ -656,14 +638,6 @@ class Members(Aggregator):
                                                     members[i]._containertype)
 
         return out
-
-    def __call__(self):
-        """Return a list of members.
-
-        Note: modifications of this list won't modify the members of the Group!
-
-        """
-        return self.list()
 
     def __getitem__(self, index):
         """Get member corresponding to the given index.
