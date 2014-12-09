@@ -277,14 +277,8 @@ class Sim(_ContainerCore):
         """The selections of the Sim.
 
         """
-        if self._uname in self._containerfile.list_universes():
-            return self._selections
-        elif not self._universe:
-            self.universes.activate()
-            return self._selections
-        else:
-            self.detach()
-            self._logger.info('This Universe is no longer defined. It has been detached')
+        # attach default universe if not attached
+        self.universe
         
         return self._selections
 
