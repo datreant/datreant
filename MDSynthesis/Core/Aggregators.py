@@ -664,6 +664,9 @@ class Data(Aggregator):
 
     """
     def __repr__(self):
+        return "Data({})".format(self.list())
+
+    def __str__(self):
         data = self.list()
         agg = "Data"
         majsep = "="
@@ -704,8 +707,6 @@ class Data(Aggregator):
                                 handle, Files.datafile) 
         return datafile
 
-    #TODO: fundamentally flawed. File is generated if directory exists; revisit
-    # immediately
     def _read_datafile(func):
         """Decorator for generating DataFile instance for reading data.
 
