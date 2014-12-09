@@ -35,55 +35,6 @@ class Aggregator(object):
         """
         pass
 
-class Info(Aggregator):
-    """Interface for accessing metadata and status information.
-
-    """
-    def __init__(self):
-        """
-        """
-        self.name = None
-
-class SimInfo(Info):
-    """Sim-specific bindings.
-
-    """
-
-    #TODO: not updated yet!
-    def info(self):
-        """Output the current status of the Sim.
-
-        """
-        title = "{}: '{}'".format(self.__class__.__name__, self.metadata['name'])
-
-        universes = "universes:\t"
-        for universe in self.metadata['universes']:
-            attached = cached = " "
-            if universe in self._cache:
-                cached = "(cached)"
-            if self._uname == universe:
-                attached = "*"
-
-            universes = universes + "{} {} {}\n".format(universe, attached, cached)
-            universes = universes + "\t\t"
-
-        data = "data: "
-        for datum in self.metadata['data']:
-            loaded = " "
-            if datum in self.data:
-                loaded = "*"
-
-            data = data + "\t\t{} {}\n".format(datum, loaded)
-
-        out = "{}\n{}\n{}".format(title, universes, data)
-
-        print out
-
-class GroupInfo(Info):
-    """Group-specific bindings.
-
-    """
-
 class Tags(Aggregator):
     """Interface to tags.
 
