@@ -192,6 +192,16 @@ class Categories(Aggregator):
         categories = self._containerfile.get_categories()
         return categories[key]
 
+    def __setitem__(self, key, value):
+        """Set value at given key.
+
+        :Arguments:
+            *key*
+                key of value to set
+        """
+        outdict = {key: value}
+        self._containerfile.add_categories(**outdict)
+
     def __iter__(self):
         return self._containerfile.get_categories().__iter__()
 
@@ -628,6 +638,9 @@ class Members(Aggregator):
 
     """
     def __repr__(self):
+        return "Members({})".format(self.list())
+
+    def __str__(self):
         members = self.list()
         agg = "Members"
         majsep = "="
@@ -690,12 +703,20 @@ class Members(Aggregator):
 
         :Arguments:
             *containers*
-                Sims and/or Groups to be added
+                Sims and/or Groups to be added; may be a list of Sims and/or
+                Groups 
         """
+        outconts = list()
         for container in containers:
+            if isinstance(container, list):
+                outconts.extend(container)
+            else:
+                outconts.append(container)
+
+        for container in outconts:
             self._containerfile.add_member(container._uuid, container._containertype, container.location)
     
-    def remove(self, *indices):
+    def remove(self, *indices, **kwargs): 
         """Remove any number of members from the Group.
     
         :Arguments:
@@ -708,7 +729,8 @@ class Members(Aggregator):
 
         """
         uuids = self._containerfile.get_members_uuid()
-        uuids = [ uuids[x] for x in indices ]
+        if not kwargs.pop('all', False):
+            uuids = [ uuids[x] for x in indices ]
 
         self._containerfile.del_member(*uuids)
 

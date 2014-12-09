@@ -384,7 +384,7 @@ class Group(_ContainerCore):
         sims = members.count('Sim')
         groups = members.count('Group')
 
-        out = "Group: '{}' | {} Members: ".format(self._containerfile.get_name(), 
+        out = "<Group: '{}' | {} Members: ".format(self._containerfile.get_name(), 
                                                 len(members))
         if sims:
             out = out + "{} Sim".format(sims)
@@ -392,6 +392,8 @@ class Group(_ContainerCore):
                 out = out + ", {} Group".format(groups)
         elif groups:
             out = out + "{} Group".format(groups)
+
+        out = out + ">"
 
         return out
 
