@@ -360,12 +360,6 @@ class Universes(Aggregator):
         
         return self._containerfile.get_default()
 
-    def get_default(self):
-        """Get the handle for default Universe.
-    
-        """
-        return self._containerfile.get_default()
-
     #TODO: implement in SimFile
     def rename(self, handle, new_handle):
         """Change the handle used for the specified Universe.

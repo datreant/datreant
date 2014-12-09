@@ -235,13 +235,14 @@ class Sim(_ContainerCore):
         """The active Universe of the Sim.
     
         """
-        if not self._universe:
+        if self._uname in self._containerfile.list_universes():
+            return self._universe
+        elif not self._universe:
             self.universes.activate()
-        elif not (self._uname in self._containerfile.list_universes()):
-            self.universes.activate()
-            self._logger.info('This Universe is no longer defined. Activating default universe.')
-    
-        return self._universe
+            return self._universe
+        else:
+            self.detach()
+            self._logger.info('This Universe is no longer defined. It has been detached')
 
     #TODO: add explicit args, kwargs
     def _generate(self, *args, **kwargs):
@@ -280,7 +281,7 @@ class Sim(_ContainerCore):
         # add universe
         if not empty:
             self.universes.add(universe, args[0], *args[1:])
-            self.universes.mark_default(universe)
+            self.universes.default(universe)
 
     def _regenerate(self, *args, **kwargs):
         """Re-generate existing Sim object.
@@ -383,7 +384,7 @@ class Group(_ContainerCore):
         sims = members.count('Sim')
         groups = members.count('Group')
 
-        out = "<Group: '{}' | {} Members: ".format(self._containerfile.get_name(), 
+        out = "Group: '{}' | {} Members: ".format(self._containerfile.get_name(), 
                                                 len(members))
         if sims:
             out = out + "{} Sim".format(sims)
@@ -391,8 +392,6 @@ class Group(_ContainerCore):
                 out = out + ", {} Group".format(groups)
         elif groups:
             out = out + "{} Group".format(groups)
-
-        out = out + ">"
 
         return out
 
