@@ -488,11 +488,17 @@ class Selections(Aggregator):
         return out
 
     def __getitem__(self, handle):
-        """Get AtomGroup corresponding to the given named selection.
-        
+        """Get selection definition for given handle and the active universe.
+    
+        :Arguments:
+            *handle*
+                name of selection to get definition of
+
+        :Returns:
+            *definition*
+                list of strings defining the atom selection
         """
-        selstring = self._containerfile.get_selection(self._container._uname, handle)
-        return self._container.universe.selectAtoms(*selstring)
+        return self.define(handle)
 
     def __setitem__(self, handle, selection):
         """Selection for the given handle and the active universe.
@@ -532,12 +538,19 @@ class Selections(Aggregator):
         """
         self._containerfile.del_selection(self._container._uname, handle)
     
-    def list(self):
+    def keys(self):
         """Return a list of all selection handles.
     
         """
         if self._container._uname:
             return self._containerfile.list_selections(self._container._uname)
+
+    def asAtomGroup(self, handle):
+        """Get AtomGroup corresponding to the given named selection.
+        
+        """
+        selstring = self._containerfile.get_selection(self._container._uname, handle)
+        return self._container.universe.selectAtoms(*selstring)
 
     def define(self, handle):
         """Get selection definition for given handle and the active universe.
