@@ -103,22 +103,8 @@ class Tags(Aggregator):
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
             for i in xrange(len(tags)):
-                out = out + "{} '{}'\n".format(i, tags[i])
+                out = out + "'{}'\n".format(tags[i])
         return out
-
-    def __getitem__(self, index):
-        """Get tag at given index.
-
-        :Arguments:
-            *index*
-                index of tag to return
-
-        :Returns:
-            *tag*
-                tag corresponding to given index
-        """
-        tags = self._containerfile.get_tags()
-        return tags[index]
 
     def list(self):
         """Get all tags for the Container as a list.
@@ -127,7 +113,9 @@ class Tags(Aggregator):
             *tags*
                 list of all tags
         """
-        return self._containerfile.get_tags()
+        tags = self._containerfile.get_tags()
+        tags.sort()
+        return tags
 
     def add(self, *tags):
         """Add any number of tags to the Container.
@@ -138,9 +126,16 @@ class Tags(Aggregator):
         :Arguments:
            *tags*
               Tags to add. Must be convertable to strings using the str() builtin.
+              May also be a list of tags.
 
         """
-        self._containerfile.add_tags(*tags)
+        outtags = list()
+        for tag in tags:
+            if isinstance(tag, list):
+                outtags.extend(tag)
+            else:
+                outtags.append(tag)
+        self._containerfile.add_tags(*outtags)
     
     def remove(self, *tags, **kwargs):
         """Remove tags from Container.
@@ -163,7 +158,7 @@ class Categories(Aggregator):
 
     """
     def __repr__(self):
-        return "Categories(\{{}\})".format(self.dict())
+        return "Categories({})".format(self.dict())
 
     def __str__(self):
         categories = self.dict()
@@ -203,7 +198,7 @@ class Categories(Aggregator):
         """
         return self._containerfile.get_categories()
 
-    def add(self, **categories):
+    def add(self, *categorydicts, **categories):
         """Add any number of categories to the Container.
 
         Categories are key-value pairs of strings that serve to differentiate
@@ -213,12 +208,22 @@ class Categories(Aggregator):
         the value for that category.
 
         :Keywords:
+            *categorydict*
+                dict of categories to add; keys used as keys, values used as
+                values. Both keys and values must be convertible to strings
+                using the str() builtin.
             *categories*
                 Categories to add. Keyword used as key, value used as value. Both
                 must be convertible to strings using the str() builtin.
         
         """
-        self._containerfile.add_categories(**categories)
+        outcats = dict()
+        for categorydict in categorydicts:
+            if isinstance(categorydict, dict):
+                outcats.update(categorydict)
+
+        outcats.update(categories)
+        self._containerfile.add_categories(**outcats)
     
     def remove(self, *categories, **kwargs):
         """Remove categories from  Container.
