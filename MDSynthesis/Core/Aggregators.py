@@ -991,14 +991,6 @@ class Data(Aggregator):
     
         return datasets
 
-class Bunch(object):
-    def __init__(self, odict):
-        adict = dict(odict)
-        for key in adict:
-            if type(adict[key]) is dict:
-                adict[key] = RwBunch(adict[key])
-        self.__dict__ = adict
-
 class Database(Aggregator):
     """Database object for tracking and coordinating Containers.
 
