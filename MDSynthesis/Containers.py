@@ -62,9 +62,9 @@ class _ContainerCore(object):
         """Initialize and attach aggregators.
 
         """
-        self.tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
-        self.categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
-        self.data = Core.Aggregators.Data(self, self._containerfile, self._logger)
+        self._tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
+        self._categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
+        self._data = Core.Aggregators.Data(self, self._containerfile, self._logger)
 
     @property
     def _uuid(self):
@@ -131,6 +131,27 @@ class _ContainerCore(object):
         
         """
         pass
+
+    @property
+    def tags(self):
+        """The tags of the Container.
+        
+        """
+        return self._tags
+
+    @property
+    def categories(self):
+        """The categories of the Container.
+        
+        """
+        return self._categories
+
+    @property
+    def data(self):
+        """The data of the Container.
+        
+        """
+        return self._data
 
 #TODO: include in documentation fgetter details
 class Sim(_ContainerCore):
@@ -244,6 +265,20 @@ class Sim(_ContainerCore):
             self.detach()
             self._logger.info('This Universe is no longer defined. It has been detached')
 
+    @property
+    def universes(self):
+        """The universes of the Sim.
+        
+        """
+        return self._universes
+
+    @property
+    def selections(self):
+        """The selections of the Sim.
+
+        """
+        return self._selections
+
     #TODO: add explicit args, kwargs
     def _generate(self, *args, **kwargs):
         """Generate new Sim object.
@@ -309,8 +344,8 @@ class Sim(_ContainerCore):
         """
         super(Sim, self)._init_aggregators()
 
-        self.universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
-        self.selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
+        self._universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
+        self._selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
 
 class Group(_ContainerCore):
     """The Group object is a collection of Sims and Groups.
@@ -397,6 +432,12 @@ class Group(_ContainerCore):
 
         return out
 
+    def members(self):
+        """The members of the Group.
+        
+        """
+        return self._members
+
     def _generate(self, *args, **kwargs):
         """Generate new Group.
          
@@ -448,4 +489,4 @@ class Group(_ContainerCore):
         """
         super(Group, self)._init_aggregators()
 
-        self.members = Core.Aggregators.Members(self, self._containerfile, self._logger)
+        self._members = Core.Aggregators.Members(self, self._containerfile, self._logger)
