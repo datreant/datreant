@@ -13,8 +13,8 @@ setup(name='MDSynthesis',
       version='0.3.0-dev',
       author='David Dotson', 
       author_email='dotsdl@gmail.com',
-      packages=['MDSynthesis'],
+      packages=['MDSynthesis', 'MDSynthesis.Core'],
       license='GPL 2',
       long_description=open('README').read(),
-      requires=['MDAnalysis']
+      requires=['MDAnalysis', 'pandas', 'tables']
      )
