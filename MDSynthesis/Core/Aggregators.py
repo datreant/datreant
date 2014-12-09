@@ -106,6 +106,9 @@ class Tags(Aggregator):
                 out = out + "'{}'\n".format(tags[i])
         return out
 
+    def __iter__(self):
+        return self._containerfile.get_tags().__iter__()
+
     def list(self):
         """Get all tags for the Container as a list.
     
@@ -189,6 +192,9 @@ class Categories(Aggregator):
         categories = self._containerfile.get_categories()
         return categories[key]
 
+    def __iter__(self):
+        return self._containerfile.get_categories().__iter__()
+
     def dict(self):
         """Get all categories for the Container as a dictionary.
 
@@ -226,7 +232,7 @@ class Categories(Aggregator):
         self._containerfile.add_categories(**outcats)
     
     def remove(self, *categories, **kwargs):
-        """Remove categories from  Container.
+        """Remove categories from Container.
         
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
@@ -241,6 +247,24 @@ class Categories(Aggregator):
     
         """
         self._containerfile.del_categories(*categories, **kwargs)
+
+    def keys(self):
+        """Get category keys.
+    
+        :Returns:
+            *keys*
+                keys present among categories
+        """
+        return self._containerfile.get_categories().keys()
+
+    def values(self):
+        """Get category values.
+    
+        :Returns:
+            *values*
+                values present among categories
+        """
+        return self._containerfile.get_categories().values()
 
 class Universes(Aggregator):
     """Interface to universes.
