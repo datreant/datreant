@@ -89,6 +89,9 @@ class Tags(Aggregator):
 
     """
     def __repr__(self):
+        return "Tags({})".format(self.list())
+
+    def __str__(self):
         tags = self.list()
         agg = "Tags"
         majsep = "="
@@ -103,14 +106,19 @@ class Tags(Aggregator):
                 out = out + "{} '{}'\n".format(i, tags[i])
         return out
 
-    def __call__(self):
-        """Get all tags for the Container as a list.
-    
+    def __getitem__(self, index):
+        """Get tag at given index.
+
+        :Arguments:
+            *index*
+                index of tag to return
+
         :Returns:
-            *tags*
-                list of all tags
+            *tag*
+                tag corresponding to given index
         """
-        return self._containerfile.get_tags()
+        tags = self._containerfile.get_tags()
+        return tags[index]
 
     def list(self):
         """Get all tags for the Container as a list.
@@ -155,6 +163,9 @@ class Categories(Aggregator):
 
     """
     def __repr__(self):
+        return "Categories(\{{}\})".format(self.dict())
+
+    def __str__(self):
         categories = self.dict()
         agg = "Categories"
         majsep = "="
@@ -169,14 +180,19 @@ class Categories(Aggregator):
                 out = out + "'{}': '{}'\n".format(key, categories[key])
         return out
 
-    def __call__(self):
-        """Get all categories for the Container as a dictionary.
+    def __getitem__(self, key):
+        """Get value at given key.
+
+        :Arguments:
+            *key*
+                key of value to return
 
         :Returns:
-            *categories*
-                dictionary of all categories 
+            *value*
+                value corresponding to given key
         """
-        return self._containerfile.get_categories()
+        categories = self._containerfile.get_categories()
+        return categories[key]
 
     def dict(self):
         """Get all categories for the Container as a dictionary.
@@ -238,7 +254,7 @@ class Universes(Aggregator):
             out = out + majsep*seplength + '\n'
             for universe in universes:
                 out = out + "'{}'".format(universe)
-                if self.get_default() == universe:
+                if self._containerfile.get_default() == universe:
                     out = out + ' (default)'
                 if self._container._uname == universe:
                     out = out + ' (active)'
