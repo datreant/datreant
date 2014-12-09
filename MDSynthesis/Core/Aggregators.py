@@ -247,7 +247,7 @@ class Categories(Aggregator):
     
         """
         self._containerfile.del_categories(*categories, **kwargs)
-
+    
     def keys(self):
         """Get category keys.
     
@@ -271,6 +271,9 @@ class Universes(Aggregator):
 
     """
     def __repr__(self):
+        return "Universes({})".format(self.list())
+
+    def __str__(self):
         universes = self.list()
         agg = "Universes"
         majsep = "="
@@ -406,98 +409,98 @@ class Universes(Aggregator):
         return self._containerfile.get_default()
 
     #TODO: implement in SimFile
-    def rename(self, handle, new_handle):
-        """Change the handle used for the specified Universe.
-    
-        """
-        pass
-
-    #TODO: not updated yet!
-    def cache(self, handle, location):
-        """Copy trajectory to a temporary location, and attach it as a universe.
-
-        Useful if running analysis on a trajectory on a networked filesystem.
-        This method will physically copy the structure and trajectory for the
-        current universe to the specified *location*. Once transferred, the
-        universe will be re-attached from the new location.
-
-        :Arguments:
-            *location*
-                path to cache directory; will be made if it does not exist
-        """
-        if self._uname in self._cache:
-            self._logger.warning("Aborting cache; universe already cached.")
-            return
-            
-        # build and store location so we can delete it later
-        location = os.path.abspath(location)
-        loc = os.path.join(location, "{}.{}".format(self.metadata['uuid'], self._uname))
-
-        i = 1
-        location = "{}.{}".format(loc, i)
-        while os.path.exists(location):
-            i += 1
-            location = "{}.{}".format(loc, i)
-
-        self.util.makedirs(location)
-
-        # build cached structure and trajectory filenames
-        structure = self.metadata['universes'][self._uname]['structure']
-        trajectory = self.metadata['universes'][self._uname]['trajectory']
-
-        structure_c = os.path.join(location, os.path.basename(structure))
-        trajectory_c = [ os.path.join(location, os.path.basename(x)) for x in trajectory ]
-
-        # check before we accidentally overwrite valuable data
-        if (structure_c == structure) or (trajectory_c == trajectory):
-            self._logger.warning("Aborting cache; cache location same as storage!")
-            return
-
-        # copy to cache
-        self._logger.info("Caching trajectory to {}\nThis may take some time...".format(location))
-        shutil.copy2(structure, structure_c)
-        for traj, traj_c in zip(trajectory, trajectory_c):
-            shutil.copy2(traj, traj_c)
-
-        self._cache[self._uname] = dict()
-        self._cache[self._uname]['location'] = location
-        self._cache[self._uname]['structure'] = structure_c
-        self._cache[self._uname]['trajectory'] = trajectory_c
-
-        self.universe = Universe(structure_c, *trajectory_c)
-        self._logger.info("Universe '{}' now cached.".format(self._uname))
-    
-    #TODO: not updated yet!
-    # ensure that trajectories are decached on object destruction
-    def decache(self):
-        """Remove cached trajectory from cache; re-attach universe to original.
-
-        This operation deletes cached files, but ONLY cached files. It will not
-        delete original trajectories.
-
-        """
-        if not (self._uname in self._cache):
-            self._logger.info("Universe '{}' not cached.".format(universe))
-            return
-
-        structure = self.metadata['universes'][self._uname]['structure']
-        trajectory = self.metadata['universes'][self._uname]['trajectory']
-        
-        structure_c = self._cache[self._uname]['structure']
-        trajectory_c = self._cache[self._uname]['trajectory']
-        location_c = self._cache[self._uname]['location']
-
-        self._cache.pop(self._uname)
-        self.attach(self._uname, force=True)
-
-        # final safety feature before delete
-        if (structure_c == structure) or (trajectory_c == trajectory):
-            self._logger.warning("Somehow cache is also storage location. Stopping before delete!")
-        else:
-            shutil.rmtree(location_c)
-
-        self._logger.info("Universe '{}' de-cached.".format(self._uname))
-        
+#    def rename(self, handle, new_handle):
+#        """Change the handle used for the specified Universe.
+#    
+#        """
+#        pass
+#
+#    #TODO: not updated yet!
+#    def cache(self, handle, location):
+#        """Copy trajectory to a temporary location, and attach it as a universe.
+#
+#        Useful if running analysis on a trajectory on a networked filesystem.
+#        This method will physically copy the structure and trajectory for the
+#        current universe to the specified *location*. Once transferred, the
+#        universe will be re-attached from the new location.
+#
+#        :Arguments:
+#            *location*
+#                path to cache directory; will be made if it does not exist
+#        """
+#        if self._uname in self._cache:
+#            self._logger.warning("Aborting cache; universe already cached.")
+#            return
+#            
+#        # build and store location so we can delete it later
+#        location = os.path.abspath(location)
+#        loc = os.path.join(location, "{}.{}".format(self.metadata['uuid'], self._uname))
+#
+#        i = 1
+#        location = "{}.{}".format(loc, i)
+#        while os.path.exists(location):
+#            i += 1
+#            location = "{}.{}".format(loc, i)
+#
+#        self.util.makedirs(location)
+#
+#        # build cached structure and trajectory filenames
+#        structure = self.metadata['universes'][self._uname]['structure']
+#        trajectory = self.metadata['universes'][self._uname]['trajectory']
+#
+#        structure_c = os.path.join(location, os.path.basename(structure))
+#        trajectory_c = [ os.path.join(location, os.path.basename(x)) for x in trajectory ]
+#
+#        # check before we accidentally overwrite valuable data
+#        if (structure_c == structure) or (trajectory_c == trajectory):
+#            self._logger.warning("Aborting cache; cache location same as storage!")
+#            return
+#
+#        # copy to cache
+#        self._logger.info("Caching trajectory to {}\nThis may take some time...".format(location))
+#        shutil.copy2(structure, structure_c)
+#        for traj, traj_c in zip(trajectory, trajectory_c):
+#            shutil.copy2(traj, traj_c)
+#
+#        self._cache[self._uname] = dict()
+#        self._cache[self._uname]['location'] = location
+#        self._cache[self._uname]['structure'] = structure_c
+#        self._cache[self._uname]['trajectory'] = trajectory_c
+#
+#        self.universe = Universe(structure_c, *trajectory_c)
+#        self._logger.info("Universe '{}' now cached.".format(self._uname))
+#    
+#    #TODO: not updated yet!
+#    # ensure that trajectories are decached on object destruction
+#    def decache(self):
+#        """Remove cached trajectory from cache; re-attach universe to original.
+#
+#        This operation deletes cached files, but ONLY cached files. It will not
+#        delete original trajectories.
+#
+#        """
+#        if not (self._uname in self._cache):
+#            self._logger.info("Universe '{}' not cached.".format(universe))
+#            return
+#
+#        structure = self.metadata['universes'][self._uname]['structure']
+#        trajectory = self.metadata['universes'][self._uname]['trajectory']
+#        
+#        structure_c = self._cache[self._uname]['structure']
+#        trajectory_c = self._cache[self._uname]['trajectory']
+#        location_c = self._cache[self._uname]['location']
+#
+#        self._cache.pop(self._uname)
+#        self.attach(self._uname, force=True)
+#
+#        # final safety feature before delete
+#        if (structure_c == structure) or (trajectory_c == trajectory):
+#            self._logger.warning("Somehow cache is also storage location. Stopping before delete!")
+#        else:
+#            shutil.rmtree(location_c)
+#
+#        self._logger.info("Universe '{}' de-cached.".format(self._uname))
+         
 class Selections(Aggregator):
     """Selection manager for Sims.
 
@@ -507,6 +510,9 @@ class Selections(Aggregator):
 
     """
     def __repr__(self):
+        return "Selections({})".format({x: self.define(x) for x in self.list()})
+
+    def __str__(self):
         selections = self.list()
         agg = "Selections"
         majsep = "="
