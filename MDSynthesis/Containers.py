@@ -248,6 +248,15 @@ class Sim(_ContainerCore):
 
         return out
 
+    def __cmp__(self, other):
+        if self.name < other.name:
+            out = -1
+        elif self.name == other.name:
+            out = 0
+        elif self.name > other.name:
+            out = +1
+        return out
+
     @property
     def universe(self):
         """The active Universe of the Sim.
