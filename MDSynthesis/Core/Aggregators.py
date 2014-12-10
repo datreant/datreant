@@ -504,6 +504,8 @@ class Selections(Aggregator):
         """Selection for the given handle and the active universe.
     
         """
+        if isinstance(selection, basestring):
+            selection = [selection]
         self._containerfile.add_selection(self._container._uname, handle, *selection)
     
     def __delitem__(self, handle):
