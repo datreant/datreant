@@ -431,6 +431,7 @@ class Group(_ContainerCore):
 
         return out
 
+    @property
     def members(self):
         """The members of the Group.
         
