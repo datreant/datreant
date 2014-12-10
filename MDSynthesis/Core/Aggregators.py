@@ -462,10 +462,10 @@ class Selections(Aggregator):
 
     """
     def __repr__(self):
-        return "Selections({})".format({x: self.define(x) for x in self.list()})
+        return "Selections({})".format({x: self.define(x) for x in self.keys()})
 
     def __str__(self):
-        selections = self.list()
+        selections = self.keys()
         agg = "Selections"
         majsep = "="
         minsep = "-"
