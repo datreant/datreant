@@ -2,6 +2,24 @@
 TODO List
 =============
 
+2014.12.9
+---------
+We will need to do some kind of caching for Group members. Reloading them on
+demand is fast on an SSD, but slow on a disk, and even slower on a network
+drive. This should work fine; I don't foresee any problems, since members
+always show their current state by reading from disk anyway...which begs the
+question as to whether or not this will be significantly faster...
+
+Nested datasets should be allowed. In other words, giving a handle such as
+'geometry/zpos' for storing a dataset should store it in
+'geometry/zpos/Data.h5'. This should cause any problems, though data discovery
+will have to be reworked to use os.walk recursively.
+
+We want to be able to store non-string tags and categories. We can achieve this
+by including a dtype identifier for each category and tag added, which will
+allow back-conversion from the string representation stored on disk back to the
+numerical data type.
+
 2014.11.25
 ----------
 Although pandas is great, I think it would be very good if datasets can be
