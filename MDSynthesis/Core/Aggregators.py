@@ -611,12 +611,21 @@ class Members(Aggregator):
         """
         uuids = self._containerfile.get_members_uuid()
         uuid = uuids[index] 
-        memberdet = self._containerfile.get_member(uuid)
 
-        if memberdet['containertype'] == 'Sim':
-            member = MDSynthesis.Containers.Sim(memberdet['abspath'])
-        elif memberdet['containertype'] == 'Group':
-            member = MDSynthesis.Containers.Group(memberdet['abspath'])
+        if isinstance(uuid, basestring):
+            memberdet = self._containerfile.get_member(uuid)
+            if memberdet['containertype'] == 'Sim':
+                member = MDSynthesis.Containers.Sim(memberdet['abspath'])
+            elif memberdet['containertype'] == 'Group':
+                member = MDSynthesis.Containers.Group(memberdet['abspath'])
+        elif isinstance(uuid, list):
+            member = list()
+            for item in uuid:
+                memberdet = self._containerfile.get_member(item)
+                if memberdet['containertype'] == 'Sim':
+                    member.append(MDSynthesis.Containers.Sim(memberdet['abspath']))
+                elif memberdet['containertype'] == 'Group':
+                    member.appned( MDSynthesis.Containers.Group(memberdet['abspath']))
 
         return member
 
@@ -630,7 +639,6 @@ class Members(Aggregator):
         members = list()
         for uuid in self._containerfile.get_members_uuid():
             member = self._containerfile.get_member(uuid)
-
             if member['containertype'] == 'Sim':
                 members.append(MDSynthesis.Containers.Sim(member['abspath']))
             elif member['containertype'] == 'Group':
