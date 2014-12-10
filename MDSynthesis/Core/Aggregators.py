@@ -612,20 +612,38 @@ class Members(Aggregator):
         uuids = self._containerfile.get_members_uuid()
         uuid = uuids[index] 
 
+        cached_uuid = [ x._uuid for x in self._container._cache ]
         if isinstance(uuid, basestring):
-            memberdet = self._containerfile.get_member(uuid)
-            if memberdet['containertype'] == 'Sim':
-                member = MDSynthesis.Containers.Sim(memberdet['abspath'])
-            elif memberdet['containertype'] == 'Group':
-                member = MDSynthesis.Containers.Group(memberdet['abspath'])
+            try:
+                index = cached_uuid.index(uuid)
+            except ValueError:
+                index = None
+            if index:
+                member = self._container._cache[index]
+            else:
+                memberdet = self._containerfile.get_member(uuid)
+                if memberdet['containertype'] == 'Sim':
+                    member = MDSynthesis.Containers.Sim(memberdet['abspath'])
+                elif memberdet['containertype'] == 'Group':
+                    member = MDSynthesis.Containers.Group(memberdet['abspath'])
+                self._container._cache.append(member)
         elif isinstance(uuid, list):
             member = list()
             for item in uuid:
-                memberdet = self._containerfile.get_member(item)
-                if memberdet['containertype'] == 'Sim':
-                    member.append(MDSynthesis.Containers.Sim(memberdet['abspath']))
-                elif memberdet['containertype'] == 'Group':
-                    member.appned( MDSynthesis.Containers.Group(memberdet['abspath']))
+                try:
+                    index = cached_uuid.index(item)
+                except ValueError:
+                    index = None
+                if index:
+                    member.append(self._container._cache[index])
+                else:
+                    memberdet = self._containerfile.get_member(item)
+                    if memberdet['containertype'] == 'Sim':
+                        new = MDSynthesis.Containers.Sim(member['abspath'])
+                    elif memberdet['containertype'] == 'Group':
+                        new = MDSynthesis.Containers.Group(member['abspath'])
+                    member.append(new)
+                    self._container._cache.append(new)
 
         return member
 
@@ -637,12 +655,22 @@ class Members(Aggregator):
         """
         #TODO: need to route these through Finder.
         members = list()
+        cached_uuid = [ x._uuid for x in self._container._cache ]
         for uuid in self._containerfile.get_members_uuid():
-            member = self._containerfile.get_member(uuid)
-            if member['containertype'] == 'Sim':
-                members.append(MDSynthesis.Containers.Sim(member['abspath']))
-            elif member['containertype'] == 'Group':
-                members.append(MDSynthesis.Containers.Group(member['abspath']))
+            try:
+                index = cached_uuid.index(uuid)
+            except ValueError:
+                index = None
+            if index:
+                members.append(self._container._cache[index])
+            else:
+                member = self._containerfile.get_member(uuid)
+                if member['containertype'] == 'Sim':
+                    new = MDSynthesis.Containers.Sim(member['abspath'])
+                elif member['containertype'] == 'Group':
+                    new = MDSynthesis.Containers.Group(member['abspath'])
+                members.append(new)
+                self._container._cache.append(new)
         
         return members
 

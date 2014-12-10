@@ -410,6 +410,7 @@ class Group(_ContainerCore):
                 no arguments required; default False
 
         """
+        self._cache = []# member cache
 
         if kwargs.pop('empty', False):
         # if no members desired, skip checks for arguments
