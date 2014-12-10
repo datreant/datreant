@@ -214,9 +214,6 @@ class Sim(_ContainerCore):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *detached*
-                if True, Sim will load WITHOUT attaching Universe; default
-                False 
             *empty*
                 if True, initialize Sim without any Universe definition;
                 no arguments required; default False
@@ -294,7 +291,6 @@ class Sim(_ContainerCore):
         categories = kwargs.pop('categories', dict())
         tags = kwargs.pop('tags', list())
         universe = kwargs.pop('universe', 'main')
-        detached = kwargs.pop('detached', False)
         empty = kwargs.pop('empty', False)
 
         # generate state file

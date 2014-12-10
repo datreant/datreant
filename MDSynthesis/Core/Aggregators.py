@@ -630,9 +630,9 @@ class Members(Aggregator):
             member = self._containerfile.get_member(uuid)
 
             if member['containertype'] == 'Sim':
-                members.append(MDSynthesis.Containers.Sim(member['abspath'], detached=True))
+                members.append(MDSynthesis.Containers.Sim(member['abspath']))
             elif member['containertype'] == 'Group':
-                members.append(MDSynthesis.Containers.Group(member['abspath'], detached=True))
+                members.append(MDSynthesis.Containers.Group(member['abspath']))
         
         return members
 
