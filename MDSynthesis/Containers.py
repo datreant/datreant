@@ -220,11 +220,11 @@ class Sim(_ContainerCore):
         self._uname = None        # attached universe name 
         self._cache = dict()      # cache path storage
 
-        if (os.path.isdir(group)):
+        if (os.path.isdir(sim)):
             # if directory string, load existing object
-            self._regenerate(group)
+            self._regenerate(sim)
         else:
-            self._generate(group, uname=uname, universe=universe,
+            self._generate(sim, uname=uname, universe=universe,
                     location=location, coordinator=coordinator,
                     categories=categories, tags=tags, copy=copy)
 

@@ -647,7 +647,8 @@ class Members(Aggregator):
                 directories containing state files to be loaded from
     
         :Returns:
-            list of Containers obtained from directories
+            list of Containers obtained from directories; returns ``None`` for
+            paths that didn't yield a Container
 
         """
         containers = []
@@ -656,6 +657,8 @@ class Members(Aggregator):
                 containers.append(mds.Sim(directory))
             elif os.path.exists(os.path.join(directory, Files.groupfile)):
                 containers.append(mds.Group(directory))
+            else:
+                containers.append(None)
     
         return containers
 
@@ -666,6 +669,7 @@ class Members(Aggregator):
 
         """
         #TODO: need to route these through Finder.
+        #TODO: need uuid checks
         members = list()
         for uuid in self._containerfile.get_members_uuid():
             try:
@@ -701,13 +705,15 @@ class Members(Aggregator):
             if isinstance(container, list):
                 self.add(*container)
             elif os.path.isdir(container):
-                outconts.append(self._path2container(container)[0])
+                cont = self._path2container(container)[0]
+                if cont:
+                    outconts.append(cont)
             elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
                 outconts.append(container)
         pdb.set_trace()
 
         for container in outconts:
-            self._containerfile.add_member(container._uuid, container._containertype, container.location)
+            self._containerfile.add_member(container._uuid, container.name, container._containertype, container.location)
     
     def remove(self, *indices, **kwargs): 
         """Remove any number of members from the Group.
