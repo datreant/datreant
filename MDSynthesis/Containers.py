@@ -181,39 +181,38 @@ class Sim(_ContainerCore):
 
     """
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, sim, uname=None, universe=None, location='.',
+                 coordinator=None, categories=None, tags=None, copy=None):
         """Generate or regenerate a Sim object.
 
-        :Arguments:
-            *name*
-                desired name for Sim; used to distinguish Sims, but need
-                not be unique
-              *args*
-                either a string giving the path to a directory with a Sim object
-                state file, or the arguments normally given to an MDAnalysis
-                Universe
+        :Required arguments:
+            *sim*
+                if generating a new Sim, the desired name to give it;
+                if regenerating an existing Sim, string giving the path
+                to the directory containing the Sim object's state file
 
-        :Keywords available on object generation:
+        :Arguments used on object generation:
+            *uname*
+                desired name to associate with universe; this universe
+                will be made the default (can always be changed later)
+            *universe*
+                arguments usually given to an MDAnalysis Universe
+                that defines the topology and coordinates of the atoms
             *location*
                 directory to place Sim object; default is current directory
             *coordinator*
                 directory of the Coordinator to associate with this object; if the
                 Coordinator does not exist, it is created [``None``] 
-            *universe*
-                desired name to associate with first universe [``main``]
             *categories*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *empty*
-                if True, initialize Sim without any Universe definition;
-                no arguments required; default False
-
-        :Keywords available on object re-generation:
-            *attach*
-                name of universe to attach
+            *copy*
+                if a Sim given, copy the contents into the new Sim;
+                elements copied include tags, categories, universes,
+                selections, and data
 
         """
 
@@ -221,15 +220,13 @@ class Sim(_ContainerCore):
         self._uname = None        # attached universe name 
         self._cache = dict()      # cache path storage
 
-        if kwargs.pop('empty', False):
-        # if no universe desired, skip checks for arguments
-            self._generate(name, *args, empty=True, **kwargs)
-        elif (os.path.isdir(args[0])):
-        # if first arg is a directory string, load existing object
-            self._regenerate(name, *args, **kwargs)
+        if (os.path.isdir(group)):
+            # if directory string, load existing object
+            self._regenerate(group)
         else:
-        # if a structure and trajectory(s) are given, begin building new object
-            self._generate(name, *args, **kwargs)
+            self._generate(group, uname=uname, universe=universe,
+                    location=location, coordinator=coordinator,
+                    categories=categories, tags=tags, copy=copy)
 
     def __repr__(self):
         if not self._uname:
@@ -281,18 +278,16 @@ class Sim(_ContainerCore):
         
         return self._selections
 
-    #TODO: add explicit args, kwargs
-    def _generate(self, name, *args, **kwargs):
+    def _generate(self, name, uname=None, universe=None, location='.',
+            coordinator=None, categories=None, tags=None, copy=None):
         """Generate new Sim object.
          
         """
         # process keywords
-        location = kwargs.pop('location', '.')
-        coordinator = kwargs.pop('coordinator', None)
-        categories = kwargs.pop('categories', dict())
-        tags = kwargs.pop('tags', list())
-        universe = kwargs.pop('universe', 'main')
-        empty = kwargs.pop('empty', False)
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
 
         # generate state file
         #TODO: need try, except for case where Sim already exists
@@ -303,9 +298,9 @@ class Sim(_ContainerCore):
         os.makedirs(os.path.join(location, dirname))
         statefile = os.path.join(location, dirname, Core.Files.simfile)
 
-        self._start_logger('Sim', name, os.path.join(location, dirname))
+        self._start_logger('Sim', sim, os.path.join(location, dirname))
         self._containerfile = Core.Files.SimFile(statefile, self._logger,
-                                                 name=name,
+                                                 name=sim,
                                                  coordinator=coordinator,
                                                  categories=categories,
                                                  tags=tags)
@@ -314,30 +309,23 @@ class Sim(_ContainerCore):
         self._init_aggregators()
 
         # add universe
-        if not empty:
-            self.universes.add(universe, args[0], *args[1:])
+        if (uname and universe):
+            self.universes.add(uname, *universe)
             self.universes.default(universe)
 
-    def _regenerate(self, *args, **kwargs):
+    def _regenerate(self, sim):
         """Re-generate existing Sim object.
         
         """
-        attach = kwargs.pop('attach', None)
-
-        #TODO: load logger first!
-
         # load state file object
-        statefile = os.path.join(args[0], Core.Files.simfile)
+        statefile = os.path.join(sim, Core.Files.simfile)
         self._containerfile = Core.Files.SimFile(statefile)
-        self._start_logger('Sim', self._containerfile.get_name(), args[0])
+        self._start_logger('Sim', self._containerfile.get_name(), sim)
         self._containerfile._start_logger(self._logger)
 
         # attach aggregators
         self._init_aggregators()
     
-        if attach:
-            self.attach(attach)
-
     def _init_aggregators(self):
         """Initialize and attach aggregators.
 
@@ -378,13 +366,13 @@ class Group(_ContainerCore):
                  tags=None, copy=None):
         """Generate or regenerate a Group object.
 
-        :Arguments:
+        :Required Arguments:
             *group*
                 if generating a new Group, the desired name to give it;
                 if regenerating an existing Group, string giving the path
                 to the directory containing the Group object's state file
 
-        :Keywords used on object generation:
+        :Arguments used on object generation:
             *members*
                 a list of Sims and/or Groups to immediately add as members
             *location*
@@ -409,9 +397,9 @@ class Group(_ContainerCore):
             # if directory string, load existing object
             self._regenerate(group)
         else:
-            self._generate(group, members=members, location=location, 
-                           coordinator=coordinator, categories=categories,
-                           tags=tags, copy=copy)
+            self._generate(group, members=members, location=location,
+                    coordinator=coordinator, categories=categories, tags=tags,
+                    copy=copy)
 
     def __repr__(self):
         members = self._containerfile.get_members_containertype()
