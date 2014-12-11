@@ -80,13 +80,6 @@ class _ContainerCore(object):
         """
         return self._containerfile.get_name()
 
-    @name.setter
-    def name(self, value):
-        """Set name of Container.
-
-        """
-        self._containerfile.update_name(value)
-
     @property
     def _containertype(self):
         """The type of the Container; either Group or Sim.
@@ -188,10 +181,13 @@ class Sim(_ContainerCore):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name, *args, **kwargs):
         """Generate or regenerate a Sim object.
 
         :Arguments:
+            *name*
+                desired name for Sim; used to distinguish Sims, but need
+                not be unique; default is ``Sim``
               *args*
                 either a string giving the path to a directory with a Sim object
                 state file, or the arguments normally given to an MDAnalysis
@@ -200,9 +196,6 @@ class Sim(_ContainerCore):
         :Keywords available on object generation:
             *location*
                 directory to place Sim object; default is current directory
-            *name*
-                desired name for Sim; can be used to distinguish Sims, but need
-                not be unique; default is ``Sim``
             *coordinator*
                 directory of the Coordinator to associate with this object; if the
                 Coordinator does not exist, it is created [``None``] 

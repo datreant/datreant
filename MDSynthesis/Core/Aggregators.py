@@ -586,10 +586,10 @@ class Members(Aggregator):
 
     """
     def __repr__(self):
-        return "Members({})".format(self.list())
+        return "Members({})".format(self.names())
 
     def __str__(self):
-        members = self.list()
+        members = self.names()
         agg = "Members"
         majsep = "="
         seplength = len(agg)
@@ -659,6 +659,12 @@ class Members(Aggregator):
                 self._container._cache[uuid] = new
         
         return members
+
+    def names(self):
+        """Return a list of member names.
+
+        """
+        return self._containerfile.get_members_name()
 
     def add(self, *containers):
         """Add any number of members to the Group.

@@ -1107,6 +1107,9 @@ class GroupFile(ContainerFile):
         # unique identifier for container
         uuid = tables.StringCol(36)
 
+        # name of container; not necessarily unique, but immutable
+        name = tables.StringCol(128)
+
         # container type; Sim or Group
         containertype = tables.StringCol(36)
 
@@ -1171,7 +1174,7 @@ class GroupFile(ContainerFile):
             table = self.handle.create_table('/', 'members', self._Members, 'members')
 
     @File._write_state
-    def add_member(self, uuid, containertype, location):
+    def add_member(self, uuid, name, containertype, location):
         """Add a member to the Group.
 
         If the member is already present, its location will be updated with
@@ -1199,6 +1202,7 @@ class GroupFile(ContainerFile):
             table.cols.relGroup[rownum[0]] = os.path.relpath(location, self.get_location())
         else:
             table.row['uuid'] = uuid
+            table.row['name'] = name
             table.row['containertype'] = containertype
             table.row['abspath'] = os.path.abspath(location)
             table.row['relGroup'] = os.path.relpath(location, self.get_location())
@@ -1289,6 +1293,18 @@ class GroupFile(ContainerFile):
         """
         table = self.handle.get_node('/', 'members')
         return [ x['uuid'] for x in table.iterrows() ]
+
+    @File._read_state
+    def get_members_name(self):
+        """List name for each member.
+
+        :Returns:
+            *names*
+                list giving names of all members, in order
+
+        """
+        table = self.handle.get_node('/', 'members')
+        return [ x['name'] for x in table.iterrows() ]
 
     @File._read_state
     def get_members_containertype(self):
