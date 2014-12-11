@@ -187,7 +187,7 @@ class Sim(_ContainerCore):
         :Arguments:
             *name*
                 desired name for Sim; used to distinguish Sims, but need
-                not be unique; default is ``Sim``
+                not be unique
               *args*
                 either a string giving the path to a directory with a Sim object
                 state file, or the arguments normally given to an MDAnalysis
@@ -223,13 +223,13 @@ class Sim(_ContainerCore):
 
         if kwargs.pop('empty', False):
         # if no universe desired, skip checks for arguments
-            self._generate(*args, empty=True, **kwargs)
+            self._generate(name, *args, empty=True, **kwargs)
         elif (os.path.isdir(args[0])):
         # if first arg is a directory string, load existing object
-            self._regenerate(*args, **kwargs)
+            self._regenerate(name, *args, **kwargs)
         else:
         # if a structure and trajectory(s) are given, begin building new object
-            self._generate(*args, **kwargs)
+            self._generate(name, *args, **kwargs)
 
     def __repr__(self):
         if not self._uname:
@@ -282,13 +282,12 @@ class Sim(_ContainerCore):
         return self._selections
 
     #TODO: add explicit args, kwargs
-    def _generate(self, *args, **kwargs):
+    def _generate(self, name, *args, **kwargs):
         """Generate new Sim object.
          
         """
         # process keywords
         location = kwargs.pop('location', '.')
-        name = kwargs.pop('name', 'Sim')
         coordinator = kwargs.pop('coordinator', None)
         categories = kwargs.pop('categories', dict())
         tags = kwargs.pop('tags', list())
@@ -375,20 +374,19 @@ class Group(_ContainerCore):
     The Group object will be back as it was before.
 
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name, *args, **kwargs):
         """Generate or regenerate a Group object.
 
-        :Arguments:
+        :Arguments for object generation:
+            *name*
+                desired name for Group; used to distinguish Groups, but need
+                not be unique;
               *args*
-                either a string giving the path to a directory with a Group object
-                state file, or any number of Sim or Group objects 
+                any number of Sim or Group objects 
 
         :Keywords available on object generation:
             *location*
                 directory to place Group object; default is current directory
-            *name*
-                desired name for Group; can be used to distinguish Groups, but need
-                not be unique; default is ``Group``
             *coordinator*
                 directory of the Coordinator to associate with this object; if the
                 Coordinator does not exist, it is created [``None``] 
@@ -401,19 +399,26 @@ class Group(_ContainerCore):
             *empty*
                 if True, initialize Group without any members;
                 no arguments required; default False
+            *copy*
+                if True, and if only a single Group given
 
+
+        :Arguments for object regeneration:
+            *name*
+                a string giving the path to a directory with a Group object
+                state file
         """
         self._cache = dict()    # member cache
 
         if kwargs.pop('empty', False):
         # if no members desired, skip checks for arguments
-            self._generate(*args, empty=True, **kwargs)
-        elif isinstance(args[0], basestring):
-        # if first arg is a directory string, load existing object
+            self._generate(name, *args, empty=True, **kwargs)
+        elif len(args) == 1 and isinstance(args[0], basestring):
+        # if only arg is a directory string, load existing object
             self._regenerate(*args, **kwargs)
         else:
         # if a number of Sim-derived objects are given, build a new group 
-            self._generate(*args, **kwargs)
+            self._generate(name, *args, **kwargs)
 
     def __repr__(self):
         members = self._containerfile.get_members_containertype()
@@ -441,13 +446,12 @@ class Group(_ContainerCore):
         """
         return self._members
 
-    def _generate(self, *args, **kwargs):
+    def _generate(self, name, *args, **kwargs):
         """Generate new Group.
          
         """
         # process keywords
         location = kwargs.pop('location', '.')
-        name = kwargs.pop('name', 'Group')
         coordinator = kwargs.pop('coordinator', None)
         categories = kwargs.pop('categories', dict())
         tags = kwargs.pop('tags', list())
