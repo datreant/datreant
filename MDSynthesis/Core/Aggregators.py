@@ -672,7 +672,8 @@ class Members(Aggregator):
         :Arguments:
             *containers*
                 Sims and/or Groups to be added; may be a list of Sims and/or
-                Groups 
+                Groups; Sims or Groups can be given as either objects or paths
+                to directories that contain object statefiles
         """
         outconts = list()
         for container in containers:

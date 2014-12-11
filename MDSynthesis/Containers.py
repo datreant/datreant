@@ -374,17 +374,19 @@ class Group(_ContainerCore):
     The Group object will be back as it was before.
 
     """
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, group, members=None, location='.', coordinator=None, categories=None,
+                 tags=None, copy=None):
         """Generate or regenerate a Group object.
 
-        :Arguments for object generation:
-            *name*
-                desired name for Group; used to distinguish Groups, but need
-                not be unique;
-              *args*
-                any number of Sim or Group objects 
+        :Arguments:
+            *group*
+                if generating a new Group, the desired name to give it;
+                if regenerating an existing Group, string giving the path
+                to the directory containing the Group object's state file
 
-        :Keywords available on object generation:
+        :Keywords used on object generation:
+            *members*
+                a list of Sims and/or Groups to immediately add as members
             *location*
                 directory to place Group object; default is current directory
             *coordinator*
@@ -396,29 +398,20 @@ class Group(_ContainerCore):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *empty*
-                if True, initialize Group without any members;
-                no arguments required; default False
             *copy*
-                if True, and if only a single Group given
+                if a Group given, copy the contents into the new Group;
+                elements copied include tags, categories, members, and data
 
-
-        :Arguments for object regeneration:
-            *name*
-                a string giving the path to a directory with a Group object
-                state file
         """
         self._cache = dict()    # member cache
 
-        if kwargs.pop('empty', False):
-        # if no members desired, skip checks for arguments
-            self._generate(name, *args, empty=True, **kwargs)
-        elif len(args) == 1 and isinstance(args[0], basestring):
-        # if only arg is a directory string, load existing object
-            self._regenerate(*args, **kwargs)
+        if (os.path.isdir(group)):
+            # if directory string, load existing object
+            self._regenerate(group)
         else:
-        # if a number of Sim-derived objects are given, build a new group 
-            self._generate(name, *args, **kwargs)
+            self._generate(group, members=members, location=location, 
+                           coordinator=coordinator, categories=categories,
+                           tags=tags, copy=copy)
 
     def __repr__(self):
         members = self._containerfile.get_members_containertype()
@@ -446,26 +439,28 @@ class Group(_ContainerCore):
         """
         return self._members
 
-    def _generate(self, name, *args, **kwargs):
+    def _generate(self, group, members=None, location='.', coordinator=None,
+                  categories=None, tags=None, copy=None):
         """Generate new Group.
          
         """
         # process keywords
-        location = kwargs.pop('location', '.')
-        coordinator = kwargs.pop('coordinator', None)
-        categories = kwargs.pop('categories', dict())
-        tags = kwargs.pop('tags', list())
-        empty = kwargs.pop('empty', False)
+        if not members:
+            members = list()
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
 
         # name mangling to give a valid directory name
         # TODO: is this robust? What other characters are problematic?
-        dirname = name.replace('/', '_')
+        dirname = group.replace('/', '_')
         os.makedirs(os.path.join(location, dirname))
         statefile = os.path.join(location, dirname, Core.Files.groupfile)
 
-        self._start_logger('Group', name, os.path.join(location, dirname))
+        self._start_logger('Group', group, os.path.join(location, dirname))
         self._containerfile = Core.Files.GroupFile(statefile, self._logger,
-                                                 name=name,
+                                                 name=group,
                                                  coordinator=coordinator,
                                                  categories=categories,
                                                  tags=tags)
@@ -474,17 +469,16 @@ class Group(_ContainerCore):
         self._init_aggregators()
 
         # add members
-        if not empty:
-            self.members.add(*args)
+        self.members.add(*members)
     
-    def _regenerate(self, *args, **kwargs):
+    def _regenerate(self, group):
         """Re-generate existing object.
         
         """
         # load state file object
-        statefile = os.path.join(args[0], Core.Files.groupfile)
+        statefile = os.path.join(group, Core.Files.groupfile)
         self._containerfile = Core.Files.GroupFile(statefile)
-        self._start_logger('Group', self._containerfile.get_name(), args[0])
+        self._start_logger('Group', self._containerfile.get_name(), group)
         self._containerfile._start_logger(self._logger)
 
         # attach aggregators
