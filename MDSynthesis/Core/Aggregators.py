@@ -10,10 +10,11 @@ a backend by a Container, too.
 """
 import Files
 import Workers
-import MDSynthesis.Containers
+import MDSynthesis as mds
 from MDAnalysis import Universe
 import os
 from functools import wraps
+import pdb
 
 class Aggregator(object):
     """Core functionality for information aggregators.
@@ -618,9 +619,9 @@ class Members(Aggregator):
             except KeyError:
                 memberdet = self._containerfile.get_member(uuid)
                 if memberdet['containertype'] == 'Sim':
-                    member = MDSynthesis.Containers.Sim(memberdet['abspath'])
+                    member = mds.Sim(memberdet['abspath'])
                 elif memberdet['containertype'] == 'Group':
-                    member = MDSynthesis.Containers.Group(memberdet['abspath'])
+                    member = mds.Group(memberdet['abspath'])
                 self._container._cache[uuid] = member
         elif isinstance(uuid, list):
             member = list()
@@ -630,13 +631,33 @@ class Members(Aggregator):
                 except KeyError:
                     memberdet = self._containerfile.get_member(item)
                     if memberdet['containertype'] == 'Sim':
-                        new = MDSynthesis.Containers.Sim(memberdet['abspath'])
+                        new = mds.Sim(memberdet['abspath'])
                     elif memberdet['containertype'] == 'Group':
-                        new = MDSynthesis.Containers.Group(memberdet['abspath'])
+                        new = mds.Group(memberdet['abspath'])
                     member.append(new)
                     self._container._cache[item] = new
 
         return member
+
+    def _path2container(self, *directories):
+        """Return Containers from directories containing Container state files.
+
+        :Arguments:
+            *directories*
+                directories containing state files to be loaded from
+    
+        :Returns:
+            list of Containers obtained from directories
+
+        """
+        containers = []
+        for directory in directories:
+            if os.path.exists(os.path.join(directory, Files.simfile)):
+                containers.append(mds.Sim(directory))
+            elif os.path.exists(os.path.join(directory, Files.groupfile)):
+                containers.append(mds.Group(directory))
+    
+        return containers
 
     def list(self):
         """Return a list of members.
@@ -652,9 +673,9 @@ class Members(Aggregator):
             except KeyError:
                 member = self._containerfile.get_member(uuid)
                 if member['containertype'] == 'Sim':
-                    new = MDSynthesis.Containers.Sim(member['abspath'])
+                    new = mds.Sim(member['abspath'])
                 elif member['containertype'] == 'Group':
-                    new = MDSynthesis.Containers.Group(member['abspath'])
+                    new = mds.Group(member['abspath'])
                 members.append(new)
                 self._container._cache[uuid] = new
         
@@ -678,9 +699,12 @@ class Members(Aggregator):
         outconts = list()
         for container in containers:
             if isinstance(container, list):
-                outconts.extend(container)
-            else:
+                self.add(*container)
+            elif os.path.isdir(container):
+                outconts.append(self._path2container(container)[0])
+            elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
                 outconts.append(container)
+        pdb.set_trace()
 
         for container in outconts:
             self._containerfile.add_member(container._uuid, container._containertype, container.location)
