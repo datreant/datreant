@@ -587,7 +587,11 @@ class Members(Aggregator):
 
     """
     def __repr__(self):
-        return "Members({})".format(self.names())
+        out = "Members(["
+        for name in self.names():
+            out = out + name + ",\n"
+        out = out + "])"
+        return out
 
     def __str__(self):
         members = self.names()

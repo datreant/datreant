@@ -181,7 +181,7 @@ class Sim(_ContainerCore):
 
     """
 
-    def __init__(self, sim, uname=None, universe=None, location='.',
+    def __init__(self, sim, universe=None, uname='main', location='.',
                  coordinator=None, categories=None, tags=None, copy=None):
         """Generate or regenerate a Sim object.
 
@@ -224,7 +224,7 @@ class Sim(_ContainerCore):
             # if directory string, load existing object
             self._regenerate(sim)
         else:
-            self._generate(sim, uname=uname, universe=universe,
+            self._generate(sim, universe=universe, uname=uname,
                     location=location, coordinator=coordinator,
                     categories=categories, tags=tags, copy=copy)
 
@@ -278,7 +278,7 @@ class Sim(_ContainerCore):
         
         return self._selections
 
-    def _generate(self, name, uname=None, universe=None, location='.',
+    def _generate(self, sim, universe=None, uname='main', location='.',
             coordinator=None, categories=None, tags=None, copy=None):
         """Generate new Sim object.
          
@@ -311,7 +311,7 @@ class Sim(_ContainerCore):
         # add universe
         if (uname and universe):
             self.universes.add(uname, *universe)
-            self.universes.default(universe)
+            self.universes.default(uname)
 
     def _regenerate(self, sim):
         """Re-generate existing Sim object.
