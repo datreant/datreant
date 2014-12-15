@@ -16,7 +16,15 @@ class _ContainerCore(object):
     instead contains methods and attributes common to all Container objects.
 
     """
-    def _start_logger(self, containertype, name, location):
+    def __init__(self):
+        """Necessary placeholders for aggregator instances.
+
+        """
+        self._tags = None
+        self._categories = None
+        self._data = None
+
+    def _start_logger(self, containertype, name, location=None, filehandler=False):
         """Start up the logger.
 
         :Arguments:
@@ -26,21 +34,26 @@ class _ContainerCore(object):
                 name of Container
             *location*
                 location of Container
+            *filehandler*
+                if True, write output to a logfile in the Container's main
+                directory [``False``]
 
         """
         # set up logging
         self._logger = logging.getLogger('{}.{}'.format(containertype, name))
 
-        location = os.path.abspath(location)
         if not self._logger.handlers:
             self._logger.setLevel(logging.INFO)
     
-            # file handler
-            logfile = os.path.join(location, Core.Files.containerlog)
-            fh = logging.FileHandler(logfile)
-            ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-            fh.setFormatter(ff)
-            self._logger.addHandler(fh)
+            if filehandler:
+                location = os.path.abspath(location)
+                # file handler if desired; beware of problems with too many open files
+                # when a large number of Containers are at play
+                logfile = os.path.join(location, Core.Files.containerlog)
+                fh = logging.FileHandler(logfile)
+                ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+                fh.setFormatter(ff)
+                self._logger.addHandler(fh)
     
             # output handler
             ch = logging.StreamHandler(sys.stdout)
@@ -57,14 +70,6 @@ class _ContainerCore(object):
         """
         if not os.path.exists(p):
             os.makedirs(p)
-
-    def _init_aggregators(self):
-        """Initialize and attach aggregators.
-
-        """
-        self._tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
-        self._categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
-        self._data = Core.Aggregators.Data(self, self._containerfile, self._logger)
 
     @property
     def _uuid(self):
@@ -130,6 +135,8 @@ class _ContainerCore(object):
         """The tags of the Container.
         
         """
+        if not self._tags:
+            self._tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
         return self._tags
 
     @property
@@ -137,6 +144,9 @@ class _ContainerCore(object):
         """The categories of the Container.
         
         """
+
+        if not self._categories:
+            self._categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
         return self._categories
 
     @property
@@ -144,6 +154,8 @@ class _ContainerCore(object):
         """The data of the Container.
         
         """
+        if not self._data:
+            self._data = Core.Aggregators.Data(self, self._containerfile, self._logger)
         return self._data
 
 #TODO: include in documentation fgetter details
@@ -215,7 +227,10 @@ class Sim(_ContainerCore):
                 selections, and data
 
         """
+        super(Sim, self).__init__()
 
+        self._universes = None
+        self._selections = None
         self._universe = None     # universe 'dock'
         self._uname = None        # attached universe name 
         self._cache = dict()      # cache path storage
@@ -266,6 +281,8 @@ class Sim(_ContainerCore):
         """The universes of the Sim.
         
         """
+        if not self._universes:
+            self._universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
         return self._universes
 
     @property
@@ -275,7 +292,8 @@ class Sim(_ContainerCore):
         """
         # attach default universe if not attached
         self.universe
-        
+        if not self._selections:
+            self._selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
         return self._selections
 
     def _generate(self, sim, universe=None, uname='main', location='.',
@@ -298,15 +316,12 @@ class Sim(_ContainerCore):
         os.makedirs(os.path.join(location, dirname))
         statefile = os.path.join(location, dirname, Core.Files.simfile)
 
-        self._start_logger('Sim', sim, os.path.join(location, dirname))
+        self._start_logger('Sim', sim)
         self._containerfile = Core.Files.SimFile(statefile, self._logger,
                                                  name=sim,
                                                  coordinator=coordinator,
                                                  categories=categories,
                                                  tags=tags)
-
-        # attach aggregators
-        self._init_aggregators()
 
         # add universe
         if (uname and universe):
@@ -320,20 +335,8 @@ class Sim(_ContainerCore):
         # load state file object
         statefile = os.path.join(sim, Core.Files.simfile)
         self._containerfile = Core.Files.SimFile(statefile)
-        self._start_logger('Sim', self._containerfile.get_name(), sim)
+        self._start_logger('Sim', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
-
-        # attach aggregators
-        self._init_aggregators()
-    
-    def _init_aggregators(self):
-        """Initialize and attach aggregators.
-
-        """
-        super(Sim, self)._init_aggregators()
-
-        self._universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
-        self._selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
 
 class Group(_ContainerCore):
     """The Group object is a collection of Sims and Groups.
@@ -391,6 +394,8 @@ class Group(_ContainerCore):
                 elements copied include tags, categories, members, and data
 
         """
+        super(Group, self).__init__()
+        self._members = None
         self._cache = dict()    # member cache
 
         if (os.path.isdir(group)):
@@ -425,6 +430,8 @@ class Group(_ContainerCore):
         """The members of the Group.
         
         """
+        if not self._members:
+            self._members = Core.Aggregators.Members(self, self._containerfile, self._logger)
         return self._members
 
     def _generate(self, group, members=None, location='.', coordinator=None,
@@ -446,15 +453,12 @@ class Group(_ContainerCore):
         os.makedirs(os.path.join(location, dirname))
         statefile = os.path.join(location, dirname, Core.Files.groupfile)
 
-        self._start_logger('Group', group, os.path.join(location, dirname))
+        self._start_logger('Group', group)
         self._containerfile = Core.Files.GroupFile(statefile, self._logger,
                                                  name=group,
                                                  coordinator=coordinator,
                                                  categories=categories,
                                                  tags=tags)
-
-        # attach aggregators
-        self._init_aggregators()
 
         # add members
         self.members.add(*members)
@@ -466,16 +470,5 @@ class Group(_ContainerCore):
         # load state file object
         statefile = os.path.join(group, Core.Files.groupfile)
         self._containerfile = Core.Files.GroupFile(statefile)
-        self._start_logger('Group', self._containerfile.get_name(), group)
+        self._start_logger('Group', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
-
-        # attach aggregators
-        self._init_aggregators()
-    
-    def _init_aggregators(self):
-        """Initialize and attach aggregators.
-
-        """
-        super(Group, self)._init_aggregators()
-
-        self._members = Core.Aggregators.Members(self, self._containerfile, self._logger)

@@ -708,13 +708,12 @@ class Members(Aggregator):
         for container in containers:
             if isinstance(container, list):
                 self.add(*container)
+            elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
+                outconts.append(container)
             elif os.path.isdir(container):
                 cont = self._path2container(container)[0]
                 if cont:
                     outconts.append(cont)
-            elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
-                outconts.append(container)
-        pdb.set_trace()
 
         for container in outconts:
             self._containerfile.add_member(container._uuid, container.name, container._containertype, container.location)

@@ -1197,7 +1197,7 @@ class GroupFile(ContainerFile):
         # check if uuid already present
         rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
         if rownum:
-            self.logger.info('Member already present. Updating with new location.')
+            self.logger.info("Member '{}' already present. Updating with new location.".format(name))
             table.cols.abspath[rownum[0]] = os.path.abspath(location)
             table.cols.relGroup[rownum[0]] = os.path.relpath(location, self.get_location())
         else:
