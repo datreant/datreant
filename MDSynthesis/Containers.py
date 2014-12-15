@@ -332,6 +332,12 @@ class Sim(_ContainerCore):
         """Re-generate existing Sim object.
         
         """
+        # process keywords
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
+
         # load state file object
         statefile = os.path.join(sim, Core.Files.simfile)
         self._containerfile = Core.Files.SimFile(statefile,
@@ -473,6 +479,14 @@ class Group(_ContainerCore):
         """Re-generate existing object.
         
         """
+        # process keywords
+        if not members:
+            members = list()
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
+
         # load state file object
         statefile = os.path.join(group, Core.Files.groupfile)
         self._containerfile = Core.Files.GroupFile(statefile,
