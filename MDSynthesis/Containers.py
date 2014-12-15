@@ -191,7 +191,7 @@ class Sim(_ContainerCore):
                 if regenerating an existing Sim, string giving the path
                 to the directory containing the Sim object's state file
 
-        :Arguments used on object generation:
+        :Optional arguments:
             *uname*
                 desired name to associate with universe; this universe
                 will be made the default (can always be changed later)
@@ -294,7 +294,7 @@ class Sim(_ContainerCore):
 
         # name mangling to give a valid directory name
         # TODO: is this robust? What other characters are problematic?
-        dirname = name.replace('/', '_')
+        dirname = sim.replace('/', '_')
         os.makedirs(os.path.join(location, dirname))
         statefile = os.path.join(location, dirname, Core.Files.simfile)
 
@@ -372,7 +372,7 @@ class Group(_ContainerCore):
                 if regenerating an existing Group, string giving the path
                 to the directory containing the Group object's state file
 
-        :Arguments used on object generation:
+        :Optional arguments:
             *members*
                 a list of Sims and/or Groups to immediately add as members
             *location*
