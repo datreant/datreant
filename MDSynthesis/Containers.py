@@ -221,10 +221,10 @@ class Sim(_ContainerCore):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *copy*
+            *copy* [TODO]
                 if a Sim given, copy the contents into the new Sim;
                 elements copied include tags, categories, universes,
-                selections, and data
+                selections, and data 
 
         """
         super(Sim, self).__init__()
@@ -237,7 +237,8 @@ class Sim(_ContainerCore):
 
         if (os.path.isdir(sim)):
             # if directory string, load existing object
-            self._regenerate(sim)
+            self._regenerate(sim, universe=universe, uname=uname,
+                    categories=categories, tags=tags, copy=copy)
         else:
             self._generate(sim, universe=universe, uname=uname,
                     location=location, coordinator=coordinator,
@@ -318,25 +319,30 @@ class Sim(_ContainerCore):
 
         self._start_logger('Sim', sim)
         self._containerfile = Core.Files.SimFile(statefile, self._logger,
-                                                 name=sim,
-                                                 coordinator=coordinator,
-                                                 categories=categories,
-                                                 tags=tags)
+                name=sim, coordinator=coordinator, categories=categories,
+                tags=tags)
 
         # add universe
         if (uname and universe):
             self.universes.add(uname, *universe)
             self.universes.default(uname)
 
-    def _regenerate(self, sim):
+    def _regenerate(self, sim, universe=None, uname='main', categories=None,
+            tags=None, copy=None):
         """Re-generate existing Sim object.
         
         """
         # load state file object
         statefile = os.path.join(sim, Core.Files.simfile)
-        self._containerfile = Core.Files.SimFile(statefile)
+        self._containerfile = Core.Files.SimFile(statefile,
+                categories=categories, tags=tags)
+
         self._start_logger('Sim', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
+
+        # add universe
+        if (uname and universe):
+            self.universes.add(uname, *universe)
 
 class Group(_ContainerCore):
     """The Group object is a collection of Sims and Groups.
@@ -389,7 +395,7 @@ class Group(_ContainerCore):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *copy*
+            *copy* [TODO]
                 if a Group given, copy the contents into the new Group;
                 elements copied include tags, categories, members, and data
 
@@ -400,7 +406,8 @@ class Group(_ContainerCore):
 
         if (os.path.isdir(group)):
             # if directory string, load existing object
-            self._regenerate(group)
+            self._regenerate(group, members=members, categories=categories,
+                    tags=tags, copy=copy)
         else:
             self._generate(group, members=members, location=location,
                     coordinator=coordinator, categories=categories, tags=tags,
@@ -455,20 +462,24 @@ class Group(_ContainerCore):
 
         self._start_logger('Group', group)
         self._containerfile = Core.Files.GroupFile(statefile, self._logger,
-                                                 name=group,
-                                                 coordinator=coordinator,
-                                                 categories=categories,
-                                                 tags=tags)
+                name=group, coordinator=coordinator, categories=categories,
+                tags=tags)
 
         # add members
         self.members.add(*members)
     
-    def _regenerate(self, group):
+    def _regenerate(self, group, members=None, categories=None, tags=None,
+            copy=None):
         """Re-generate existing object.
         
         """
         # load state file object
         statefile = os.path.join(group, Core.Files.groupfile)
-        self._containerfile = Core.Files.GroupFile(statefile)
+        self._containerfile = Core.Files.GroupFile(statefile,
+                categories=categories, tags=tags)
+
         self._start_logger('Group', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
+
+        # add members
+        self.members.add(*members)
