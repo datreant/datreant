@@ -781,7 +781,7 @@ class Data(Aggregator):
         """
         datafile = None
         datafiletype = None
-        for dfiletype in (Files.pddatafile, Files.npdatafile):
+        for dfiletype in (Files.pddatafile, Files.npdatafile, Files.pydatafile):
             dfile = os.path.join(self._containerfile.get_location(), 
                                     handle, dfiletype) 
             if os.path.exists(dfile):
@@ -933,7 +933,7 @@ class Data(Aggregator):
 
         if datafiletype == Files.pddatafile:
             self._delete_data(handle, **kwargs)
-        elif datafiletype == Files.npdatafile:
+        elif datafile:
             os.remove(datafile)
             top = self._containerfile.get_location()
             directory = os.path.dirname(datafile)
@@ -1044,9 +1044,9 @@ class Data(Aggregator):
     def append(self, handle, data):
         """Append rows to an existing dataset.
     
-        The object must be of the same class (Series, DataFrame, Panel) as the
-        existing dataset, and it must have exactly the same columns (names
-        included).
+        The object must be of the same pandas class (Series, DataFrame, Panel)
+        as the existing dataset, and it must have exactly the same columns
+        (names included).
 
         :Arguments:
             *handle*
@@ -1068,7 +1068,7 @@ class Data(Aggregator):
         datasets = list()
         top = self._containerfile.get_location()
         for root, dirs, files in os.walk(top):
-            if (Files.pddatafile in files) or (Files.npdatafile in files):
+            if (Files.pddatafile in files) or (Files.npdatafile in files) or (Files.pydatafile in files):
                 datasets.append(os.path.relpath(root, start=top))
 
         datasets.sort()

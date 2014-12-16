@@ -7,17 +7,16 @@ import Aggregators
 import Workers
 from uuid import uuid4
 import tables
-import pandas
-import numpy as np
 import h5py
+import pandas as pd
+import numpy as np
+import pickle
 import fcntl
 import os
 import sys
 import logging
 from functools import wraps
 import MDSynthesis
-
-import pdb
 
 # Sim state file
 simfile = "Sim.h5"
@@ -33,6 +32,9 @@ pddatafile = "pdData.h5"
 
 # numpy Datafile
 npdatafile = "npData.h5"
+
+# catchall DataFile
+pydatafile = "pyData.pkl"
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
@@ -211,7 +213,7 @@ class File(object):
             if self.handle.is_open:
                 out = func(self, *args, **kwargs)
             else:
-                self.handle = pandas.HDFStore(self.filename, 'r')
+                self.handle = pd.HDFStore(self.filename, 'r')
                 self._shlock(self.handle._handle)
                 try:
                     out = func(self, *args, **kwargs)
@@ -233,7 +235,7 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            self.handle = pandas.HDFStore(self.filename, 'a')
+            self.handle = pd.HDFStore(self.filename, 'a')
             self._exlock(self.handle._handle)
             try:
                 out = func(self, *args, **kwargs)
@@ -284,6 +286,54 @@ class File(object):
         def inner(self, *args, **kwargs):
             self.handle = h5py.File(self.filename, 'a')
             self._exlock(self.handle.fid.get_vfd_handle())
+            try:
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
+            return out
+
+        return inner
+
+    @staticmethod
+    def _read_pydata(func):
+        """Decorator for opening data file for reading and applying shared lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            try:
+                self.handle.fileno()
+                out = func(self, *args, **kwargs)
+            except ValueError:
+                self.handle = open(self.filename, 'rb')
+                self._shlock(self.handle)
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
+            return out
+
+        return inner
+    
+    @staticmethod
+    def _write_pydata(func):
+        """Decorator for opening data file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = open(self.filename, 'ab+')
+            self._exlock(self.handle)
             try:
                 out = func(self, *args, **kwargs)
             finally:
@@ -1464,8 +1514,10 @@ class DataFile(object):
         """
         if isinstance(data, np.ndarray):
             self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
-        else:
+        elif isinstance(data, (pd.Series, pd.DataFrame, pd.Panel, pd.Panel4D)):
             self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
+        else:
+            self.datafile = pyDataFile(os.path.join(self.datadir, pydatafile), logger=self.logger)
 
         self.datafile.add_data(key, data)
 
@@ -1490,9 +1542,11 @@ class DataFile(object):
         """
         if isinstance(data, np.ndarray):
             self.logger.info('Cannot append numpy arrays.')
-        else:
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
+        elif isinstance(data, (pd.Series, pd.DataFrame, pd.Panel, pd.Panel4D)):
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
             self.datafile.append(key, data, data_columns=True)
+        else:
+            self.logger.info('Cannot append python object.')
 
             # dereference
             self.datafile = None
@@ -1525,13 +1579,16 @@ class DataFile(object):
                 the selected data
         """
         if self.datafiletype == npdatafile:
-            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile))
+            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
             out = self.datafile.get_data(key, **kwargs)
             self.datafile = None
-
         elif self.datafiletype == pddatafile:
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
             out = self.datafile.get_data(key, **kwargs)
+            self.datafile = None
+        elif self.datafiletype == pydatafile:
+            self.datafile = pyDataFile(os.path.join(self.datadir, pydatafile), logger=self.logger)
+            out = self.datafile.get_data(key)
             self.datafile = None
         else:
             self.logger.info('Cannot return data without knowing datatype.')
@@ -1556,14 +1613,16 @@ class DataFile(object):
         
         """
         if self.datafiletype == npdatafile:
-            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile))
+            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
             out = self.datafile.del_data(key, data, **kwargs)
             self.datafile = None
 
         elif self.datafiletype == pddatafile:
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
             out = self.datafile.del_data(key, data, **kwargs)
             self.datafile = None
+        elif self.datafiletype == pydatafile:
+            pass
         else:
             self.logger.info('Cannot return data without knowing datatype.')
             out = None
@@ -1579,14 +1638,16 @@ class DataFile(object):
 
         """
         if self.datafiletype == npdatafile:
-            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile))
+            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
             out = self.datafile.list_data(key, data, **kwargs)
             self.datafile = None
-
         elif self.datafiletype == pddatafile:
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
             out = self.datafile.list_data(key, data, **kwargs)
             self.datafile = None
+        elif self.datafiletype == pydatafile:
+            self.logger.info('No substructure to serialized python object')
+            out = None
         else:
             self.logger.info('Cannot return data without knowing datatype.')
             out = None
@@ -1615,7 +1676,7 @@ class pdDataFile(File):
         super(pdDataFile, self).__init__(filename, logger=logger)
 
         # open file for the first time to initialize handle
-        self.handle = pandas.HDFStore(self.filename, 'a')
+        self.handle = pd.HDFStore(self.filename, 'a')
         self.handle.close()
 
     @File._write_pddata
@@ -1800,3 +1861,56 @@ class npDataFile(File):
         """
         keys = self.handle.keys()
         return keys
+
+class pyDataFile(File):
+    """Interface to python object data files.
+
+    Arbitrary python objects are stored as pickled objects on disk. This class
+    gives the needed components for storing and retrieving stored data in the same
+    basic way as for pandas and numpy objects. It uses pickle files for
+    serialization.
+
+    """
+    def __init__(self, filename, logger=None, **kwargs): 
+        """Initialize data file.
+
+        :Arguments:
+           *filename*
+              path to file
+           *logger*
+              Container's logger instance
+
+        """
+        super(pyDataFile, self).__init__(filename, logger=logger)
+
+        # open file for the first time to initialize handle
+        self.handle = open(self.filename, 'ab+')
+        self.handle.close()
+
+    @File._write_pydata
+    def add_data(self, key, data):
+        """Add a numpy array to the data file.
+
+        If data already exists for the given key, then it is overwritten.
+    
+        :Arguments:
+            *key*
+                not used, but needed to give consistent interface
+            *data*
+                the numpy array to store
+        """
+        pickle.dump(data, self.handle)
+
+    @File._read_pydata
+    def get_data(self, key, **kwargs):
+        """Retrieve numpy array stored in file.
+
+        :Arguments:
+            *key*
+                not used, but needed to give consistent interface
+        
+        :Returns:
+            *data*
+                the selected data
+        """
+        return pickle.load(self.handle)
