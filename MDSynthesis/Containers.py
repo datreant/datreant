@@ -3,591 +3,523 @@ Basic Container objects: the organizational units for :mod:`MDSynthesis`.
 
 """
 
-import os
-import yaml
-import pdb
+import os, sys
 import shutil
-import MDAnalysis
+import logging
+from MDAnalysis import Universe
+import Core
 
-from Core import *
+class _ContainerCore(object):
+    """Core class for all Containers.
 
-class Sim(ContainerCore):
-    """The MDSynthesis Sim object is the base container for single simulations.
+    The ContainerCore object is not intended to be useful on its own, but
+    instead contains methods and attributes common to all Container objects.
 
-    The Sim object contains all the machinery required to handle trajectories
-    and the data generated from them in an organized and object-oriented fashion.
-    It is built to be used as a parent class, expanded upon for specific use
-    cases as needed for specific simulation systems.
+    """
+    def __init__(self):
+        """Necessary placeholders for aggregator instances.
 
-    To generate a Sim object from scratch, provide a topology and a trajectory
-    in the same way you would for a Universe (:class:`MDAnalysis.Universe`). 
+        """
+        self._tags = None
+        self._categories = None
+        self._data = None
 
-    For example, as with a Universe::
+    def _start_logger(self, containertype, name, location=None, filehandler=False):
+        """Start up the logger.
 
-       s = Sim(topology, trajectory)          # read system from file(s)
-       s = Sim(pdbfile)                       # read atoms and coordinates from PDB or GRO
-       s = Sim(topology, [traj1, traj2, ...]) # read from a list of trajectories
-       s = Sim(topology, traj1, traj2, ...)   # read from multiple trajectories
+        :Arguments:
+            *containertype*
+                type of Container the logger is a part of; Sim or Group
+            *name*
+                name of Container
+            *location*
+                location of Container
+            *filehandler*
+                if True, write output to a logfile in the Container's main
+                directory [``False``]
+
+        """
+        # set up logging
+        self._logger = logging.getLogger('{}.{}'.format(containertype, name))
+
+        if not self._logger.handlers:
+            self._logger.setLevel(logging.INFO)
+    
+            if filehandler:
+                location = os.path.abspath(location)
+                # file handler if desired; beware of problems with too many open files
+                # when a large number of Containers are at play
+                logfile = os.path.join(location, Core.Files.containerlog)
+                fh = logging.FileHandler(logfile)
+                ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+                fh.setFormatter(ff)
+                self._logger.addHandler(fh)
+    
+            # output handler
+            ch = logging.StreamHandler(sys.stdout)
+            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+            ch.setFormatter(cf)
+            self._logger.addHandler(ch)
+
+    def _makedirs(self, p):
+        """Make directories and all parents necessary.
+
+        :Arguments:
+            *p*
+                directory path to make
+        """
+        if not os.path.exists(p):
+            os.makedirs(p)
+
+    @property
+    def _uuid(self):
+        """The uuid of the Container.
+    
+        """
+        return self._containerfile.get_uuid()
+
+    @property
+    def name(self):
+        """The name of the Container.
+        
+        """
+        return self._containerfile.get_name()
+
+    @property
+    def _containertype(self):
+        """The type of the Container; either Group or Sim.
+    
+        """
+        return self._containerfile.get_containertype()
+
+    @property
+    def location(self):
+        """The location of the Container.
+
+        Setting the location to a new path physically moves the Container to
+        the given location. This only works if the new location is an empty or
+        nonexistent directory.
+    
+        """
+        return self._containerfile.get_location()
+
+    @location.setter
+    def location(self, value):
+        """Set location of Container. 
+        
+        Physically moves the Container to the given location.
+        Only works if the new location is an empty or nonexistent
+        directory.
+
+        """
+        self._makedirs(value)
+        os.rename(self._containerfile.get_location(), value)
+        self._regenerate(value)
+    
+    @property
+    def coordinator(self):
+        """The location of the associated Coordinator.
+    
+        """
+        return self._containerfile.get_coordinator()
+
+    #TODO: implement with Coordinator checking
+    @coordinator.setter
+    def coordinator(self, value):
+        """Set location of Coordinator. 
+        
+        Setting this to ``None`` will dissociate the Container from any
+        Coordinator. 
+        
+        """
+        pass
+
+    @property
+    def tags(self):
+        """The tags of the Container.
+        
+        """
+        if not self._tags:
+            self._tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
+        return self._tags
+
+    @property
+    def categories(self):
+        """The categories of the Container.
+        
+        """
+
+        if not self._categories:
+            self._categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
+        return self._categories
+
+    @property
+    def data(self):
+        """The data of the Container.
+        
+        """
+        if not self._data:
+            self._data = Core.Aggregators.Data(self, self._containerfile, self._logger)
+        return self._data
+
+#TODO: include in documentation fgetter details
+class Sim(_ContainerCore):
+    """The Sim object is an interface to data for single simulations.
+
+    A Sim object contains all the machinery required to handle trajectories and
+    the data generated from them in an organized and object-oriented fashion.
+
+    To generate a Sim object from scratch, we need only give it a name. This
+    will be used to distinguish the Sim from other Sims, though it need not be
+    unique. We can also give it a topology and/or trajectory files as we would
+    to an MDAnalysis Universe::
+        
+        s = Sim('fluffy', universe=[topology, trajectory])
+
+    This will create a directory ``name`` that contains a single file (``Sim.h5``).
+    That file is a persistent representation of the Sim on disk. We can access
+    trajectory data by way of an MDAnalysis Universe::
+
+        s.universe
+
+    It can also store selections by giving the usual inputs to
+    ``Universe.selectAtoms``::
+
+        s.selections.add('backbone', ['name CA', 'name C', 'name O1', 'name O2'])
+
+    And the AtomGroup can be conveniently obtained with::
+
+        s.selections['backbone']
+
+    The Sim can also store custom data structures. These can be pandas objects
+    (e.g. Series, DataFrame, Panel), numpy arrays, or other python objects::
+
+        a = np.random.randn(100, 100)
+        s.data.add('randomdata', a)
+
+    This can be recalled later with::
+
+        s.data['randomdata']
 
     The real strength of the Sim object is how it stores its information. Generating
     an object from scratch stores the information needed to re-generate it in the
-    filesystem. By default, this is the current working directory::
+    filesystem. To generate another instance of the same Sim, simply give the directory
+    where the state file lives::
 
-        ./MDSynthesis/Sim/name
+        s2 = Sim('fluffy/')
 
-    The object name can be specified as a keyword, or generated automatically.
-
-    This directory contains a metadata file (Sim.yaml) with all the information
-    needed by the object to find its trajectories and other generated data. To
-    alter it, you need only open it in a text editor. This file is the same
-    dictionary as in::
-
-        s.metadata
-
-    You can reload the metadata from the file with ``s.refresh()``. If you make
-    changes to the metadata attribute interactively, you can write to the file
-    using ``s.save()``.
-
-    To regenerate an existing Sim object, give a directory that contains a Sim
-    object metadata file (self.__class__.__name__ + ".yaml") instead of a topology::
-
-        s = Sim('./MDSynthesis/Sim/name')
-
-    The Sim object will be back as it was before.
-
-    Data from Analysis objects are stored in the object directory. Having generated
-    data from an Analysis called 'Foo', one would reload it with::
-
-        s.load('Foo')
-
-    and access it with::
-
-        s.analysis['Foo']
-
-    The data can be unloaded with::
-
-        s.unload('Foo')
-
-    This is beneficial if the data is rather large, freeing up memory. See the
-    documentation for :class:`MDSynthesis.Operators.Analysis` for more details
-    on how this scheme works.
+    The Sim object will give access to the Universe, stored selections, and stored data
+    as before.
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, sim, universe=None, uname='main', location='.',
+                 coordinator=None, categories=None, tags=None, copy=None):
         """Generate or regenerate a Sim object.
 
-        :Arguments:
-              *args*
-                either a string giving the path to a directory with a Sim object
-                metadata file, or the arguments normally given to an MDAnalysis
-                Universe
+        :Required arguments:
+            *sim*
+                if generating a new Sim, the desired name to give it;
+                if regenerating an existing Sim, string giving the path
+                to the directory containing the Sim object's state file
 
-        :Keywords used on object generation:
-            *name*
-                desired name for object, used for logging and referring to
-                object in some analyses; default will be the object's randomly
-                selected UUID
-            *database*
-                directory of the database to associate with this object; if the
-                database does not exist, it is created; if none given, the
-                directory tree will be searched upward until one or none is found
+        :Optional arguments:
+            *uname*
+                desired name to associate with universe; this universe
+                will be made the default (can always be changed later)
             *universe*
-                desired name to associate with first universe [``main``]
-            *selections*
-                dictionary with selection strings to be applied to structure; 
-                these will be used to make persistent AtomGroups; the dictionary
-                may be recursive, i.e. items may be more dictionaries; the
-                structure of this dictionary will be reflected in the Sim's
-                selections attribute
-            *category*
+                arguments usually given to an MDAnalysis Universe
+                that defines the topology and coordinates of the atoms
+            *location*
+                directory to place Sim object; default is current directory
+            *coordinator*
+                directory of the Coordinator to associate with this object; if the
+                Coordinator does not exist, it is created [``None``] 
+            *categories*
                 dictionary with user-defined keys and values; basically used to
                 give Sims distinguishing characteristics
             *tags*
-                list with user-defined values; like category, but useful for
+                list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *detached*
-                if True, Sim will load WITHOUT attaching trajectory; this is
-                useful if only loadable analysis data are needed or
-                trajectories are unavailable; default False
-
-        :Keywords used on object re-generation:
-            *attach*
-                name of universe to attach
-            *load*
-                list of data elements to load
-
-        :Keywords always available:
+            *copy* [TODO]
+                if a Sim given, copy the contents into the new Sim;
+                elements copied include tags, categories, universes,
+                selections, and data 
 
         """
         super(Sim, self).__init__()
-            
-        self.universe = None      # universe 'dock'
+
+        self._universes = None
+        self._selections = None
+        self._universe = None     # universe 'dock'
         self._uname = None        # attached universe name 
-        self.selections = dict()  # AtomGroup selections
         self._cache = dict()      # cache path storage
-        
-        if (os.path.isdir(args[0])):
-        # if first arg is a directory string, load existing object
-            self._regenerate(*args, **kwargs)
+
+        if (os.path.isdir(sim)):
+            # if directory string, load existing object
+            self._regenerate(sim, universe=universe, uname=uname,
+                    categories=categories, tags=tags, copy=copy)
         else:
-        # if a structure and trajectory(s) are given, begin building new object
-            self._generate(*args, **kwargs)
-    
+            self._generate(sim, universe=universe, uname=uname,
+                    location=location, coordinator=coordinator,
+                    categories=categories, tags=tags, copy=copy)
+
     def __repr__(self):
-        if self._uname in self._cache:
-            out = "{}: '{}' | universe (cached): '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+        if not self._uname:
+            out = "<Sim: '{}'>".format(self._containerfile.get_name())
+        elif self._uname in self._cache:
+            out = "<Sim: '{}' | active universe (cached): '{}'>".format(self._containerfile.get_name(), self._uname)
         else:
-            out = "{}: '{}' | universe: '{}'".format(self.__class__.__name__, self.metadata['name'], self._uname)
+            out = "<Sim: '{}' | active universe: '{}'>".format(self._containerfile.get_name(), self._uname)
 
         return out
+
+    def __cmp__(self, other):
+        if self.name < other.name:
+            out = -1
+        elif self.name == other.name:
+            out = 0
+        elif self.name > other.name:
+            out = +1
+        return out
+
+    @property
+    def universe(self):
+        """The active Universe of the Sim.
+    
+        """
+        if self._uname in self._containerfile.list_universes():
+            return self._universe
+        elif not self._universe:
+            self.universes.activate()
+            return self._universe
+        else:
+            self.detach()
+            self._logger.info('This Universe is no longer defined. It has been detached')
+
+    @property
+    def universes(self):
+        """The universes of the Sim.
         
-    def _generate(self, *args, **kwargs):
+        """
+        if not self._universes:
+            self._universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
+        return self._universes
+
+    @property
+    def selections(self):
+        """The selections of the Sim.
+
+        """
+        # attach default universe if not attached
+        self.universe
+        if not self._selections:
+            self._selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
+        return self._selections
+
+    def _generate(self, sim, universe=None, uname='main', location='.',
+            coordinator=None, categories=None, tags=None, copy=None):
         """Generate new Sim object.
          
         """
-        detached = kwargs.pop('detached', False)
-        uname = kwargs.pop('universe', 'main')
-        system = MDAnalysis.Universe(*args, **kwargs)
+        # process keywords
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
 
-        # generate metadata items
-        self._build_metadata(**kwargs)
-        self._start_logger()
+        # generate state file
+        #TODO: need try, except for case where Sim already exists
 
-        # find or generate database
-        database = kwargs.pop('database', None)
-        self._init_database(database, locate=True)
+        # name mangling to give a valid directory name
+        # TODO: is this robust? What other characters are problematic?
+        dirname = sim.replace('/', '_')
+        os.makedirs(os.path.join(location, dirname))
+        statefile = os.path.join(location, dirname, Core.Files.simfile)
 
-        # record universe
-        self.metadata['universes'] = dict()
-        self.add('main', *args, **kwargs)
+        self._start_logger('Sim', sim)
+        self._containerfile = Core.Files.SimFile(statefile, self._logger,
+                name=sim, coordinator=coordinator, categories=categories,
+                tags=tags)
 
-        # record selections
-        self.metadata['selections'] = kwargs.pop('selections', dict())
-            
-        # finish up and save
-        self.save()
-        self._start_logger()
+        # add universe
+        if (uname and universe):
+            self.universes.add(uname, *universe)
+            self.universes.default(uname)
 
-        # finally, attach universe to object
-        if not detached:
-            self.attach(uname)
-
-    def _regenerate(self, *args, **kwargs):
+    def _regenerate(self, sim, universe=None, uname='main', categories=None,
+            tags=None, copy=None):
         """Re-generate existing Sim object.
         
         """
-        attach = kwargs.pop('attach', None)
-        load = kwargs.pop('load', None)
+        # process keywords
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
 
-        basedir = os.path.abspath(args[0])
-        self.metadata['basedir'] = basedir
-        
-        # get metadata (overwrites basedir metadata)
-        self.refresh()
-        
-        # update location of object if changed
-        self.metadata['basedir'] = basedir
+        # load state file object
+        statefile = os.path.join(sim, Core.Files.simfile)
+        self._containerfile = Core.Files.SimFile(statefile,
+                categories=categories, tags=tags)
 
-        # finish up and save
-        self._build_metadata(**kwargs)
-        self._start_logger()
-        self.save()
+        self._start_logger('Sim', self._containerfile.get_name())
+        self._containerfile._start_logger(self._logger)
 
-        # attach universe, if desired
-        if attach:
-            self.attach(attach)
-    
-    def add(self, uname, *args, **kwargs):
-        """Add a universe to the Sim.
+        # add universe
+        if (uname and universe):
+            self.universes.add(uname, *universe)
 
-        It is often useful to convert a raw MD trajectory into forms that are
-        convenient for different types of analysis. Given this, the Sim object
-        can associate with multiple trajectories, with the idea that all of
-        these trajectories are drawn from the same raw simulation. The same Sim
-        can thus be used to analyze every processed trajectory, keeping the
-        data for a single simulation together.
+class Group(_ContainerCore):
+    """The Group object is a collection of Sims and Groups.
 
-        This method adds one universe at a time. 
+    A Group object keeps track of any number of Sims and Groups added to it as
+    members, and it can store datasets derived from these objects in the same
+    way as Sims.
 
-        :Arguments:
-            *uname*
-                identifier to use for the new universe
-            *args*
-                arguments normally given to ``MDAnalysis.Universe``
+    To generate a Group object from scratch, we need only give it a name. We
+    can also give any number of Sim and/or Groups as an argument::
 
-        :Keywords:
-            **kwargs passed to ``MDAnalysis.Universe``
+        g = Group('gruffy', members=[s1, s2, s3, g4, g5])
 
-        """
-        system = MDAnalysis.Universe(*args, **kwargs)
-        self.metadata['universes'][uname] = dict()
+    The Group can store custom data structures the same way as Sims. These can
+    be pandas objects (e.g. Series, DataFrame, Panel), numpy arrays, or other
+    python objects::
 
-        self.metadata['universes'][uname]['structure'] = os.path.abspath(system.filename)
-        try:
-            self.metadata['universes'][uname]['trajectory'] = [ os.path.abspath(x) for x in system.trajectory.filenames ] 
-        except AttributeError:
-            self.metadata['universes'][uname]['trajectory'] = [os.path.abspath(system.trajectory.filename)]
-    
-        self.save()
+        a = np.random.randn(100, 100)
+        g.data.add('randomdata', a)
 
-    def remove(self, *universe):
-        """Remove a universe from Sim.
+    This can be recalled later with::
 
-        This just removes the universe reference from the Sim's metadata, so
-        it cannot be attached. This does not remove any other data, even if it
-        was generated from the removed universe.
+        g.data['randomdata']
 
-        :Arguments:
-            *universe*
-                identifier(s) of universe to remove
-        """
-        for n in universe:
-            self.metadata['universes'].pop(n)
-            if n == self._uname:
-                self.detach()
-        self.save()
+    The real strength of the Group object is how it stores its information. Generating
+    an object from scratch stores the information needed to re-generate it in the
+    filesystem. To generate another instance of the same Group, simply give the directory
+    where the state file lives::
 
-    def attach(self, universe, **kwargs):
-        """Attach universe.
+        g2 = Group('gruffy/')
 
-        If another universe is already attached, it is detached first.
-    
-        :Arguments:
-            *universe*
-                universe to attach
-
-        :Keywords:
-            *force*
-                if True, reattach universe even if already loaded; [``False``]
-        """
-        force = kwargs.pop('force', False)
-
-        if (universe != self._uname) or (force == True):
-            self._logger.info("Attaching '{}'...".format(universe))
-
-            # attach cached universe if found to be cached; otherwise, attach original
-            if universe in self._cache:
-                self._logger.info("Found '{}' in cache; attaching cached version (decache to load original).".format(universe))
-                structure = self._cache[universe]['structure']
-                trajectory = self._cache[universe]['trajectory']
-                self.universe = MDAnalysis.Universe(structure, *trajectory)
-            else:
-                structure = self.metadata['universes'][universe]['structure']
-                trajectory = self.metadata['universes'][universe]['trajectory']
-                self.universe = MDAnalysis.Universe(structure, *trajectory) 
-
-            self._uname = universe
-            self._logger.info("'{}' attached to universe '{}'.".format(self.metadata['name'], universe))
-            self._build_selections()
-            self._logger.info("Atom selections generated.".format(self.metadata['name'], universe))
-        else:
-            self._logger.info("Skipping re-attach of {}...".format(universe))
-
-    def detach(self):
-        """Detach universe.
-
-        """
-        self.universe = None
-        self._logger.info("'{}' detached from universe'{}'".format(self.metadata['name'], self._uname))
-        self._uname = None
-    
-    def cache(self, location):
-        """Copy trajectory to a temporary location, and attach it as a universe.
-
-        Useful if running analysis on a trajectory on a networked filesystem.
-        This method will physically copy the structure and trajectory for the
-        current universe to the specified *location*. Once transferred, the
-        universe will be re-attached from the new location.
-
-        :Arguments:
-            *location*
-                path to cache directory; will be made if it does not exist
-        """
-        if self._uname in self._cache:
-            self._logger.warning("Aborting cache; universe already cached.")
-            return
-            
-        # build and store location so we can delete it later
-        location = os.path.abspath(location)
-        loc = os.path.join(location, "{}.{}".format(self.metadata['uuid'], self._uname))
-
-        i = 1
-        location = "{}.{}".format(loc, i)
-        while os.path.exists(location):
-            i += 1
-            location = "{}.{}".format(loc, i)
-
-        self.util.makedirs(location)
-
-        # build cached structure and trajectory filenames
-        structure = self.metadata['universes'][self._uname]['structure']
-        trajectory = self.metadata['universes'][self._uname]['trajectory']
-
-        structure_c = os.path.join(location, os.path.basename(structure))
-        trajectory_c = [ os.path.join(location, os.path.basename(x)) for x in trajectory ]
-
-        # check before we accidentally overwrite valuable data
-        if (structure_c == structure) or (trajectory_c == trajectory):
-            self._logger.warning("Aborting cache; cache location same as storage!")
-            return
-
-        # copy to cache
-        self._logger.info("Caching trajectory to {}\nThis may take some time...".format(location))
-        shutil.copy2(structure, structure_c)
-        for traj, traj_c in zip(trajectory, trajectory_c):
-            shutil.copy2(traj, traj_c)
-
-        self._cache[self._uname] = dict()
-        self._cache[self._uname]['location'] = location
-        self._cache[self._uname]['structure'] = structure_c
-        self._cache[self._uname]['trajectory'] = trajectory_c
-
-        self.universe = MDAnalysis.Universe(structure_c, *trajectory_c)
-        self._logger.info("Universe '{}' now cached.".format(self._uname))
-    
-    def decache(self):
-        """Remove cached trajectory from cache; re-attach universe to original.
-
-        This operation deletes cached files, but ONLY cached files. It will not
-        delete original trajectories.
-
-        """
-        if not (self._uname in self._cache):
-            self._logger.info("Universe '{}' not cached.".format(universe))
-            return
-
-        structure = self.metadata['universes'][self._uname]['structure']
-        trajectory = self.metadata['universes'][self._uname]['trajectory']
-        
-        structure_c = self._cache[self._uname]['structure']
-        trajectory_c = self._cache[self._uname]['trajectory']
-        location_c = self._cache[self._uname]['location']
-
-        self._cache.pop(self._uname)
-        self.attach(self._uname, force=True)
-
-        # final safety feature before delete
-        if (structure_c == structure) or (trajectory_c == trajectory):
-            self._logger.warning("Somehow cache is also storage location. Stopping before delete!")
-        else:
-            shutil.rmtree(location_c)
-
-        self._logger.info("Universe '{}' de-cached.".format(self._uname))
-
-    def _build_selections(self):
-        """Build selections attribute from selection strings stored in metadata.
-
-        """
-        def selection2atomGroup(selection):
-            if isinstance(selection, dict):
-                for key in selection:
-                    selection[key] = selection2atomGroup(selection[key])
-            elif isinstance(selection, basestring):
-                agroup = self.universe.selectAtoms(selection)
-                return agroup
-        
-        self.selections = selection2atomGroup(self.metadata['selections'])
-
-    def _build_metadata(self, **kwargs):
-        """Build metadata. Runs each time object is generated.
-        
-        Only adds keys; never modifies existing ones.
-
-        :Keywords:
-            *name*
-                desired name of object, used for logging and referring to
-                object in some analyses; default None
-        """
-        super(Sim, self)._build_metadata(**kwargs)
-
-        # building core items
-        uuid = self._generate_uuid()
-        attributes = {'selections': kwargs.pop('selections', dict()),
-                      }
-
-        for key in attributes:
-            if not key in self.metadata:
-                self.metadata[key] = attributes[key]
-        
-class Group(ContainerCore):
-    """Base class for a grouping of simulation objects.
+    The Group object will give access to its members and stored data as before.
 
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, group, members=None, location='.', coordinator=None, categories=None,
+                 tags=None, copy=None):
         """Generate or regenerate a Group object.
 
-        :Arguments:
-              *args*
-                either a string giving the path to a directory with a Group object
-                metadata file, or any number of re-generated Sim-derived
-                objects 
+        :Required Arguments:
+            *group*
+                if generating a new Group, the desired name to give it;
+                if regenerating an existing Group, string giving the path
+                to the directory containing the Group object's state file
 
-        :Keywords:
-            *name*
-                desired name for object, used for logging and referring to
-                object in some analyses; default is class name
-            *database*
-                directory of the database to associate with this object; if the
-                database does not exist, it is created; if none is specified, a
-                database is created in the current directory
-            *category*
+        :Optional arguments:
+            *members*
+                a list of Sims and/or Groups to immediately add as members
+            *location*
+                directory to place Group object; default is current directory
+            *coordinator*
+                directory of the Coordinator to associate with this object; if the
+                Coordinator does not exist, it is created [``None``] 
+            *categories*
                 dictionary with user-defined keys and values; basically used to
-                give Sims distinguishing characteristics
+                give Groups distinguishing characteristics
             *tags*
-                list with user-defined values; like category, but useful for
+                list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *detached*
-                if True, members will load WITHOUT attaching trajectories or
-                loading additional attributes; this is useful if only loadable
-                analysis data are needed or trajectories are unavailable;
-                default False
-                
+            *copy* [TODO]
+                if a Group given, copy the contents into the new Group;
+                elements copied include tags, categories, members, and data
+
         """
         super(Group, self).__init__()
-        self.members = list()           # member list
+        self._members = None
+        self._cache = dict()    # member cache
 
-        if isinstance(args[0], basestring):
-        # if first arg is a directory string, load existing object
-            self._regenerate(*args, **kwargs)
+        if (os.path.isdir(group)):
+            # if directory string, load existing object
+            self._regenerate(group, members=members, categories=categories,
+                    tags=tags, copy=copy)
         else:
-        # if a number of Sim-derived objects are given, build a new group 
-            self._generate(*args, **kwargs)
+            self._generate(group, members=members, location=location,
+                    coordinator=coordinator, categories=categories, tags=tags,
+                    copy=copy)
 
-    def load_members(self, *args, **kwargs):
-        """Load data instances for individual members of group.
-    
-        :Arguments:
-            *args*
-                datasets to load into each member
+    def __repr__(self):
+        members = self._containerfile.get_members_containertype()
 
-        :Keywords:
-            *all*
-                if True, unload all data instances [``False``]
+        sims = members.count('Sim')
+        groups = members.count('Group')
+
+        out = "<Group: '{}' | {} Members: ".format(self._containerfile.get_name(), 
+                                                len(members))
+        if sims:
+            out = out + "{} Sim".format(sims)
+            if groups:
+                out = out + ", {} Group".format(groups)
+        elif groups:
+            out = out + "{} Group".format(groups)
+
+        out = out + ">"
+
+        return out
+
+    @property
+    def members(self):
+        """The members of the Group.
+        
         """
-        for member in self.members:
-            member.load(*args)
+        if not self._members:
+            self._members = Core.Aggregators.Members(self, self._containerfile, self._logger)
+        return self._members
 
-    def unload_members(self, *args):
-        """Unload data instances from individual members of group.
-
-        :Arguments:
-            *args*
-                datasets to unload from each member
-
-        :Keywords:
-            *all*
-                if True, unload all data instances from each member [``False``]
-        """
-        for member in self.members:
-            member.unload(*args)
-
-    def add(self, *args): 
-        """Add a member to the Group.
-    
-        :Arguments:
-            *args*
-                Sim-derived objects to add to Group
-        """
-        for container in args:
-            self.metadata['members'].append({'name': container.metadata['name'],
-                                             'class': container.metadata['class'],
-                                             'basedir': container.metadata['basedir'],
-                                             'uuid': container.metadata['uuid']
-                                            })
-            self.members.append(container)
-        self.save()
-
-    def remove(self, *args):
-        """Remove a member from the Group.
-
-        :Arguments:
-            *args*
-                index of member in self.members to be removed from Group
-        """
-        for index in args:
-            self.metadata['members'].pop(index)
-            self.members.pop(index)
-        self.save()
-
-    def _update_members(self):
-        """Update member attributes.
-
-        """
-        for i in xrange(len(self.members)):
-            self.metadata['members'][i]['name'] = self.members[i].metadata['name']
-
-        self.save()
-            
-    def _generate(self, *args, **kwargs):
+    def _generate(self, group, members=None, location='.', coordinator=None,
+                  categories=None, tags=None, copy=None):
         """Generate new Group.
          
         """
-        # generate metadata items
-        self._build_metadata(**kwargs)
-        self._start_logger()
+        # process keywords
+        if not members:
+            members = list()
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
 
-        # find or generate database
-        database = kwargs.pop('database', None)
-        self._init_database(database, locate=True)
+        # name mangling to give a valid directory name
+        # TODO: is this robust? What other characters are problematic?
+        dirname = group.replace('/', '_')
+        os.makedirs(os.path.join(location, dirname))
+        statefile = os.path.join(location, dirname, Core.Files.groupfile)
 
-        # build list of Group members
-        self.metadata['members'] = list()
-        self.add(*args)
+        self._start_logger('Group', group)
+        self._containerfile = Core.Files.GroupFile(statefile, self._logger,
+                name=group, coordinator=coordinator, categories=categories,
+                tags=tags)
 
-        # finish up and save
-        self.save()
-        self._start_logger()
+        # add members
+        self.members.add(*members)
     
-    def _regenerate(self, *args, **kwargs):
+    def _regenerate(self, group, members=None, categories=None, tags=None,
+            copy=None):
         """Re-generate existing object.
         
         """
-        basedir = os.path.abspath(args[0])
-        self.metadata['basedir'] = basedir
-        
-        # get metadata (overwrites basedir metadata)
-        self.refresh()
+        # process keywords
+        if not members:
+            members = list()
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
 
-        # update location of object if changed
-        self.metadata['basedir'] = basedir
+        # load state file object
+        statefile = os.path.join(group, Core.Files.groupfile)
+        self._containerfile = Core.Files.GroupFile(statefile,
+                categories=categories, tags=tags)
 
-        # finish up and save
-        self._build_metadata(**kwargs)
-        self._start_logger()
-        self.save()
+        self._start_logger('Group', self._containerfile.get_name())
+        self._containerfile._start_logger(self._logger)
 
-        # attach members to object
-        self._attach_members(**kwargs)
-        self._update_members()
-
-    def _attach_members(self, **kwargs):
-        """Attach member to Group object.
-            
-        Keyword arguments passed to Sim-derived object __init__().
-
-        """
-        for member in self.metadata['members']:
-            Simtype = self._simtype(member['class'])
-            self.members.append(Simtype(member['basedir'], **kwargs))
-    
-    def _simtype(self, typestring):
-        """Return Sim or Sim-derived object based on type recorded in object
-           metadata.
-
-        :Arguments:
-            *typestring*
-                string pulled from Sim-derived object metadata signifying the
-                object type (e.g. for a plain Sim object, this is ``Sim``)
-        """
-        objectout = None
-        if typestring == 'Sim':
-            objectout = Sim
-            
-        return objectout
-
-    def _find_member(self, *uuid):
-        """Find a member that has gone missing by consulting the Database.
-
-        """
-
+        # add members
+        self.members.add(*members)
