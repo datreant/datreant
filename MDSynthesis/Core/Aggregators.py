@@ -929,23 +929,22 @@ class Data(Aggregator):
                 row number to stop selection
     
         """
+        datafile, datafiletype = self._get_datafile(handle)
 
-        if kwargs: 
-            if os.path.exists(self._get_datafile(handle)):
-                self._delete_data(handle, **kwargs)
-            else:
-                self._logger.info("No data named '{}' present".format(handle))
-        else:
-            datafile = self._get_datafile(handle)
-
-            if os.path.exists(self._get_datafile(handle)):
-                os.remove(datafile)
+        if datafiletype == Files.pddatafile:
+            self._delete_data(handle, **kwargs)
+        elif datafiletype == Files.npdatafile:
+            os.remove(datafile)
+            top = self._containerfile.get_location()
+            directory = os.path.dirname(datafile)
+            while directory != top:
                 try: 
-                    os.rmdir(os.path.dirname(datafile))
+                    os.rmdir(directory)
+                    directory = os.path.dirname(directory)
                 except OSError:
-                    self._logger.info("Directory for '{}' not empty. Retaining directory.".format(handle))
-            else:
-                self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
+                    break
+        else:
+            self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
 
     @_write_datafile
     def _delete_data(self, handle, **kwargs):
@@ -975,16 +974,17 @@ class Data(Aggregator):
             self._datafile.del_data('main', **kwargs)
         except NotImplementedError:
             self._logger.info("Dataset '{}' empty; removing.".format(handle))
-            datafile = self._get_datafile(handle)
+            datafile = self._get_datafile(handle)[0]
 
-            if os.path.exists(self._get_datafile(handle)):
-                os.remove(datafile)
+            os.remove(datafile)
+            top = self._containerfile.get_location()
+            directory = os.path.dirname(datafile)
+            while directory != top:
                 try: 
-                    os.rmdir(os.path.dirname(datafile))
+                    os.rmdir(directory)
+                    directory = os.path.dirname(directory)
                 except OSError:
-                    self._logger.info("Directory for '{}' not empty. Retaining directory.".format(handle))
-            else:
-                self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
+                    break
 
     @_read_datafile
     def retrieve(self, handle, **kwargs):
@@ -1066,13 +1066,31 @@ class Data(Aggregator):
 
         """
         datasets = list()
-        for root, dirs, files in os.walk(self._containerfile.get_location()):
+        top = self._containerfile.get_location()
+        for root, dirs, files in os.walk(top):
             if (Files.pddatafile in files) or (Files.npdatafile in files):
-                datasets.append(os.path.basename(root))
+                datasets.append(os.path.relpath(root, start=top))
 
         datasets.sort()
     
         return datasets
+
+    def locate(self, handle):
+        """Get location for stored data.
+
+        Useful if preparing plots or other files derived from the dataset,
+        since these can be stored with the data in its own directory.
+
+        :Arguments:
+            *handle*
+                name of data to retrieve location of
+
+        :Returns:
+            *datadir*
+                absolute path to directory containing stored data
+
+        """
+        return os.path.dirname(self._get_datafile(handle)[0])
 
 class Database(Aggregator):
     """Database object for tracking and coordinating Containers.

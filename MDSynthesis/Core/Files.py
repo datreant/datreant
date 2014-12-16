@@ -256,11 +256,12 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            if self.handle.is_open:
+            try:
+                self.handle.mode
                 out = func(self, *args, **kwargs)
-            else:
+            except ValueError:
                 self.handle = h5py.File(self.filename, 'r')
-                self._shlock(self.handle.fid.fileno[0])
+                self._shlock(self.handle.fid.get_vfd_handle())
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
@@ -282,13 +283,12 @@ class File(object):
         @wraps(func)
         def inner(self, *args, **kwargs):
             self.handle = h5py.File(self.filename, 'a')
-            self._exlock(self.handle.fid.fileno[0])
+            self._exlock(self.handle.fid.get_vfd_handle())
             try:
                 out = func(self, *args, **kwargs)
             finally:
                 self.handle.close()
             return out
-
 
         return inner
 
@@ -1449,7 +1449,8 @@ class DataFile(object):
         self.logger = logger
 
     def add_data(self, key, data):
-        """Add a pandas data object (Series, DataFrame, Panel) to the data file.
+        """Add a pandas data object (Series, DataFrame, Panel) or numpy array
+        to the data file.
 
         If data already exists for the given key, then it is overwritten.
     
@@ -1458,10 +1459,9 @@ class DataFile(object):
                 name given to the data; used as the index for retrieving
                 the data later
             *data*
-                the data object to store; should be either a Series, DataFrame,
-                or Panel
+                the data object to store; should be either a pandas Series,
+                DataFrame, Panel, or a numpy array
         """
-        pdb.set_trace()
         if isinstance(data, np.ndarray):
             self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
         else:
@@ -1498,7 +1498,7 @@ class DataFile(object):
             self.datafile = None
 
     def get_data(self, key, **kwargs):
-        """Retrieve pandas object stored in file, optionally based on where criteria.
+        """Retrieve data object stored in file.
 
         :Arguments:
             *key*
@@ -1506,18 +1506,19 @@ class DataFile(object):
         
         :Keywords:
             *where*
-                conditions for what rows/columns to return
+                for pandas objects, conditions for what rows/columns to return
             *start* 
-                row number to start selection
+                for pandas objects, row number to start selection
             *stop*  
-                row number to stop selection
+                for pandas objects, row number to stop selection
             *columns*
-                list of columns to return; all columns returned by default
+                for pandas objects, list of columns to return; all columns
+                returned by default 
             *iterator* 
-                if True, return an iterator [``False``]
+                for pandas objects, if True, return an iterator [``False``]
             *chunksize*
-                number of rows to include in iteration; implies
-                ``iterator=True`` 
+                for pandas objects, number of rows to include in iteration;
+                implies ``iterator=True`` 
 
         :Returns:
             *data*
@@ -1525,12 +1526,12 @@ class DataFile(object):
         """
         if self.datafiletype == npdatafile:
             self.datafile = npDataFile(os.path.join(self.datadir, npdatafile))
-            out = self.datafile.get_data(key, data, **kwargs)
+            out = self.datafile.get_data(key, **kwargs)
             self.datafile = None
 
         elif self.datafiletype == pddatafile:
             self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
-            out = self.datafile.get_data(key, data, **kwargs)
+            out = self.datafile.get_data(key, **kwargs)
             self.datafile = None
         else:
             self.logger.info('Cannot return data without knowing datatype.')
@@ -1547,11 +1548,11 @@ class DataFile(object):
 
         :Keywords:
             *where*
-                conditions for what rows/columns to remove
+                for pandas objects, conditions for what rows/columns to remove
             *start* 
-                row number to start selection
+                for pandas objecs, row number to start selection
             *stop*  
-                row number to stop selection
+                for pandas objects, row number to stop selection
         
         """
         if self.datafiletype == npdatafile:
@@ -1574,7 +1575,7 @@ class DataFile(object):
         HDF5 data tree, we wish to abstract this away. We remove the leading
         '\' from the output. This shouldn't cause any problems since the
         leading '\' can be neglected when referring to stored objects by name
-        using all of pandas.HDFStore's methods anyway.
+        using all of pandas.HDFStore and h5py.File methods anyway.
 
         """
         if self.datafiletype == npdatafile:
@@ -1738,14 +1739,13 @@ class npDataFile(File):
         """
         super(npDataFile, self).__init__(filename, logger=logger)
 
-        pdb.set_trace()
         # open file for the first time to initialize handle
         self.handle = h5py.File(self.filename, 'a')
         self.handle.close()
 
     @File._write_npdata
     def add_data(self, key, data):
-        """Add a pandas data object (Series, DataFrame, Panel) to the data file.
+        """Add a numpy array to the data file.
 
         If data already exists for the given key, then it is overwritten.
     
@@ -1754,8 +1754,7 @@ class npDataFile(File):
                 name given to the data; used as the index for retrieving
                 the data later
             *data*
-                the data object to store; should be either a Series, DataFrame,
-                or Panel
+                the numpy array to store
         """
         try:
             self.handle.create_dataset(key, data=data)
@@ -1765,32 +1764,17 @@ class npDataFile(File):
 
     @File._read_npdata
     def get_data(self, key, **kwargs):
-        """Retrieve pandas object stored in file, optionally based on where criteria.
+        """Retrieve numpy array stored in file.
 
         :Arguments:
             *key*
                 name of data to retrieve
         
-        :Keywords:
-            *where*
-                conditions for what rows/columns to return
-            *start* 
-                row number to start selection
-            *stop*  
-                row number to stop selection
-            *columns*
-                list of columns to return; all columns returned by default
-            *iterator* 
-                if True, return an iterator [``False``]
-            *chunksize*
-                number of rows to include in iteration; implies
-                ``iterator=True`` 
-
         :Returns:
             *data*
                 the selected data
         """
-        return self.handle[key]
+        return self.handle[key][:]
 
     @File._write_npdata
     def del_data(self, key, **kwargs):
@@ -1800,14 +1784,6 @@ class npDataFile(File):
             *key*
                 name of data to delete
 
-        :Keywords:
-            *where*
-                conditions for what rows/columns to remove
-            *start* 
-                row number to start selection
-            *stop*  
-                row number to stop selection
-        
         """
         del self.handle[key]
     
@@ -1819,7 +1795,7 @@ class npDataFile(File):
         HDF5 data tree, we wish to abstract this away. We remove the leading
         '\' from the output. This shouldn't cause any problems since the
         leading '\' can be neglected when referring to stored objects by name
-        using all of pandas.HDFStore's methods anyway.
+        using all of h5py.File's methods anyway.
 
         """
         keys = self.handle.keys()
