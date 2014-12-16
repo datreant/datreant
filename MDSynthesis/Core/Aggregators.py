@@ -773,12 +773,22 @@ class Data(Aggregator):
 
         :Returns:
             *datafile*
-                datafile path
+                datafile path; None if does not exist
+            *datafiletype*
+                datafile type; either ``Files.pddatafile`` or 
+                ``Files.npdatafile``
 
         """
-        datafile = os.path.join(self._containerfile.get_location(), 
-                                handle, Files.datafile) 
-        return datafile
+        datafile = None
+        datafiletype = None
+        for dfiletype in (Files.pddatafile, Files.npdatafile):
+            dfile = os.path.join(self._containerfile.get_location(), 
+                                    handle, dfiletype) 
+            if os.path.exists(dfile):
+                datafile = dfile
+                datafiletype = dfiletype
+
+        return (datafile, datafiletype)
 
     def _read_datafile(func):
         """Decorator for generating DataFile instance for reading data.
@@ -794,11 +804,11 @@ class Data(Aggregator):
         """
         @wraps(func)
         def inner(self, handle, *args, **kwargs):
-            filename = os.path.join(self._containerfile.get_location(), 
-                                    handle, Files.datafile) 
+            filename, filetype = self._get_datafile(handle)
 
-            if os.path.exists(filename):
-                self._datafile = Files.DataFile(filename, logger=self._logger)
+            if filename:
+                self._datafile = Files.DataFile(os.path.join(self._containerfile.get_location(), handle), 
+                        logger=self._logger, datafiletype=filetype) 
                 try:
                     out = func(self, handle, *args, **kwargs)
                 finally:
@@ -826,10 +836,9 @@ class Data(Aggregator):
         @wraps(func)
         def inner(self, handle, *args, **kwargs):
             dirname = os.path.join(self._containerfile.get_location(), handle)
-            filename = os.path.join(dirname, Files.datafile) 
 
             self._makedirs(dirname)
-            self._datafile = Files.DataFile(filename, logger=self._logger)
+            self._datafile = Files.DataFile(dirname, logger=self._logger)
 
             try:
                 out = func(self, handle, *args, **kwargs)
@@ -1058,7 +1067,7 @@ class Data(Aggregator):
         """
         datasets = list()
         for root, dirs, files in os.walk(self._containerfile.get_location()):
-            if Files.datafile in files:
+            if (Files.pddatafile in files) or (Files.npdatafile in files):
                 datasets.append(os.path.basename(root))
 
         datasets.sort()

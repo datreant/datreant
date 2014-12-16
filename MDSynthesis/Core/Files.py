@@ -8,12 +8,16 @@ import Workers
 from uuid import uuid4
 import tables
 import pandas
+import numpy as np
+import h5py
 import fcntl
 import os
 import sys
 import logging
 from functools import wraps
 import MDSynthesis
+
+import pdb
 
 # Sim state file
 simfile = "Sim.h5"
@@ -24,8 +28,11 @@ groupfile = "Group.h5"
 # Container log
 containerlog = "log.out"
 
-# Datafile
-datafile = "Data.h5"
+# pandas Datafile
+pddatafile = "pdData.h5"
+
+# numpy Datafile
+npdatafile = "npData.h5"
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
@@ -190,7 +197,7 @@ class File(object):
         return inner
     
     @staticmethod
-    def _read_data(func):
+    def _read_pddata(func):
         """Decorator for opening data file for reading and applying shared lock.
         
         Applying this decorator to a method will ensure that the file is opened
@@ -215,7 +222,7 @@ class File(object):
         return inner
     
     @staticmethod
-    def _write_data(func):
+    def _write_pddata(func):
         """Decorator for opening data file for writing and applying exclusive lock.
         
         Applying this decorator to a method will ensure that the file is opened
@@ -228,6 +235,54 @@ class File(object):
         def inner(self, *args, **kwargs):
             self.handle = pandas.HDFStore(self.filename, 'a')
             self._exlock(self.handle._handle)
+            try:
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
+            return out
+
+
+        return inner
+    
+    @staticmethod
+    def _read_npdata(func):
+        """Decorator for opening data file for reading and applying shared lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            if self.handle.is_open:
+                out = func(self, *args, **kwargs)
+            else:
+                self.handle = h5py.File(self.filename, 'r')
+                self._shlock(self.handle.fid.fileno[0])
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
+            return out
+
+        return inner
+    
+    @staticmethod
+    def _write_npdata(func):
+        """Decorator for opening data file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = h5py.File(self.filename, 'a')
+            self._exlock(self.handle.fid.fileno[0])
             try:
                 out = func(self, *args, **kwargs)
             finally:
@@ -1365,8 +1420,180 @@ class DatabaseFile(File):
 
     """
 
-class DataFile(File):
+class DataFile(object):
     """Interface to data files.
+
+    This is an abstraction layer to the pdDataFile and npDataFile objects.
+    This can be used by higher level objects without worrying about whether
+    to use pandas storers or numpy storers.
+
+    """
+    def __init__(self, datadir, logger=None, datafiletype=None, **kwargs): 
+        """Initialize data interface.
+
+        :Arguments:
+           *datadir*
+              path to data directory
+           *logger*
+              Container's logger instance
+           *datafiletype*
+              If known, either pddatafile or npdatafile
+
+        """
+        self.datadir = datadir
+        self.datafile = None
+
+        # if given, can get data
+        self.datafiletype = datafiletype
+
+        self.logger = logger
+
+    def add_data(self, key, data):
+        """Add a pandas data object (Series, DataFrame, Panel) to the data file.
+
+        If data already exists for the given key, then it is overwritten.
+    
+        :Arguments:
+            *key*
+                name given to the data; used as the index for retrieving
+                the data later
+            *data*
+                the data object to store; should be either a Series, DataFrame,
+                or Panel
+        """
+        pdb.set_trace()
+        if isinstance(data, np.ndarray):
+            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
+        else:
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
+
+        self.datafile.add_data(key, data)
+
+        # dereference
+        self.datafile = None
+
+    def append_data(self, key, data):
+        """Append rows to an existing pandas data object stored in the data file.
+
+        Note that column names of new data must match those of the existing
+        data. Columns cannot be appended due to the technical details of the
+        HDF5 standard. To add new columns, store as a new dataset.
+    
+        :Arguments:
+            *key*
+                name of existing data object to append to
+            *data*
+                the data object whose rows are to be appended to the existing
+                stored data; must have same columns (with names) as existing
+                data 
+
+        """
+        if isinstance(data, np.ndarray):
+            self.logger.info('Cannot append numpy arrays.')
+        else:
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
+            self.datafile.append(key, data, data_columns=True)
+
+            # dereference
+            self.datafile = None
+
+    def get_data(self, key, **kwargs):
+        """Retrieve pandas object stored in file, optionally based on where criteria.
+
+        :Arguments:
+            *key*
+                name of data to retrieve
+        
+        :Keywords:
+            *where*
+                conditions for what rows/columns to return
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
+            *columns*
+                list of columns to return; all columns returned by default
+            *iterator* 
+                if True, return an iterator [``False``]
+            *chunksize*
+                number of rows to include in iteration; implies
+                ``iterator=True`` 
+
+        :Returns:
+            *data*
+                the selected data
+        """
+        if self.datafiletype == npdatafile:
+            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile))
+            out = self.datafile.get_data(key, data, **kwargs)
+            self.datafile = None
+
+        elif self.datafiletype == pddatafile:
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
+            out = self.datafile.get_data(key, data, **kwargs)
+            self.datafile = None
+        else:
+            self.logger.info('Cannot return data without knowing datatype.')
+            out = None
+
+        return out
+
+    def del_data(self, key, **kwargs):
+        """Delete a stored data object.
+
+        :Arguments:
+            *key*
+                name of data to delete
+
+        :Keywords:
+            *where*
+                conditions for what rows/columns to remove
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
+        
+        """
+        if self.datafiletype == npdatafile:
+            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile))
+            out = self.datafile.del_data(key, data, **kwargs)
+            self.datafile = None
+
+        elif self.datafiletype == pddatafile:
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
+            out = self.datafile.del_data(key, data, **kwargs)
+            self.datafile = None
+        else:
+            self.logger.info('Cannot return data without knowing datatype.')
+            out = None
+
+    def list_data(self):
+        """List names of all stored datasets.
+
+        Although the true names start with '\' indicating the root of the
+        HDF5 data tree, we wish to abstract this away. We remove the leading
+        '\' from the output. This shouldn't cause any problems since the
+        leading '\' can be neglected when referring to stored objects by name
+        using all of pandas.HDFStore's methods anyway.
+
+        """
+        if self.datafiletype == npdatafile:
+            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile))
+            out = self.datafile.list_data(key, data, **kwargs)
+            self.datafile = None
+
+        elif self.datafiletype == pddatafile:
+            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile))
+            out = self.datafile.list_data(key, data, **kwargs)
+            self.datafile = None
+        else:
+            self.logger.info('Cannot return data without knowing datatype.')
+            out = None
+        
+        return out
+
+class pdDataFile(File):
+    """Interface to pandas object data files.
 
     Data is stored as pandas data structures (Series, DataFrame, Panel) in
     the HDF5 format. This class gives the needed components for storing
@@ -1384,13 +1611,13 @@ class DataFile(File):
               Container's logger instance
 
         """
-        super(DataFile, self).__init__(filename, logger=logger)
+        super(pdDataFile, self).__init__(filename, logger=logger)
 
         # open file for the first time to initialize handle
         self.handle = pandas.HDFStore(self.filename, 'a')
         self.handle.close()
 
-    @File._write_data
+    @File._write_pddata
     def add_data(self, key, data):
         """Add a pandas data object (Series, DataFrame, Panel) to the data file.
 
@@ -1410,7 +1637,7 @@ class DataFile(File):
         except AttributeError:
             self.handle.put(key, data, format='table')
 
-    @File._write_data
+    @File._write_pddata
     def append_data(self, key, data):
         """Append rows to an existing pandas data object stored in the data file.
 
@@ -1429,7 +1656,7 @@ class DataFile(File):
         """
         self.handle.append(key, data, data_columns=True)
 
-    @File._read_data
+    @File._read_pddata
     def get_data(self, key, **kwargs):
         """Retrieve pandas object stored in file, optionally based on where criteria.
 
@@ -1458,7 +1685,7 @@ class DataFile(File):
         """
         return self.handle.select(key, **kwargs)
 
-    @File._write_data
+    @File._write_pddata
     def del_data(self, key, **kwargs):
         """Delete a stored data object.
 
@@ -1477,7 +1704,7 @@ class DataFile(File):
         """
         self.handle.remove(key, **kwargs)
     
-    @File._read_data
+    @File._read_pddata
     def list_data(self):
         """List names of all stored datasets.
 
@@ -1490,3 +1717,110 @@ class DataFile(File):
         """
         keys = self.handle.keys()
         return [ i.lstrip('/') for i in keys ]
+
+class npDataFile(File):
+    """Interface to numpy object data files.
+
+    Data is stored as numpy arrays in the HDF5 format. This class gives the
+    needed components for storing and retrieving stored data. It uses h5py as
+    its backend.
+
+    """
+    def __init__(self, filename, logger=None, **kwargs): 
+        """Initialize data file.
+
+        :Arguments:
+           *filename*
+              path to file
+           *logger*
+              Container's logger instance
+
+        """
+        super(npDataFile, self).__init__(filename, logger=logger)
+
+        pdb.set_trace()
+        # open file for the first time to initialize handle
+        self.handle = h5py.File(self.filename, 'a')
+        self.handle.close()
+
+    @File._write_npdata
+    def add_data(self, key, data):
+        """Add a pandas data object (Series, DataFrame, Panel) to the data file.
+
+        If data already exists for the given key, then it is overwritten.
+    
+        :Arguments:
+            *key*
+                name given to the data; used as the index for retrieving
+                the data later
+            *data*
+                the data object to store; should be either a Series, DataFrame,
+                or Panel
+        """
+        try:
+            self.handle.create_dataset(key, data=data)
+        except RuntimeError:
+            del self.handle[key]
+            self.handle.create_dataset(key, data=data)
+
+    @File._read_npdata
+    def get_data(self, key, **kwargs):
+        """Retrieve pandas object stored in file, optionally based on where criteria.
+
+        :Arguments:
+            *key*
+                name of data to retrieve
+        
+        :Keywords:
+            *where*
+                conditions for what rows/columns to return
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
+            *columns*
+                list of columns to return; all columns returned by default
+            *iterator* 
+                if True, return an iterator [``False``]
+            *chunksize*
+                number of rows to include in iteration; implies
+                ``iterator=True`` 
+
+        :Returns:
+            *data*
+                the selected data
+        """
+        return self.handle[key]
+
+    @File._write_npdata
+    def del_data(self, key, **kwargs):
+        """Delete a stored data object.
+
+        :Arguments:
+            *key*
+                name of data to delete
+
+        :Keywords:
+            *where*
+                conditions for what rows/columns to remove
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
+        
+        """
+        del self.handle[key]
+    
+    @File._read_npdata
+    def list_data(self):
+        """List names of all stored datasets.
+
+        Although the true names start with '\' indicating the root of the
+        HDF5 data tree, we wish to abstract this away. We remove the leading
+        '\' from the output. This shouldn't cause any problems since the
+        leading '\' can be neglected when referring to stored objects by name
+        using all of pandas.HDFStore's methods anyway.
+
+        """
+        keys = self.handle.keys()
+        return keys
