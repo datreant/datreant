@@ -95,6 +95,10 @@ class _ContainerCore(object):
     @property
     def location(self):
         """The location of the Container.
+
+        Setting the location to a new path physically moves the Container to
+        the given location. This only works if the new location is an empty or
+        nonexistent directory.
     
         """
         return self._containerfile.get_location()
