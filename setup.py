@@ -10,11 +10,11 @@ For a basic installation just type the command::
 from setuptools import setup
 
 setup(name='MDSynthesis',
-      version='0.3.0-dev',
+      version='0.4.0-dev',
       author='David Dotson', 
       author_email='dotsdl@gmail.com',
       packages=['MDSynthesis', 'MDSynthesis.Core'],
       license='GPL 2',
       long_description=open('README').read(),
-      requires=['MDAnalysis', 'pandas', 'tables']
+      requires=['MDAnalysis', 'pandas', 'tables', 'h5py']
      )

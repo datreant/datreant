@@ -165,31 +165,47 @@ class Sim(_ContainerCore):
     A Sim object contains all the machinery required to handle trajectories and
     the data generated from them in an organized and object-oriented fashion.
 
-    To generate a Sim object from scratch, provide a topology and a trajectory
-    in the same way you would for a Universe (:class:`MDAnalysis.Universe`). 
+    To generate a Sim object from scratch, we need only give it a name. This
+    will be used to distinguish the Sim from other Sims, though it need not be
+    unique. We can also give it a topology and/or trajectory files as we would
+    to an MDAnalysis Universe::
+        
+        s = Sim('fluffy', universe=[topology, trajectory])
 
-    For example, as with a Universe::
+    This will create a directory ``name`` that contains a single file (``Sim.h5``).
+    That file is a persistent representation of the Sim on disk. We can access
+    trajectory data by way of an MDAnalysis Universe::
 
-       s = Sim(topology, trajectory)          # read system from file(s)
-       s = Sim(pdbfile)                       # read atoms and coordinates from PDB or GRO
-       s = Sim(topology, [traj1, traj2, ...]) # read from a list of trajectories
-       s = Sim(topology, traj1, traj2, ...)   # read from multiple trajectories
+        s.universe
+
+    It can also store selections by giving the usual inputs to
+    ``Universe.selectAtoms``::
+
+        s.selections.add('backbone', ['name CA', 'name C', 'name O1', 'name O2'])
+
+    And the AtomGroup can be conveniently obtained with::
+
+        s.selections['backbone']
+
+    The Sim can also store custom data structures. These can be pandas objects
+    (e.g. Series, DataFrame, Panel), numpy arrays, or other python objects::
+
+        a = np.random.randn(100, 100)
+        s.data.add('randomdata', a)
+
+    This can be recalled later with::
+
+        s.data['randomdata']
 
     The real strength of the Sim object is how it stores its information. Generating
     an object from scratch stores the information needed to re-generate it in the
-    filesystem. By default, this is the current working directory::
+    filesystem. To generate another instance of the same Sim, simply give the directory
+    where the state file lives::
 
-        ./Sim
+        s2 = Sim('fluffy/')
 
-    This directory contains a state file with all the information needed by the
-    object to find its trajectories and other generated data.
-
-    To regenerate an existing Sim object, give a directory that contains a Sim
-    object state file instead of a topology::
-
-        s = Sim('path/to/sim/directory')
-
-    The Sim object will be back as it was before.
+    The Sim object will give access to the Universe, stored selections, and stored data
+    as before.
 
     """
 
@@ -357,24 +373,30 @@ class Group(_ContainerCore):
     members, and it can store datasets derived from these objects in the same
     way as Sims.
 
-    To generate a Group object from scratch, give as arguments any number of Sim
-    and/or Groups.
+    To generate a Group object from scratch, we need only give it a name. We
+    can also give any number of Sim and/or Groups as an argument::
 
-    Generating an object from scratch stores the information needed to
-    re-generate it in the filesystem. By default, this is the current working
-    directory::
+        g = Group('gruffy', members=[s1, s2, s3, g4, g5])
 
-        ./Group
+    The Group can store custom data structures the same way as Sims. These can
+    be pandas objects (e.g. Series, DataFrame, Panel), numpy arrays, or other
+    python objects::
 
-    This directory contains a state file with all the information needed by the
-    object to find its members and other generated data.
+        a = np.random.randn(100, 100)
+        g.data.add('randomdata', a)
 
-    To regenerate an existing Group object, give a directory that contains a Group
-    object state file as the first argument:
+    This can be recalled later with::
 
-        g = Group('path/to/sim/directory')
+        g.data['randomdata']
 
-    The Group object will be back as it was before.
+    The real strength of the Group object is how it stores its information. Generating
+    an object from scratch stores the information needed to re-generate it in the
+    filesystem. To generate another instance of the same Group, simply give the directory
+    where the state file lives::
+
+        g2 = Group('gruffy/')
+
+    The Group object will give access to its members and stored data as before.
 
     """
     def __init__(self, group, members=None, location='.', coordinator=None, categories=None,
