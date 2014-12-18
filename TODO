@@ -2,6 +2,10 @@
 TODO List
 =============
 
+2014.12.18
+----------
+Need selections to update instead of having to manually delete them.
+
 2014.12.9
 ---------
 We will need to do some kind of caching for Group members. Reloading them on
