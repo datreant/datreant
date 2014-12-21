@@ -308,7 +308,7 @@ class Sim(_ContainerCore):
         elif self.name > other.name:
             out = +1
         return out
-
+    
     @property
     def universe(self):
         """The active universe of the Sim.
