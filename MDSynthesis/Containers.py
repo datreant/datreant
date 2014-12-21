@@ -189,7 +189,6 @@ class _ContainerCore(object):
             self._data = Core.Aggregators.Data(self, self._containerfile, self._logger)
         return self._data
 
-#TODO: include in documentation fgetter details
 class Sim(_ContainerCore):
     """The Sim object is an interface to data for single simulations.
 
@@ -326,6 +325,8 @@ class Sim(_ContainerCore):
         disk as needed, and make a universe active for each one.
     
         """
+        #TODO: include check for changes to universe definition, not just
+        # definition absence
         if self._uname in self._containerfile.list_universes():
             return self._universe
         elif not self._universe:
