@@ -74,6 +74,10 @@ class _ContainerCore(object):
     @property
     def _uuid(self):
         """The uuid of the Container.
+
+        This is automatically generated when the Container is first created,
+        and is unchangeable. It is used by other MDSynthesis objects to
+        uniquely identify the Container.
     
         """
         return self._containerfile.get_uuid()
@@ -81,6 +85,11 @@ class _ContainerCore(object):
     @property
     def name(self):
         """The name of the Container.
+
+        The name of a Container is the only immutable element stored in the
+        object's state file (aside from its unique id). It need not be unique
+        with respect to other Containers, but is used as part of Container's
+        displayed representation.
         
         """
         return self._containerfile.get_name()
@@ -119,6 +128,9 @@ class _ContainerCore(object):
     @property
     def coordinator(self):
         """The location of the associated Coordinator.
+
+        Change this to associate the Container with an existing
+        or new Coordinator.
     
         """
         return self._containerfile.get_coordinator()
@@ -137,6 +149,11 @@ class _ContainerCore(object):
     @property
     def tags(self):
         """The tags of the Container.
+
+        Tags are user-added strings that can be used to and distinguish
+        Containers from one another through Coordinator or Group queries.
+        They can also be useful as flags for external code to determine
+        how to handle the Container.
         
         """
         if not self._tags:
@@ -147,6 +164,11 @@ class _ContainerCore(object):
     def categories(self):
         """The categories of the Container.
         
+        Categories are user-added key-value pairs that can be used to and
+        distinguish Containers from one another through Coordinator or Group
+        queries. They can also be useful as flags for external code to
+        determine how to handle the Container.
+
         """
 
         if not self._categories:
@@ -156,6 +178,11 @@ class _ContainerCore(object):
     @property
     def data(self):
         """The data of the Container.
+
+        Data are user-generated pandas objects (e.g. Series, DataFrames), numpy
+        arrays, or any pickleable python object that are stored in the Container
+        for easy recall later.  Each data instance is given its own directory
+        in the Container's tree.
         
         """
         if not self._data:
@@ -208,7 +235,7 @@ class Sim(_ContainerCore):
 
         s2 = Sim('fluffy/')
 
-    The Sim object will give access to the Universe, stored selections, and stored data
+    The Sim object will give access to the universe, stored selections, and stored data
     as before.
 
     """
@@ -285,7 +312,18 @@ class Sim(_ContainerCore):
 
     @property
     def universe(self):
-        """The active Universe of the Sim.
+        """The active universe of the Sim.
+
+        Universes are interfaces to raw simulation data. The Sim can store
+        multiple universe definitions corresponding to different versions
+        of the same simulation output (e.g. post-processed trajectories derived
+        from the same raw trajectory). The Sim has at most one universe
+        definition that is "active" at one time, with stored selections for
+        this universe directly available via ``Sim.selections``.
+
+        To have more than one universe available as "active" at the same time,
+        generate as many instances of the Sim object from the same statefile on
+        disk as needed, and make a universe active for each one.
     
         """
         if self._uname in self._containerfile.list_universes():
@@ -294,12 +332,22 @@ class Sim(_ContainerCore):
             self.universes.activate()
             return self._universe
         else:
-            self.detach()
-            self._logger.info('This Universe is no longer defined. It has been detached')
+            self._universe = None
+            self._logger.info('This universe is no longer defined. It has been detached.')
 
     @property
     def universes(self):
-        """The universes of the Sim.
+        """Manage the defined universes of the Sim.
+
+        Universes are interfaces to raw simulation data. The Sim can store
+        multiple universe definitions corresponding to different versions
+        of the same simulation output (e.g. post-processed trajectories derived
+        from the same raw trajectory). The Sim has at most one universe
+        definition that is "active" at one time, with stored selections for
+        this universe directly available via ``Sim.selections``.
+
+        The Sim can also store a preference for a "default" universe, which is
+        activated on a call to ``Sim.universe`` when no other universe is active.
         
         """
         if not self._universes:
@@ -308,7 +356,12 @@ class Sim(_ContainerCore):
 
     @property
     def selections(self):
-        """The selections of the Sim.
+        """Stored atom selections for the active universe.
+
+        Useful atom selections can be stored for the active universe and
+        recalled later. Selections are stored separately for each defined
+        universe, since the same selection may require a different selection
+        string for different universes.
 
         """
         # attach default universe if not attached
@@ -467,6 +520,15 @@ class Group(_ContainerCore):
     @property
     def members(self):
         """The members of the Group.
+
+        A Group is useful as an interface to collections of Containers, and
+        they allow direct access to each member of that collection. Often
+        a Group is used to store datasets derived from this collection as
+        an aggregate.
+        
+        Queries can also be made on the Group's members to return a
+        subselection of the members based on some search criteria. This can be
+        useful to define new Groups from members of existing ones.
         
         """
         if not self._members:
