@@ -944,6 +944,12 @@ class SimFile(ContainerFile):
         """
         selection = tables.StringCol(255)
 
+    class _Resnums(tables.IsDescription):
+        """Table definition for storing resnums.
+
+        """
+        resnum = tables.UInt64Col()
+
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Sim state file.
 
@@ -1132,6 +1138,70 @@ class SimFile(ContainerFile):
         """
         self.handle.remove_node('/universes', universe, recursive=True)
 
+    @File._write_state
+    def update_resnums(self, universe, resnums):
+        """Update resnum definition for the given universe.
+
+        Resnums are useful for referring to residues by their canonical resid,
+        for instance that stored in the PDB. By giving a resnum definition
+        for the universe, this definition can be applied to the universe
+        on activation.
+
+        Will overwrite existing definition if it exists.
+
+        :Arguments:
+            *universe*
+                name of universe to associate resnums with
+            *resnums*
+                list giving the resnum for each atom in the topology, in index
+                order
+        """
+        try:
+            table = self.handle.create_table('/universes/{}'.format(universe), 'resnums', self._Resnums, 'resnums')
+        except tables.NoSuchNodeError:
+            self.logger.info("Universe definition '{}' does not exist. Add it first.".format(universe))
+            return
+        except tables.NodeError:
+            self.logger.info("Replacing existing resnums for '{}'.".format(universe))
+            self.handle.remove_node('/universes/{}'.format(universe), 'resnums')
+            table = self.handle.create_table('/universes/{}'.format(universe), 'resnums', self._Resnums, 'resnums')
+
+        # add trajectory paths to table
+        for item in resnums:
+            table.row['resnum'] = item
+            table.row.append()
+
+    @File._read_state
+    def get_resnums(self, universe):
+        """Get the resnum definition for the given universe.
+
+        :Arguments:
+            *universe*
+                name of universe the resnum definition applies to
+
+        :Returns:
+            *resnums*
+                list of the resnums for each atom in topology; None if
+                no resnums defined
+        """
+        try:
+            table = self.handle.get_node('/universes/{}'.format(universe), 'resnums')
+            resnums = [ x['resnum'] for x in table.iterrows() ]
+        except tables.NoSuchNodeError:
+            resnums = None
+
+        return resnums
+
+    @File._write_state
+    def del_resnums(self, universe):
+        """Delete resnum definition from specified universe.
+
+        :Arguments:
+            *universe*
+                name of universe to remove resnum definition from
+        """
+        self.handle.remove_node('/universes/{}'.format(universe), 'resnums')
+
     @File._read_state
     def list_selections(self, universe):
         """List selection names.
@@ -1177,6 +1247,8 @@ class SimFile(ContainerFile):
         data. It is useful to store AtomGroup selections for later use, since
         they can be complex and atom order may matter.
 
+        Will overwrite existing definition if it exists.
+
         :Arguments:
             *universe*
                 name of universe the selection applies to
@@ -1197,8 +1269,12 @@ class SimFile(ContainerFile):
         except tables.NoSuchNodeError:
             self.logger.info("Universe definition '{}' does not exist. Add it first.".format(universe))
             return
+        except tables.NodeError:
+            self.logger.info("Replacing existing selection '{}'.".format(handle))
+            self.handle.remove_node('/universes/{}/selections'.format(universe), handle)
+            table = self.handle.create_table('/universes/{}/selections'.format(universe), handle, self._Selection, handle)
 
-        # add trajectory paths to table
+        # add selections to table
         for item in selection:
             table.row['selection'] = item
             table.row.append()

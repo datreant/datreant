@@ -318,22 +318,56 @@ class Universes(Aggregator):
         ``Sim.selections``.
 
         If no handle given, the default universe is loaded.
+
+        If a resnum definition exists for the universe, it is applied.
     
         :Arguments:
             *handle*
                 given name for selecting the universe; if ``None``, default
                 universe selected
         """
-        if handle:
-            udef = self._containerfile.get_universe(handle)
-            self._container._universe = Universe(udef[0], *udef[1])
-            self._container._uname = handle
-        else:
-            default = self._containerfile.get_default()
-            udef = self._containerfile.get_universe(default)
-            self._container._universe = Universe(udef[0], *udef[1])
-            self._container._uname = default
+        if not handle:
+            handle = self._containerfile.get_default()
+    
+        udef = self._containerfile.get_universe(handle)
+        self._container._universe = Universe(udef[0], *udef[1])
+        self._container._uname = default
+        self._apply_resnums()
 
+    def _apply_resnums(self):
+        """Apply resnum definition to active universe.
+    
+        """
+        resnums = self._containerfile.get_resnums(self._uname))
+
+        if resnums:
+            self._container._universe.atoms.set_resnum(resnums)
+
+    def resnums(self, handle, resnums):
+        """Define resnums for the given universe.
+
+        Resnums are useful for referring to residues by their canonical resid,
+        for instance that stored in the PDB. By giving a resnum definition
+        for the universe, this definition will be applied to the universe
+        on activation.
+
+        Will overwrite existing resnum definition if it exists.
+
+        :Arguments:
+            *handle*
+                name of universe to apply resnums to
+            *resnums*
+                list giving the resnum for each atom in the topology, in index
+                order; giving ``None`` will delete resnum definition
+        """
+        if not resnums:
+            self._containerfile.del_resnums(handle)
+            
+        self._containerfile.update_resnums(handle, resnums)
+    
+        if handle == self._container._uname:
+            self._apply_resnums()
+        
     def default(self, handle=None):
         """Mark the selected universe as the default, or get the default universe.
 
