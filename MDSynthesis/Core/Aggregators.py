@@ -4,8 +4,8 @@ the state of an object (data loaded, universe attached, etc.). They are also
 used to aggregate the functionality of higher level objects (such as Sim) in ways
 that are user-friendly.
 
-An Aggregator is designed to be user friendly on its own, but it can be used as
-a backend by a Container, too.
+In short, an Aggregator is designed to be user friendly on its own, but it can
+be used as a backend by a Container, too.
 
 """
 import Files
@@ -233,7 +233,7 @@ class Universes(Aggregator):
         seplength = len(agg)
 
         if not universes:
-            out = "No Universes"
+            out = "No universes"
         else:
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
@@ -247,7 +247,7 @@ class Universes(Aggregator):
         return out
 
     def __getitem__(self, handle):
-        """Attach Universe and return a reference to it.
+        """Attach universe and return a reference to it.
 
         :Arguments:
             *handle*
@@ -264,7 +264,7 @@ class Universes(Aggregator):
     def add(self, handle, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
-        A Universe is an MDAnalysis object that gives access to the details
+        A universe is an MDAnalysis object that gives access to the details
         of a simulation trajectory. A Sim object can contain multiple universe
         definitions (topology and trajectory pairs), since it is often
         convenient to have different post-processed versions of the same
@@ -297,28 +297,28 @@ class Universes(Aggregator):
             self._container.detach()
     
     def list(self):
-        """Get handles for all Universe definitions as a list.
+        """Get handles for all universe definitions as a list.
     
         :Returns:
             *handles*
-                list of all Universe handles
+                list of all universe handles
         """
         return self._containerfile.list_universes()
 
     def activate(self, handle=None):
-        """Make the selected Universe active.
+        """Make the selected universe active.
         
-        Only one Universe definition can be active in a Sim at one time. The
-        active Universe can be accessed from ``Sim.universe``. Stored
-        selections for the active Universe can be accessed as items in
+        Only one universe definition can be active in a Sim at one time. The
+        active universe can be accessed from ``Sim.universe``. Stored
+        selections for the active universe can be accessed as items in
         ``Sim.selections``.
 
-        If no handle given, the default Universe is loaded.
+        If no handle given, the default universe is loaded.
     
         :Arguments:
             *handle*
-                given name for selecting the Universe; if ``None``, default
-                Universe selected
+                given name for selecting the universe; if ``None``, default
+                universe selected
         """
         if handle:
             udef = self._containerfile.get_universe(handle)
@@ -331,21 +331,21 @@ class Universes(Aggregator):
             self._container._uname = default
 
     def default(self, handle=None):
-        """Mark the selected Universe as the default, or get the default Universe.
+        """Mark the selected universe as the default, or get the default universe.
 
-        The default Universe is loaded on calls to ``Sim.universe`` or
-        ``Sim.selections`` when no other Universe is attached.
+        The default universe is loaded on calls to ``Sim.universe`` or
+        ``Sim.selections`` when no other universe is attached.
 
-        If no handle given, returns the current default Universe.
+        If no handle given, returns the current default universe.
 
         :Arguments:
             *handle*
                 given name for selecting the universe; if ``None``, default
-                Universe is unchanged
+                universe is unchanged
 
         :Returns:
             *default*
-                handle of the default Universe
+                handle of the default universe
         """
         if handle:
             self._containerfile.update_default(handle)
@@ -353,10 +353,25 @@ class Universes(Aggregator):
         return self._containerfile.get_default()
     
     def rename(self, handle, new_handle):
-        """Change the handle used for the specified Universe.
+        """Change the handle used for the specified universe.
     
         """
         raise NotImplementedError
+
+    def define(self, handle):
+        """Get the topology and trajectory used for the specified universe.
+
+        :Arguments:
+            *handle*
+                name of universe to get definition for
+        
+        :Returns:
+            *topology*
+                path to the topology file
+            *trajectory*
+                list of paths to trajectory files
+        """
+        return self._containerfile.get_universe(handle)
 
 class Selections(Aggregator):
     """Selection manager for Sims.
@@ -378,9 +393,9 @@ class Selections(Aggregator):
         seplength = len(agg)
 
         if not self._container._uname:
-            out = "No Universe attached; no Selections to show"
+            out = "No universe attached; no Selections to show"
         elif not selections:
-            out = "No Selections for Universe '{}'".format(self._container._uname)
+            out = "No selections for universe '{}'".format(self._container._uname)
         else:
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
@@ -421,7 +436,7 @@ class Selections(Aggregator):
         self._containerfile.del_selection(self._container._uname, handle)
 
     def add(self, handle, *selection):
-        """Add an atom selection for the attached Universe.
+        """Add an atom selection for the attached universe.
         
         AtomGroups are needed to obtain useful information from raw coordinate
         data. It is useful to store AtomGroup selections for later use, since
@@ -438,7 +453,7 @@ class Selections(Aggregator):
         self._containerfile.add_selection(self._container._uname, handle, *selection)
         
     def remove(self, handle):
-        """Remove an atom selection for the attached Universe.
+        """Remove an atom selection for the attached universe.
         
         :Arguments:
             *handle*
@@ -482,7 +497,7 @@ class Selections(Aggregator):
         return self._containerfile.get_selection(self._container._uname, handle)
     
     def copy(self, universe):
-        """Copy defined selections of another Universe to the attached Universe.
+        """Copy defined selections of another universe to the attached universe.
     
         :Arguments:
             *universe*
