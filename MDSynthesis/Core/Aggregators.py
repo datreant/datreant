@@ -270,6 +270,9 @@ class Universes(Aggregator):
         convenient to have different post-processed versions of the same
         raw trajectory.
 
+        Using an existing universe handle will replace the topology and trajectory
+        for that definition; selections for that universe will be retained.
+
         :Arguments:
             *handle*
                 given name for selecting the universe
@@ -282,19 +285,20 @@ class Universes(Aggregator):
         """
         self._containerfile.add_universe(handle, topology, *trajectory)
     
-    def remove(self, handle):
+    def remove(self, *handle):
         """Remove a universe definition.
     
         Also removes any selections associated with the universe.
 
         :Arguments:
             *handle*
-                name of universe to delete
+                name of universe(s) to delete
         """
-        self._containerfile.del_universe(handle)
+        for item in handle:
+            self._containerfile.del_universe(item)
     
-        if self._container._uname == handle:
-            self._container.detach()
+            if self._container._uname == item:
+                self._container.detach()
     
     def list(self):
         """Get handles for all universe definitions as a list.
@@ -446,14 +450,15 @@ class Selections(Aggregator):
         """
         self._containerfile.add_selection(self._container._uname, handle, *selection)
         
-    def remove(self, handle):
+    def remove(self, *handle):
         """Remove an atom selection for the attached universe.
         
         :Arguments:
             *handle*
-                name of selection to remove
+                name of selection(s) to remove
         """
-        self._containerfile.del_selection(self._container._uname, handle)
+        for item in handle:
+            self._containerfile.del_selection(self._container._uname, item)
     
     def keys(self):
         """Return a list of all selection handles.
