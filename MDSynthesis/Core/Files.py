@@ -1096,8 +1096,8 @@ class SimFile(ContainerFile):
         try:
             group = self.handle.create_group('/universes', universe, universe, createparents=True)
         except tables.NodeError:
-            self.logger.info("Universe definition '{}' already exists. Remove it first.".format(universe))
-            return
+            self.logger.info("Replacing existing universe definition '{}'.".format(universe))
+            self.handle.remove_node('/universes', universe, recursive=True)
 
         # construct topology table 
         table = self.handle.create_table('/universes/{}'.format(universe), 'topology', self._Topology, 'topology')
@@ -1327,7 +1327,7 @@ class GroupFile(ContainerFile):
         # check if uuid already present
         rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
         if rownum:
-            self.logger.info("Member '{}' already present. Updating with new location.".format(name))
+            # if present, update location
             table.cols.abspath[rownum[0]] = os.path.abspath(location)
             table.cols.relGroup[rownum[0]] = os.path.relpath(location, self.get_location())
         else:
