@@ -352,12 +352,6 @@ class Universes(Aggregator):
         
         return self._containerfile.get_default()
     
-    def rename(self, handle, new_handle):
-        """Change the handle used for the specified universe.
-    
-        """
-        raise NotImplementedError
-
     def define(self, handle):
         """Get the topology and trajectory used for the specified universe.
 
