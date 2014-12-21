@@ -331,17 +331,17 @@ class Universes(Aggregator):
     
         udef = self._containerfile.get_universe(handle)
         self._container._universe = Universe(udef[0], *udef[1])
-        self._container._uname = default
+        self._container._uname = handle
         self._apply_resnums()
 
     def _apply_resnums(self):
         """Apply resnum definition to active universe.
     
         """
-        resnums = self._containerfile.get_resnums(self._uname))
+        resnums = self._containerfile.get_resnums(self._container._uname)
 
         if resnums:
-            self._container._universe.atoms.set_resnum(resnums)
+            self._container._universe.residues.set_resnum(resnums)
 
     def resnums(self, handle, resnums):
         """Define resnums for the given universe.
@@ -357,10 +357,10 @@ class Universes(Aggregator):
             *handle*
                 name of universe to apply resnums to
             *resnums*
-                list giving the resnum for each atom in the topology, in index
-                order; giving ``None`` will delete resnum definition
+                list giving the resnum for each residue in the topology, in
+                atom index order; giving ``None`` will delete resnum definition
         """
-        if not resnums:
+        if resnums is None:
             self._containerfile.del_resnums(handle)
             
         self._containerfile.update_resnums(handle, resnums)

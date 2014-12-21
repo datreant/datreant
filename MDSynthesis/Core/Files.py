@@ -948,7 +948,7 @@ class SimFile(ContainerFile):
         """Table definition for storing resnums.
 
         """
-        resnum = tables.UInt64Col()
+        resnum = tables.UInt32Col()
 
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Sim state file.
