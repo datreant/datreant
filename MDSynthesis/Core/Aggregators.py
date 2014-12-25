@@ -257,7 +257,7 @@ class Universes(Aggregator):
             *universe*
                 a reference to the newly attached universe
         """
-        self.make_active(handle)
+        self.activate(handle)
 
         return self._container.universe
 
