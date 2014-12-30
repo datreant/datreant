@@ -33,8 +33,8 @@ Collect aggregated data and keep track of it, too
 Groups can store datasets obtained from these collections, can can even
 contain other Groups as members.
 
-Query for simulation results instead of manually searching for them
--------------------------------------------------------------------
+Query for simulation results instead of manually hunting for them
+-----------------------------------------------------------------
 **Sim** and **Group** objects persistently store their data to disk automatically,
 but it can be tedious to navigate around the filesystem to recall them later.
 The **Coordinator** object gives a single interface for querying all **Sim**
