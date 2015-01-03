@@ -21,9 +21,10 @@ science, letting the computer handle the lower-level logistical details.
 
 __version__ = "0.4.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 
-__all__ = ['Sim', 'Group']
+__all__ = ['Sim', 'Group', 'Coordinator']
 
 # Bring some often used objects into the current namespace
 #from Coordinator import Coordinator
 from Containers import Sim, Group
+from Coordinator import Coordinator
 import Core
