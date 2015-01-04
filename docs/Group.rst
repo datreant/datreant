@@ -2,34 +2,61 @@
 Leveraging Groups for aggregate data
 ====================================
 
-A Group is a Container that keeps track of any number of Sims and Groups added
-to it as members, and it can store datasets derived from these objects in the
-same way as Sims.
+**Group** objects can keep track of any number of **Sim** and **Group** objects
+it counts as members, and it can store datasets derived from these objects.
+Just as a **Sim** manages data obtained from a single simulation, a **Group**
+is designed to manage data obtained from a collection of **Sim** or **Group**
+objects in aggregate.
 
-To generate a Group object from scratch, we need only give it a name. We
-can also give any number of Sim and/or Groups as an argument ::
+As with a **Sim**, to generate a Group from scratch, we need only give it a
+name. We can also give any number of existing **Sim** or **Group** objects as
+an argument ::
 
-    g = Group('gruffy', members=[s1, s2, s3, g4, g5])
+    >>> g = Group('gruffy', members=[s1, s2, s3, g4, g5])
+    >>> g
+    <Group: 'gruffy' | 5 Members: 3 Sim, 2 Group>
 
-The Group can store custom data structures the same way as Sims. These can
-be pandas objects (e.g. Series, DataFrame, Panel), numpy arrays, or other
-python objects ::
+This will create a directory ``gruffy`` that contains a single file
+(``Group.h5``). That file is a persistent representation of the **Group** on
+disk. We can access its members with ::
 
-    a = np.random.randn(100, 100)
-    g.data.add('randomdata', a)
+    >>> g.members
+    <Members(['marklar', 'scruffy', 'fluffy', 'buffy', 'gorp'])>
+    >>> g.members[2]
+    <Sim: 'fluffy'>
 
-This can be recalled later with ::
+and we can slice, too ::
 
-    g.data['randomdata']
+    >>> g.members[2:]
+    [<Sim: 'fluffy'>, <Group: 'buffy'>, <Group: 'gorp'>]
 
-The real strength of the Group is how it stores its information. Generating an
-object from scratch stores the information needed to re-generate it in the
-filesystem. To generate another instance of the same Group, simply give the
-directory where the state file lives ::
+.. note:: Members are generated from their state file on disk upon access.
+          This means that for a **Group** with hundreds of objects, there will
+          be a delay when trying to access them all at once.
 
-    g2 = Group('gruffy/')
+A **Group** can even be a member of itself ::
 
-This Group instance will give access to its members and stored data as before.
+    >>> g.members.add(g)
+    >>> g
+    <Group: 'gruffy' | 6 Members: 3 Sim, 3 Group>
+    >>> g.members[-1]
+    <Group: 'gruffy' | 6 Members: 3 Sim, 3 Group>
+    >>> g.members[-1].members[-1]
+    <Group: 'gruffy' | 6 Members: 3 Sim, 3 Group>
+
+As a technical aside, note that a **Group** returned as a member of itself
+is not the same object in memory as the **Group** that returned it. They are
+two different instances of the same **Group** ::
+
+    >>> g2 = g.members[-1]
+    >>> g2 is g
+    False
+
+But as usual, they will reflect the same stored information at all times ::
+    
+    >>> g.tags.add('kinases')
+    >>> g2.tags
+    <Tags(['kinases'])>
 
 Reference: Group
 ================
@@ -39,6 +66,10 @@ Reference: Group
 
 Reference: Members
 ==================
+The class :class:`MDSynthesis.Core.Aggregators.Members` is the interface used
+by a **Group** to manage its members. It is not intended to be used on its own,
+but is shown here to give a detailed view of its methods.
+
 .. autoclass:: MDSynthesis.Core.Aggregators.Members
     :members:
     :inherited-members:

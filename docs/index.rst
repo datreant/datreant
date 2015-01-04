@@ -87,6 +87,7 @@ Documentation
     Group
     tags-categories
     Coordinator
+    interactive
 
 Misc
 ----

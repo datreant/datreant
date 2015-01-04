@@ -11,9 +11,9 @@ to distinguish the **Sim** from others, though it need not be unique. We can
 also give it a topology and/or trajectory files as we would to an MDAnalysis
 **Universe** ::
     
-    >>> s = Sim('fluffy', universe=['path/to/topology', 'path/to/trajectory'])
+    >>> s = Sim('scruffy', universe=['path/to/topology', 'path/to/trajectory'])
 
-This will create a directory ``fluffy`` that contains a single file
+This will create a directory ``scruffy`` that contains a single file
 (``Sim.h5``).  That file is a persistent representation of the **Sim** on disk.
 We can access trajectory data by way of ::
 
@@ -53,7 +53,7 @@ and we can make this the active **Universe** with ::
 
     >>> s.universes['anotherU']
     >>> s
-    <Sim: 'fluffy' | active universe: 'anotherU'>
+    <Sim: 'scruffy' | active universe: 'anotherU'>
 
 Only a single **Universe** may be active at a time. Atom selections that are
 stored correspond to the currently active **Universe**, since different
@@ -120,12 +120,20 @@ Reference: Sim
 
 Reference: Universes
 ====================
+The class :class:`MDSynthesis.Core.Aggregators.Universes` is the interface used
+by a **Sim** to manage **Universe** definitions. It is not intended to be used
+on its own, but is shown here to give a detailed view of its methods.
+
 .. autoclass:: MDSynthesis.Core.Aggregators.Universes
     :members:
     :inherited-members:
 
 Reference: Selections
 =====================
+The class :class:`MDSynthesis.Core.Aggregators.Selections` is the interface
+used by a **Sim** to access its stored selections. It is not intended to be
+used on its own, but is shown here to give a detailed view of its methods.
+
 .. autoclass:: MDSynthesis.Core.Aggregators.Selections
     :members:
     :inherited-members:

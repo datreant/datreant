@@ -20,9 +20,6 @@ class Aggregator(object):
 
     """
     def __init__(self, container, containerfile, logger):
-        """Initialize thin class with references it needs to perform its function.
-
-        """
         self._container = container
         self._containerfile = containerfile
         self._logger = logger

@@ -1,0 +1,4 @@
+MDAnalysis
+pandas
+tables
+h5py
