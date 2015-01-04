@@ -32,7 +32,7 @@ class Tags(Aggregator):
 
     """
     def __repr__(self):
-        return "Tags({})".format(self.list())
+        return "<Tags({})>".format(self.list())
 
     def __str__(self):
         tags = self.list()
@@ -104,7 +104,7 @@ class Categories(Aggregator):
 
     """
     def __repr__(self):
-        return "Categories({})".format(self.dict())
+        return "<Categories({})>".format(self.dict())
 
     def __str__(self):
         categories = self.dict()
@@ -224,7 +224,7 @@ class Universes(Aggregator):
 
     """
     def __repr__(self):
-        return "Universes({})".format(self.list())
+        return "<Universes({})>".format(self.list())
 
     def __str__(self):
         universes = self.list()
@@ -414,7 +414,7 @@ class Selections(Aggregator):
 
     """
     def __repr__(self):
-        return "Selections({})".format({x: self.define(x) for x in self.keys()})
+        return "<Selections({})>".format({x: self.define(x) for x in self.keys()})
 
     def __str__(self):
         selections = self.keys()
@@ -548,7 +548,7 @@ class Members(Aggregator):
 
     """
     def __repr__(self):
-        return "Members({})".format(self.names())
+        return "<Members({})>".format(self.names())
 
     def __str__(self):
         members = self.names()
@@ -698,7 +698,7 @@ class Data(Aggregator):
 
     """
     def __repr__(self):
-        return "Data({})".format(self.list())
+        return "<Data({})>".format(self.list())
 
     def __str__(self):
         data = self.list()

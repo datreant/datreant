@@ -80,20 +80,13 @@ Documentation
 -------------
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   getting_started
-   install
-
-API Reference
--------------
-
-.. toctree::
-   :maxdepth: 1
-
-   Sim
-   Group
-   Coordinator
+    getting_started
+    Sim
+    Group
+    Containers
+    Coordinator
 
 Misc
 ----
@@ -101,6 +94,7 @@ Misc
 .. toctree::
     :maxdepth: 1
 
+    install
     whatsnew
     faq
 
