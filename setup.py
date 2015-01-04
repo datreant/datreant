@@ -16,5 +16,5 @@ setup(name='MDSynthesis',
       packages=['MDSynthesis', 'MDSynthesis.Core'],
       license='GPL 2',
       long_description=open('README.rst').read(),
-      requires=['MDAnalysis', 'pandas', 'tables', 'h5py']
+      requires=['pandas', 'tables', 'h5py', 'MDAnalysis']
      )
