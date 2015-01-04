@@ -31,8 +31,14 @@ directory where the state file lives ::
 
 This Group instance will give access to its members and stored data as before.
 
-Reference
-=========
+Reference: Group
+================
 .. autoclass:: MDSynthesis.Group
+    :members:
+    :inherited-members:
+
+Reference: Members
+==================
+.. autoclass:: MDSynthesis.Core.Aggregators.Members
     :members:
     :inherited-members:

@@ -541,7 +541,7 @@ class Selections(Aggregator):
         return self._containerfile.get_selection(self._container._uname, handle)
     
     def copy(self, universe):
-        """Copy defined selections of another universe to the attached universe.
+        """Copy defined selections of another universe to the active universe.
     
         :Arguments:
             *universe*

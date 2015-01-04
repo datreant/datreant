@@ -401,10 +401,11 @@ class Group(_ContainerCore):
                 directory to place Group object; default is current directory
             *coordinator*
                 directory of the Coordinator to associate with this object; if the
-                Coordinator does not exist, it is created [``None``] 
+                Coordinator does not exist, it is created; if ``None``, the Sim
+                will not associate with any Coordinator
             *categories*
-                dictionary with user-defined keys and values; basically used to
-                give Groups distinguishing characteristics
+                dictionary with user-defined keys and values; used to give
+                Groups distinguishing characteristics
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors

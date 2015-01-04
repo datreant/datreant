@@ -82,10 +82,10 @@ Documentation
 .. toctree::
     :maxdepth: 1
 
-    getting_started
+    data
     Sim
     Group
-    Containers
+    tags-categories
     Coordinator
 
 Misc
