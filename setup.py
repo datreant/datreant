@@ -15,6 +15,6 @@ setup(name='MDSynthesis',
       author_email='dotsdl@gmail.com',
       packages=['MDSynthesis', 'MDSynthesis.Core'],
       license='GPL 2',
-      long_description=open('README').read(),
+      long_description=open('README.rst').read(),
       requires=['MDAnalysis', 'pandas', 'tables', 'h5py']
      )
