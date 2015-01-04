@@ -901,10 +901,10 @@ class SimFile(ContainerFile):
     elements of the data structure, as well as the data structure definition.
     
     """
-    class _Universe(tables.IsDescription):
-        """Table definition for storing universe preferences.
+    class _Default(tables.IsDescription):
+        """Table definition for storing default universe preference.
 
-        Stores, for example, which universe is marked as default.
+        Stores which universe is marked as default.
 
         """
         default = tables.StringCol(255)
@@ -995,10 +995,11 @@ class SimFile(ContainerFile):
         super(SimFile, self).create(containertype='Sim', **kwargs)
 
         self._make_universegroup()
+        self.update_default()
 
     @File._write_state
     def _make_universegroup(self):
-        """Make universes group.
+        """Make universes and universe groups.
 
         Used only on file creation.
 
@@ -1009,18 +1010,19 @@ class SimFile(ContainerFile):
             group = self.handle.create_group('/', 'universes', 'universes')
 
     @File._write_state
-    def update_default(self, universe):
+    def update_default(self, universe=None):
         """Mark the given universe as the default.
 
         :Arguments:
             *universe*
-                name of universe to mark as default
+                name of universe to mark as default; if ``None``,
+                remove default preference
         """
         try:
-            table = self.handle.get_node('/', 'universe')
+            table = self.handle.get_node('/', 'default')
             table.cols.default[0] = universe
         except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'universe', self._Universe, 'universe')
+            table = self.handle.create_table('/', 'default', self._Default, 'default')
             table.row['default'] = universe
             table.row.append()
 
@@ -1033,8 +1035,13 @@ class SimFile(ContainerFile):
                 name of default universe 
 
         """
-        table = self.handle.get_node('/', 'universe')
-        return table.cols.default[0]
+        table = self.handle.get_node('/', 'default')
+        default = table.cols.default[0]
+        
+        if default == 'None':
+            default = None
+
+        return default
 
     @File._read_state
     def list_universes(self):
@@ -1124,7 +1131,10 @@ class SimFile(ContainerFile):
             table.row.append()
 
         # construct selection group
-        group = self.handle.create_group('/universes/{}'.format(universe), 'selections', 'selections')
+        try:
+            group = self.handle.create_group('/universes/{}'.format(universe), 'selections', 'selections')
+        except tables.NodeError:
+            pass
 
     @File._write_state
     def del_universe(self, universe):

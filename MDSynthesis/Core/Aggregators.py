@@ -273,6 +273,9 @@ class Universes(Aggregator):
         Using an existing universe handle will replace the topology and trajectory
         for that definition; selections for that universe will be retained.
 
+        If there is no current default universe, then the added universe will
+        become the default.
+
         :Arguments:
             *handle*
                 given name for selecting the universe
@@ -284,6 +287,9 @@ class Universes(Aggregator):
 
         """
         self._containerfile.add_universe(handle, topology, *trajectory)
+
+        if not self.default():
+            self.default(handle)
     
     def remove(self, *handle):
         """Remove a universe definition.
@@ -298,7 +304,11 @@ class Universes(Aggregator):
             self._containerfile.del_universe(item)
     
             if self._container._uname == item:
-                self._container.detach()
+                self._container._universe = None
+                self._container._uname = None
+
+            if self.default() == item:
+                self._containerfile.update_default()
     
     def list(self):
         """Get handles for all universe definitions as a list.
@@ -329,10 +339,11 @@ class Universes(Aggregator):
         if not handle:
             handle = self._containerfile.get_default()
     
-        udef = self._containerfile.get_universe(handle)
-        self._container._universe = Universe(udef[0], *udef[1])
-        self._container._uname = handle
-        self._apply_resnums()
+        if handle:
+            udef = self._containerfile.get_universe(handle)
+            self._container._universe = Universe(udef[0], *udef[1])
+            self._container._uname = handle
+            self._apply_resnums()
 
     def _apply_resnums(self):
         """Apply resnum definition to active universe.

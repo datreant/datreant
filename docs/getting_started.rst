@@ -1,3 +1,4 @@
+===============
 Getting started
 ===============
 MDSynthesis is not an analysis code. On its own, it does not produce output
@@ -19,17 +20,20 @@ for each transaction is handled automatically, so more than one python session
 can be working with any number of instances of the same Container at the same
 time.
 
+Persistence as a feature
+========================
+
 Containers store their data as directory structures in the file system. Generating
 a new **Sim**, for example, with the following ::
     
-    [ python session 1 ]
+    >>> # python session 1
     >>> import MDSynthesis as mds
     >>> s = mds.Sim('marklar')
 
 creates a directory called ``marklar`` in the current working directory. It contains
 a single file at the moment ::
 
-    [ shell ]
+    > # shell 
     > ls marklar
     Sim.h5
 
@@ -37,19 +41,19 @@ This is the state file containing all the information needed to regenerate an
 identical instance of this **Sim**. In fact, we can open a separate python
 session (go ahead!) and regenerate this **Sim** immediately there ::
 
-    [ python session 2 ]
+    >>> # python session 2
     >>> import MDSynthesis as mds
     >>> s = mds.Sim('marklar')
 
 Making a modification to the **Sim** in one session, perhaps by adding a tag,
 will be reflected in the **Sim** in the other session ::
 
-    [ python session 1 ]
+    >>> # python session 1
     >>> s.tags.add('TIP3P')
 
-    [ python session 2 ]
+    >>> # python session 2
     >>> s.tags
-    Tags(['TIP3P'])
+    <Tags(['TIP3P'])>
 
 This is because both objects pull their identifying information from the same
 file on disk; they store almost nothing in memory.
