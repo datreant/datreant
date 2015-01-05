@@ -1,3 +1,6 @@
+numpy
+numexpr
+Cython
 pandas
 tables
 h5py
