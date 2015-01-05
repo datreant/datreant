@@ -1,7 +1,7 @@
 numpy
 numexpr
 Cython
-pandas
 tables
+pandas
 h5py
 MDAnalysis
