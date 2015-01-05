@@ -9,8 +9,8 @@ is designed to manage data obtained from a collection of **Sim** or **Group**
 objects in aggregate.
 
 As with a **Sim**, to generate a Group from scratch, we need only give it a
-name. We can also give any number of existing **Sim** or **Group** objects as
-an argument ::
+name. We can also give any number of existing **Sim** or **Group** objects to
+add them as members ::
 
     >>> g = Group('gruffy', members=[s1, s2, s3, g4, g5])
     >>> g
