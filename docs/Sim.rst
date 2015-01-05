@@ -40,7 +40,7 @@ Multiple Universes
 Often it is necessary to post-process a simulation trajectory to get it into a
 useful form for analysis. This may involve coordinate transformations that
 center on a particular set of atoms or fit to a structure, removal of water,
-skipping of frames, etc. This can mean that for a given simulation, multiple
+skipping of frames, etc. This can mean that for a given simulation multiple
 versions of the raw trajectory may be needed.
 
 For this reason, a **Sim** can store multiple **Universe** definitions. To add
