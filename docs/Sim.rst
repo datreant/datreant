@@ -2,7 +2,7 @@
 Using Sims to dissect trajectories
 ==================================
 
-**Sim** objects are designed to store datasets that were obtained from a single
+**Sim** objects are designed to store datasets that are obtained from a single
 simulation, and they give a direct interface to trajectory data by way of the
 `MDAnalysis <http://mdanalysis.googlecode.com>`__ **Universe** object.
 
