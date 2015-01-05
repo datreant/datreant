@@ -141,7 +141,9 @@ is immediately reflected by the Container ::
     >>> s.data
     <Data(['cations/residue1', 'cations/residue3', 'distances'])>
     
-Datasets can likewise be moved and they will still be found by the Container.
+Datasets can likewise be moved within the Container's directory tree and they
+will still be found, with names matching their location relative to the state
+file.
 
 Reference: Data
 ===============
