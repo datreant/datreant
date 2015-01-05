@@ -30,8 +30,8 @@ datasets are stored in the efficient HDF5 format when possible.
 Collect aggregated data and keep track of it, too
 -------------------------------------------------
 **Sim** objects can be gathered into arbitrary collections with **Group** objects.
-Groups can store datasets obtained from these collections, can can even
-contain other Groups as members.
+Groups can store datasets obtained from these collections, and can even contain
+other Groups as members.
 
 Query for simulation results instead of manually hunting for them
 -----------------------------------------------------------------

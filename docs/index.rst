@@ -18,12 +18,13 @@ it is useful to store them.
 Stay organized
 ==============
 MDSynthesis is designed to perform the logistics of medium-to-large-scale
-analysis of many trajectories, individually or as entire groups. It is designed
+analysis of many trajectories, individually or as entire groups. It is intended
 to allow the scientist to operate at a high level when working with the data,
-while MDSynthesis handles the details of storing and recalling this data. 
+while letting MDSynthesis handle the details of storing and recalling this
+data. 
 
-In other words, let the computer do the boring work of keeping track of where
-things are and how they are stored.
+In other words, MDSynthesis lets the computer do the boring work of keeping
+track of where things are and how they are stored.
 
 Efficiently store intermediate data for individual simulations for easy recall
 ------------------------------------------------------------------------------
@@ -39,7 +40,7 @@ Collect aggregated data and keep track of it, too
 -------------------------------------------------
 :doc:`Sim <Sim>` objects can be gathered into arbitrary collections with
 :doc:`Group <Group>` objects.  Groups can store datasets obtained from these
-collections, can can even contain other Groups as members.
+collections, and can even contain other Groups as members.
 
 Query for simulation results instead of manually hunting for them
 -----------------------------------------------------------------
