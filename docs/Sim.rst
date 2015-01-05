@@ -32,7 +32,8 @@ And the **AtomGroup** can be conveniently obtained with ::
 
 .. note:: Only selection strings are stored, not the resulting atoms of those
           selections. This means that if the topology on disk is replaced
-          or altered, the results of particular selections may change.
+          or altered, the **AtomGroup** returned by a particular selection may
+          change.
 
 Multiple Universes
 ==================
