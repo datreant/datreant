@@ -20,7 +20,8 @@ transaction is handled automatically, so more than one python process can be
 working with any number of instances of the same Container at the same time.
 
 .. warning:: As usual, file locking is process safe, but not thread safe. Don't
-             use multithreading and try to modify Container elements with them.
+             use multithreading and try to modify Container elements at the same
+             time.
 
 Persistence as a feature
 ========================
