@@ -12,13 +12,12 @@ the :doc:`Sim <Sim>` and :doc:`Group <Group>` objects.
 
 In brief, a **Sim** is designed to manage and give access to the data corresponding
 to a single simulation (the raw trajectory(s), as well as analysis results); a
-**Group** gives access to any number of **Sim** or other **Group** objects
-it has as members (including perhaps itself), and can store analysis results
-that pertain to these members collectively. Both types of Container store
-their underlying data persistently to disk on the fly. The file locking needed
-for each transaction is handled automatically, so more than one python process
-can be working with any number of instances of the same Container at the same
-time.
+**Group** gives access to any number of **Sim** or **Group** objects it has as
+members (including perhaps itself), and can store analysis results that pertain
+to these members collectively. Both types of Container store their underlying
+data persistently to disk on the fly. The file locking needed for each
+transaction is handled automatically, so more than one python process can be
+working with any number of instances of the same Container at the same time.
 
 .. warning:: As usual, file locking is process safe, but not thread safe. Don't
              use multithreading and try to modify Container elements with them.
