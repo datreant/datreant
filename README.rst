@@ -41,6 +41,11 @@ The **Coordinator** object gives a single interface for querying all **Sim**
 and **Group** objects it is made aware of, allowing retrieval of specific
 datasets with a single line of code.
 
+Documentation
+=============
+A brief user guide is available on `Read the Docs
+<http://mdsynthesis.readthedocs.org/>`__.
+
 Dependencies
 ============
 * MDAnalysis: 0.8.0 or higher
