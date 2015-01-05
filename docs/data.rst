@@ -119,9 +119,9 @@ Minimal blobs
 =============
 Individual datasets get their own place in the filesystem instead of all being
 shoved into a single file on disk. This is by design, as it generally means
-better performance since individual data files means less waiting for file
-locks to release from other Container instances. Also, it gives a space to put
-other files related to the dataset itself, such as figures produced from it.
+better performance since this means less waiting for file locks to release from
+other Container instances. Also, it gives a space to put other files related to
+the dataset itself, such as figures produced from it.
 
 You can get the location on disk of a dataset with ::
 
