@@ -964,21 +964,19 @@ class Data(Aggregator):
 
         If dataset doesn't exist, ``None`` is returned.
 
-        For pandas objects (Series, DataFrame, or Panel) 
-        ------------------------------------------------
-        Subsets of the whole dataset can be returned using keywords such as
-        *start* and *stop* for ranges of rows, and *columns* for selected
-        columns.
+        For pandas objects (Series, DataFrame, or Panel) subsets of the whole
+        dataset can be returned using keywords such as *start* and *stop* for
+        ranges of rows, and *columns* for selected columns.
 
-        The *where* keyword takes a string as input and can be used to filter
-        out rows and columns without loading the full object into memory. For
-        example, given a DataFrame with handle 'mydata' with columns (A, B, C,
-        D), one could return all rows for columns A and C for which column D is
-        greater than .3 with::
+        Also for pandas objects, the *where* keyword takes a string as input
+        and can be used to filter out rows and columns without loading the full
+        object into memory. For example, given a DataFrame with handle 'mydata'
+        with columns (A, B, C, D), one could return all rows for columns A and
+        C for which column D is greater than .3 with::
 
             retrieve('mydata', where='columns=[A,C] & D > .3')
 
-        Or, if I wanted all rows with index = 3 (there could be more than
+        Or, if we wanted all rows with index = 3 (there could be more than
         one)::
 
             retrieve('mydata', where='index = 3')
