@@ -867,9 +867,10 @@ class Data(Aggregator):
     def add(self, handle, data):
         """Store data in Container.
 
-        A data instance must be either a pandas Series, DataFrame, or Panel
-        object. If dataset doesn't exist, it is added. If a dataset already
-        exists for the given handle, it is replaced.
+        A data instance can be a pandas object (Series, DataFrame, Panel),
+        a numpy array, or a pickleable python object. If the dataset doesn't
+        exist, it is added. If a dataset already exists for the given handle,
+        it is replaced.
 
         :Arguments:
             *handle*

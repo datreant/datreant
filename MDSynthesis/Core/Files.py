@@ -1560,9 +1560,9 @@ class DatabaseFile(File):
 class DataFile(object):
     """Interface to data files.
 
-    This is an abstraction layer to the pdDataFile and npDataFile objects.
-    This can be used by higher level objects without worrying about whether
-    to use pandas storers or numpy storers.
+    This is an abstraction layer to the pdDataFile, npDataFile, and pyDataFile
+    objects. This can be used by higher level objects without worrying about
+    whether to use pandas storers or numpy storers.
 
     """
     def __init__(self, datadir, logger=None, datafiletype=None, **kwargs): 
@@ -1586,8 +1586,8 @@ class DataFile(object):
         self.logger = logger
 
     def add_data(self, key, data):
-        """Add a pandas data object (Series, DataFrame, Panel) or numpy array
-        to the data file.
+        """Add a pandas data object (Series, DataFrame, Panel), numpy array,
+        or pickleable python object to the data file.
 
         If data already exists for the given key, then it is overwritten.
     
