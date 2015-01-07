@@ -960,11 +960,12 @@ class Data(Aggregator):
     def retrieve(self, handle, **kwargs):
         """Retrieve stored data.
 
-        The pandas object (Series, DataFrame, or Panel) for the given handle
-        is returned.
-    
+        The stored data structure is read from disk and returned. 
+
         If dataset doesn't exist, ``None`` is returned.
 
+        For pandas objects (Series, DataFrame, or Panel) 
+        ------------------------------------------------
         Subsets of the whole dataset can be returned using keywords such as
         *start* and *stop* for ranges of rows, and *columns* for selected
         columns.
