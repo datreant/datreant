@@ -71,6 +71,51 @@ class _ContainerCore(object):
         if not os.path.exists(p):
             os.makedirs(p)
 
+    def __getitem__(self, handle):
+        """Get dataset corresponding to given handle.
+
+        If dataset doesn't exist, ``None`` is returned.
+        
+        :Arguments:
+            *handle*
+                name of data to retrieve
+
+        :Returns:
+            *data*
+                stored data; ``None`` if nonexistent
+        """
+        return self.data.__getitem__(handle)
+
+    def __setitem__(self, handle, data):
+        """Set dataset corresponding to given handle.
+        
+        A data instance must be either a pandas Series, DataFrame, or Panel
+        object. If dataset doesn't exist, it is added. If a dataset already
+        exists for the given handle, it is replaced.
+
+        :Arguments:
+            *handle*
+                name given to data; needed for retrieval
+            *data*
+                data to store; must be a pandas Series, DataFrame, or Panel
+
+        """
+        self.data.__setitem__(handle, data)
+    
+    def __delitem__(self, handle):
+        """Remove a dataset.
+
+        Note: the directory containing the dataset file (``Data.h5``) will NOT
+        be removed if it still contains file after the removal of the dataset
+        file.
+
+        :Arguments:
+            *handle*
+                name of dataset to delete
+    
+        """
+        self.data.__delitem__(handle)
+
     @property
     def _uuid(self):
         """The uuid of the Container.
