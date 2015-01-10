@@ -283,7 +283,15 @@ class Universes(Aggregator):
                 and these will be used in order as frames for the trajectory
 
         """
-        self._containerfile.add_universe(handle, topology, *trajectory)
+        outtraj = []
+        for traj in trajectory:
+            if isinstance(traj, list):
+                for t in traj:
+                    outtraj.append(t)
+            else:
+                outtraj.append(traj)
+
+        self._containerfile.add_universe(handle, topology, *outtraj)
 
         if not self.default():
             self.default(handle)
