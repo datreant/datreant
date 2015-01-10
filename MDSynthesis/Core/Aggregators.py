@@ -341,6 +341,16 @@ class Universes(Aggregator):
                 given name for selecting the universe; if ``None``, default
                 universe selected
         """
+        self._container._universe = None
+        self._container._uname = None
+    
+    def deactivate(self):
+        """Deactivate the current universe.
+        
+        Deactivating the current universe may be necessary to conserve
+        memory, since the universe can then be garbage collected.
+
+        """
         if not handle:
             handle = self._containerfile.get_default()
     
