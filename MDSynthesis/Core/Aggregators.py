@@ -283,7 +283,15 @@ class Universes(Aggregator):
                 and these will be used in order as frames for the trajectory
 
         """
-        self._containerfile.add_universe(handle, topology, *trajectory)
+        outtraj = []
+        for traj in trajectory:
+            if isinstance(traj, list):
+                for t in traj:
+                    outtraj.append(t)
+            else:
+                outtraj.append(traj)
+
+        self._containerfile.add_universe(handle, topology, *outtraj)
 
         if not self.default():
             self.default(handle)
@@ -341,6 +349,16 @@ class Universes(Aggregator):
             self._container._universe = Universe(udef[0], *udef[1])
             self._container._uname = handle
             self._apply_resnums()
+    
+    def deactivate(self):
+        """Deactivate the current universe.
+        
+        Deactivating the current universe may be necessary to conserve
+        memory, since the universe can then be garbage collected.
+
+        """
+        self._container._universe = None
+        self._container._uname = None
 
     def _apply_resnums(self):
         """Apply resnum definition to active universe.
