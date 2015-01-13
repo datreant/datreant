@@ -4,8 +4,8 @@ the state of an object (data loaded, universe attached, etc.). They are also
 used to aggregate the functionality of higher level objects (such as Sim) in ways
 that are user-friendly.
 
-An Aggregator is designed to be user friendly on its own, but it can be used as
-a backend by a Container, too.
+In short, an Aggregator is designed to be user friendly on its own, but it can
+be used as a backend by a Container, too.
 
 """
 import Files
@@ -14,34 +14,22 @@ import MDSynthesis as mds
 from MDAnalysis import Universe
 import os
 from functools import wraps
-import pdb
 
 class Aggregator(object):
     """Core functionality for information aggregators.
 
     """
     def __init__(self, container, containerfile, logger):
-        """Initialize thin class with references it needs to perform its function.
-
-        """
         self._container = container
         self._containerfile = containerfile
         self._logger = logger
-
-        self._create()
-
-    def _create(self):
-        """Initialize object attributes.
-        
-        """
-        pass
 
 class Tags(Aggregator):
     """Interface to tags.
 
     """
     def __repr__(self):
-        return "Tags({})".format(self.list())
+        return "<Tags({})>".format(self.list())
 
     def __str__(self):
         tags = self.list()
@@ -113,7 +101,7 @@ class Categories(Aggregator):
 
     """
     def __repr__(self):
-        return "Categories({})".format(self.dict())
+        return "<Categories({})>".format(self.dict())
 
     def __str__(self):
         categories = self.dict()
@@ -233,7 +221,7 @@ class Universes(Aggregator):
 
     """
     def __repr__(self):
-        return "Universes({})".format(self.list())
+        return "<Universes({})>".format(self.list())
 
     def __str__(self):
         universes = self.list()
@@ -242,7 +230,7 @@ class Universes(Aggregator):
         seplength = len(agg)
 
         if not universes:
-            out = "No Universes"
+            out = "No universes"
         else:
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
@@ -256,7 +244,7 @@ class Universes(Aggregator):
         return out
 
     def __getitem__(self, handle):
-        """Attach Universe and return a reference to it.
+        """Attach universe and return a reference to it.
 
         :Arguments:
             *handle*
@@ -266,18 +254,24 @@ class Universes(Aggregator):
             *universe*
                 a reference to the newly attached universe
         """
-        self.make_active(handle)
+        self.activate(handle)
 
         return self._container.universe
 
     def add(self, handle, topology, *trajectory):
         """Add a universe definition to the Sim object.
 
-        A Universe is an MDAnalysis object that gives access to the details
+        A universe is an MDAnalysis object that gives access to the details
         of a simulation trajectory. A Sim object can contain multiple universe
         definitions (topology and trajectory pairs), since it is often
         convenient to have different post-processed versions of the same
         raw trajectory.
+
+        Using an existing universe handle will replace the topology and trajectory
+        for that definition; selections for that universe will be retained.
+
+        If there is no current default universe, then the added universe will
+        become the default.
 
         :Arguments:
             *handle*
@@ -289,171 +283,154 @@ class Universes(Aggregator):
                 and these will be used in order as frames for the trajectory
 
         """
-        self._containerfile.add_universe(handle, topology, *trajectory)
+        outtraj = []
+        for traj in trajectory:
+            if isinstance(traj, list):
+                for t in traj:
+                    outtraj.append(t)
+            else:
+                outtraj.append(traj)
+
+        self._containerfile.add_universe(handle, topology, *outtraj)
+
+        if not self.default():
+            self.default(handle)
     
-    def remove(self, handle):
+    def remove(self, *handle):
         """Remove a universe definition.
     
         Also removes any selections associated with the universe.
 
         :Arguments:
             *handle*
-                name of universe to delete
+                name of universe(s) to delete
         """
-        self._containerfile.del_universe(handle)
+        for item in handle:
+            self._containerfile.del_universe(item)
     
-        if self._container._uname == handle:
-            self._container.detach()
+            if self._container._uname == item:
+                self._container._universe = None
+                self._container._uname = None
+
+            if self.default() == item:
+                self._containerfile.update_default()
     
     def list(self):
-        """Get handles for all Universe definitions as a list.
+        """Get handles for all universe definitions as a list.
     
         :Returns:
             *handles*
-                list of all Universe handles
+                list of all universe handles
         """
         return self._containerfile.list_universes()
 
     def activate(self, handle=None):
-        """Make the selected Universe active.
+        """Make the selected universe active.
         
-        Only one Universe definition can be active in a Sim at one time. The
-        active Universe can be accessed from ``Sim.universe``. Stored
-        selections for the active Universe can be accessed as items in
+        Only one universe definition can be active in a Sim at one time. The
+        active universe can be accessed from ``Sim.universe``. Stored
+        selections for the active universe can be accessed as items in
         ``Sim.selections``.
 
-        If no handle given, the default Universe is loaded.
+        If no handle given, the default universe is loaded.
+
+        If a resnum definition exists for the universe, it is applied.
     
         :Arguments:
             *handle*
-                given name for selecting the Universe; if ``None``, default
-                Universe selected
+                given name for selecting the universe; if ``None``, default
+                universe selected
         """
+        if not handle:
+            handle = self._containerfile.get_default()
+    
         if handle:
             udef = self._containerfile.get_universe(handle)
             self._container._universe = Universe(udef[0], *udef[1])
             self._container._uname = handle
-        else:
-            default = self._containerfile.get_default()
-            udef = self._containerfile.get_universe(default)
-            self._container._universe = Universe(udef[0], *udef[1])
-            self._container._uname = default
+            self._apply_resnums()
     
+    def deactivate(self):
+        """Deactivate the current universe.
+        
+        Deactivating the current universe may be necessary to conserve
+        memory, since the universe can then be garbage collected.
+
+        """
+        self._container._universe = None
+        self._container._uname = None
+    
+    def _apply_resnums(self):
+        """Apply resnum definition to active universe.
+    
+        """
+        resnums = self._containerfile.get_resnums(self._container._uname)
+
+        if resnums:
+            self._container._universe.residues.set_resnum(resnums)
+
+    def resnums(self, handle, resnums):
+        """Define resnums for the given universe.
+
+        Resnums are useful for referring to residues by their canonical resid,
+        for instance that stored in the PDB. By giving a resnum definition
+        for the universe, this definition will be applied to the universe
+        on activation.
+
+        Will overwrite existing resnum definition if it exists.
+
+        :Arguments:
+            *handle*
+                name of universe to apply resnums to
+            *resnums*
+                list giving the resnum for each residue in the topology, in
+                atom index order; giving ``None`` will delete resnum definition
+        """
+        if resnums is None:
+            self._containerfile.del_resnums(handle)
+            
+        self._containerfile.update_resnums(handle, resnums)
+    
+        if handle == self._container._uname:
+            self._apply_resnums()
+        
     def default(self, handle=None):
-        """Mark the selected Universe as the default, or get the default Universe.
+        """Mark the selected universe as the default, or get the default universe.
 
-        The default Universe is loaded on calls to ``Sim.universe`` or
-        ``Sim.selections`` when no other Universe is attached.
+        The default universe is loaded on calls to ``Sim.universe`` or
+        ``Sim.selections`` when no other universe is attached.
 
-        If no handle given, returns the current default Universe.
+        If no handle given, returns the current default universe.
 
         :Arguments:
             *handle*
                 given name for selecting the universe; if ``None``, default
-                Universe is unchanged
+                universe is unchanged
 
         :Returns:
             *default*
-                handle of the default Universe
+                handle of the default universe
         """
         if handle:
             self._containerfile.update_default(handle)
         
         return self._containerfile.get_default()
+    
+    def define(self, handle):
+        """Get the topology and trajectory used for the specified universe.
 
-    #TODO: implement in SimFile
-#    def rename(self, handle, new_handle):
-#        """Change the handle used for the specified Universe.
-#    
-#        """
-#        pass
-#
-#    #TODO: not updated yet!
-#    def cache(self, handle, location):
-#        """Copy trajectory to a temporary location, and attach it as a universe.
-#
-#        Useful if running analysis on a trajectory on a networked filesystem.
-#        This method will physically copy the structure and trajectory for the
-#        current universe to the specified *location*. Once transferred, the
-#        universe will be re-attached from the new location.
-#
-#        :Arguments:
-#            *location*
-#                path to cache directory; will be made if it does not exist
-#        """
-#        if self._uname in self._cache:
-#            self._logger.warning("Aborting cache; universe already cached.")
-#            return
-#            
-#        # build and store location so we can delete it later
-#        location = os.path.abspath(location)
-#        loc = os.path.join(location, "{}.{}".format(self.metadata['uuid'], self._uname))
-#
-#        i = 1
-#        location = "{}.{}".format(loc, i)
-#        while os.path.exists(location):
-#            i += 1
-#            location = "{}.{}".format(loc, i)
-#
-#        self.util.makedirs(location)
-#
-#        # build cached structure and trajectory filenames
-#        structure = self.metadata['universes'][self._uname]['structure']
-#        trajectory = self.metadata['universes'][self._uname]['trajectory']
-#
-#        structure_c = os.path.join(location, os.path.basename(structure))
-#        trajectory_c = [ os.path.join(location, os.path.basename(x)) for x in trajectory ]
-#
-#        # check before we accidentally overwrite valuable data
-#        if (structure_c == structure) or (trajectory_c == trajectory):
-#            self._logger.warning("Aborting cache; cache location same as storage!")
-#            return
-#
-#        # copy to cache
-#        self._logger.info("Caching trajectory to {}\nThis may take some time...".format(location))
-#        shutil.copy2(structure, structure_c)
-#        for traj, traj_c in zip(trajectory, trajectory_c):
-#            shutil.copy2(traj, traj_c)
-#
-#        self._cache[self._uname] = dict()
-#        self._cache[self._uname]['location'] = location
-#        self._cache[self._uname]['structure'] = structure_c
-#        self._cache[self._uname]['trajectory'] = trajectory_c
-#
-#        self.universe = Universe(structure_c, *trajectory_c)
-#        self._logger.info("Universe '{}' now cached.".format(self._uname))
-#    
-#    #TODO: not updated yet!
-#    # ensure that trajectories are decached on object destruction
-#    def decache(self):
-#        """Remove cached trajectory from cache; re-attach universe to original.
-#
-#        This operation deletes cached files, but ONLY cached files. It will not
-#        delete original trajectories.
-#
-#        """
-#        if not (self._uname in self._cache):
-#            self._logger.info("Universe '{}' not cached.".format(universe))
-#            return
-#
-#        structure = self.metadata['universes'][self._uname]['structure']
-#        trajectory = self.metadata['universes'][self._uname]['trajectory']
-#        
-#        structure_c = self._cache[self._uname]['structure']
-#        trajectory_c = self._cache[self._uname]['trajectory']
-#        location_c = self._cache[self._uname]['location']
-#
-#        self._cache.pop(self._uname)
-#        self.attach(self._uname, force=True)
-#
-#        # final safety feature before delete
-#        if (structure_c == structure) or (trajectory_c == trajectory):
-#            self._logger.warning("Somehow cache is also storage location. Stopping before delete!")
-#        else:
-#            shutil.rmtree(location_c)
-#
-#        self._logger.info("Universe '{}' de-cached.".format(self._uname))
-         
+        :Arguments:
+            *handle*
+                name of universe to get definition for
+        
+        :Returns:
+            *topology*
+                path to the topology file
+            *trajectory*
+                list of paths to trajectory files
+        """
+        return self._containerfile.get_universe(handle)
+
 class Selections(Aggregator):
     """Selection manager for Sims.
 
@@ -463,7 +440,7 @@ class Selections(Aggregator):
 
     """
     def __repr__(self):
-        return "Selections({})".format({x: self.define(x) for x in self.keys()})
+        return "<Selections({})>".format({x: self.define(x) for x in self.keys()})
 
     def __str__(self):
         selections = self.keys()
@@ -474,9 +451,9 @@ class Selections(Aggregator):
         seplength = len(agg)
 
         if not self._container._uname:
-            out = "No Universe attached; no Selections to show"
+            out = "No universe attached; no Selections to show"
         elif not selections:
-            out = "No Selections for Universe '{}'".format(self._container._uname)
+            out = "No selections for universe '{}'".format(self._container._uname)
         else:
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
@@ -517,7 +494,7 @@ class Selections(Aggregator):
         self._containerfile.del_selection(self._container._uname, handle)
 
     def add(self, handle, *selection):
-        """Add an atom selection for the attached Universe.
+        """Add an atom selection for the attached universe.
         
         AtomGroups are needed to obtain useful information from raw coordinate
         data. It is useful to store AtomGroup selections for later use, since
@@ -533,14 +510,15 @@ class Selections(Aggregator):
         """
         self._containerfile.add_selection(self._container._uname, handle, *selection)
         
-    def remove(self, handle):
-        """Remove an atom selection for the attached Universe.
+    def remove(self, *handle):
+        """Remove an atom selection for the attached universe.
         
         :Arguments:
             *handle*
-                name of selection to remove
+                name of selection(s) to remove
         """
-        self._containerfile.del_selection(self._container._uname, handle)
+        for item in handle:
+            self._containerfile.del_selection(self._container._uname, item)
     
     def keys(self):
         """Return a list of all selection handles.
@@ -578,7 +556,7 @@ class Selections(Aggregator):
         return self._containerfile.get_selection(self._container._uname, handle)
     
     def copy(self, universe):
-        """Copy defined selections of another Universe to the attached Universe.
+        """Copy defined selections of another universe to the active universe.
     
         :Arguments:
             *universe*
@@ -596,7 +574,7 @@ class Members(Aggregator):
 
     """
     def __repr__(self):
-        return "Members({})".format(self.names())
+        return "<Members({})>".format(self.names())
 
     def __str__(self):
         members = self.names()
@@ -746,7 +724,7 @@ class Data(Aggregator):
 
     """
     def __repr__(self):
-        return "Data({})".format(self.list())
+        return "<Data({})>".format(self.list())
 
     def __str__(self):
         data = self.list()
@@ -907,9 +885,10 @@ class Data(Aggregator):
     def add(self, handle, data):
         """Store data in Container.
 
-        A data instance must be either a pandas Series, DataFrame, or Panel
-        object. If dataset doesn't exist, it is added. If a dataset already
-        exists for the given handle, it is replaced.
+        A data instance can be a pandas object (Series, DataFrame, Panel),
+        a numpy array, or a pickleable python object. If the dataset doesn't
+        exist, it is added. If a dataset already exists for the given handle,
+        it is replaced.
 
         :Arguments:
             *handle*
@@ -999,24 +978,23 @@ class Data(Aggregator):
     def retrieve(self, handle, **kwargs):
         """Retrieve stored data.
 
-        The pandas object (Series, DataFrame, or Panel) for the given handle
-        is returned.
-    
+        The stored data structure is read from disk and returned. 
+
         If dataset doesn't exist, ``None`` is returned.
 
-        Subsets of the whole dataset can be returned using keywords such as
-        *start* and *stop* for ranges of rows, and *columns* for selected
-        columns.
+        For pandas objects (Series, DataFrame, or Panel) subsets of the whole
+        dataset can be returned using keywords such as *start* and *stop* for
+        ranges of rows, and *columns* for selected columns.
 
-        The *where* keyword takes a string as input and can be used to filter
-        out rows and columns without loading the full object into memory. For
-        example, given a DataFrame with handle 'mydata' with columns (A, B, C,
-        D), one could return all rows for columns A and C for which column D is
-        greater than .3 with::
+        Also for pandas objects, the *where* keyword takes a string as input
+        and can be used to filter out rows and columns without loading the full
+        object into memory. For example, given a DataFrame with handle 'mydata'
+        with columns (A, B, C, D), one could return all rows for columns A and
+        C for which column D is greater than .3 with::
 
             retrieve('mydata', where='columns=[A,C] & D > .3')
 
-        Or, if I wanted all rows with index = 3 (there could be more than
+        Or, if we wanted all rows with index = 3 (there could be more than
         one)::
 
             retrieve('mydata', where='index = 3')

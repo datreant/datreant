@@ -71,9 +71,58 @@ class _ContainerCore(object):
         if not os.path.exists(p):
             os.makedirs(p)
 
+    def __getitem__(self, handle):
+        """Get dataset corresponding to given handle.
+
+        If dataset doesn't exist, ``None`` is returned.
+        
+        :Arguments:
+            *handle*
+                name of data to retrieve
+
+        :Returns:
+            *data*
+                stored data; ``None`` if nonexistent
+        """
+        return self.data.__getitem__(handle)
+
+    def __setitem__(self, handle, data):
+        """Set dataset corresponding to given handle.
+        
+        A data instance must be either a pandas Series, DataFrame, or Panel
+        object. If dataset doesn't exist, it is added. If a dataset already
+        exists for the given handle, it is replaced.
+
+        :Arguments:
+            *handle*
+                name given to data; needed for retrieval
+            *data*
+                data to store; must be a pandas Series, DataFrame, or Panel
+
+        """
+        self.data.__setitem__(handle, data)
+    
+    def __delitem__(self, handle):
+        """Remove a dataset.
+
+        Note: the directory containing the dataset file (``Data.h5``) will NOT
+        be removed if it still contains file after the removal of the dataset
+        file.
+
+        :Arguments:
+            *handle*
+                name of dataset to delete
+    
+        """
+        self.data.__delitem__(handle)
+
     @property
     def _uuid(self):
         """The uuid of the Container.
+
+        This is automatically generated when the Container is first created,
+        and is unchangeable. It is used by other MDSynthesis objects to
+        uniquely identify the Container.
     
         """
         return self._containerfile.get_uuid()
@@ -81,6 +130,11 @@ class _ContainerCore(object):
     @property
     def name(self):
         """The name of the Container.
+
+        The name of a Container is the only immutable element stored in the
+        object's state file (aside from its unique id). It need not be unique
+        with respect to other Containers, but is used as part of Container's
+        displayed representation.
         
         """
         return self._containerfile.get_name()
@@ -119,6 +173,9 @@ class _ContainerCore(object):
     @property
     def coordinator(self):
         """The location of the associated Coordinator.
+
+        Change this to associate the Container with an existing
+        or new Coordinator.
     
         """
         return self._containerfile.get_coordinator()
@@ -137,6 +194,11 @@ class _ContainerCore(object):
     @property
     def tags(self):
         """The tags of the Container.
+
+        Tags are user-added strings that can be used to and distinguish
+        Containers from one another through Coordinator or Group queries.
+        They can also be useful as flags for external code to determine
+        how to handle the Container.
         
         """
         if not self._tags:
@@ -147,6 +209,11 @@ class _ContainerCore(object):
     def categories(self):
         """The categories of the Container.
         
+        Categories are user-added key-value pairs that can be used to and
+        distinguish Containers from one another through Coordinator or Group
+        queries. They can also be useful as flags for external code to
+        determine how to handle the Container.
+
         """
 
         if not self._categories:
@@ -156,66 +223,25 @@ class _ContainerCore(object):
     @property
     def data(self):
         """The data of the Container.
+
+        Data are user-generated pandas objects (e.g. Series, DataFrames), numpy
+        arrays, or any pickleable python object that are stored in the Container
+        for easy recall later.  Each data instance is given its own directory
+        in the Container's tree.
         
         """
         if not self._data:
             self._data = Core.Aggregators.Data(self, self._containerfile, self._logger)
         return self._data
 
-#TODO: include in documentation fgetter details
 class Sim(_ContainerCore):
     """The Sim object is an interface to data for single simulations.
-
-    A Sim object contains all the machinery required to handle trajectories and
-    the data generated from them in an organized and object-oriented fashion.
-
-    To generate a Sim object from scratch, we need only give it a name. This
-    will be used to distinguish the Sim from other Sims, though it need not be
-    unique. We can also give it a topology and/or trajectory files as we would
-    to an MDAnalysis Universe::
-        
-        s = Sim('fluffy', universe=[topology, trajectory])
-
-    This will create a directory ``name`` that contains a single file (``Sim.h5``).
-    That file is a persistent representation of the Sim on disk. We can access
-    trajectory data by way of an MDAnalysis Universe::
-
-        s.universe
-
-    It can also store selections by giving the usual inputs to
-    ``Universe.selectAtoms``::
-
-        s.selections.add('backbone', ['name CA', 'name C', 'name O1', 'name O2'])
-
-    And the AtomGroup can be conveniently obtained with::
-
-        s.selections['backbone']
-
-    The Sim can also store custom data structures. These can be pandas objects
-    (e.g. Series, DataFrame, Panel), numpy arrays, or other python objects::
-
-        a = np.random.randn(100, 100)
-        s.data.add('randomdata', a)
-
-    This can be recalled later with::
-
-        s.data['randomdata']
-
-    The real strength of the Sim object is how it stores its information. Generating
-    an object from scratch stores the information needed to re-generate it in the
-    filesystem. To generate another instance of the same Sim, simply give the directory
-    where the state file lives::
-
-        s2 = Sim('fluffy/')
-
-    The Sim object will give access to the Universe, stored selections, and stored data
-    as before.
 
     """
 
     def __init__(self, sim, universe=None, uname='main', location='.',
                  coordinator=None, categories=None, tags=None, copy=None):
-        """Generate or regenerate a Sim object.
+        """Generate a new or regenerate an existing (on disk) Sim object.
 
         :Required arguments:
             *sim*
@@ -229,15 +255,16 @@ class Sim(_ContainerCore):
                 will be made the default (can always be changed later)
             *universe*
                 arguments usually given to an MDAnalysis Universe
-                that defines the topology and coordinates of the atoms
+                that defines the topology and trajectory of the atoms
             *location*
                 directory to place Sim object; default is current directory
             *coordinator*
-                directory of the Coordinator to associate with this object; if the
-                Coordinator does not exist, it is created [``None``] 
+                directory of the Coordinator to associate with the Sim; if the
+                Coordinator does not exist, it is created; if ``None``, the Sim
+                will not associate with any Coordinator
             *categories*
-                dictionary with user-defined keys and values; basically used to
-                give Sims distinguishing characteristics
+                dictionary with user-defined keys and values; used to give Sims
+                distinguishing characteristics
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
@@ -282,24 +309,47 @@ class Sim(_ContainerCore):
         elif self.name > other.name:
             out = +1
         return out
-
+    
     @property
     def universe(self):
-        """The active Universe of the Sim.
+        """The active universe of the Sim.
+
+        Universes are interfaces to raw simulation data. The Sim can store
+        multiple universe definitions corresponding to different versions
+        of the same simulation output (e.g. post-processed trajectories derived
+        from the same raw trajectory). The Sim has at most one universe
+        definition that is "active" at one time, with stored selections for
+        this universe directly available via ``Sim.selections``.
+
+        To have more than one universe available as "active" at the same time,
+        generate as many instances of the Sim object from the same statefile on
+        disk as needed, and make a universe active for each one.
     
         """
+        #TODO: include check for changes to universe definition, not just
+        # definition absence
         if self._uname in self._containerfile.list_universes():
             return self._universe
         elif not self._universe:
             self.universes.activate()
             return self._universe
         else:
-            self.detach()
-            self._logger.info('This Universe is no longer defined. It has been detached')
+            self._universe = None
+            self._logger.info('This universe is no longer defined. It has been detached.')
 
     @property
     def universes(self):
-        """The universes of the Sim.
+        """Manage the defined universes of the Sim.
+
+        Universes are interfaces to raw simulation data. The Sim can store
+        multiple universe definitions corresponding to different versions
+        of the same simulation output (e.g. post-processed trajectories derived
+        from the same raw trajectory). The Sim has at most one universe
+        definition that is "active" at one time, with stored selections for
+        this universe directly available via ``Sim.selections``.
+
+        The Sim can also store a preference for a "default" universe, which is
+        activated on a call to ``Sim.universe`` when no other universe is active.
         
         """
         if not self._universes:
@@ -308,7 +358,12 @@ class Sim(_ContainerCore):
 
     @property
     def selections(self):
-        """The selections of the Sim.
+        """Stored atom selections for the active universe.
+
+        Useful atom selections can be stored for the active universe and
+        recalled later. Selections are stored separately for each defined
+        universe, since the same selection may require a different selection
+        string for different universes.
 
         """
         # attach default universe if not attached
@@ -373,39 +428,10 @@ class Sim(_ContainerCore):
 class Group(_ContainerCore):
     """The Group object is a collection of Sims and Groups.
 
-    A Group object keeps track of any number of Sims and Groups added to it as
-    members, and it can store datasets derived from these objects in the same
-    way as Sims.
-
-    To generate a Group object from scratch, we need only give it a name. We
-    can also give any number of Sim and/or Groups as an argument::
-
-        g = Group('gruffy', members=[s1, s2, s3, g4, g5])
-
-    The Group can store custom data structures the same way as Sims. These can
-    be pandas objects (e.g. Series, DataFrame, Panel), numpy arrays, or other
-    python objects::
-
-        a = np.random.randn(100, 100)
-        g.data.add('randomdata', a)
-
-    This can be recalled later with::
-
-        g.data['randomdata']
-
-    The real strength of the Group object is how it stores its information. Generating
-    an object from scratch stores the information needed to re-generate it in the
-    filesystem. To generate another instance of the same Group, simply give the directory
-    where the state file lives::
-
-        g2 = Group('gruffy/')
-
-    The Group object will give access to its members and stored data as before.
-
     """
     def __init__(self, group, members=None, location='.', coordinator=None, categories=None,
                  tags=None, copy=None):
-        """Generate or regenerate a Group object.
+        """Generate a new or regenerate an existing (on disk) Group object.
 
         :Required Arguments:
             *group*
@@ -420,10 +446,11 @@ class Group(_ContainerCore):
                 directory to place Group object; default is current directory
             *coordinator*
                 directory of the Coordinator to associate with this object; if the
-                Coordinator does not exist, it is created [``None``] 
+                Coordinator does not exist, it is created; if ``None``, the Sim
+                will not associate with any Coordinator
             *categories*
-                dictionary with user-defined keys and values; basically used to
-                give Groups distinguishing characteristics
+                dictionary with user-defined keys and values; used to give
+                Groups distinguishing characteristics
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
@@ -451,14 +478,16 @@ class Group(_ContainerCore):
         sims = members.count('Sim')
         groups = members.count('Group')
 
-        out = "<Group: '{}' | {} Members: ".format(self._containerfile.get_name(), 
+        out = "<Group: '{}'".format(self._containerfile.get_name(), 
                                                 len(members))
-        if sims:
-            out = out + "{} Sim".format(sims)
-            if groups:
-                out = out + ", {} Group".format(groups)
-        elif groups:
-            out = out + "{} Group".format(groups)
+        if members:
+            out = out +" | {} Members: ".format(len(members))
+            if sims:
+                out = out + "{} Sim".format(sims)
+                if groups:
+                    out = out + ", {} Group".format(groups)
+            elif groups:
+                out = out + "{} Group".format(groups)
 
         out = out + ">"
 
@@ -467,6 +496,15 @@ class Group(_ContainerCore):
     @property
     def members(self):
         """The members of the Group.
+
+        A Group is useful as an interface to collections of Containers, and
+        they allow direct access to each member of that collection. Often
+        a Group is used to store datasets derived from this collection as
+        an aggregate.
+        
+        Queries can also be made on the Group's members to return a
+        subselection of the members based on some search criteria. This can be
+        useful to define new Groups from members of existing ones.
         
         """
         if not self._members:

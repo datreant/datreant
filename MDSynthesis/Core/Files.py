@@ -901,10 +901,10 @@ class SimFile(ContainerFile):
     elements of the data structure, as well as the data structure definition.
     
     """
-    class _Universe(tables.IsDescription):
-        """Table definition for storing universe preferences.
+    class _Default(tables.IsDescription):
+        """Table definition for storing default universe preference.
 
-        Stores, for example, which universe is marked as default.
+        Stores which universe is marked as default.
 
         """
         default = tables.StringCol(255)
@@ -943,6 +943,12 @@ class SimFile(ContainerFile):
 
         """
         selection = tables.StringCol(255)
+
+    class _Resnums(tables.IsDescription):
+        """Table definition for storing resnums.
+
+        """
+        resnum = tables.UInt32Col()
 
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Sim state file.
@@ -989,10 +995,11 @@ class SimFile(ContainerFile):
         super(SimFile, self).create(containertype='Sim', **kwargs)
 
         self._make_universegroup()
+        self.update_default()
 
     @File._write_state
     def _make_universegroup(self):
-        """Make universes group.
+        """Make universes and universe groups.
 
         Used only on file creation.
 
@@ -1003,18 +1010,19 @@ class SimFile(ContainerFile):
             group = self.handle.create_group('/', 'universes', 'universes')
 
     @File._write_state
-    def update_default(self, universe):
+    def update_default(self, universe=None):
         """Mark the given universe as the default.
 
         :Arguments:
             *universe*
-                name of universe to mark as default
+                name of universe to mark as default; if ``None``,
+                remove default preference
         """
         try:
-            table = self.handle.get_node('/', 'universe')
+            table = self.handle.get_node('/', 'default')
             table.cols.default[0] = universe
         except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'universe', self._Universe, 'universe')
+            table = self.handle.create_table('/', 'default', self._Default, 'default')
             table.row['default'] = universe
             table.row.append()
 
@@ -1027,8 +1035,13 @@ class SimFile(ContainerFile):
                 name of default universe 
 
         """
-        table = self.handle.get_node('/', 'universe')
-        return table.cols.default[0]
+        table = self.handle.get_node('/', 'default')
+        default = table.cols.default[0]
+        
+        if default == 'None':
+            default = None
+
+        return default
 
     @File._read_state
     def list_universes(self):
@@ -1096,8 +1109,9 @@ class SimFile(ContainerFile):
         try:
             group = self.handle.create_group('/universes', universe, universe, createparents=True)
         except tables.NodeError:
-            self.logger.info("Universe definition '{}' already exists. Remove it first.".format(universe))
-            return
+            self.logger.info("Replacing existing universe definition '{}'; retaining selections.".format(universe))
+            self.handle.remove_node('/universes/{}'.format(universe), 'topology')
+            self.handle.remove_node('/universes/{}'.format(universe), 'trajectory')
 
         # construct topology table 
         table = self.handle.create_table('/universes/{}'.format(universe), 'topology', self._Topology, 'topology')
@@ -1117,7 +1131,10 @@ class SimFile(ContainerFile):
             table.row.append()
 
         # construct selection group
-        group = self.handle.create_group('/universes/{}'.format(universe), 'selections', 'selections')
+        try:
+            group = self.handle.create_group('/universes/{}'.format(universe), 'selections', 'selections')
+        except tables.NodeError:
+            pass
 
     @File._write_state
     def del_universe(self, universe):
@@ -1130,6 +1147,70 @@ class SimFile(ContainerFile):
                 name of universe to delete
         """
         self.handle.remove_node('/universes', universe, recursive=True)
+
+    @File._write_state
+    def update_resnums(self, universe, resnums):
+        """Update resnum definition for the given universe.
+
+        Resnums are useful for referring to residues by their canonical resid,
+        for instance that stored in the PDB. By giving a resnum definition
+        for the universe, this definition can be applied to the universe
+        on activation.
+
+        Will overwrite existing definition if it exists.
+
+        :Arguments:
+            *universe*
+                name of universe to associate resnums with
+            *resnums*
+                list giving the resnum for each atom in the topology, in index
+                order
+        """
+        try:
+            table = self.handle.create_table('/universes/{}'.format(universe), 'resnums', self._Resnums, 'resnums')
+        except tables.NoSuchNodeError:
+            self.logger.info("Universe definition '{}' does not exist. Add it first.".format(universe))
+            return
+        except tables.NodeError:
+            self.logger.info("Replacing existing resnums for '{}'.".format(universe))
+            self.handle.remove_node('/universes/{}'.format(universe), 'resnums')
+            table = self.handle.create_table('/universes/{}'.format(universe), 'resnums', self._Resnums, 'resnums')
+
+        # add trajectory paths to table
+        for item in resnums:
+            table.row['resnum'] = item
+            table.row.append()
+
+    @File._read_state
+    def get_resnums(self, universe):
+        """Get the resnum definition for the given universe.
+
+        :Arguments:
+            *universe*
+                name of universe the resnum definition applies to
+
+        :Returns:
+            *resnums*
+                list of the resnums for each atom in topology; None if
+                no resnums defined
+        """
+        try:
+            table = self.handle.get_node('/universes/{}'.format(universe), 'resnums')
+            resnums = [ x['resnum'] for x in table.iterrows() ]
+        except tables.NoSuchNodeError:
+            resnums = None
+
+        return resnums
+
+    @File._write_state
+    def del_resnums(self, universe):
+        """Delete resnum definition from specified universe.
+
+        :Arguments:
+            *universe*
+                name of universe to remove resnum definition from
+        """
+        self.handle.remove_node('/universes/{}'.format(universe), 'resnums')
 
     @File._read_state
     def list_selections(self, universe):
@@ -1176,6 +1257,8 @@ class SimFile(ContainerFile):
         data. It is useful to store AtomGroup selections for later use, since
         they can be complex and atom order may matter.
 
+        Will overwrite existing definition if it exists.
+
         :Arguments:
             *universe*
                 name of universe the selection applies to
@@ -1196,8 +1279,12 @@ class SimFile(ContainerFile):
         except tables.NoSuchNodeError:
             self.logger.info("Universe definition '{}' does not exist. Add it first.".format(universe))
             return
+        except tables.NodeError:
+            self.logger.info("Replacing existing selection '{}'.".format(handle))
+            self.handle.remove_node('/universes/{}/selections'.format(universe), handle)
+            table = self.handle.create_table('/universes/{}/selections'.format(universe), handle, self._Selection, handle)
 
-        # add trajectory paths to table
+        # add selections to table
         for item in selection:
             table.row['selection'] = item
             table.row.append()
@@ -1327,7 +1414,7 @@ class GroupFile(ContainerFile):
         # check if uuid already present
         rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
         if rownum:
-            self.logger.info("Member '{}' already present. Updating with new location.".format(name))
+            # if present, update location
             table.cols.abspath[rownum[0]] = os.path.abspath(location)
             table.cols.relGroup[rownum[0]] = os.path.relpath(location, self.get_location())
         else:
@@ -1473,9 +1560,9 @@ class DatabaseFile(File):
 class DataFile(object):
     """Interface to data files.
 
-    This is an abstraction layer to the pdDataFile and npDataFile objects.
-    This can be used by higher level objects without worrying about whether
-    to use pandas storers or numpy storers.
+    This is an abstraction layer to the pdDataFile, npDataFile, and pyDataFile
+    objects. This can be used by higher level objects without worrying about
+    whether to use pandas storers or numpy storers.
 
     """
     def __init__(self, datadir, logger=None, datafiletype=None, **kwargs): 
@@ -1499,8 +1586,8 @@ class DataFile(object):
         self.logger = logger
 
     def add_data(self, key, data):
-        """Add a pandas data object (Series, DataFrame, Panel) or numpy array
-        to the data file.
+        """Add a pandas data object (Series, DataFrame, Panel), numpy array,
+        or pickleable python object to the data file.
 
         If data already exists for the given key, then it is overwritten.
     

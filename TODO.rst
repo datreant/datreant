@@ -2,6 +2,10 @@
 TODO List
 =============
 
+2014.12.18
+----------
+Need selections to update instead of having to manually delete them.
+
 2014.12.9
 ---------
 We will need to do some kind of caching for Group members. Reloading them on
@@ -274,7 +278,7 @@ Sim::
 Overall scheme
 ==============
 Sean Seyler and and I are collaborating to make this package work well as the
-lower-level infrastructure for two different purposes, and it will fucking rock.
+lower-level infrastructure for two different purposes. It will rock.
 
 To make it easier to build, I propose we split the workload for now as follows:
 
@@ -347,63 +351,3 @@ Core
     + this new paradigm will mesh with another: that Operator base classes are
       built with few prescriptive methods but instead contain decorators that
       can be mixed and matched to get powerful functionality with little work.
-
-Containers
-==========
-Add `notes` metadata item for user-notes.
-
-
-Containers.Sim
-~~~~~~~~~~~~~~
-
-Containers.Group
-~~~~~~~~~~~~~~~~~
-
-Containers.SuperGroup
-~~~~~~~~~~~~~~~~~~~~~
-
-Operators
-=========
-
-Operators.Anaysis
-~~~~~~~~~~~~~~~~~
-
-+ add a progressbar scheme that shows progress of multiple systems
-  in a meaningful way; current one is meant for serial use.
-
-+ rethink the basic paradigm with decorators
-    + could have decorators that corresponds to timeseries, parallelism, or
-    mix-n-match; basically, one only needs to write an analysis routine with
-      minimal criteria, then decorate it!
-    + will have to think hard on this to avoid too much magic that it
-      obfuscates function.
-
-Operators.MetaAnaysis
-~~~~~~~~~~~~~~~~~~~~~
-
-Operators.MacroAnaysis
-~~~~~~~~~~~~~~~~~~~~~
-
-
-Ideastorm (anything from pie-in-sky to random musing)
-=====================================================
-
-Classes for handling md systems that are still being run?
-+ integration with GromacsWrapper?
-+ globus-toolkit methods and/or classes?
--> these are probably outside the scope of MDSynthesis, but I am considering
-   building an "applications" package that includes specific and useful Containers
-   and Operators
-
-Markov analysis class?
-+ see Michael Grabe's work on mitochondrial channels
-
-+ Create VMD operator that can take multiple objects and load all of them
-  at once.
-
-Globus Toolkit!
-+ build an Operator that can perform globus tasks on container objects
-
-Perhaps use IPython.Config as a prototype for a dictionary accessible as
-attributes.
-
