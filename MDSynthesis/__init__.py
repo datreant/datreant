@@ -28,3 +28,4 @@ __all__ = ['Sim', 'Group', 'Coordinator']
 from Containers import Sim, Group
 from Coordinator import Coordinator
 import Core
+from Core.Workers import Bundle
