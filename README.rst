@@ -2,7 +2,7 @@
 MDSynthesis: a persistence engine for intermediate molecular dynamics data
 ==========================================================================
 
-|build-status| |docs|
+|docs|
 
 Although the raw data for any study involving molecular dynamics simulations are
 the full trajectories themselves, often we are most interested in
@@ -62,3 +62,7 @@ Contributing
 This project is still under heavy development, and there are certainly rough
 edges and bugs. Issues and pull requests welcome!
 
+.. |docs| image:: https://readthedocs.org/projects/mdsynthesis/badge/?version=latest
+    :alt: Documentation Status
+    :scale: 100%
+    :target: https://readthedocs.org/projects/mdsynthesis
