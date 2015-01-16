@@ -44,6 +44,8 @@ collections, and can even contain other Groups as members.
 
 Query for simulation results instead of manually hunting for them
 -----------------------------------------------------------------
+.. note:: This feature is planned, but not yet present in the codebase.
+
 :doc:`Sim <Sim>` and :doc:`Group <Group>` objects persistently store their data
 to disk automatically, but it can be tedious to navigate around the filesystem
 to recall them later.  The :doc:`Coordinator <Coordinator>` object gives a

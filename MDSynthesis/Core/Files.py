@@ -1631,7 +1631,7 @@ class DataFile(object):
             self.logger.info('Cannot append numpy arrays.')
         elif isinstance(data, (pd.Series, pd.DataFrame, pd.Panel, pd.Panel4D)):
             self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
-            self.datafile.append(key, data, data_columns=True)
+            self.datafile.append_data(key, data)
         else:
             self.logger.info('Cannot append python object.')
 
