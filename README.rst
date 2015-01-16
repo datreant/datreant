@@ -2,6 +2,8 @@
 MDSynthesis: a persistence engine for intermediate molecular dynamics data
 ==========================================================================
 
+|build-status| |docs|
+
 Although the raw data for any study involving molecular dynamics simulations are
 the full trajectories themselves, often we are most interested in
 lower-dimensional measures of what is happening. These measures may be as simple
