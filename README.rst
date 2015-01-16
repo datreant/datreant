@@ -35,6 +35,8 @@ other Groups as members.
 
 Query for simulation results instead of manually hunting for them
 -----------------------------------------------------------------
+.. note:: This feature is planned, but not yet present in the codebase.
+
 **Sim** and **Group** objects persistently store their data to disk automatically,
 but it can be tedious to navigate around the filesystem to recall them later.
 The **Coordinator** object gives a single interface for querying all **Sim**
