@@ -4,15 +4,41 @@ and possibly a bit messy.
 
 """
 import os, sys
-import time
-import logging
-import pdb
 import glob
-from uuid import uuid4
-from multiprocessing import Process
 
 import Aggregators
 import Files
+import MDSynthesis as mds
+
+class Utilities(object):
+    """Mixin with a few commonly-used standalone methods.
+
+    If it needs to be used in more than one unrelated class, it goes here.
+
+    """
+    def _path2container(self, *directories):
+        """Return Containers from directories containing Container state files.
+
+        :Arguments:
+            *directories*
+                directories containing state files to be loaded from
+    
+        :Returns:
+            list of Containers obtained from directories; returns ``None`` for
+            paths that didn't yield a Container
+
+        """
+        containers = []
+        for directory in directories:
+            if os.path.exists(os.path.join(directory, Files.simfile)):
+                containers.append(mds.Sim(directory))
+            elif os.path.exists(os.path.join(directory, Files.groupfile)):
+                containers.append(mds.Group(directory))
+            else:
+                containers.append(None)
+    
+        return containers
+
 
 class Foxhound(object):
     """A Finder has methods for locating specified objects based on attributes.
@@ -78,3 +104,59 @@ class Attributes(object):
     def __init__(self):
         pass
 
+class Bundle(Utilities):
+    """Non-persistent Container for Sims and Groups.
+    
+    A Bundle is basically an indexable set. It is often used to return the
+    results of a query on a Coordinator or a Group, but can be used on its
+    own as well.
+
+    """
+    def __init__(self, *containers, **kwargs):
+        """Generate a Bundle from any number of Containers.
+    
+        :Arguments:
+            *containers*
+                list giving either Sims, Groups, or paths giving the
+                directories of the state files for such objects in the
+                filesystem
+    
+        :Keywords:
+            *flatten* [NOT IMPLEMENTED]
+                if ``True``, will recursively obtain members of any Groups;
+                only Sims will be present in the bunch 
+         
+        """
+        self._containers = list()
+        self._uuids = list()
+
+        self.add(*containers)
+
+    def add(self, *containers):
+        outconts = list()
+        for container in containers:
+            if isinstance(container, list):
+                self.add(*container)
+            elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
+                uuid = container._uuid
+                if not (uuid in self._uuids):
+                    outconts.append(container)
+                    self._uuids.append(uuid)
+            elif os.path.isdir(container):
+                cont = self._path2container(container)[0]
+                if cont:
+                    uuid = cont._uuid
+                    if not (uuid in self._uuids):
+                        outconts.append(cont)
+                        self._uuids.append(uuid)
+
+        self._containers.extend(outconts)
+    
+    def list(self):
+        """Return list representation.
+    
+        """
+        return list(self._containers)
+
+    def __repr__(self):
+        return "<Bundle({})>".format(self.list())

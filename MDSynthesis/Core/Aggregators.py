@@ -15,7 +15,7 @@ from MDAnalysis import Universe
 import os
 from functools import wraps
 
-class Aggregator(object):
+class Aggregator(Workers.Utilities):
     """Core functionality for information aggregators.
 
     """
@@ -625,29 +625,6 @@ class Members(Aggregator):
                     self._container._cache[item] = new
 
         return member
-
-    def _path2container(self, *directories):
-        """Return Containers from directories containing Container state files.
-
-        :Arguments:
-            *directories*
-                directories containing state files to be loaded from
-    
-        :Returns:
-            list of Containers obtained from directories; returns ``None`` for
-            paths that didn't yield a Container
-
-        """
-        containers = []
-        for directory in directories:
-            if os.path.exists(os.path.join(directory, Files.simfile)):
-                containers.append(mds.Sim(directory))
-            elif os.path.exists(os.path.join(directory, Files.groupfile)):
-                containers.append(mds.Group(directory))
-            else:
-                containers.append(None)
-    
-        return containers
 
     def list(self):
         """Return a list of members.

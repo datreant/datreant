@@ -15,8 +15,11 @@ import fcntl
 import os
 import sys
 import logging
+import warnings
 from functools import wraps
 import MDSynthesis
+
+warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
 
 # Sim state file
 simfile = "Sim.h5"
