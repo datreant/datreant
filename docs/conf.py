@@ -288,5 +288,5 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 
-MOCK_MODULES = ['pandas', 'tables', 'h5py', 'MDAnalysis', 'warnings']
+MOCK_MODULES = ['pandas', 'tables', 'h5py', 'MDAnalysis']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
