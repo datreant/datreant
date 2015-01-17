@@ -58,7 +58,7 @@ class File(object):
               logger to send warnings and errors to
 
         """
-        # filter NaturalNameWarnings from pytables, when the arrive
+        # filter NaturalNameWarnings from pytables, when they arrive
         warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
 
         self.filename = os.path.abspath(filename)
