@@ -19,8 +19,6 @@ import warnings
 from functools import wraps
 import MDSynthesis
 
-warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
-
 # Sim state file
 simfile = "Sim.h5"
 
@@ -60,6 +58,9 @@ class File(object):
               logger to send warnings and errors to
 
         """
+        # filter NaturalNameWarnings from pytables, when the arrive
+        warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
+
         self.filename = os.path.abspath(filename)
         self.handle = None
 
