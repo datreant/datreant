@@ -487,6 +487,9 @@ class Selections(Aggregator):
             selection = [selection]
         self._containerfile.add_selection(self._container._uname, handle, *selection)
     
+    def __iter__(self):
+        return self._containerfile.list_selections(self._container._uname).__iter__()
+
     def __delitem__(self, handle):
         """Remove stored selection for given handle and the active universe.
     
@@ -717,6 +720,9 @@ class Data(Aggregator):
             for datum in data:
                 out = out + "'{}'\n".format(datum)
         return out
+
+    def __iter__(self):
+        return self.list().__iter__()
 
     def _makedirs(self, p):
         """Make directories and all parents necessary.
