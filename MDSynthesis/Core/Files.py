@@ -1767,7 +1767,7 @@ class pdDataFile(File):
         super(pdDataFile, self).__init__(filename, logger=logger)
 
         # open file for the first time to initialize handle
-        self.handle = pd.HDFStore(self.filename, 'a')
+        self.handle = pd.HDFStore(self.filename, 'a', complevel=5, complib='blosc')
         self.handle.close()
 
     @File._write_pddata
