@@ -1767,7 +1767,7 @@ class pdDataFile(File):
         super(pdDataFile, self).__init__(filename, logger=logger)
 
         # open file for the first time to initialize handle
-        self.handle = pd.HDFStore(self.filename, 'a', complevel=5, complib='blosc')
+        self.handle = pd.HDFStore(self.filename, 'a')
         self.handle.close()
 
     @File._write_pddata
@@ -1786,9 +1786,9 @@ class pdDataFile(File):
         """
         # index all columns if possible
         try:
-            self.handle.put(key, data, format='table', data_columns=True)
+            self.handle.put(key, data, format='table', data_columns=True, complevel=5, complib='blosc')
         except AttributeError:
-            self.handle.put(key, data, format='table')
+            self.handle.put(key, data, format='table', complevel=5, complib='blosc')
 
     @File._write_pddata
     def append_data(self, key, data):
@@ -1807,7 +1807,7 @@ class pdDataFile(File):
                 data 
 
         """
-        self.handle.append(key, data, data_columns=True)
+        self.handle.append(key, data, data_columns=True, complevel=5, complib='blosc')
 
     @File._read_pddata
     def get_data(self, key, **kwargs):
