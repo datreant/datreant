@@ -580,19 +580,19 @@ class Members(Aggregator):
         return "<Members({})>".format(self.names())
 
     def __str__(self):
-        members = self.names()
+        names = self.names()
+        containertypes = self.containertypes()
         agg = "Members"
         majsep = "="
         seplength = len(agg)
 
-        if not members:
+        if not names:
             out = "No Members"
         else:
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
-            for i in xrange(len(members)):
-                out = out + "{} '{}' ({})\n".format(i, members[i].name,
-                                                    members[i]._containertype)
+            for i, name, containertype in zip(xrange(len(names)), names, containertypes):
+                out = out + "{}\t{}:\t{}\n".format(i, containertype, name)
 
         return out
 
@@ -651,6 +651,12 @@ class Members(Aggregator):
                 self._container._cache[uuid] = new
         
         return members
+
+    def containertypes(self):
+        """Return a list of member containertypes.
+
+        """
+        return self._containerfile.get_members_containertype()
 
     def names(self):
         """Return a list of member names.
