@@ -1807,7 +1807,10 @@ class pdDataFile(File):
                 data 
 
         """
-        self.handle.append(key, data, data_columns=True, complevel=5, complib='blosc')
+        try:
+            self.handle.append(key, data, data_columns=True, complevel=5, complib='blosc')
+        except AttributeError:
+            self.handle.append(key, data, complevel=5, complib='blosc')
 
     @File._read_pddata
     def get_data(self, key, **kwargs):
