@@ -122,10 +122,7 @@ class File(object):
            *success*
               True if exclusive lock successfully obtained
         """
-        # first obtain shared lock; may help to avoid race conditions between
-        # exclusive locks (REQUIRES THOROUGH TESTING)
-        if self._shlock(f):
-            fcntl.lockf(f, fcntl.LOCK_EX)
+        fcntl.lockf(f, fcntl.LOCK_EX)
     
         return True
 
@@ -192,12 +189,15 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            self.handle = tables.open_file(self.filename, 'a')
-            self._exlock(self.handle)
-            try:
+            if self.handle.isopen and (self.handle.mode == 'a'):
                 out = func(self, *args, **kwargs)
-            finally:
-                self.handle.close()
+            else:
+                self.handle = tables.open_file(self.filename, 'a')
+                self._exlock(self.handle)
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
             return out
 
         return inner
@@ -486,6 +486,7 @@ class ContainerFile(File):
         categories = kwargs.pop('categories', dict())
         self.add_categories(**categories)
 
+    @File._write_state
     def update(self, **kwargs):
         """Add new data all at once.
 
