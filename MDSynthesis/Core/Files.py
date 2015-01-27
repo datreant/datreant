@@ -365,13 +365,6 @@ class ContainerFile(File):
         # container type; Sim or Group
         containertype = tables.StringCol(36)
 
-        # eventually we would like this to be generated dynamically
-        # meaning, size of location string is size needed, and meta table
-        # is regenerated if any of its strings need to be (or smaller)
-        # When Coordinator generates its database, it uses largest string size
-        # needed
-        location = tables.StringCol(256)
-
         # version of MDSynthesis object file data corresponds to 
         # allows future-proofing of old objects so that formats of new releases
         # can be automatically built from old ones
@@ -472,7 +465,6 @@ class ContainerFile(File):
         self.update_uuid()
         self.update_containertype(containertype)
         self.update_name(kwargs.pop('name', containertype))
-        self.update_location()
         self.update_version(kwargs.pop('version', MDSynthesis.__version__))
 
         # coordinator table
@@ -499,9 +491,6 @@ class ContainerFile(File):
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
         """
-
-        # update location
-        self.update_location()
 
         # tags table
         tags = kwargs.pop('tags', list())
@@ -592,7 +581,6 @@ class ContainerFile(File):
                 table.row['containertype'] = containertype
                 table.row.append()
 
-    @File._read_state
     def get_location(self):
         """Get Container location.
 
@@ -601,20 +589,7 @@ class ContainerFile(File):
                 absolute path to Container directory
     
         """
-        table = self.handle.get_node('/', 'meta')
-        return table.cols.location[0]
-
-    @File._write_state
-    def update_location(self):
-        """Update Container location.
-
-        """
-        try:
-            table = self.handle.get_node('/', 'meta')
-            table.cols.location[0] = os.path.dirname(self.filename)
-        except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
-            table.row['location'] = os.path.dirname(self.filename)
+        return os.path.dirname(self.filename)
 
     @File._read_state
     def get_version(self):
