@@ -189,15 +189,12 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            if self.handle.isopen and (self.handle.mode == 'a'):
+            self.handle = tables.open_file(self.filename, 'a')
+            self._exlock(self.handle)
+            try:
                 out = func(self, *args, **kwargs)
-            else:
-                self.handle = tables.open_file(self.filename, 'a')
-                self._exlock(self.handle)
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
+            finally:
+                self.handle.close()
             return out
 
         return inner
@@ -478,7 +475,6 @@ class ContainerFile(File):
         categories = kwargs.pop('categories', dict())
         self.add_categories(**categories)
 
-    @File._write_state
     def update(self, **kwargs):
         """Add new data all at once.
 
