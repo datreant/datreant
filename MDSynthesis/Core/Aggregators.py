@@ -895,9 +895,15 @@ class Data(Aggregator):
         containing the dataset file (``Data.h5``) will NOT be removed if it
         still contains file(s) after the removal of the dataset file.
 
+        For pandas objects (Series, DataFrame, or Panel) subsets of the whole
+        dataset can be removed using keywords such as *start* and *stop* for
+        ranges of rows, and *columns* for selected columns.
+
         :Arguments:
             *handle*
                 name of dataset to delete
+
+        :Keywords:
             *where*
                 conditions for what rows/columns to remove
             *start* 
