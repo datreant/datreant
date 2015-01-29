@@ -366,11 +366,12 @@ class Sim(_ContainerCore):
         string for different universes.
 
         """
-        # attach default universe if not attached
-        self.universe
-        if not self._selections:
-            self._selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
-        return self._selections
+        # attach default universe if not attached, and only give results if a
+        # universe is present thereafter
+        if self.universe:
+            if not self._selections:
+                self._selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
+            return self._selections
 
     def _generate(self, sim, universe=None, uname='main', location='.',
             coordinator=None, categories=None, tags=None, copy=None):
