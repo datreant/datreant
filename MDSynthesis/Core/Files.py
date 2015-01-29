@@ -1677,12 +1677,11 @@ class DataFile(object):
         """
         if self.datafiletype == npdatafile:
             self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
-            out = self.datafile.del_data(key, data, **kwargs)
+            out = self.datafile.del_data(key, **kwargs)
             self.datafile = None
-
         elif self.datafiletype == pddatafile:
             self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
-            out = self.datafile.del_data(key, data, **kwargs)
+            out = self.datafile.del_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pydatafile:
             pass

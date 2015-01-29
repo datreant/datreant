@@ -914,7 +914,7 @@ class Data(Aggregator):
         """
         datafile, datafiletype = self._get_datafile(handle)
 
-        if datafiletype == Files.pddatafile:
+        if kwargs and datafiletype == Files.pddatafile:
             self._delete_data(handle, **kwargs)
         elif datafile:
             os.remove(datafile)
@@ -953,6 +953,9 @@ class Data(Aggregator):
                 row number to stop selection
 
         """
+        # only called for pandas objects at the moment
+        filename, filetype = self._get_datafile(handle)
+        self._datafile.datafiletype = filetype
         try:
             self._datafile.del_data('main', **kwargs)
         except NotImplementedError:
