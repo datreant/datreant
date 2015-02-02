@@ -282,8 +282,7 @@ class Sim(_ContainerCore):
 
         if (os.path.isdir(sim)):
             # if directory string, load existing object
-            self._regenerate(sim, universe=universe, uname=uname,
-                    categories=categories, tags=tags, copy=copy)
+            self._regenerate(sim)
         else:
             self._generate(sim, universe=universe, uname=uname,
                     location=location, coordinator=coordinator,
@@ -451,8 +450,7 @@ class Group(_ContainerCore):
 
         if (os.path.isdir(group)):
             # if directory string, load existing object
-            self._regenerate(group, members=members, categories=categories,
-                    tags=tags, copy=copy)
+            self._regenerate(group)
         else:
             self._generate(group, members=members, location=location,
                     coordinator=coordinator, categories=categories, tags=tags,
