@@ -236,7 +236,7 @@ class _ContainerCore(object):
 
 class Sim(_ContainerCore):
     """The Sim object is an interface to data for single simulations.
-
+    
     """
 
     def __init__(self, sim, universe=None, uname='main', location='.',
@@ -249,7 +249,7 @@ class Sim(_ContainerCore):
                 if regenerating an existing Sim, string giving the path
                 to the directory containing the Sim object's state file
 
-        :Optional arguments:
+        :Optional arguments when generating a new Sim:
             *uname*
                 desired name to associate with universe; this universe
                 will be made the default (can always be changed later)
@@ -257,7 +257,7 @@ class Sim(_ContainerCore):
                 arguments usually given to an MDAnalysis Universe
                 that defines the topology and trajectory of the atoms
             *location*
-                directory to place Sim object; default is current directory
+                directory to place Sim object; default is the current directory
             *coordinator*
                 directory of the Coordinator to associate with the Sim; if the
                 Coordinator does not exist, it is created; if ``None``, the Sim
@@ -268,10 +268,8 @@ class Sim(_ContainerCore):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *copy* [TODO]
-                if a Sim given, copy the contents into the new Sim;
-                elements copied include tags, categories, universes,
-                selections, and data 
+
+        *Note*: optional arguments are ignored when regenerating an existing Sim
 
         """
         super(Sim, self).__init__()
@@ -403,28 +401,16 @@ class Sim(_ContainerCore):
             self.universes.add(uname, *universe)
             self.universes.default(uname)
 
-    def _regenerate(self, sim, universe=None, uname='main', categories=None,
-            tags=None, copy=None):
+    def _regenerate(self, sim):
         """Re-generate existing Sim object.
         
         """
-        # process keywords
-        if not categories:
-            categories = dict()
-        if not tags:
-            tags = list()
-
         # load state file object
         statefile = os.path.join(sim, Core.Files.simfile)
-        self._containerfile = Core.Files.SimFile(statefile,
-                categories=categories, tags=tags)
+        self._containerfile = Core.Files.SimFile(statefile)
 
         self._start_logger('Sim', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
-
-        # add universe
-        if (uname and universe):
-            self.universes.add(uname, *universe)
 
 class Group(_ContainerCore):
     """The Group object is a collection of Sims and Groups.
@@ -440,11 +426,11 @@ class Group(_ContainerCore):
                 if regenerating an existing Group, string giving the path
                 to the directory containing the Group object's state file
 
-        :Optional arguments:
+        :Optional arguments when generating a new Group:
             *members*
                 a list of Sims and/or Groups to immediately add as members
             *location*
-                directory to place Group object; default is current directory
+                directory to place Group object; default is the current directory
             *coordinator*
                 directory of the Coordinator to associate with this object; if the
                 Coordinator does not exist, it is created; if ``None``, the Sim
@@ -455,9 +441,8 @@ class Group(_ContainerCore):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *copy* [TODO]
-                if a Group given, copy the contents into the new Group;
-                elements copied include tags, categories, members, and data
+
+        *Note*: optional arguments are ignored when regenerating an existing Group
 
         """
         super(Group, self).__init__()
@@ -539,19 +524,10 @@ class Group(_ContainerCore):
         # add members
         self.members.add(*members)
     
-    def _regenerate(self, group, members=None, categories=None, tags=None,
-            copy=None):
+    def _regenerate(self, group):
         """Re-generate existing object.
         
         """
-        # process keywords
-        if not members:
-            members = list()
-        if not categories:
-            categories = dict()
-        if not tags:
-            tags = list()
-
         # load state file object
         statefile = os.path.join(group, Core.Files.groupfile)
         self._containerfile = Core.Files.GroupFile(statefile,
@@ -559,6 +535,3 @@ class Group(_ContainerCore):
 
         self._start_logger('Group', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
-
-        # add members
-        self.members.add(*members)
