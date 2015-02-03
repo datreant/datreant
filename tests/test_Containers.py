@@ -86,3 +86,9 @@ class TestContainer:
         del container.categories['bark']
         assert 'bark' not in container.categories
 
+        container.categories['lark'] = 42
+        container.categories['fark'] = 32.3
+
+        container.categories.remove(all=True)
+        assert len(container.categories) == 0
+
