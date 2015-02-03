@@ -528,8 +528,7 @@ class Group(_ContainerCore):
         """
         # load state file object
         statefile = os.path.join(group, Core.Files.groupfile)
-        self._containerfile = Core.Files.GroupFile(statefile,
-                categories=categories, tags=tags)
+        self._containerfile = Core.Files.GroupFile(statefile)
 
         self._start_logger('Group', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
