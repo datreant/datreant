@@ -1,7 +1,0 @@
-numpy
-numexpr
-Cython
-tables
-pandas
-h5py
-MDAnalysis

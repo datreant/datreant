@@ -1,12 +1,20 @@
 language: python
+
 python:
   - "2.6"
   - "2.7"
-# command to install dependencies
+
+# install system dependencies
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq libhdf5-serial-dev
+
+# install python dependencies
 install:
-  - "pip install numpy numexpr Cython"
-  - "pip install tables"
-  - "pip install pandas h5py MDAnalysis"
-  - "pip install ."
-# command to run tests
+  - pip install numpy numexpr Cython
+  - pip install tables
+  - pip install pandas h5py MDAnalysis
+  - pip install .
+
+# run tests
 script: py.tests
