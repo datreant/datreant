@@ -724,6 +724,19 @@ class Data(Aggregator):
     def __repr__(self):
         return "<Data({})>".format(self.list())
 
+    def _repr_html_(self):
+        data = self.list()
+        agg = "Data"
+        if not data:
+            out = "No Data"
+        else:
+            out = "<h3>{}</h3>".format(agg)
+            out = out + "<ul style='list-style-type:none'>"
+            for datum in data:
+                out = out + "<li>{}</li>".format(datum)
+            out = out + "</ul>"
+        return out
+
     def __str__(self):
         data = self.list()
         agg = "Data"
