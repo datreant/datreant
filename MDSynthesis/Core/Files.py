@@ -434,9 +434,6 @@ class ContainerFile(File):
             self.handle = tables.open_file(self.filename, 'r')
             self.handle.close()
 
-            # update data elements
-            self.update(**kwargs)
-
     def create(self, **kwargs):
         """Build state file and common data structure elements.
 
@@ -466,28 +463,6 @@ class ContainerFile(File):
 
         # coordinator table
         self.update_coordinator(kwargs.pop('coordinator', None))
-
-        # tags table
-        tags = kwargs.pop('tags', list())
-        self.add_tags(*tags)
-
-        # categories table
-        categories = kwargs.pop('categories', dict())
-        self.add_categories(**categories)
-
-    def update(self, **kwargs):
-        """Add new data all at once.
-
-        Used in regeneration init.
-
-        :Keywords:
-           *categories*
-              user-given dictionary with custom keys and values; used to
-              give distinguishing characteristics to object for search
-           *tags*
-              user-given list with custom elements; used to give distinguishing
-              characteristics to object for search
-        """
 
         # tags table
         tags = kwargs.pop('tags', list())
