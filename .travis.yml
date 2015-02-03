@@ -17,4 +17,4 @@ install:
   - pip install .
 
 # run tests
-script: py.tests
+script: py.test
