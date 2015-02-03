@@ -9,14 +9,89 @@ import logging
 from MDAnalysis import Universe
 import Core
 
-class _ContainerCore(object):
+class Container(object):
     """Core class for all Containers.
 
     The ContainerCore object is not intended to be useful on its own, but
     instead contains methods and attributes common to all Container objects.
 
     """
-    def __init__(self):
+    def __init__(self, container, location='.', coordinator=None,
+            categories=None, tags=None):
+        """Generate a new or regenerate an existing (on disk) generic Container
+        object.
+
+        :Required arguments:
+            *container*
+                if generating a new Container, the desired name to give it;
+                if regenerating an existing Container, string giving the path
+                to the directory containing the Container object's state file
+
+        :Optional arguments when generating a new Container:
+            *location*
+                directory to place Container object; default is the current
+                directory 
+            *coordinator*
+                directory of the Coordinator to associate with the Container;
+                if the Coordinator does not exist, it is created; if ``None``,
+                the Container will not associate with any Coordinator
+            *categories*
+                dictionary with user-defined keys and values; used to give
+                Containers distinguishing characteristics
+            *tags*
+                list with user-defined values; like categories, but useful for
+                adding many distinguishing descriptors
+
+        *Note*: optional arguments are ignored when regenerating an existing
+                Container
+
+        """
+        self._placeholders()
+
+        if (os.path.isdir(container)):
+            # if directory string, load existing object
+            self._regenerate(container)
+        else:
+            self._generate(container, location=location,
+                    coordinator=coordinator, categories=categories, tags=tags)
+
+    def _generate(self, container, location='.', coordinator=None,
+            categories=None, tags=None):
+        """Generate new generic Container object.
+         
+        """
+        # process keywords
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
+
+        # generate state file
+        #TODO: need try, except for case where Container already exists
+
+        # name mangling to give a valid directory name
+        # TODO: is this robust? What other characters are problematic?
+        dirname = container.replace('/', '_')
+        os.makedirs(os.path.join(location, dirname))
+        statefile = os.path.join(location, dirname, Core.Files.containerfile)
+
+        self._start_logger('Container', container)
+        self._containerfile = Core.Files.ContainerFile(statefile, self._logger,
+                name=container, coordinator=coordinator, categories=categories,
+                tags=tags)
+
+    def _regenerate(self, container):
+        """Re-generate existing Container object.
+        
+        """
+        # load state file object
+        statefile = os.path.join(container, Core.Files.containerfile)
+        self._containerfile = Core.Files.ContainerFile(statefile)
+
+        self._start_logger('Container', self._containerfile.get_name())
+        self._containerfile._start_logger(self._logger)
+
+    def _placeholders(self):
         """Necessary placeholders for aggregator instances.
 
         """
@@ -234,13 +309,13 @@ class _ContainerCore(object):
             self._data = Core.Aggregators.Data(self, self._containerfile, self._logger)
         return self._data
 
-class Sim(_ContainerCore):
+class Sim(Container):
     """The Sim object is an interface to data for single simulations.
     
     """
 
     def __init__(self, sim, universe=None, uname='main', location='.',
-                 coordinator=None, categories=None, tags=None, copy=None):
+                 coordinator=None, categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Sim object.
 
         :Required arguments:
@@ -272,13 +347,12 @@ class Sim(_ContainerCore):
         *Note*: optional arguments are ignored when regenerating an existing Sim
 
         """
-        super(Sim, self).__init__()
+        self._placeholders()
 
         self._universes = None
         self._selections = None
         self._universe = None     # universe 'dock'
         self._uname = None        # attached universe name 
-        self._cache = dict()      # cache path storage
 
         if (os.path.isdir(sim)):
             # if directory string, load existing object
@@ -286,13 +360,11 @@ class Sim(_ContainerCore):
         else:
             self._generate(sim, universe=universe, uname=uname,
                     location=location, coordinator=coordinator,
-                    categories=categories, tags=tags, copy=copy)
+                    categories=categories, tags=tags)
 
     def __repr__(self):
         if not self._uname:
             out = "<Sim: '{}'>".format(self._containerfile.get_name())
-        elif self._uname in self._cache:
-            out = "<Sim: '{}' | active universe (cached): '{}'>".format(self._containerfile.get_name(), self._uname)
         else:
             out = "<Sim: '{}' | active universe: '{}'>".format(self._containerfile.get_name(), self._uname)
 
@@ -371,7 +443,7 @@ class Sim(_ContainerCore):
             return self._selections
 
     def _generate(self, sim, universe=None, uname='main', location='.',
-            coordinator=None, categories=None, tags=None, copy=None):
+            coordinator=None, categories=None, tags=None):
         """Generate new Sim object.
          
         """
@@ -411,12 +483,12 @@ class Sim(_ContainerCore):
         self._start_logger('Sim', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
 
-class Group(_ContainerCore):
+class Group(Container):
     """The Group object is a collection of Sims and Groups.
 
     """
     def __init__(self, group, members=None, location='.', coordinator=None, categories=None,
-                 tags=None, copy=None):
+                 tags=None):
         """Generate a new or regenerate an existing (on disk) Group object.
 
         :Required Arguments:
@@ -444,7 +516,8 @@ class Group(_ContainerCore):
         *Note*: optional arguments are ignored when regenerating an existing Group
 
         """
-        super(Group, self).__init__()
+        self._placeholders()
+
         self._members = None
         self._cache = dict()    # member cache
 
@@ -453,8 +526,7 @@ class Group(_ContainerCore):
             self._regenerate(group)
         else:
             self._generate(group, members=members, location=location,
-                    coordinator=coordinator, categories=categories, tags=tags,
-                    copy=copy)
+                    coordinator=coordinator, categories=categories, tags=tags)
 
     def __repr__(self):
         members = self._containerfile.get_members_containertype()
@@ -496,7 +568,7 @@ class Group(_ContainerCore):
         return self._members
 
     def _generate(self, group, members=None, location='.', coordinator=None,
-                  categories=None, tags=None, copy=None):
+                  categories=None, tags=None):
         """Generate new Group.
          
         """

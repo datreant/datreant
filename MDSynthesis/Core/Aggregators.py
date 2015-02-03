@@ -49,6 +49,9 @@ class Tags(Aggregator):
     def __iter__(self):
         return self._containerfile.get_tags().__iter__()
 
+    def __len__(self):
+        return len(self._containerfile.get_tags())
+
     def list(self):
         """Get all tags for the Container as a list.
     
@@ -144,6 +147,9 @@ class Categories(Aggregator):
 
     def __iter__(self):
         return self._containerfile.get_categories().__iter__()
+
+    def __len__(self):
+        return len(self._containerfile.get_categories())
 
     def dict(self):
         """Get all categories for the Container as a dictionary.

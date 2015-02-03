@@ -19,6 +19,9 @@ import warnings
 from functools import wraps
 import MDSynthesis
 
+# generic Container state file
+containerfile = "Container.h5"
+
 # Sim state file
 simfile = "Sim.h5"
 
