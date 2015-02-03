@@ -145,6 +145,12 @@ class Categories(Aggregator):
         outdict = {key: value}
         self._containerfile.add_categories(**outdict)
 
+    def __delitem__(self, category):
+        """Remove category from Container.
+    
+        """
+        self._containerfile.del_categories(category)
+
     def __iter__(self):
         return self._containerfile.get_categories().__iter__()
 

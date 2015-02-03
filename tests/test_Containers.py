@@ -81,3 +81,8 @@ class TestContainer:
 
         container.categories.remove('marklar')
         assert 'marklar' not in container.categories
+
+        container.categories.add({'bark': 'snark'}, lark=27)
+        del container.categories['bark']
+        assert 'bark' not in container.categories
+
