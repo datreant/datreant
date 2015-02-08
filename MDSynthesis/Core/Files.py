@@ -1130,7 +1130,7 @@ class SimFile(ContainerFile):
             self.handle.remove_node('/universes/{}'.format(universe), 'resnums')
             table = self.handle.create_table('/universes/{}'.format(universe), 'resnums', self._Resnums, 'resnums')
 
-        # add trajectory paths to table
+        # add resnums to table
         for item in resnums:
             table.row['resnum'] = item
             table.row.append()
