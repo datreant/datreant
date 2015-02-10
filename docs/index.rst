@@ -11,7 +11,7 @@ the full trajectories themselves, often we are most interested in
 lower-dimensional measures of what is happening. These measures may be as simple
 as the distance between two specific atoms, or as complex as the percentage of
 contacts relative to some native structure. Some measures may even be
-comparisons of one or more trajectories against each other. In any case, it may
+comparisons of two or more trajectories against each other. In any case, it may
 be time-consuming to obtain these lower-dimensional intermediate data, and so
 it is useful to store them.
 
