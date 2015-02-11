@@ -21,7 +21,7 @@ dependencies. It is best to first install PyTables' dependencies explicitly ::
 
     pip install numpy numexpr Cython
 
-Then install tables and everthing else ::
+Then install PyTables and everthing else ::
     
     pip install tables 
     pip install pandas h5py MDAnalysis
