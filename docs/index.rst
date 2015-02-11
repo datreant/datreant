@@ -56,7 +56,7 @@ single line of code.
 Getting MDSynthesis
 ===================
 We have yet to make an official release, but you can get the current state
-of the codebase from the `development branch on GitHub 
+of the codebase from the `master branch on GitHub 
 <https://github.com/dotsdl/MDSynthesis>`__.
 
 See the :doc:`installation instructions <install>` to set it up.
@@ -64,7 +64,7 @@ See the :doc:`installation instructions <install>` to set it up.
 Dependencies
 ============
 * MDAnalysis: 0.8.0 or higher
-* Pandas: 0.15.0 or higher
+* pandas: 0.15.0 or higher
 * PyTables: 3.1.0 or higher
 * h5py: 2.3.0 or higher
 
