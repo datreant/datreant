@@ -18,6 +18,7 @@ from functools import wraps
 
 import aggregators
 import workers
+import mdsynthesis as mds
 
 # generic Container state file
 containerfile = "Container.h5"
@@ -462,7 +463,7 @@ class ContainerFile(File):
         self.update_uuid()
         self.update_containertype(containertype)
         self.update_name(kwargs.pop('name', containertype))
-        self.update_version(kwargs.pop('version', MDSynthesis.__version__))
+        self.update_version(kwargs.pop('version', mds.__version__))
 
         # coordinator table
         self.update_coordinator(kwargs.pop('coordinator', None))

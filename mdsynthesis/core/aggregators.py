@@ -16,7 +16,7 @@ import files
 import workers
 import mdsynthesis as mds
 
-class Aggregator(Workers.Utilities):
+class Aggregator(workers.Utilities):
     """Core functionality for information aggregators.
 
     """

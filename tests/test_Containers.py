@@ -2,7 +2,7 @@
 
 """
 
-import MDSynthesis as mds
+import mdsynthesis as mds
 import pytest
 import os, shutil
 
@@ -17,7 +17,7 @@ class TestContainer:
     @pytest.fixture
     def container(self, tmpdir):
         with tmpdir.as_cwd():
-            c = mds.Containers.Container(containername)
+            c = mds.containers.Container(containername)
         return c
     
     def test_init(self, container, tmpdir):

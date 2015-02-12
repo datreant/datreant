@@ -7,13 +7,11 @@ import os, sys
 import shutil
 import logging
 from MDAnalysis import Universe
+
 import core
 
 class Container(object):
     """Core class for all Containers.
-
-    The ContainerCore object is not intended to be useful on its own, but
-    instead contains methods and attributes common to all Container objects.
 
     """
     def __init__(self, container, location='.', coordinator=None,
@@ -73,10 +71,10 @@ class Container(object):
         # TODO: is this robust? What other characters are problematic?
         dirname = container.replace('/', '_')
         os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, Core.Files.containerfile)
+        statefile = os.path.join(location, dirname, core.files.containerfile)
 
         self._start_logger('Container', container)
-        self._containerfile = Core.Files.ContainerFile(statefile, self._logger,
+        self._containerfile = core.files.ContainerFile(statefile, self._logger,
                 name=container, coordinator=coordinator, categories=categories,
                 tags=tags)
 
@@ -85,8 +83,8 @@ class Container(object):
         
         """
         # load state file object
-        statefile = os.path.join(container, Core.Files.containerfile)
-        self._containerfile = Core.Files.ContainerFile(statefile)
+        statefile = os.path.join(container, core.files.containerfile)
+        self._containerfile = core.files.ContainerFile(statefile)
 
         self._start_logger('Container', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
@@ -124,7 +122,7 @@ class Container(object):
                 location = os.path.abspath(location)
                 # file handler if desired; beware of problems with too many open files
                 # when a large number of Containers are at play
-                logfile = os.path.join(location, Core.Files.containerlog)
+                logfile = os.path.join(location, core.files.containerlog)
                 fh = logging.FileHandler(logfile)
                 ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
                 fh.setFormatter(ff)
@@ -277,7 +275,7 @@ class Container(object):
         
         """
         if not self._tags:
-            self._tags = Core.Aggregators.Tags(self, self._containerfile, self._logger)
+            self._tags = core.aggregators.Tags(self, self._containerfile, self._logger)
         return self._tags
 
     @property
@@ -292,7 +290,7 @@ class Container(object):
         """
 
         if not self._categories:
-            self._categories = Core.Aggregators.Categories(self, self._containerfile, self._logger)
+            self._categories = core.aggregators.Categories(self, self._containerfile, self._logger)
         return self._categories
 
     @property
@@ -306,7 +304,7 @@ class Container(object):
         
         """
         if not self._data:
-            self._data = Core.Aggregators.Data(self, self._containerfile, self._logger)
+            self._data = core.aggregators.Data(self, self._containerfile, self._logger)
         return self._data
 
 class Sim(Container):
@@ -422,7 +420,7 @@ class Sim(Container):
         
         """
         if not self._universes:
-            self._universes = Core.Aggregators.Universes(self, self._containerfile, self._logger)
+            self._universes = core.aggregators.Universes(self, self._containerfile, self._logger)
         return self._universes
 
     @property
@@ -439,7 +437,7 @@ class Sim(Container):
         # universe is present thereafter
         if self.universe:
             if not self._selections:
-                self._selections = Core.Aggregators.Selections(self, self._containerfile, self._logger)
+                self._selections = core.aggregators.Selections(self, self._containerfile, self._logger)
             return self._selections
 
     def _generate(self, sim, universe=None, uname='main', location='.',
@@ -460,10 +458,10 @@ class Sim(Container):
         # TODO: is this robust? What other characters are problematic?
         dirname = sim.replace('/', '_')
         os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, Core.Files.simfile)
+        statefile = os.path.join(location, dirname, core.files.simfile)
 
         self._start_logger('Sim', sim)
-        self._containerfile = Core.Files.SimFile(statefile, self._logger,
+        self._containerfile = core.files.SimFile(statefile, self._logger,
                 name=sim, coordinator=coordinator, categories=categories,
                 tags=tags)
 
@@ -477,8 +475,8 @@ class Sim(Container):
         
         """
         # load state file object
-        statefile = os.path.join(sim, Core.Files.simfile)
-        self._containerfile = Core.Files.SimFile(statefile)
+        statefile = os.path.join(sim, core.files.simfile)
+        self._containerfile = core.files.SimFile(statefile)
 
         self._start_logger('Sim', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
@@ -564,7 +562,7 @@ class Group(Container):
         
         """
         if not self._members:
-            self._members = Core.Aggregators.Members(self, self._containerfile, self._logger)
+            self._members = core.aggregators.Members(self, self._containerfile, self._logger)
         return self._members
 
     def _generate(self, group, members=None, location='.', coordinator=None,
@@ -584,10 +582,10 @@ class Group(Container):
         # TODO: is this robust? What other characters are problematic?
         dirname = group.replace('/', '_')
         os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, Core.Files.groupfile)
+        statefile = os.path.join(location, dirname, core.files.groupfile)
 
         self._start_logger('Group', group)
-        self._containerfile = Core.Files.GroupFile(statefile, self._logger,
+        self._containerfile = core.files.GroupFile(statefile, self._logger,
                 name=group, coordinator=coordinator, categories=categories,
                 tags=tags)
 
@@ -599,8 +597,8 @@ class Group(Container):
         
         """
         # load state file object
-        statefile = os.path.join(group, Core.Files.groupfile)
-        self._containerfile = Core.Files.GroupFile(statefile)
+        statefile = os.path.join(group, core.files.groupfile)
+        self._containerfile = core.files.GroupFile(statefile)
 
         self._start_logger('Group', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
