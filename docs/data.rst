@@ -29,7 +29,7 @@ Containers store their data as directory structures in the file system. Generati
 a new **Sim**, for example, with the following ::
     
     >>> # python session 1
-    >>> import MDSynthesis as mds
+    >>> import mdsynthesis as mds
     >>> s = mds.Sim('marklar')
 
 creates a directory called ``marklar`` in the current working directory. It contains
@@ -44,7 +44,7 @@ identical instance of this **Sim**. In fact, we can open a separate python
 session (go ahead!) and regenerate this **Sim** immediately there ::
 
     >>> # python session 2
-    >>> import MDSynthesis as mds
+    >>> import mdsynthesis as mds
     >>> s = mds.Sim('marklar')
 
 Making a modification to the **Sim** in one session, perhaps by adding a tag,
@@ -147,10 +147,10 @@ file.
 
 Reference: Data
 ===============
-The class :class:`MDSynthesis.Core.Aggregators.Data` is the interface used
+The class :class:`mdsynthesis.core.aggregators.Data` is the interface used
 by Containers to access their stored datasets. It is not intended to be used
 on its own, but is shown here to give a detailed view of its methods.
 
-.. autoclass:: MDSynthesis.Core.Aggregators.Data
+.. autoclass:: mdsynthesis.core.aggregators.Data
     :members:
     :inherited-members:

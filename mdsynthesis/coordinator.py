@@ -6,7 +6,7 @@ for querying the whole set of Containers it is aware of and returning them;
 this can remove the need to manually go hunting for Containers in the filesystem.
 
 """
-import Core
+import core
 
 class Coordinator(object):
     """Macrocontroller for all Containers in the database.

@@ -11,6 +11,8 @@ we can use tags and categories.
 Tags are individual strings that describe a Container. Using our **Sim**
 ``marklar`` as an example, we can add many tags at once ::
 
+    >>> from mdsynthesis import Sim
+    >>> s = Sim('marklar')
     >>> s.tags.add('TIP4P', 'ADK', 'kinases', 'globular', 'equilibrium')
     >>> s.tags
     <Tags(['ADK', 'TIP4P', 'equilibrium', 'globular', 'kinases'])>
@@ -48,20 +50,20 @@ Tags and categories are two elements of Containers that will be :doc:`queryable
 
 Reference: Tags
 ===============
-The class :class:`MDSynthesis.Core.Aggregators.Tags` is the interface used
+The class :class:`mdsynthesis.core.aggregators.Tags` is the interface used
 by Containers to access their tags. It is not intended to be used on its own,
 but is shown here to give a detailed view of its methods.
 
-.. autoclass:: MDSynthesis.Core.Aggregators.Tags
+.. autoclass:: mdsynthesis.core.aggregators.Tags
     :members:
     :inherited-members:
 
 Reference: Categories
 =====================
-The class :class:`MDSynthesis.Core.Aggregators.Categories` is the interface
+The class :class:`mdsynthesis.core.aggregators.Categories` is the interface
 used by Containers to access their categories. It is not intended to be used on
 its own, but is shown here to give a detailed view of its methods.
 
-.. autoclass:: MDSynthesis.Core.Aggregators.Categories
+.. autoclass:: mdsynthesis.core.aggregators.Categories
     :members:
     :inherited-members:

@@ -11,6 +11,7 @@ to distinguish the **Sim** from others, though it need not be unique. We can
 also give it a topology and/or trajectory files as we would to an MDAnalysis
 **Universe** ::
     
+    >>> from mdsynthesis import Sim
     >>> s = Sim('scruffy', universe=['path/to/topology', 'path/to/trajectory'])
 
 This will create a directory ``scruffy`` that contains a single file
@@ -115,26 +116,26 @@ time it is activated.
 
 Reference: Sim
 ==============
-.. autoclass:: MDSynthesis.Sim
+.. autoclass:: mdsynthesis.Sim
     :members:
     :inherited-members:
 
 Reference: Universes
 ====================
-The class :class:`MDSynthesis.Core.Aggregators.Universes` is the interface used
+The class :class:`mdsynthesis.core.aggregators.Universes` is the interface used
 by a **Sim** to manage **Universe** definitions. It is not intended to be used
 on its own, but is shown here to give a detailed view of its methods.
 
-.. autoclass:: MDSynthesis.Core.Aggregators.Universes
+.. autoclass:: mdsynthesis.core.aggregators.Universes
     :members:
     :inherited-members:
 
 Reference: Selections
 =====================
-The class :class:`MDSynthesis.Core.Aggregators.Selections` is the interface
+The class :class:`mdsynthesis.core.aggregators.Selections` is the interface
 used by a **Sim** to access its stored selections. It is not intended to be
 used on its own, but is shown here to give a detailed view of its methods.
 
-.. autoclass:: MDSynthesis.Core.Aggregators.Selections
+.. autoclass:: mdsynthesis.core.aggregators.Selections
     :members:
     :inherited-members:

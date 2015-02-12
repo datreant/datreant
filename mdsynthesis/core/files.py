@@ -3,8 +3,6 @@ Classes for datafile syncronization.
 
 """
 
-import Aggregators
-import Workers
 from uuid import uuid4
 import tables
 import h5py
@@ -17,7 +15,9 @@ import sys
 import logging
 import warnings
 from functools import wraps
-import MDSynthesis
+
+import aggregators
+import workers
 
 # generic Container state file
 containerfile = "Container.h5"

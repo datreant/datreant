@@ -8,12 +8,13 @@ In short, an Aggregator is designed to be user friendly on its own, but it can
 be used as a backend by a Container, too.
 
 """
-import Files
-import Workers
-import MDSynthesis as mds
 from MDAnalysis import Universe
 import os
 from functools import wraps
+
+import files
+import workers
+import mdsynthesis as mds
 
 class Aggregator(Workers.Utilities):
     """Core functionality for information aggregators.

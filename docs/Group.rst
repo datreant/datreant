@@ -12,6 +12,7 @@ As with a **Sim**, to generate a Group from scratch, we need only give it a
 name. We can also give any number of existing **Sim** or **Group** objects to
 add them as members ::
 
+    >>> from mdsynthesis import Group
     >>> g = Group('gruffy', members=[s1, s2, s3, g4, g5])
     >>> g
     <Group: 'gruffy' | 5 Members: 3 Sim, 2 Group>
@@ -61,16 +62,16 @@ the same stored information at all times ::
 
 Reference: Group
 ================
-.. autoclass:: MDSynthesis.Group
+.. autoclass:: mdsynthesis.Group
     :members:
     :inherited-members:
 
 Reference: Members
 ==================
-The class :class:`MDSynthesis.Core.Aggregators.Members` is the interface used
+The class :class:`mdsynthesis.core.aggregators.Members` is the interface used
 by a **Group** to manage its members. It is not intended to be used on its own,
 but is shown here to give a detailed view of its methods.
 
-.. autoclass:: MDSynthesis.Core.Aggregators.Members
+.. autoclass:: mdsynthesis.core.aggregators.Members
     :members:
     :inherited-members:

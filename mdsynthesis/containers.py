@@ -1,5 +1,5 @@
 """
-Basic Container objects: the organizational units for :mod:`MDSynthesis`.
+Basic Container objects: the organizational units for :mod:`mdsynthesis`.
 
 """
 
@@ -7,7 +7,7 @@ import os, sys
 import shutil
 import logging
 from MDAnalysis import Universe
-import Core
+import core
 
 class Container(object):
     """Core class for all Containers.

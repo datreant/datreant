@@ -6,9 +6,9 @@ and possibly a bit messy.
 import os, sys
 import glob
 
-import Aggregators
-import Files
-import MDSynthesis as mds
+import aggregators
+import files
+import mdsynthesis as mds
 
 class Utilities(object):
     """Mixin with a few commonly-used standalone methods.

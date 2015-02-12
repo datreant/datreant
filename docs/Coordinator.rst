@@ -10,6 +10,6 @@ report changes to their state files as they are made, giving the
 
 This feature is not yet implemented.
 
-.. .. autoclass:: MDSynthesis.Coordinator
+.. .. autoclass:: mdsynthesis.Coordinator
     :members:
     :inherited-members:
