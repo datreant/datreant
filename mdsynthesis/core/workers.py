@@ -30,9 +30,9 @@ class Utilities(object):
         """
         containers = []
         for directory in directories:
-            if os.path.exists(os.path.join(directory, Files.simfile)):
+            if os.path.exists(os.path.join(directory, files.simfile)):
                 containers.append(mds.Sim(directory))
-            elif os.path.exists(os.path.join(directory, Files.groupfile)):
+            elif os.path.exists(os.path.join(directory, files.groupfile)):
                 containers.append(mds.Group(directory))
             else:
                 containers.append(None)

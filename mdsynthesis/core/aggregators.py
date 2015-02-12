@@ -777,13 +777,13 @@ class Data(Aggregator):
             *datafile*
                 datafile path; None if does not exist
             *datafiletype*
-                datafile type; either ``Files.pddatafile`` or 
-                ``Files.npdatafile``
+                datafile type; either ``files.pddatafile`` or 
+                ``files.npdatafile``
 
         """
         datafile = None
         datafiletype = None
-        for dfiletype in (Files.pddatafile, Files.npdatafile, Files.pydatafile):
+        for dfiletype in (files.pddatafile, files.npdatafile, files.pydatafile):
             dfile = os.path.join(self._containerfile.get_location(), 
                                     handle, dfiletype) 
             if os.path.exists(dfile):
@@ -809,7 +809,7 @@ class Data(Aggregator):
             filename, filetype = self._get_datafile(handle)
 
             if filename:
-                self._datafile = Files.DataFile(os.path.join(self._containerfile.get_location(), handle), 
+                self._datafile = files.DataFile(os.path.join(self._containerfile.get_location(), handle), 
                         logger=self._logger, datafiletype=filetype) 
                 try:
                     out = func(self, handle, *args, **kwargs)
@@ -840,7 +840,7 @@ class Data(Aggregator):
             dirname = os.path.join(self._containerfile.get_location(), handle)
 
             self._makedirs(dirname)
-            self._datafile = Files.DataFile(dirname, logger=self._logger)
+            self._datafile = files.DataFile(dirname, logger=self._logger)
 
             try:
                 out = func(self, handle, *args, **kwargs)
@@ -940,7 +940,7 @@ class Data(Aggregator):
         """
         datafile, datafiletype = self._get_datafile(handle)
 
-        if kwargs and datafiletype == Files.pddatafile:
+        if kwargs and datafiletype == files.pddatafile:
             self._delete_data(handle, **kwargs)
         elif datafile:
             os.remove(datafile)
@@ -1079,7 +1079,7 @@ class Data(Aggregator):
         datasets = list()
         top = self._containerfile.get_location()
         for root, dirs, files in os.walk(top):
-            if (Files.pddatafile in files) or (Files.npdatafile in files) or (Files.pydatafile in files):
+            if (files.pddatafile in files) or (files.npdatafile in files) or (files.pydatafile in files):
                 datasets.append(os.path.relpath(root, start=top))
 
         datasets.sort()
