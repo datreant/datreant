@@ -71,10 +71,10 @@ class Container(object):
         # TODO: is this robust? What other characters are problematic?
         dirname = container.replace('/', '_')
         os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, core.files.containerfile)
+        statefile = os.path.join(location, dirname, core.persistence.containerfile)
 
         self._start_logger('Container', container)
-        self._containerfile = core.files.ContainerFile(statefile, self._logger,
+        self._containerfile = core.persistence.ContainerFile(statefile, self._logger,
                 name=container, coordinator=coordinator, categories=categories,
                 tags=tags)
 
@@ -83,8 +83,8 @@ class Container(object):
         
         """
         # load state file object
-        statefile = os.path.join(container, core.files.containerfile)
-        self._containerfile = core.files.ContainerFile(statefile)
+        statefile = os.path.join(container, core.persistence.containerfile)
+        self._containerfile = core.persistence.ContainerFile(statefile)
 
         self._start_logger('Container', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
@@ -122,7 +122,7 @@ class Container(object):
                 location = os.path.abspath(location)
                 # file handler if desired; beware of problems with too many open files
                 # when a large number of Containers are at play
-                logfile = os.path.join(location, core.files.containerlog)
+                logfile = os.path.join(location, core.persistence.containerlog)
                 fh = logging.FileHandler(logfile)
                 ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
                 fh.setFormatter(ff)
@@ -458,10 +458,10 @@ class Sim(Container):
         # TODO: is this robust? What other characters are problematic?
         dirname = sim.replace('/', '_')
         os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, core.files.simfile)
+        statefile = os.path.join(location, dirname, core.persistence.simfile)
 
         self._start_logger('Sim', sim)
-        self._containerfile = core.files.SimFile(statefile, self._logger,
+        self._containerfile = core.persistence.SimFile(statefile, self._logger,
                 name=sim, coordinator=coordinator, categories=categories,
                 tags=tags)
 
@@ -475,8 +475,8 @@ class Sim(Container):
         
         """
         # load state file object
-        statefile = os.path.join(sim, core.files.simfile)
-        self._containerfile = core.files.SimFile(statefile)
+        statefile = os.path.join(sim, core.persistence.simfile)
+        self._containerfile = core.persistence.SimFile(statefile)
 
         self._start_logger('Sim', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)
@@ -582,10 +582,10 @@ class Group(Container):
         # TODO: is this robust? What other characters are problematic?
         dirname = group.replace('/', '_')
         os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, core.files.groupfile)
+        statefile = os.path.join(location, dirname, core.persistence.groupfile)
 
         self._start_logger('Group', group)
-        self._containerfile = core.files.GroupFile(statefile, self._logger,
+        self._containerfile = core.persistence.GroupFile(statefile, self._logger,
                 name=group, coordinator=coordinator, categories=categories,
                 tags=tags)
 
@@ -597,8 +597,8 @@ class Group(Container):
         
         """
         # load state file object
-        statefile = os.path.join(group, core.files.groupfile)
-        self._containerfile = core.files.GroupFile(statefile)
+        statefile = os.path.join(group, core.persistence.groupfile)
+        self._containerfile = core.persistence.GroupFile(statefile)
 
         self._start_logger('Group', self._containerfile.get_name())
         self._containerfile._start_logger(self._logger)

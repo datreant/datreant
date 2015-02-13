@@ -7,7 +7,7 @@ import os, sys
 import glob
 
 import aggregators
-import files
+import persistence
 import mdsynthesis as mds
 
 class Utilities(object):
@@ -30,9 +30,9 @@ class Utilities(object):
         """
         containers = []
         for directory in directories:
-            if os.path.exists(os.path.join(directory, files.simfile)):
+            if os.path.exists(os.path.join(directory, persistence.simfile)):
                 containers.append(mds.Sim(directory))
-            elif os.path.exists(os.path.join(directory, files.groupfile)):
+            elif os.path.exists(os.path.join(directory, persistence.groupfile)):
                 containers.append(mds.Group(directory))
             else:
                 containers.append(None)
