@@ -621,10 +621,11 @@ class Members(Aggregator):
                 member = self._container._cache[uuid]
             except KeyError:
                 memberdet = self._containerfile.get_member(uuid)
+                memberpath = os.path.join(memberdet['abspath'], memberdet['name'])
                 if memberdet['containertype'] == 'Sim':
-                    member = mds.Sim(memberdet['abspath'])
+                    member = mds.Sim(memberpath)
                 elif memberdet['containertype'] == 'Group':
-                    member = mds.Group(memberdet['abspath'])
+                    member = mds.Group(memberpath)
                 self._container._cache[uuid] = member
         elif isinstance(uuid, list):
             member = list()
@@ -633,10 +634,11 @@ class Members(Aggregator):
                     member.append(self._container._cache[item])
                 except KeyError:
                     memberdet = self._containerfile.get_member(item)
+                    memberpath = os.path.join(memberdet['abspath'], memberdet['name'])
                     if memberdet['containertype'] == 'Sim':
-                        new = mds.Sim(memberdet['abspath'])
+                        new = mds.Sim(memberpath)
                     elif memberdet['containertype'] == 'Group':
-                        new = mds.Group(memberdet['abspath'])
+                        new = mds.Group(memberpath)
                     member.append(new)
                     self._container._cache[item] = new
 
@@ -656,10 +658,11 @@ class Members(Aggregator):
                 members.append(self._container._cache[uuid])
             except KeyError:
                 member = self._containerfile.get_member(uuid)
+                memberpath = os.path.join(member['abspath'], member['name'])
                 if member['containertype'] == 'Sim':
-                    new = mds.Sim(member['abspath'])
+                    new = mds.Sim(memberpath)
                 elif member['containertype'] == 'Group':
-                    new = mds.Group(member['abspath'])
+                    new = mds.Group(memberpath)
                 members.append(new)
                 self._container._cache[uuid] = new
         

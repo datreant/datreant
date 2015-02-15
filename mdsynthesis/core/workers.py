@@ -39,14 +39,60 @@ class Utilities(object):
     
         return containers
 
-
 class Foxhound(object):
-    """A Finder has methods for locating specified objects based on attributes.
+    """Locator for Containers that have gone missing.
 
-    This object is used by Databases to find Containers, and vice-versa.
+    This object is used by Containers to find Containers when they are no longer
+    in their last known location.
 
     """
+    def __init__(self, uuids, locations, coordinators=None):
+        """Generate a foxhound to track down Containers.
 
+        :Arguments:
+            *uuids*
+                list of unique identifiers of Containers to find
+            *locations*
+                list of locations to start searching around; these need not
+                be in any particular order, nor must their number match that
+                of the given uuids
+            *coordinators*
+                list of Coordinators to consult; if ``None``, involve no Coordinators
+
+        """
+        self.uuids = uuids
+        self.locations = locations
+        self.coordinators = coordinators
+
+        # once found: uuids as keys, absolute paths as values
+        self.containers = dict()
+
+    def _downward_search(self, path):
+        """Check for Containers downward from specified path.
+
+        :Arguments:
+            *path*
+                path to begin downward search from
+
+        """
+        pass
+
+    def _outward_search(self, path):
+        pass
+
+    def _consult_Coordinators(self):
+        pass
+
+    def find_Group_members(self):
+        pass
+
+    def find_Coordinator_members(self):
+        pass
+
+    def discover(self, path):
+        pass
+
+    #OLD
     def _locate_database(self, **kwargs):
         """Find database; to be used if it can't be found.
 
@@ -92,17 +138,6 @@ class Foxhound(object):
             basedir = None
 
         return basedir
-
-#TODO: Perhaps attach to Containers as a way for users to store random
-# things without the expectation that they are indexable? Could pickle
-# this thing and then unpickle it when object is regenerated. Will
-# need its own file locks (which actually might be kind of hard)
-class Attributes(object):
-    """Class for user-defined attributes.
-
-    """
-    def __init__(self):
-        pass
 
 class Bundle(Utilities):
     """Non-persistent Container for Sims and Groups.
