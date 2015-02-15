@@ -360,9 +360,6 @@ class ContainerFile(File):
         # unique identifier for container
         uuid = tables.StringCol(36)
 
-        # user-given name of container
-        name = tables.StringCol(128)
-
         # container type; Sim or Group
         containertype = tables.StringCol(36)
 
@@ -462,7 +459,6 @@ class ContainerFile(File):
         # metadata table
         self.update_uuid()
         self.update_containertype(containertype)
-        self.update_name(kwargs.pop('name', containertype))
         self.update_version(kwargs.pop('version', mds.__version__))
 
         # coordinator table
@@ -498,35 +494,6 @@ class ContainerFile(File):
         except tables.NoSuchNodeError:
             table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
             table.row['uuid'] = str(uuid4())
-            table.row.append()
-
-    @File._read_state
-    def get_name(self):
-        """Get Container name.
-
-        :Returns:
-            *name*
-                name of Container
-
-        """
-        table = self.handle.get_node('/', 'meta')
-        return table.cols.name[0]
-
-    @File._write_state
-    def update_name(self, name):
-        """Rename Container.
-
-        :Arugments:
-            *name*
-                new name of Container
-
-        """
-        try:
-            table = self.handle.get_node('/', 'meta')
-            table.cols.name[0] = name
-        except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
-            table.row['name'] = name
             table.row.append()
 
     @File._read_state

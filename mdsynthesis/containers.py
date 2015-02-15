@@ -86,7 +86,7 @@ class Container(object):
         statefile = os.path.join(container, core.persistence.containerfile)
         self._containerfile = core.persistence.ContainerFile(statefile)
 
-        self._start_logger('Container', self._containerfile.get_name())
+        self._start_logger('Container', self.name)
         self._containerfile._start_logger(self._logger)
 
     def _placeholders(self):
@@ -210,7 +210,22 @@ class Container(object):
         displayed representation.
         
         """
-        return self._containerfile.get_name()
+        return os.path.basename(os.path.dirname(self._containerfile.filename))
+
+    @name.setter
+    def name(self, name):
+        """The name of the Container.
+
+        The name of a Container is the only immutable element stored in the
+        object's state file (aside from its unique id). It need not be unique
+        with respect to other Containers, but is used as part of Container's
+        displayed representation.
+        
+        """
+        olddir = os.path.dirname(self._containerfile.filename)
+        newdir = os.path.join(os.path.dirname(olddir), name)
+        os.rename(olddir, newdir)
+        self._regenerate(newdir)
 
     @property
     def _containertype(self):
@@ -228,7 +243,7 @@ class Container(object):
         nonexistent directory.
     
         """
-        return self._containerfile.get_location()
+        return os.path.dirname(self._containerfile.get_location())
 
     @location.setter
     def location(self, value):
@@ -240,8 +255,10 @@ class Container(object):
 
         """
         self._makedirs(value)
-        os.rename(self._containerfile.get_location(), value)
-        self._regenerate(value)
+        oldpath = self._containerfile.get_location()
+        newpath = os.path.join(value, self.name)
+        os.rename(oldpath, newpath)
+        self._regenerate(newpath)
     
     @property
     def coordinator(self):
@@ -362,9 +379,9 @@ class Sim(Container):
 
     def __repr__(self):
         if not self._uname:
-            out = "<Sim: '{}'>".format(self._containerfile.get_name())
+            out = "<Sim: '{}'>".format(self.name)
         else:
-            out = "<Sim: '{}' | active universe: '{}'>".format(self._containerfile.get_name(), self._uname)
+            out = "<Sim: '{}' | active universe: '{}'>".format(self.name, self._uname)
 
         return out
 
@@ -478,7 +495,7 @@ class Sim(Container):
         statefile = os.path.join(sim, core.persistence.simfile)
         self._containerfile = core.persistence.SimFile(statefile)
 
-        self._start_logger('Sim', self._containerfile.get_name())
+        self._start_logger('Sim', self.name)
         self._containerfile._start_logger(self._logger)
 
 class Group(Container):
@@ -532,8 +549,7 @@ class Group(Container):
         sims = members.count('Sim')
         groups = members.count('Group')
 
-        out = "<Group: '{}'".format(self._containerfile.get_name(), 
-                                                len(members))
+        out = "<Group: '{}'".format(self.name, len(members))
         if members:
             out = out +" | {} Members: ".format(len(members))
             if sims:
@@ -600,5 +616,5 @@ class Group(Container):
         statefile = os.path.join(group, core.persistence.groupfile)
         self._containerfile = core.persistence.GroupFile(statefile)
 
-        self._start_logger('Group', self._containerfile.get_name())
+        self._start_logger('Group', self.name)
         self._containerfile._start_logger(self._logger)
