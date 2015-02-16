@@ -1,5 +1,5 @@
 """
-Classes for datafile syncronization. 
+Interface classes for state files and data files.
 
 """
 
@@ -15,8 +15,6 @@ import logging
 import warnings
 from functools import wraps
 
-import aggregators
-import workers
 import mdsynthesis as mds
 
 # extension used for state files
@@ -30,6 +28,27 @@ npdatafile = "npData.h5"
 
 # catchall DataFile
 pydatafile = "pyData.pkl"
+
+def containerfile(filename, logger=None, **kwargs):
+    """Generate or regenerate the appropriate container file instance from filename.
+
+    :Arguments:
+        *filename*
+            path to state file (existing or to be created), including the filename
+        *logger*
+            logger instance to pass to container file instance
+
+    **kwargs passed to container file ``__init__()`` method
+
+    """
+    if 'Container' in filename:
+        statefileclass = ContainerFile
+    elif 'Sim' in filename:
+        statefileclass = SimFile
+    elif 'Group' in filename:
+        statefileclass = GroupFile
+    
+    return statefileclass(filename, logger=logger, **kwargs)
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
@@ -441,8 +460,6 @@ class ContainerFile(File):
         containertype = kwargs.pop('containertype', None)
 
         # metadata table
-        self.update_uuid()
-        self.update_containertype(containertype)
         self.update_version(kwargs.pop('version', mds.__version__))
 
         # coordinator table

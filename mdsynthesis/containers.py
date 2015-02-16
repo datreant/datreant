@@ -50,9 +50,9 @@ class Container(object):
 
         if (os.path.isdir(container)):
             # if directory string, load existing object
-            self._regenerate(container)
+            self._regenerate('Container', container)
         else:
-            self._generate(container, location=location,
+            self._generate('Container', container, location=location,
                     coordinator=coordinator, categories=categories, tags=tags)
 
     def _generate(self, containertype, container, location='.',
@@ -71,7 +71,7 @@ class Container(object):
 
         # TODO: need to raise exception where invalid characters used for directory
         os.makedirs(os.path.join(location, container))
-        filename = core.workers.statefilename(containertype, str(uuid4()))
+        filename = core.filesystem.statefilename(containertype, str(uuid4()))
 
         statefile = os.path.join(location, container, filename)
         self._start_logger(containertype, container)
@@ -80,15 +80,27 @@ class Container(object):
                 name=container, coordinator=coordinator, categories=categories,
                 tags=tags)
 
-    def _regenerate(self, container):
+    def _regenerate(self, containertype, container):
         """Re-generate existing Container object.
         
         """
-        # load state file object
-        statefile = os.path.join(container, core.persistence.containerfile)
-        self._containerfile = core.persistence.ContainerFile(statefile)
 
-        self._start_logger('Container', self.name)
+        # convenient to give only name of object (its directory name)
+        if os.path.isdir(container):
+            statefile = glob_containerfile(container)
+            
+            #TODO: FINISH EXCEPTION
+            # if only one state file, load it; otherwise, complain loudly
+            if len(statefile) == 1:
+                self._containerfile = core.persistence.containerfile(statefile[0])
+            else:
+                raise 
+
+        # if a state file is given, try loading it
+        elif os.path.exists(container):
+            self._containerfile = core.persistence.containerfile(container)
+
+        self._start_logger(containertype, self.name)
         self._containerfile._start_logger(self._logger)
 
     def _placeholders(self):
@@ -220,10 +232,10 @@ class Container(object):
 
     @property
     def containertype(self):
-        """The type of the Container; either Group or Sim.
+        """The type of the Container.
     
         """
-        return self._containerfile.get_containertype()
+        return self._containerfile.filename.split('.')[0]
 
     @property
     def location(self):
@@ -350,7 +362,7 @@ class Container(object):
         oldfile = self._containerfile.filename
         olddir = os.path.dirname(self._containerfile.filename)
         newfile = os.path.join(olddir, 
-                core.workers.statefilename(self.containertype, uuid))
+                core.filesystem.statefilename(self.containertype, uuid))
         os.rename(oldfile, newfile)
         self._regenerate(olddir)
 
@@ -401,7 +413,7 @@ class Sim(Container):
 
         if (os.path.isdir(sim)):
             # if directory string, load existing object
-            self._regenerate(sim)
+            self._regenerate('Sim', sim)
         else:
             self._generate('Sim', sim, universe=universe, uname=uname,
                     location=location, coordinator=coordinator,
@@ -500,17 +512,6 @@ class Sim(Container):
             self.universes.add(uname, *universe)
             self.universes.default(uname)
 
-    def _regenerate(self, sim):
-        """Re-generate existing Sim object.
-        
-        """
-        # load state file object
-        statefile = os.path.join(sim, core.persistence.simfile)
-        self._containerfile = core.persistence.SimFile(statefile)
-
-        self._start_logger('Sim', self.name)
-        self._containerfile._start_logger(self._logger)
-
 class Group(Container):
     """The Group object is a collection of Sims and Groups.
 
@@ -551,7 +552,7 @@ class Group(Container):
 
         if (os.path.isdir(group)):
             # if directory string, load existing object
-            self._regenerate(group)
+            self._regenerate('Group', group)
         else:
             self._generate('Group', group, members=members, location=location,
                     coordinator=coordinator, categories=categories, tags=tags)
@@ -608,14 +609,3 @@ class Group(Container):
 
         # add members
         self.members.add(*members)
-    
-    def _regenerate(self, container):
-        """Re-generate existing object.
-        
-        """
-        # load state file object
-        statefile = core.workers.glob_containerfile(group)
-        self._containerfile = core.persistence.GroupFile(statefile)
-
-        self._start_logger('Group', self.name)
-        self._containerfile._start_logger(self._logger)

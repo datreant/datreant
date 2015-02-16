@@ -25,7 +25,7 @@ class TestContainer:
     
         """
         assert container.name == containername
-        assert container.location == os.path.join(tmpdir.strpath, containername)
+        assert container.location == tmpdir.strpath
     
     def test_add_tags(self, container):
         container.tags.add('marklar')

@@ -13,10 +13,10 @@ import os
 from functools import wraps
 
 import persistence
-import workers
+import filesystem
 import mdsynthesis as mds
 
-class Aggregator(workers.Utilities):
+class Aggregator(object):
     """Core functionality for information aggregators.
 
     """
@@ -696,12 +696,12 @@ class Members(Aggregator):
             elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
                 outconts.append(container)
             elif os.path.isdir(container):
-                cont = self._path2container(container)[0]
+                cont = filesystem.path2container(container)[0]
                 if cont:
                     outconts.append(cont)
 
         for container in outconts:
-            self._containerfile.add_member(container._uuid, container.name, container._containertype, container.location)
+            self._containerfile.add_member(container.uuid, container.name, container.containertype, container.location)
     
     def remove(self, *indices, **kwargs): 
         """Remove any number of members from the Group.
