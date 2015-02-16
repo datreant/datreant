@@ -3,6 +3,12 @@ language: python
 python:
   - "2.7"
 
+# whitelist
+branches:
+    only:
+        - master
+        - develop
+
 # install system dependencies
 before_install:
     - sudo apt-get update -qq
