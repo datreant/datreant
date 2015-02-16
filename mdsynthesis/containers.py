@@ -2,9 +2,10 @@
 Basic Container objects: the organizational units for :mod:`mdsynthesis`.
 
 """
-
-import os, sys
+import os
+import sys
 import shutil
+from uuid import uuid4
 import logging
 from MDAnalysis import Universe
 
@@ -14,6 +15,7 @@ class Container(object):
     """Core class for all Containers.
 
     """
+
     def __init__(self, container, location='.', coordinator=None,
             categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) generic Container
@@ -53,8 +55,8 @@ class Container(object):
             self._generate(container, location=location,
                     coordinator=coordinator, categories=categories, tags=tags)
 
-    def _generate(self, container, location='.', coordinator=None,
-            categories=None, tags=None):
+    def _generate(self, containertype, container, location='.',
+            coordinator=None, categories=None, tags=None):
         """Generate new generic Container object.
          
         """
@@ -67,14 +69,14 @@ class Container(object):
         # generate state file
         #TODO: need try, except for case where Container already exists
 
-        # name mangling to give a valid directory name
-        # TODO: is this robust? What other characters are problematic?
-        dirname = container.replace('/', '_')
-        os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, core.persistence.containerfile)
+        # TODO: need to raise exception where invalid characters used for directory
+        os.makedirs(os.path.join(location, container))
+        filename = core.workers.statefilename(containertype, str(uuid4()))
 
-        self._start_logger('Container', container)
-        self._containerfile = core.persistence.ContainerFile(statefile, self._logger,
+        statefile = os.path.join(location, container, filename)
+        self._start_logger(containertype, container)
+
+        self._containerfile = core.persistence.containerfile(statefile, self._logger,
                 name=container, coordinator=coordinator, categories=categories,
                 tags=tags)
 
@@ -190,17 +192,6 @@ class Container(object):
         self.data.__delitem__(handle)
 
     @property
-    def _uuid(self):
-        """The uuid of the Container.
-
-        This is automatically generated when the Container is first created,
-        and is unchangeable. It is used by other MDSynthesis objects to
-        uniquely identify the Container.
-    
-        """
-        return self._containerfile.get_uuid()
-
-    @property
     def name(self):
         """The name of the Container.
 
@@ -228,7 +219,7 @@ class Container(object):
         self._regenerate(newdir)
 
     @property
-    def _containertype(self):
+    def containertype(self):
         """The type of the Container; either Group or Sim.
     
         """
@@ -324,6 +315,45 @@ class Container(object):
             self._data = core.aggregators.Data(self, self._containerfile, self._logger)
         return self._data
 
+    @property
+    def uuid(self):
+        """Get Container uuid.
+
+        A Container's uuid is used by other Containers to identify it. The uuid
+        is given in the Container's state file name for fast filesystem
+        searching. For example, a Sim object with state file::
+
+            'Sim.7dd9305a-d7d9-4a7b-b513-adf5f4205e09.h5'
+
+        has uuid::
+
+            '7dd9305a-d7d9-4a7b-b513-adf5f4205e09'
+
+        Changing this string will alter the Container's uuid. This is not
+        generally recommended.
+    
+        :Returns:
+            *uuid*
+                unique identifier string for this Container
+        """
+        return self._containerfile.filename.split('.')[1]
+
+    def _new_uuid(self):
+        """Generate new uuid for Container.
+
+        *Warning*: A Container's uuid is used by Groups to identify whether or
+        not it is a member. Any Groups a Container is a part of will cease
+        to recognize it when changed.
+
+        """
+        new_id = str(uuid4())
+        oldfile = self._containerfile.filename
+        olddir = os.path.dirname(self._containerfile.filename)
+        newfile = os.path.join(olddir, 
+                core.workers.statefilename(self.containertype, uuid))
+        os.rename(oldfile, newfile)
+        self._regenerate(olddir)
+
 class Sim(Container):
     """The Sim object is an interface to data for single simulations.
     
@@ -373,7 +403,7 @@ class Sim(Container):
             # if directory string, load existing object
             self._regenerate(sim)
         else:
-            self._generate(sim, universe=universe, uname=uname,
+            self._generate('Sim', sim, universe=universe, uname=uname,
                     location=location, coordinator=coordinator,
                     categories=categories, tags=tags)
 
@@ -457,30 +487,13 @@ class Sim(Container):
                 self._selections = core.aggregators.Selections(self, self._containerfile, self._logger)
             return self._selections
 
-    def _generate(self, sim, universe=None, uname='main', location='.',
+    def _generate(self, containertype, container, universe=None, uname='main', location='.',
             coordinator=None, categories=None, tags=None):
         """Generate new Sim object.
          
         """
-        # process keywords
-        if not categories:
-            categories = dict()
-        if not tags:
-            tags = list()
-
-        # generate state file
-        #TODO: need try, except for case where Sim already exists
-
-        # name mangling to give a valid directory name
-        # TODO: is this robust? What other characters are problematic?
-        dirname = sim.replace('/', '_')
-        os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, core.persistence.simfile)
-
-        self._start_logger('Sim', sim)
-        self._containerfile = core.persistence.SimFile(statefile, self._logger,
-                name=sim, coordinator=coordinator, categories=categories,
-                tags=tags)
+        super(Sim, self)._generate(containertype, container, location=location,
+                coordinator=coordinator, categories=categories, tags=tags)
 
         # add universe
         if (uname and universe):
@@ -540,7 +553,7 @@ class Group(Container):
             # if directory string, load existing object
             self._regenerate(group)
         else:
-            self._generate(group, members=members, location=location,
+            self._generate('Group', group, members=members, location=location,
                     coordinator=coordinator, categories=categories, tags=tags)
 
     def __repr__(self):
@@ -581,39 +594,27 @@ class Group(Container):
             self._members = core.aggregators.Members(self, self._containerfile, self._logger)
         return self._members
 
-    def _generate(self, group, members=None, location='.', coordinator=None,
+    def _generate(self, containertype, container, members=None, location='.', coordinator=None,
                   categories=None, tags=None):
         """Generate new Group.
          
         """
+        super(Group, self)._generate(containertype, container, location=location,
+                coordinator=coordinator, categories=categories, tags=tags)
+
         # process keywords
         if not members:
             members = list()
-        if not categories:
-            categories = dict()
-        if not tags:
-            tags = list()
-
-        # name mangling to give a valid directory name
-        # TODO: is this robust? What other characters are problematic?
-        dirname = group.replace('/', '_')
-        os.makedirs(os.path.join(location, dirname))
-        statefile = os.path.join(location, dirname, core.persistence.groupfile)
-
-        self._start_logger('Group', group)
-        self._containerfile = core.persistence.GroupFile(statefile, self._logger,
-                name=group, coordinator=coordinator, categories=categories,
-                tags=tags)
 
         # add members
         self.members.add(*members)
     
-    def _regenerate(self, group):
+    def _regenerate(self, container):
         """Re-generate existing object.
         
         """
         # load state file object
-        statefile = os.path.join(group, core.persistence.groupfile)
+        statefile = core.workers.glob_containerfile(group)
         self._containerfile = core.persistence.GroupFile(statefile)
 
         self._start_logger('Group', self.name)

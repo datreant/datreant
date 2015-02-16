@@ -10,6 +10,28 @@ import aggregators
 import persistence
 import mdsynthesis as mds
 
+def statefilename(containertype, uuid):
+    """Return state file name given the type of container and its uuid.
+
+    """
+    return "{}.{}.{}".format(containertype, uuid, persistence.statefile_ext)
+
+def glob_containerfile(container):
+    """Given a Container's directory, get its state file.
+
+    Since state file names contain uuids, they vary.
+
+    :Arguments:
+        *container*
+            directory containing a state file
+
+    :Returns:
+        *containerfile*
+            list giving absolute paths of state files found
+            in directory
+    """
+
+
 class Utilities(object):
     """Mixin with a few commonly-used standalone methods.
 

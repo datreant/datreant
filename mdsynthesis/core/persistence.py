@@ -3,7 +3,6 @@ Classes for datafile syncronization.
 
 """
 
-from uuid import uuid4
 import tables
 import h5py
 import pandas as pd
@@ -20,17 +19,8 @@ import aggregators
 import workers
 import mdsynthesis as mds
 
-# generic Container state file
-containerfile = "Container.h5"
-
-# Sim state file
-simfile = "Sim.h5"
-
-# Group state file
-groupfile = "Group.h5"
-
-# Container log
-containerlog = "log.out"
+# extension used for state files
+statefile_ext = 'h5'
 
 # pandas Datafile
 pddatafile = "pdData.h5"
@@ -357,12 +347,6 @@ class ContainerFile(File):
         All strings limited to hardcoded size for now.
 
         """
-        # unique identifier for container
-        uuid = tables.StringCol(36)
-
-        # container type; Sim or Group
-        containertype = tables.StringCol(36)
-
         # version of MDSynthesis object file data corresponds to 
         # allows future-proofing of old objects so that formats of new releases
         # can be automatically built from old ones
@@ -472,30 +456,6 @@ class ContainerFile(File):
         categories = kwargs.pop('categories', dict())
         self.add_categories(**categories)
     
-    @File._read_state
-    def get_uuid(self):
-        """Get Container uuid.
-    
-        :Returns:
-            *uuid*
-                unique string for this Container
-        """
-        table = self.handle.get_node('/', 'meta')
-        return table.cols.uuid[0]
-
-    @File._write_state
-    def update_uuid(self):
-        """Generate new uuid for Container.
-
-        """
-        try:
-            table = self.handle.get_node('/', 'meta')
-            table.cols.uuid[0] = str(uuid4())
-        except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
-            table.row['uuid'] = str(uuid4())
-            table.row.append()
-
     @File._read_state
     def get_containertype(self):
         """Get Container type: Sim or Group.
