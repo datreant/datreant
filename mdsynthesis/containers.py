@@ -8,6 +8,7 @@ import shutil
 from uuid import uuid4
 import logging
 from MDAnalysis import Universe
+import pdb
 
 import core
 
@@ -49,8 +50,6 @@ class Container(object):
                 Container
 
         """
-        self._placeholders()
-
         if os.path.exists(container):
             self._regenerate('Container', container)
         else:
@@ -62,6 +61,8 @@ class Container(object):
         """Generate new generic Container object.
          
         """
+        self._placeholders()
+
         # process keywords
         if not categories:
             categories = dict()
@@ -86,6 +87,7 @@ class Container(object):
         """Re-generate existing Container object.
         
         """
+        self._placeholders()
 
         # convenient to give only name of object (its directory name)
         if os.path.isdir(container):
@@ -104,6 +106,8 @@ class Container(object):
 
         self._start_logger(containertype, self.name)
         self._containerfile._start_logger(self._logger)
+
+        self._placeholders()
 
     def _placeholders(self):
         """Necessary placeholders for aggregator instances.
@@ -229,15 +233,18 @@ class Container(object):
         """
         olddir = os.path.dirname(self._containerfile.filename)
         newdir = os.path.join(os.path.dirname(olddir), name)
+        statefile = os.path.join(newdir,
+                core.filesystem.statefilename(self.containertype, self.uuid))
+
         os.rename(olddir, newdir)
-        self._regenerate(newdir)
+        self._regenerate(self.containertype, statefile)
 
     @property
     def containertype(self):
         """The type of the Container.
     
         """
-        return self._containerfile.filename.split('.')[0]
+        return os.path.basename(self._containerfile.filename).split('.')[0]
 
     @property
     def location(self):
@@ -262,8 +269,11 @@ class Container(object):
         self._makedirs(value)
         oldpath = self._containerfile.get_location()
         newpath = os.path.join(value, self.name)
+        statefile = os.path.join(newpath,
+                core.filesystem.statefilename(self.containertype, self.uuid))
+        pdb.set_trace()
         os.rename(oldpath, newpath)
-        self._regenerate(newpath)
+        self._regenerate(self.containertype, statefile)
     
     @property
     def coordinator(self):
@@ -366,7 +376,7 @@ class Container(object):
         newfile = os.path.join(olddir, 
                 core.filesystem.statefilename(self.containertype, uuid))
         os.rename(oldfile, newfile)
-        self._regenerate(olddir)
+        self._regenerate(self.containertype, olddir)
 
 class Sim(Container):
     """The Sim object is an interface to data for single simulations.
@@ -406,13 +416,6 @@ class Sim(Container):
         *Note*: optional arguments are ignored when regenerating an existing Sim
 
         """
-        self._placeholders()
-
-        self._universes = None
-        self._selections = None
-        self._universe = None     # universe 'dock'
-        self._uname = None        # attached universe name 
-
         if os.path.exists(sim):
             self._regenerate('Sim', sim)
         else:
@@ -513,6 +516,17 @@ class Sim(Container):
             self.universes.add(uname, *universe)
             self.universes.default(uname)
 
+    def _placeholders(self):
+        """Necessary placeholders for aggregator instances.
+
+        """
+        super(Sim, self)._placeholders()
+
+        self._universes = None
+        self._selections = None
+        self._universe = None     # universe 'dock'
+        self._uname = None        # attached universe name 
+
 class Group(Container):
     """The Group object is a collection of Sims and Groups.
 
@@ -546,11 +560,6 @@ class Group(Container):
         *Note*: optional arguments are ignored when regenerating an existing Group
 
         """
-        self._placeholders()
-
-        self._members = None
-        self._cache = dict()    # member cache
-
         if os.path.exists(group):
             self._regenerate('Group', group)
         else:
@@ -609,3 +618,13 @@ class Group(Container):
 
         # add members
         self.members.add(*members)
+
+    def _placeholders(self):
+        """Necessary placeholders for aggregator instances.
+
+        """
+        super(Group, self)._placeholders()
+    
+        self._members = None
+        self._cache = dict()    # member cache
+
