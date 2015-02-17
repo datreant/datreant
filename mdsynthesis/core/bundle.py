@@ -39,23 +39,30 @@ class Bundle(object):
 
         self.add(*containers)
 
+    #TODO: make more efficient by using ordered dict for storage?
     def add(self, *containers):
         outconts = list()
         for container in containers:
             if isinstance(container, list):
                 self.add(*container)
-            elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
-                uuid = container._uuid
+            elif isinstance(container, mds.containers.Container):
+                uuid = container.uuid
                 if not (uuid in self._uuids):
                     outconts.append(container)
                     self._uuids.append(uuid)
             elif os.path.isdir(container):
-                cont = filesystem.path2container(container)[0]
-                if cont:
-                    uuid = cont._uuid
+                conts = filesystem.path2container(container)
+                for cont in conts:
+                    uuid = cont.uuid
                     if not (uuid in self._uuids):
                         outconts.append(cont)
                         self._uuids.append(uuid)
+            elif os.path.exists(container):
+                cont = persistence.containerfile(container)
+                uuid = cont.uuid
+                if not (uuid in self._uuids):
+                    outconts.append(cont)
+                    self._uuids.append(uuid)
 
         self._containers.extend(outconts)
     

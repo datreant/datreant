@@ -29,6 +29,7 @@ npdatafile = "npData.h5"
 # catchall DataFile
 pydatafile = "pyData.pkl"
 
+#TODO: add careful checks that file is actually a state file
 def containerfile(filename, logger=None, **kwargs):
     """Generate or regenerate the appropriate container file instance from filename.
 

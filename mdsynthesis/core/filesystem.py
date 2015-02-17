@@ -15,10 +15,11 @@ def statefilename(containertype, uuid):
     """
     return "{}.{}.{}".format(containertype, uuid, persistence.statefile_ext)
 
-def glob_containerfile(container):
+def glob_container(container):
     """Given a Container's directory, get its state file.
 
-    Since state file names contain uuids, they vary.
+    Since state file names contain uuids, they vary. Multiple state files may
+    therefore be present in a single directory. All will be returned as a list.
 
     :Arguments:
         *container*
@@ -29,7 +30,12 @@ def glob_containerfile(container):
             list giving absolute paths of state files found
             in directory
     """
+    fileglob = list()
+    for containertype in ('Container', 'Sim', 'Group'):
+        fileglob.extend(glob.glob(os.path.join(container, '{}.*.h5'.format(containertype))))
 
+    paths = [ os.path.abspath(x) for x in fileglob ]
+    return paths
 
 def path2container(*directories):
     """Return Containers from directories containing Container state files.
@@ -43,25 +49,19 @@ def path2container(*directories):
 
     :Returns:
         *containers*
-            list of Containers obtained from directories; returns ``None`` for
-            paths that didn't yield any Containers
+            list of Containers obtained from directories
 
     """
-    containers = []
+    containers = list()
     for directory in directories:
-        fileglob = []
-        for containertype in ('Container', 'Sim', 'Group'):
-            fileglob.extend(glob.glob(os.path.join(directory, '{}.*.h5'.format(containertype))))
-
-        for item in fileglob:
+        paths = glob_container(directory)
+        for item in paths:
             if 'Container' in item:
                 containers.append(mds.Container(item))
             elif 'Sim' in item:
                 containers.append(mds.Sim(item))
             elif 'Group' in item:
                 containers.append(mds.Group(item))
-            else:
-                containers.append(None)
 
     return containers
 

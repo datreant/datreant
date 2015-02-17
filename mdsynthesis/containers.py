@@ -11,6 +11,9 @@ from MDAnalysis import Universe
 
 import core
 
+class MultipleContainersError(Exception):
+    pass
+
 class Container(object):
     """Core class for all Containers.
 
@@ -48,8 +51,7 @@ class Container(object):
         """
         self._placeholders()
 
-        if (os.path.isdir(container)):
-            # if directory string, load existing object
+        if os.path.exists(container):
             self._regenerate('Container', container)
         else:
             self._generate('Container', container, location=location,
@@ -87,14 +89,14 @@ class Container(object):
 
         # convenient to give only name of object (its directory name)
         if os.path.isdir(container):
-            statefile = glob_containerfile(container)
+            statefile = core.filesystem.glob_container(container)
             
-            #TODO: FINISH EXCEPTION
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
                 self._containerfile = core.persistence.containerfile(statefile[0])
             else:
-                raise 
+                raise MultipleContainersError('Multiple Containers found in ' 
+                        'directory. Give path to a specific state file.')
 
         # if a state file is given, try loading it
         elif os.path.exists(container):
@@ -411,8 +413,7 @@ class Sim(Container):
         self._universe = None     # universe 'dock'
         self._uname = None        # attached universe name 
 
-        if (os.path.isdir(sim)):
-            # if directory string, load existing object
+        if os.path.exists(sim):
             self._regenerate('Sim', sim)
         else:
             self._generate('Sim', sim, universe=universe, uname=uname,
@@ -550,8 +551,7 @@ class Group(Container):
         self._members = None
         self._cache = dict()    # member cache
 
-        if (os.path.isdir(group)):
-            # if directory string, load existing object
+        if os.path.exists(group):
             self._regenerate('Group', group)
         else:
             self._generate('Group', group, members=members, location=location,
