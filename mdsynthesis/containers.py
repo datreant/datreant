@@ -627,4 +627,3 @@ class Group(Container):
     
         self._members = None
         self._cache = dict()    # member cache
-
