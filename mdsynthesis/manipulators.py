@@ -3,11 +3,10 @@ User-level functions for manipulating Containers. Used by included shell
 scripts.
 
 """
+import mdsynthesis as mds
 
-import core
-
-def load(*containers):
-    """Load the given Containers.
+def get(*containers):
+    """Get instances of the given Containers.
 
     :Arguments:
         *containers*
@@ -16,9 +15,8 @@ def load(*containers):
 
     :Returns:
         *instances*
-           new instances of each Container given
+           Bundle of new instances for each Container given
 
     """
-    pass
-
+    return mds.Bundle(*containers)
 

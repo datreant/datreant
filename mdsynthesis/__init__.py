@@ -29,3 +29,4 @@ from containers import Sim, Group
 from coordinator import Coordinator
 import core
 from core.bundle import Bundle
+from manipulators import *
