@@ -8,7 +8,6 @@ import shutil
 from uuid import uuid4
 import logging
 from MDAnalysis import Universe
-import pdb
 
 import core
 
@@ -271,7 +270,6 @@ class Container(object):
         newpath = os.path.join(value, self.name)
         statefile = os.path.join(newpath,
                 core.filesystem.statefilename(self.containertype, self.uuid))
-        pdb.set_trace()
         os.rename(oldpath, newpath)
         self._regenerate(self.containertype, statefile)
     
