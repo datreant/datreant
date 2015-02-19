@@ -49,6 +49,9 @@ class Tags(Aggregator):
     def __iter__(self):
         return self._containerfile.get_tags().__iter__()
 
+    def __len__(self):
+        return len(self._containerfile.get_tags())
+
     def list(self):
         """Get all tags for the Container as a list.
     
@@ -142,8 +145,17 @@ class Categories(Aggregator):
         outdict = {key: value}
         self._containerfile.add_categories(**outdict)
 
+    def __delitem__(self, category):
+        """Remove category from Container.
+    
+        """
+        self._containerfile.del_categories(category)
+
     def __iter__(self):
         return self._containerfile.get_categories().__iter__()
+
+    def __len__(self):
+        return len(self._containerfile.get_categories())
 
     def dict(self):
         """Get all categories for the Container as a dictionary.
@@ -487,6 +499,9 @@ class Selections(Aggregator):
             selection = [selection]
         self._containerfile.add_selection(self._container._uname, handle, *selection)
     
+    def __iter__(self):
+        return self._containerfile.list_selections(self._container._uname).__iter__()
+
     def __delitem__(self, handle):
         """Remove stored selection for given handle and the active universe.
     
@@ -577,19 +592,19 @@ class Members(Aggregator):
         return "<Members({})>".format(self.names())
 
     def __str__(self):
-        members = self.names()
+        names = self.names()
+        containertypes = self.containertypes()
         agg = "Members"
         majsep = "="
         seplength = len(agg)
 
-        if not members:
+        if not names:
             out = "No Members"
         else:
             out = agg +'\n'
             out = out + majsep*seplength + '\n'
-            for i in xrange(len(members)):
-                out = out + "{} '{}' ({})\n".format(i, members[i].name,
-                                                    members[i]._containertype)
+            for i, name, containertype in zip(xrange(len(names)), names, containertypes):
+                out = out + "{}\t{}:\t{}\n".format(i, containertype, name)
 
         return out
 
@@ -649,6 +664,12 @@ class Members(Aggregator):
         
         return members
 
+    def containertypes(self):
+        """Return a list of member containertypes.
+
+        """
+        return self._containerfile.get_members_containertype()
+
     def names(self):
         """Return a list of member names.
 
@@ -703,6 +724,19 @@ class Data(Aggregator):
     def __repr__(self):
         return "<Data({})>".format(self.list())
 
+    def _repr_html_(self):
+        data = self.list()
+        agg = "Data"
+        if not data:
+            out = "No Data"
+        else:
+            out = "<h3>{}</h3>".format(agg)
+            out = out + "<ul style='list-style-type:none'>"
+            for datum in data:
+                out = out + "<li>{}</li>".format(datum)
+            out = out + "</ul>"
+        return out
+
     def __str__(self):
         data = self.list()
         agg = "Data"
@@ -717,6 +751,9 @@ class Data(Aggregator):
             for datum in data:
                 out = out + "'{}'\n".format(datum)
         return out
+
+    def __iter__(self):
+        return self.list().__iter__()
 
     def _makedirs(self, p):
         """Make directories and all parents necessary.
@@ -883,9 +920,15 @@ class Data(Aggregator):
         containing the dataset file (``Data.h5``) will NOT be removed if it
         still contains file(s) after the removal of the dataset file.
 
+        For pandas objects (Series, DataFrame, or Panel) subsets of the whole
+        dataset can be removed using keywords such as *start* and *stop* for
+        ranges of rows, and *columns* for selected columns.
+
         :Arguments:
             *handle*
                 name of dataset to delete
+
+        :Keywords:
             *where*
                 conditions for what rows/columns to remove
             *start* 
@@ -896,7 +939,7 @@ class Data(Aggregator):
         """
         datafile, datafiletype = self._get_datafile(handle)
 
-        if datafiletype == Files.pddatafile:
+        if kwargs and datafiletype == Files.pddatafile:
             self._delete_data(handle, **kwargs)
         elif datafile:
             os.remove(datafile)
@@ -935,6 +978,9 @@ class Data(Aggregator):
                 row number to stop selection
 
         """
+        # only called for pandas objects at the moment
+        filename, filetype = self._get_datafile(handle)
+        self._datafile.datafiletype = filetype
         try:
             self._datafile.del_data('main', **kwargs)
         except NotImplementedError:

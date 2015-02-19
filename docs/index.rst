@@ -11,7 +11,7 @@ the full trajectories themselves, often we are most interested in
 lower-dimensional measures of what is happening. These measures may be as simple
 as the distance between two specific atoms, or as complex as the percentage of
 contacts relative to some native structure. Some measures may even be
-comparisons of one or more trajectories against each other. In any case, it may
+comparisons of two or more trajectories against each other. In any case, it may
 be time-consuming to obtain these lower-dimensional intermediate data, and so
 it is useful to store them.
 
@@ -56,7 +56,7 @@ single line of code.
 Getting MDSynthesis
 ===================
 We have yet to make an official release, but you can get the current state
-of the codebase from the `development branch on GitHub 
+of the codebase from the `master branch on GitHub 
 <https://github.com/dotsdl/MDSynthesis>`__.
 
 See the :doc:`installation instructions <install>` to set it up.
@@ -64,7 +64,7 @@ See the :doc:`installation instructions <install>` to set it up.
 Dependencies
 ============
 * MDAnalysis: 0.8.0 or higher
-* Pandas: 0.15.0 or higher
+* pandas: 0.15.0 or higher
 * PyTables: 3.1.0 or higher
 * h5py: 2.3.0 or higher
 

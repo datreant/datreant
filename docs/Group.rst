@@ -52,7 +52,8 @@ two different instances of the same **Group** ::
     >>> g2 is g
     False
 
-But as usual, they will reflect the same stored information at all times ::
+But since they pull their state from the same file on disk, they will reflect
+the same stored information at all times ::
     
     >>> g.tags.add('kinases')
     >>> g2.tags

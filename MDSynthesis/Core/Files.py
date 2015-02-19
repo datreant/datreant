@@ -19,6 +19,9 @@ import warnings
 from functools import wraps
 import MDSynthesis
 
+# generic Container state file
+containerfile = "Container.h5"
+
 # Sim state file
 simfile = "Sim.h5"
 
@@ -122,10 +125,7 @@ class File(object):
            *success*
               True if exclusive lock successfully obtained
         """
-        # first obtain shared lock; may help to avoid race conditions between
-        # exclusive locks (REQUIRES THOROUGH TESTING)
-        if self._shlock(f):
-            fcntl.lockf(f, fcntl.LOCK_EX)
+        fcntl.lockf(f, fcntl.LOCK_EX)
     
         return True
 
@@ -365,13 +365,6 @@ class ContainerFile(File):
         # container type; Sim or Group
         containertype = tables.StringCol(36)
 
-        # eventually we would like this to be generated dynamically
-        # meaning, size of location string is size needed, and meta table
-        # is regenerated if any of its strings need to be (or smaller)
-        # When Coordinator generates its database, it uses largest string size
-        # needed
-        location = tables.StringCol(256)
-
         # version of MDSynthesis object file data corresponds to 
         # allows future-proofing of old objects so that formats of new releases
         # can be automatically built from old ones
@@ -444,9 +437,6 @@ class ContainerFile(File):
             self.handle = tables.open_file(self.filename, 'r')
             self.handle.close()
 
-            # update data elements
-            self.update(**kwargs)
-
     def create(self, **kwargs):
         """Build state file and common data structure elements.
 
@@ -472,36 +462,10 @@ class ContainerFile(File):
         self.update_uuid()
         self.update_containertype(containertype)
         self.update_name(kwargs.pop('name', containertype))
-        self.update_location()
         self.update_version(kwargs.pop('version', MDSynthesis.__version__))
 
         # coordinator table
         self.update_coordinator(kwargs.pop('coordinator', None))
-
-        # tags table
-        tags = kwargs.pop('tags', list())
-        self.add_tags(*tags)
-
-        # categories table
-        categories = kwargs.pop('categories', dict())
-        self.add_categories(**categories)
-
-    def update(self, **kwargs):
-        """Add new data all at once.
-
-        Used in regeneration init.
-
-        :Keywords:
-           *categories*
-              user-given dictionary with custom keys and values; used to
-              give distinguishing characteristics to object for search
-           *tags*
-              user-given list with custom elements; used to give distinguishing
-              characteristics to object for search
-        """
-
-        # update location
-        self.update_location()
 
         # tags table
         tags = kwargs.pop('tags', list())
@@ -592,7 +556,6 @@ class ContainerFile(File):
                 table.row['containertype'] = containertype
                 table.row.append()
 
-    @File._read_state
     def get_location(self):
         """Get Container location.
 
@@ -601,20 +564,7 @@ class ContainerFile(File):
                 absolute path to Container directory
     
         """
-        table = self.handle.get_node('/', 'meta')
-        return table.cols.location[0]
-
-    @File._write_state
-    def update_location(self):
-        """Update Container location.
-
-        """
-        try:
-            table = self.handle.get_node('/', 'meta')
-            table.cols.location[0] = os.path.dirname(self.filename)
-        except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
-            table.row['location'] = os.path.dirname(self.filename)
+        return os.path.dirname(self.filename)
 
     @File._read_state
     def get_version(self):
@@ -1180,7 +1130,7 @@ class SimFile(ContainerFile):
             self.handle.remove_node('/universes/{}'.format(universe), 'resnums')
             table = self.handle.create_table('/universes/{}'.format(universe), 'resnums', self._Resnums, 'resnums')
 
-        # add trajectory paths to table
+        # add resnums to table
         for item in resnums:
             table.row['resnum'] = item
             table.row.append()
@@ -1705,12 +1655,11 @@ class DataFile(object):
         """
         if self.datafiletype == npdatafile:
             self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
-            out = self.datafile.del_data(key, data, **kwargs)
+            out = self.datafile.del_data(key, **kwargs)
             self.datafile = None
-
         elif self.datafiletype == pddatafile:
             self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
-            out = self.datafile.del_data(key, data, **kwargs)
+            out = self.datafile.del_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pydatafile:
             pass
@@ -1786,9 +1735,9 @@ class pdDataFile(File):
         """
         # index all columns if possible
         try:
-            self.handle.put(key, data, format='table', data_columns=True)
+            self.handle.put(key, data, format='table', data_columns=True, complevel=5, complib='blosc')
         except AttributeError:
-            self.handle.put(key, data, format='table')
+            self.handle.put(key, data, format='table', complevel=5, complib='blosc')
 
     @File._write_pddata
     def append_data(self, key, data):
@@ -1807,7 +1756,10 @@ class pdDataFile(File):
                 data 
 
         """
-        self.handle.append(key, data, data_columns=True)
+        try:
+            self.handle.append(key, data, data_columns=True, complevel=5, complib='blosc')
+        except AttributeError:
+            self.handle.append(key, data, complevel=5, complib='blosc')
 
     @File._read_pddata
     def get_data(self, key, **kwargs):
