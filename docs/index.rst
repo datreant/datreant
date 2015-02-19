@@ -85,6 +85,7 @@ Documentation
 .. toctree::
     :maxdepth: 1
 
+    install
     data
     Sim
     Group
@@ -98,7 +99,6 @@ Misc
 .. toctree::
     :maxdepth: 1
 
-    install
     whatsnew
     faq
 
