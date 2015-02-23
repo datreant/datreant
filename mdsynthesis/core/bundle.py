@@ -50,19 +50,13 @@ class Bundle(object):
                 if not (uuid in self._uuids):
                     outconts.append(container)
                     self._uuids.append(uuid)
-            elif os.path.isdir(container):
+            elif os.path.exists(container):
                 conts = filesystem.path2container(container)
                 for cont in conts:
                     uuid = cont.uuid
                     if not (uuid in self._uuids):
                         outconts.append(cont)
                         self._uuids.append(uuid)
-            elif os.path.exists(container):
-                cont = persistence.containerfile(container)
-                uuid = cont.uuid
-                if not (uuid in self._uuids):
-                    outconts.append(cont)
-                    self._uuids.append(uuid)
 
         self._containers.extend(outconts)
     
