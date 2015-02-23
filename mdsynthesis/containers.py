@@ -14,6 +14,9 @@ import core
 class MultipleContainersError(Exception):
     pass
 
+class NoContainersError(Exception):
+    pass
+
 class Container(object):
     """Core class for all Containers.
 
@@ -95,6 +98,8 @@ class Container(object):
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
                 self._containerfile = core.persistence.containerfile(statefile[0])
+            elif len(statefile) == 0:
+                raise NoContainersError('No Containers found in directory.')
             else:
                 raise MultipleContainersError('Multiple Containers found in ' 
                         'directory. Give path to a specific state file.')
