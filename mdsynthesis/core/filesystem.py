@@ -57,7 +57,7 @@ def path2container(*paths):
     containers = list()
     for path in paths:
         if os.path.isdir(path):
-            files = glob_container(directory)
+            files = glob_container(path)
             for item in files:
                 basename = os.path.basename(item)
                 if 'Container' in basename:
