@@ -30,6 +30,7 @@ class TestContainer:
         assert container.name == containername
         assert container.location == tmpdir.strpath
         assert container.containertype == 'Container'
+        assert container.basedir == os.path.join(tmpdir.strpath, containername)
     
     class TestTags:
         """Test container tags.
@@ -130,19 +131,54 @@ class TestContainer:
                 p = pd.Panel(data, items=('I', 'II', 'III', 'IV'), minor_axis=('A', 'B', 'C'))
                 return p
 
+            @pytest.fixture
+            def panel4d(self):
+                data = np.random.rand(2,4,10000,3)
+                p4 = pd.Panel4D(data, labels=('gallahad', 'lancelot'), items=('I', 'II', 'III', 'IV'), minor_axis=('A', 'B', 'C'))
+                return p4
+
+            # TODO: is there a convenient way to make pytest loop through our data
+            # structures instead of explicitly making the same methods for each
+            # one?
             def test_add_series(self, container, series):
-                container.data.add('seriesdata', series)
-                assert os.path.exists(os.path.join(
+                handle = 'seriesdata'
+                container.data.add(handle, series)
+                assert os.path.exists(os.path.join(container.basedir, 
+                                                   handle, 
+                                                   mds.core.persistence.pddatafile))
+
+            def test_add_dataframe(self, container, dataframe):
+                handle = 'dataframedata'
+                container.data.add(handle, dataframe)
+                assert os.path.exists(os.path.join(container.basedir, 
+                                                   handle, 
+                                                   mds.core.persistence.pddatafile))
+
+            def test_add_panel(self, container, panel):
+                handle = 'paneldata'
+                container.data.add(handle, panel)
+                assert os.path.exists(os.path.join(container.basedir, 
+                                                   handle, 
+                                                   mds.core.persistence.pddatafile))
+
+            def test_add_panel4d(self, container, panel4d):
+                handle = 'panel4ddata'
+                container.data.add(handle, panel4d)
+                assert os.path.exists(os.path.join(container.basedir, 
+                                                   handle, 
+                                                   mds.core.persistence.pddatafile))
 
         class TestNumpy:
             """Test pandas datastructure storage and retrieval.
 
             """
+            pass
 
         class TestPython:
             """Test pandas datastructure storage and retrieval.
 
             """
+            pass
 
 
 
@@ -166,4 +202,5 @@ class TestSim:
         assert sim.containertype == 'Sim'
     
     def test_add_universe(self, sim):
+        pass
 
