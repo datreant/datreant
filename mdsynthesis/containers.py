@@ -279,6 +279,16 @@ class Container(object):
         self._regenerate(self.containertype, statefile)
     
     @property
+    def basedir(self):
+        """Absolute path to the Container's base directory.
+
+        This is a convenience property; the same result can be obtained by
+        joining `:attr:location` and `:attr:name`.
+
+        """
+        return self._containerfile.get_location()
+
+    @property
     def coordinator(self):
         """The location of the associated Coordinator.
 

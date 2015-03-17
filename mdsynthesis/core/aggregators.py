@@ -912,7 +912,7 @@ class Data(Aggregator):
             *handle*
                 name given to data; needed for retrieval
             *data*
-                data to store; must be a pandas Series, DataFrame, or Panel
+                data structure to store
 
         """
         self._datafile.add_data('main', data)
@@ -939,6 +939,8 @@ class Data(Aggregator):
                 row number to start selection
             *stop*  
                 row number to stop selection
+            *columns*
+                columns to remove
     
         """
         datafile, datafiletype = self._get_datafile(handle)
@@ -974,12 +976,16 @@ class Data(Aggregator):
         :Arguments:
             *handle*
                 name of dataset to delete
+
+        :Keywords:
             *where*
                 conditions for what rows/columns to remove
             *start* 
                 row number to start selection
             *stop*  
                 row number to stop selection
+            *columns*
+                columns to remove
 
         """
         # only called for pandas objects at the moment

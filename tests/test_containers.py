@@ -130,19 +130,19 @@ class TestContainer:
                 p = pd.Panel(data, items=('I', 'II', 'III', 'IV'), minor_axis=('A', 'B', 'C'))
                 return p
 
-            def test_lock_series(series)
+            def test_add_series(self, container, series):
+                container.data.add('seriesdata', series)
+                assert os.path.exists(os.path.join(
 
         class TestNumpy:
             """Test pandas datastructure storage and retrieval.
 
             """
-            def test_lock
 
         class TestPython:
             """Test pandas datastructure storage and retrieval.
 
             """
-            def test_lock
 
 
 
