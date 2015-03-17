@@ -212,150 +212,6 @@ class File(object):
             return out
 
         return inner
-    
-    @staticmethod
-    def _read_pddata(func):
-        """Decorator for opening data file for reading and applying shared lock.
-        
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.handle.is_open:
-                out = func(self, *args, **kwargs)
-            else:
-                self.handle = pd.HDFStore(self.filename, 'r')
-                self._shlock(self.handle._handle)
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
-            return out
-
-        return inner
-    
-    @staticmethod
-    def _write_pddata(func):
-        """Decorator for opening data file for writing and applying exclusive lock.
-        
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self.handle = pd.HDFStore(self.filename, 'a')
-            self._exlock(self.handle._handle)
-            try:
-                out = func(self, *args, **kwargs)
-            finally:
-                self.handle.close()
-            return out
-
-
-        return inner
-    
-    @staticmethod
-    def _read_npdata(func):
-        """Decorator for opening data file for reading and applying shared lock.
-        
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            try:
-                self.handle.mode
-                out = func(self, *args, **kwargs)
-            except ValueError:
-                self.handle = h5py.File(self.filename, 'r')
-                self._shlock(self.handle.fid.get_vfd_handle())
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
-            return out
-
-        return inner
-    
-    @staticmethod
-    def _write_npdata(func):
-        """Decorator for opening data file for writing and applying exclusive lock.
-        
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self.handle = h5py.File(self.filename, 'a')
-            self._exlock(self.handle.fid.get_vfd_handle())
-            try:
-                out = func(self, *args, **kwargs)
-            finally:
-                self.handle.close()
-            return out
-
-        return inner
-
-    @staticmethod
-    def _read_pydata(func):
-        """Decorator for opening data file for reading and applying shared lock.
-        
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            try:
-                self.handle.fileno()
-                out = func(self, *args, **kwargs)
-            except ValueError:
-                self.handle = open(self.filename, 'rb')
-                self._shlock(self.handle)
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
-            return out
-
-        return inner
-    
-    @staticmethod
-    def _write_pydata(func):
-        """Decorator for opening data file for writing and applying exclusive lock.
-        
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self.handle = open(self.filename, 'ab+')
-            self._exlock(self.handle)
-            try:
-                out = func(self, *args, **kwargs)
-            finally:
-                self.handle.close()
-            return out
-
-        return inner
 
 class ContainerFile(File):
     """Container file object; syncronized access to Container data.
@@ -1462,7 +1318,7 @@ class DataFile(object):
 
     This is an abstraction layer to the pdDataFile, npDataFile, and pyDataFile
     objects. This can be used by higher level objects without worrying about
-    whether to use pandas storers or numpy storers.
+    whether to use pandas storers, numpy storers, or pickle.
 
     """
     def __init__(self, datadir, logger=None, datafiletype=None, **kwargs): 
@@ -1527,6 +1383,7 @@ class DataFile(object):
                 data 
 
         """
+        #TODO: add exceptions where appending isn't possible
         if isinstance(data, np.ndarray):
             self.logger.info('Cannot append numpy arrays.')
         elif isinstance(data, (pd.Series, pd.DataFrame, pd.Panel, pd.Panel4D)):
@@ -1578,6 +1435,7 @@ class DataFile(object):
             out = self.datafile.get_data(key)
             self.datafile = None
         else:
+            #TODO: add exception here
             self.logger.info('Cannot return data without knowing datatype.')
             out = None
 
@@ -1610,9 +1468,12 @@ class DataFile(object):
         elif self.datafiletype == pydatafile:
             pass
         else:
+            #TODO: add exception here
             self.logger.info('Cannot return data without knowing datatype.')
             out = None
 
+    #TODO: remove this; since we only place one datastructure in an HDF5 file,
+    # we don't need it
     def list_data(self):
         """List names of all stored datasets.
 
@@ -1665,7 +1526,52 @@ class pdDataFile(File):
         self.handle = pd.HDFStore(self.filename, 'a')
         self.handle.close()
 
-    @File._write_pddata
+    def _read_pddata(func):
+        """Decorator for opening data file for reading and applying shared lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            if self.handle.is_open:
+                out = func(self, *args, **kwargs)
+            else:
+                self.handle = pd.HDFStore(self.filename, 'r')
+                self._shlock(self.handle._handle)
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
+            return out
+
+        return inner
+    
+    def _write_pddata(func):
+        """Decorator for opening data file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = pd.HDFStore(self.filename, 'a')
+            self._exlock(self.handle._handle)
+            try:
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
+            return out
+
+        return inner
+
+    @_write_pddata
     def add_data(self, key, data):
         """Add a pandas data object (Series, DataFrame, Panel) to the data file.
 
@@ -1685,7 +1591,7 @@ class pdDataFile(File):
         except AttributeError:
             self.handle.put(key, data, format='table', complevel=5, complib='blosc')
 
-    @File._write_pddata
+    @_write_pddata
     def append_data(self, key, data):
         """Append rows to an existing pandas data object stored in the data file.
 
@@ -1707,7 +1613,7 @@ class pdDataFile(File):
         except AttributeError:
             self.handle.append(key, data, complevel=5, complib='blosc')
 
-    @File._read_pddata
+    @_read_pddata
     def get_data(self, key, **kwargs):
         """Retrieve pandas object stored in file, optionally based on where criteria.
 
@@ -1736,7 +1642,7 @@ class pdDataFile(File):
         """
         return self.handle.select(key, **kwargs)
 
-    @File._write_pddata
+    @_write_pddata
     def del_data(self, key, **kwargs):
         """Delete a stored data object.
 
@@ -1755,7 +1661,9 @@ class pdDataFile(File):
         """
         self.handle.remove(key, **kwargs)
     
-    @File._read_pddata
+    #TODO: remove this; since we only place one datastructure in an HDF5 file,
+    # we don't need it
+    @_read_pddata
     def list_data(self):
         """List names of all stored datasets.
 
@@ -1792,8 +1700,54 @@ class npDataFile(File):
         # open file for the first time to initialize handle
         self.handle = h5py.File(self.filename, 'a')
         self.handle.close()
+    
+    def _read_npdata(func):
+        """Decorator for opening data file for reading and applying shared lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
 
-    @File._write_npdata
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            try:
+                self.handle.mode
+                out = func(self, *args, **kwargs)
+            except ValueError:
+                self.handle = h5py.File(self.filename, 'r')
+                self._shlock(self.handle.fid.get_vfd_handle())
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
+            return out
+
+        return inner
+    
+    def _write_npdata(func):
+        """Decorator for opening data file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = h5py.File(self.filename, 'a')
+            self._exlock(self.handle.fid.get_vfd_handle())
+            try:
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
+            return out
+
+        return inner
+    
+    @_write_npdata
     def add_data(self, key, data):
         """Add a numpy array to the data file.
 
@@ -1812,7 +1766,7 @@ class npDataFile(File):
             del self.handle[key]
             self.handle.create_dataset(key, data=data)
 
-    @File._read_npdata
+    @_read_npdata
     def get_data(self, key, **kwargs):
         """Retrieve numpy array stored in file.
 
@@ -1826,7 +1780,7 @@ class npDataFile(File):
         """
         return self.handle[key][:]
 
-    @File._write_npdata
+    @_write_npdata
     def del_data(self, key, **kwargs):
         """Delete a stored data object.
 
@@ -1837,7 +1791,7 @@ class npDataFile(File):
         """
         del self.handle[key]
     
-    @File._read_npdata
+    @_read_npdata
     def list_data(self):
         """List names of all stored datasets.
 
@@ -1876,7 +1830,53 @@ class pyDataFile(File):
         self.handle = open(self.filename, 'ab+')
         self.handle.close()
 
-    @File._write_pydata
+    def _read_pydata(func):
+        """Decorator for opening data file for reading and applying shared lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            try:
+                self.handle.fileno()
+                out = func(self, *args, **kwargs)
+            except ValueError:
+                self.handle = open(self.filename, 'rb')
+                self._shlock(self.handle)
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
+            return out
+
+        return inner
+    
+    def _write_pydata(func):
+        """Decorator for opening data file for writing and applying exclusive lock.
+        
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self.handle = open(self.filename, 'ab+')
+            self._exlock(self.handle)
+            try:
+                out = func(self, *args, **kwargs)
+            finally:
+                self.handle.close()
+            return out
+
+        return inner
+
+    @_write_pydata
     def add_data(self, key, data):
         """Add a numpy array to the data file.
 
@@ -1890,7 +1890,7 @@ class pyDataFile(File):
         """
         pickle.dump(data, self.handle)
 
-    @File._read_pydata
+    @_read_pydata
     def get_data(self, key, **kwargs):
         """Retrieve numpy array stored in file.
 
