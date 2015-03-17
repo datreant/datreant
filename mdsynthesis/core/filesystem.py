@@ -37,15 +37,17 @@ def glob_container(container):
     paths = [ os.path.abspath(x) for x in fileglob ]
     return paths
 
-def path2container(*directories):
-    """Return Containers from directories containing Container state files.
+def path2container(*paths):
+    """Return Containers from directories or full paths containing Container
+        state files.
 
     *Note*: If there are multiple state files in a given directory, Containers
     will be returned for each. 
 
     :Arguments:
-        *directories*
-            directories containing state files to be loaded from
+        *paths*
+            directories containing state files or full paths to state files to
+            load Containers from
 
     :Returns:
         *containers*
@@ -53,15 +55,25 @@ def path2container(*directories):
 
     """
     containers = list()
-    for directory in directories:
-        paths = glob_container(directory)
-        for item in paths:
-            if 'Container' in item:
-                containers.append(mds.Container(item))
-            elif 'Sim' in item:
-                containers.append(mds.Sim(item))
-            elif 'Group' in item:
-                containers.append(mds.Group(item))
+    for path in paths:
+        if os.path.isdir(path):
+            files = glob_container(path)
+            for item in files:
+                basename = os.path.basename(item)
+                if 'Container' in basename:
+                    containers.append(mds.Container(item))
+                elif 'Sim' in basename:
+                    containers.append(mds.Sim(item))
+                elif 'Group' in basename:
+                    containers.append(mds.Group(item))
+        elif os.path.exists(path):
+            basename = os.path.basename(path)
+            if 'Container' in basename:
+                containers.append(mds.Container(path))
+            elif 'Sim' in basename:
+                containers.append(mds.Sim(path))
+            elif 'Group' in basename:
+                containers.append(mds.Group(path))
 
     return containers
 

@@ -695,10 +695,10 @@ class Members(Aggregator):
                 self.add(*container)
             elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
                 outconts.append(container)
-            elif os.path.isdir(container):
-                cont = filesystem.path2container(container)[0]
-                if cont:
-                    outconts.append(cont)
+            elif os.path.exists(container):
+                cont = filesystem.path2container(container)
+                for c in cont:
+                    outconts.append(c)
 
         for container in outconts:
             self._containerfile.add_member(container.uuid, container.name, container.containertype, container.location)

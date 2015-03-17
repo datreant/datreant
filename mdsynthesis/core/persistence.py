@@ -42,11 +42,12 @@ def containerfile(filename, logger=None, **kwargs):
     **kwargs passed to container file ``__init__()`` method
 
     """
-    if 'Container' in filename:
+    basename = os.path.basename(filename)
+    if 'Container' in basename:
         statefileclass = ContainerFile
-    elif 'Sim' in filename:
+    elif 'Sim' in basename:
         statefileclass = SimFile
-    elif 'Group' in filename:
+    elif 'Group' in basename:
         statefileclass = GroupFile
     
     return statefileclass(filename, logger=logger, **kwargs)
