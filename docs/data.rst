@@ -39,6 +39,8 @@ a single file at the moment ::
     > ls marklar
     Sim.2b4b5800-48a7-4814-ba6d-1e631a09a199.h5
 
+The name of this file includes the type of Container (**Sim**) it corresponds
+to, as well as the ``uuid`` of the Container, which is its unique identifier.
 This is the state file containing all the information needed to regenerate an
 identical instance of this **Sim**. In fact, we can open a separate python
 session (go ahead!) and regenerate this **Sim** immediately there ::
@@ -60,7 +62,7 @@ will be reflected in the **Sim** in the other session ::
 This is because both objects pull their identifying information from the same
 file on disk; they store almost nothing in memory.
 
-.. note:: The uuid of the **Sim** in this example will certainly differ from
+.. note:: The ``uuid`` of the **Sim** in this example will certainly differ from
           any **Sims** you generate. This is used to differentiate **Sims**
           from each other. Unexpected and broken behavior will result from
           changing the names of state files!
