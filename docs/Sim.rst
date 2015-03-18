@@ -15,7 +15,7 @@ also give it a topology and/or trajectory files as we would to an MDAnalysis
     >>> s = Sim('scruffy', universe=['path/to/topology', 'path/to/trajectory'])
 
 This will create a directory ``scruffy`` that contains a single file
-(``Sim.h5``).  That file is a persistent representation of the **Sim** on disk.
+(``Sim.<uuid>.h5``).  That file is a persistent representation of the **Sim** on disk.
 We can access trajectory data by way of ::
 
     >>> s.universe

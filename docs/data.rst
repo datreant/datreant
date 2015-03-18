@@ -37,7 +37,7 @@ a single file at the moment ::
 
     > # shell 
     > ls marklar
-    Sim.h5
+    Sim.2b4b5800-48a7-4814-ba6d-1e631a09a199.h5
 
 This is the state file containing all the information needed to regenerate an
 identical instance of this **Sim**. In fact, we can open a separate python
@@ -59,6 +59,11 @@ will be reflected in the **Sim** in the other session ::
 
 This is because both objects pull their identifying information from the same
 file on disk; they store almost nothing in memory.
+
+.. note:: The uuid of the **Sim** in this example will certainly differ from
+          any **Sims** you generate. This is used to differentiate **Sims**
+          from each other. Unexpected and broken behavior will result from
+          changing the names of state files!
 
 Storing arbitrary datasets
 ==========================

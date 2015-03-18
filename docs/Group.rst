@@ -18,7 +18,7 @@ add them as members ::
     <Group: 'gruffy' | 5 Members: 3 Sim, 2 Group>
 
 This will create a directory ``gruffy`` that contains a single file
-(``Group.h5``). That file is a persistent representation of the **Group** on
+(``Group.<uuid>.h5``). That file is a persistent representation of the **Group** on
 disk. We can access its members with ::
 
     >>> g.members
