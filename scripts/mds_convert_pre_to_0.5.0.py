@@ -22,10 +22,14 @@ if __name__ == '__main__':
         f = tables.open_file(statefile, 'r')
         table = f.get_node('/', 'meta')
 
-        containertype = table.cols.containertype[0]
-        uuid = table.cols.uuid[0]
-        f.close()
+        try:
+            containertype = table.cols.containertype[0]
+            uuid = table.cols.uuid[0]
+            f.close()
 
-        newfile = os.path.join(os.path.dirname(statefile), '{}.{}.h5'.format(containertype, uuid))
-        os.rename(statefile, newfile)
+            newfile = os.path.join(os.path.dirname(statefile), '{}.{}.h5'.format(containertype, uuid))
+            os.rename(statefile, newfile)
+        except AttributeError:
+            print("State file '{}' already at version 0.5.0; skipping".format(statefile))
+            f.close()
 
