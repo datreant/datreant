@@ -31,7 +31,7 @@ and we can slice, too ::
     >>> g.members[2:]
     [<Sim: 'fluffy'>, <Group: 'buffy'>, <Group: 'gorp'>]
 
-.. note:: Members are generated from their state file on disk upon access.
+.. note:: Members are generated from their state files on disk upon access.
           This means that for a **Group** with hundreds of members, there will
           be a delay when trying to access them all at once.
 
