@@ -26,8 +26,8 @@ data.
 In other words, MDSynthesis lets the computer do the boring work of keeping
 track of where things are and how they are stored.
 
-Efficiently store intermediate data for individual simulations for easy recall
-------------------------------------------------------------------------------
+Efficiently store intermediate data from individual simulations for easy recall
+-------------------------------------------------------------------------------
 For a given simulation trajectory, MDSynthesis gives an interface (the :doc:`Sim <Sim>`
 object) to the simulation data itself through `MDAnalysis`_. Data structures
 generated from raw trajectories (pandas objects, numpy arrays, or any pure
@@ -57,7 +57,7 @@ Getting MDSynthesis
 ===================
 We have yet to make an official release, but you can get the current state
 of the codebase from the `master branch on GitHub 
-<https://github.com/dotsdl/MDSynthesis>`__.
+<https://github.com/Becksteinlab/MDSynthesis>`__.
 
 See the :doc:`installation instructions <install>` to set it up.
 

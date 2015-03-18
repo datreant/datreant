@@ -19,8 +19,8 @@ analysis of many trajectories, individually or as entire groups. It should
 allow the scientist to operate at a high level when working with the data,
 while MDSynthesis handles the details of storing and recalling this data.
 
-Efficiently store intermediate data for individual simulations for easy recall
-------------------------------------------------------------------------------
+Efficiently store intermediate data from individual simulations for easy recall
+-------------------------------------------------------------------------------
 For a given simulation trajectory, MDSynthesis gives an interface (the **Sim**
 object) to the simulation data itself through `MDAnalysis`_. Data structures
 generated from raw trajectories (pandas objects, numpy arrays, or any pure
@@ -67,7 +67,7 @@ edges and bugs. Issues and pull requests welcome!
     :scale: 100%
     :target: https://readthedocs.org/projects/mdsynthesis
 
-.. |build| image:: https://travis-ci.org/dotsdl/MDSynthesis.svg?branch=develop
+.. |build| image:: https://travis-ci.org/Becksteinlab/MDSynthesis.svg?branch=develop
     :alt: Build Status
     :scale: 100%
-    :target: https://travis-ci.org/dotsdl/MDSynthesis
+    :target: https://travis-ci.org/Becksteinlab/MDSynthesis
