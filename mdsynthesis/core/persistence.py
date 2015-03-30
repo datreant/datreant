@@ -814,30 +814,32 @@ class SimFile(ContainerFile):
         return group.__members__
 
     @File._read_state
-    def get_universe(self, universe, path='abspath'):
+    def get_universe(self, universe):
         """Get topology and trajectory paths for the desired universe.
+
+        Returns multiple path types, including absolute paths (abspath)
+        and paths relative to the Sim object (relSim).
 
         :Arguments:
             *universe*
                 given name for selecting the universe
-            *path*
-                type of paths to return; either absolute paths (abspath) or
-                paths relative to the Sim object (relSim) ['abspath']
 
         :Returns:
             *topology*
-                path to the topology file
+                structured array containing all paths to topology
             *trajectory*
-                list of paths to trajectory files
+                structured array containing all paths to trajectory(s)
                 
         """
+        paths = dict()
+
         # get topology file
         table = self.handle.get_node('/universes/{}'.format(universe), 'topology')
-        topology = table.colinstances[path][0]
+        topology = table.read()
 
         # get trajectory files
         table = self.handle.get_node('/universes/{}'.format(universe), 'trajectory')
-        trajectory = [ x[path] for x in table.iterrows() ]
+        trajectory = table.read()
 
         return (topology, trajectory)
 
@@ -866,7 +868,6 @@ class SimFile(ContainerFile):
         try:
             group = self.handle.create_group('/universes', universe, universe, createparents=True)
         except tables.NodeError:
-            self.logger.info("Replacing existing universe definition '{}'; retaining selections.".format(universe))
             self.handle.remove_node('/universes/{}'.format(universe), 'topology')
             self.handle.remove_node('/universes/{}'.format(universe), 'trajectory')
 

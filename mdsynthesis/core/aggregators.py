@@ -359,9 +359,40 @@ class Universes(Aggregator):
     
         if handle:
             udef = self._containerfile.get_universe(handle)
-            self._container._universe = Universe(udef[0], *udef[1])
+            
+            # get a working path to the topology from last known locations
+            topology = None
+            for top in udef[0]:
+                found = False
+                for path in top:
+                    if os.path.exists(path):
+                        topology = path
+                        found = True
+                        break
+
+                if not found:
+                    raise IOError("Topology file could not be found for universe '{}'; cannot activate!".format(handle))
+
+            # get a working path to each trajectory from last known locations
+            trajectory = list()
+            for traj in udef[1]:
+                found = False
+                for path in traj:
+                    if os.path.exists(path):
+                        trajectory.append(path)
+                        found = True
+                        break
+
+                if not found:
+                    raise IOError("At least one trajectory file could not be found for universe '{}'; cannot activate!".format(handle))
+        
+            self._container._universe = Universe(topology, *trajectory)
             self._container._uname = handle
             self._apply_resnums()
+            
+            # update the universe definition; will automatically build current
+            # path variants for each file
+            self._containerfile.add_universe(handle, topology, *trajectory)
     
     def deactivate(self):
         """Deactivate the current universe.
