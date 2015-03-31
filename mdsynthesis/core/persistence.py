@@ -360,11 +360,11 @@ class ContainerFile(File):
                 table.row.append()
 
     def get_location(self):
-        """Get Container location.
+        """Get Container basedir.
 
         :Returns:
             *location*
-                absolute path to Container directory
+                absolute path to Container basedir
     
         """
         return os.path.dirname(self.filename)
@@ -1118,7 +1118,7 @@ class GroupFile(ContainerFile):
 
         :Keywords:
            *name*
-              user-given name of Sim object
+              user-given name of Group object
            *coordinator*
               directory in which Coordinator state file can be found [``None``]
            *categories*
@@ -1148,7 +1148,7 @@ class GroupFile(ContainerFile):
             table = self.handle.create_table('/', 'members', self._Members, 'members')
 
     @File._write_state
-    def add_member(self, uuid, name, containertype, basedir):
+    def add_member(self, uuid, containertype, basedir):
         """Add a member to the Group.
 
         If the member is already present, its basedir paths will be updated with
@@ -1176,7 +1176,6 @@ class GroupFile(ContainerFile):
             table.cols.relGroup[rownum[0]] = os.path.relpath(basedir, self.get_location())
         else:
             table.row['uuid'] = uuid
-            table.row['name'] = name
             table.row['containertype'] = containertype
             table.row['abspath'] = os.path.abspath(basedir)
             table.row['relGroup'] = os.path.relpath(basedir, self.get_location())
