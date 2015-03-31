@@ -359,7 +359,7 @@ class Universes(Aggregator):
     
         if handle:
             udef = self._containerfile.get_universe(handle)
-            
+                
             # get a working path to the topology from last known locations
             topology = None
             for top in udef[0]:
@@ -732,7 +732,7 @@ class Members(Aggregator):
                     outconts.append(c)
 
         for container in outconts:
-            self._containerfile.add_member(container.uuid, container.name, container.containertype, container.location)
+            self._containerfile.add_member(container.uuid, container.containertype, container.basedir)
     
     def remove(self, *indices, **kwargs): 
         """Remove any number of members from the Group.
