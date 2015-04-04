@@ -645,20 +645,20 @@ class Members(Aggregator):
         """Get member corresponding to the given index or slice.
         
         """
-        members = self._containerfile.get_members()
-        uuids = list(members['uuid'][index])
+        allrecords = self._containerfile.get_members()
+        records = allrecords[index]
+        uuids = records['uuid']
 
         if isinstance(uuids, basestring):
+            member = None
             # if member already cached, use cached member
             if uuids in self._container._cache:
                 member = self._container._cache[uuids]
             else:
-                member = None
                 for pathtype in self._containerfile.memberpaths:
-
                     # use full path to state file in case there are multiples
-                    path = os.path.join(members[pathtype][index], 
-                            filesystem.statefilename(members['containertype'][index], members['uuid'][index]))
+                    path = os.path.join(records[pathtype], 
+                            filesystem.statefilename(records['containertype'], records['uuid']))
 
                     # returns a (possibly empty) list
                     member = filesystem.path2container(path)
@@ -669,11 +669,12 @@ class Members(Aggregator):
                         break
 
                 if not member:
-                    raise IOError("Could not find member at index {} (uuid: {}); re-add or remove it.".format(index, uuids))
+                    raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(index, uuids))
 
-        elif isinstance(uuids, list):
+        elif isinstance(uuids, np.ndarray):
             member = list()
-            for uuid, ind in zip(uuids, range(*index.indices(index.stop))):
+            for uuid, record in zip(uuids, records):
+                # if member already cached, use cached member
                 if uuid in self._container._cache:
                     member.append(self._container._cache[uuid])
                 else:
@@ -681,8 +682,8 @@ class Members(Aggregator):
                     for pathtype in self._containerfile.memberpaths:
                         # use full path to state file in case there are multiples, and to avoid
                         # loading a replacement (checks uuid)
-                        path = os.path.join(members[pathtype][ind], 
-                                filesystem.statefilename(members['containertype'][ind], members['uuid'][ind]))
+                        path = os.path.join(record[pathtype], 
+                                filesystem.statefilename(record['containertype'], record['uuid']))
 
                         # returns a (possibly empty) list
                         newmember = filesystem.path2container(path)
@@ -693,7 +694,8 @@ class Members(Aggregator):
                             break
 
                     if not newmember:
-                        raise IOError("Could not find member at index {} (uuid: {}); re-add or remove it.".format(ind, uuid))
+                        ind = list(allrecords['uuid']).index(uuid)
+                        raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
 
         return member
 
@@ -1183,10 +1185,7 @@ class Data(Aggregator):
         return datasets
 
     def locate(self, handle):
-        """Get location for stored data.
-
-        Useful if preparing plots or other files derived from the dataset,
-        since these can be stored with the data in its own directory.
+        """Get directory location for a stored dataset.
 
         :Arguments:
             *handle*
@@ -1198,6 +1197,31 @@ class Data(Aggregator):
 
         """
         return os.path.dirname(self._get_datafile(handle)[0])
+
+    def make_filepath(self, handle, filename):
+        """Return a full path for a file stored in a data directory, whether
+        the file exists or not.
+
+        This is useful if preparing plots or other files derived from the
+        dataset, since these can be stored with the data in its own directory.
+        This method does the small but annoying work of generating a full path
+        for the file.
+
+        This method doesn't care whether or not the path exists; it simply returns
+        the path it's asked to build.
+
+        :Arguments:
+            *handle*
+                name of dataset file corresponds to
+            *filename*
+                filename of file
+
+        :Returns:
+            *filepath*
+                absolute path for file
+
+        """
+        return os.path.join(os.path.dirname(self._get_datafile(handle)[0]), filename)
 
 class Database(Aggregator):
     """Database object for tracking and coordinating Containers.
