@@ -1096,10 +1096,7 @@ class Data(Aggregator):
         return datasets
 
     def locate(self, handle):
-        """Get location for stored data.
-
-        Useful if preparing plots or other files derived from the dataset,
-        since these can be stored with the data in its own directory.
+        """Get directory location for a stored dataset.
 
         :Arguments:
             *handle*
@@ -1111,6 +1108,31 @@ class Data(Aggregator):
 
         """
         return os.path.dirname(self._get_datafile(handle)[0])
+
+    def make_filepath(self, handle, filename):
+        """Return a full path for a file stored in a data directory, whether
+        the file exists or not.
+
+        This is useful if preparing plots or other files derived from the
+        dataset, since these can be stored with the data in its own directory.
+        This method does the small but annoying work of generating a full path
+        for the file.
+
+        This method doesn't care whether or not the path exists; it simply returns
+        the path it's asked to build.
+
+        :Arguments:
+            *handle*
+                name of dataset file corresponds to
+            *filename*
+                filename of file
+
+        :Returns:
+            *filepath*
+                absolute path for file
+
+        """
+        return os.path.join(os.path.dirname(self._get_datafile(handle)[0]), filename)
 
 class Database(Aggregator):
     """Database object for tracking and coordinating Containers.
