@@ -363,6 +363,15 @@ class Universes(Aggregator):
             self._container._uname = handle
             self._apply_resnums()
     
+    def current(self):
+        """Return the name of the currently active universe.
+
+        :Returns:
+            *handle*
+                name of currently active universe
+        """
+        return self._container._uname
+                
     def deactivate(self):
         """Deactivate the current universe.
         
