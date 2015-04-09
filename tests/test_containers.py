@@ -109,10 +109,32 @@ class TestContainer:
         """Test data storage and retrieval.
 
         """
-        class TestPandas:
+        class DataMixin:
+            """Base class for data storage tests.
+            
+            """
+            def test_add_data(self, container, datastructs):
+                for ds in datastructs:
+                    container.data.add(ds, datastructs[ds])
+                    assert os.path.exists(os.path.join(container.basedir, 
+                                ds, self.datafile))
+
+            def test_remove_data(self, container, datastructs):
+                for ds in datastructs:
+                    container.data.add(ds, datastructs[ds])
+                    assert os.path.exists(os.path.join(container.basedir, 
+                                ds, self.datafile))
+
+                    container.data.remove(ds)
+                    assert not os.path.exists(os.path.join(container.basedir, 
+                                ds, self.datafile))
+
+        class TestPandas(DataMixin):
             """Test pandas datastructure storage and retrieval.
 
             """
+            datafile = mds.core.persistence.pddatafile
+
             @pytest.fixture
             def datastructs(self):
                 ds = dict()
@@ -138,27 +160,27 @@ class TestContainer:
 
                 return ds
 
-            def test_add_data(self, container, datastructs):
-                for ds in datastructs:
-                    container.data.add(ds, datastructs[ds])
-                    assert os.path.exists(os.path.join(container.basedir, 
-                                ds, mds.core.persistence.pddatafile))
-
-            def test_remove_data(self, container, datastructs):
-                for ds in datastructs:
-                    container.data.add(ds, datastructs[ds])
-                    assert os.path.exists(os.path.join(container.basedir, 
-                                ds, mds.core.persistence.pddatafile))
-
-                    container.data.remove(ds)
-                    assert not os.path.exists(os.path.join(container.basedir, 
-                                ds, mds.core.persistence.pddatafile))
-
-        class TestNumpy:
+        class TestNumpy(DataMixin):
             """Test pandas datastructure storage and retrieval.
 
             """
-            pass
+            datafile = mds.core.persistence.npdatafile
+
+            @pytest.fixture
+            def datastructs(self):
+                ds = dict()
+
+                ds['1d'] = np.random.rand(10000)
+
+                ds['2d'] = np.random.rand(10000,500)
+
+                ds['wide_blank'] =  np.zeros((1,10))
+                ds['thin_blank'] = np.zeros((10,1))
+
+                ds['3d'] = np.random.rand(4,10000,45)
+                ds['4d'] = np.random.rand(2,4,10000,45)
+
+                return ds
 
         class TestPython:
             """Test pandas datastructure storage and retrieval.
