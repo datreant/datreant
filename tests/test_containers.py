@@ -114,71 +114,45 @@ class TestContainer:
 
             """
             @pytest.fixture
-            def series(self):
+            def datastructs(self):
+                ds = dict()
+
                 data = np.random.rand(10000)
-                s = pd.Series(data)
-                return s
-    
-            @pytest.fixture
-            def dataframe(self):
+                ds['series'] = pd.Series(data)
+
                 data = np.random.rand(10000,3)
-                df = pd.DataFrame(data, columns=('A', 'B', 'C'))
-                return df
+                ds['dataframe'] = pd.DataFrame(data, columns=('A', 'B', 'C'))
 
-            @pytest.fixture
-            def blank_dataframe(self):
-                return pd.DataFrame(np.zeros((10,10)))
+                ds['blank_dataframe'] =  pd.DataFrame(np.zeros((10,10)))
+                ds['wide_blank_dataframe'] =  pd.DataFrame(np.zeros((1,10)))
+                ds['thin_blank_dataframe'] = pd.DataFrame(np.zeros((10,1)))
 
-            @pytest.fixture
-            def wide_blank_dataframe(self):
-                return pd.DataFrame(np.zeros((1,10)))
-
-            @pytest.fixture
-            def thin_blank_dataframe(self):
-                return pd.DataFrame(np.zeros((10,1)))
-
-            @pytest.fixture
-            def panel(self):
                 data = np.random.rand(4,10000,3)
-                p = pd.Panel(data, items=('I', 'II', 'III', 'IV'), minor_axis=('A', 'B', 'C'))
-                return p
+                ds['panel'] = pd.Panel(data, items=('I', 'II', 'III', 'IV'), 
+                                    minor_axis=('A', 'B', 'C'))
 
-            @pytest.fixture
-            def panel4d(self):
                 data = np.random.rand(2,4,10000,3)
-                p4 = pd.Panel4D(data, labels=('gallahad', 'lancelot'), items=('I', 'II', 'III', 'IV'), minor_axis=('A', 'B', 'C'))
-                return p4
+                ds['panel4d'] = pd.Panel4D(data, labels=('gallahad', 'lancelot'), 
+                                    items=('I', 'II', 'III', 'IV'),
+                                    minor_axis=('A', 'B', 'C'))
 
-            # TODO: is there a convenient way to make pytest loop through our data
-            # structures instead of explicitly making the same methods for each
-            # one?
-            def test_add_data(self, container, series):
-                handle = 'seriesdata'
-                container.data.add(handle, series)
-                assert os.path.exists(os.path.join(container.basedir, 
-                                                   handle, 
-                                                   mds.core.persistence.pddatafile))
+                return ds
 
-            def test_add_dataframe(self, container, dataframe):
-                handle = 'dataframedata'
-                container.data.add(handle, dataframe)
-                assert os.path.exists(os.path.join(container.basedir, 
-                                                   handle, 
-                                                   mds.core.persistence.pddatafile))
+            def test_add_data(self, container, datastructs):
+                for ds in datastructs:
+                    container.data.add(ds, datastructs[ds])
+                    assert os.path.exists(os.path.join(container.basedir, 
+                                ds, mds.core.persistence.pddatafile))
 
-            def test_add_panel(self, container, panel):
-                handle = 'paneldata'
-                container.data.add(handle, panel)
-                assert os.path.exists(os.path.join(container.basedir, 
-                                                   handle, 
-                                                   mds.core.persistence.pddatafile))
+            def test_remove_data(self, container, datastructs):
+                for ds in datastructs:
+                    container.data.add(ds, datastructs[ds])
+                    assert os.path.exists(os.path.join(container.basedir, 
+                                ds, mds.core.persistence.pddatafile))
 
-            def test_add_panel4d(self, container, panel4d):
-                handle = 'panel4ddata'
-                container.data.add(handle, panel4d)
-                assert os.path.exists(os.path.join(container.basedir, 
-                                                   handle, 
-                                                   mds.core.persistence.pddatafile))
+                    container.data.remove(ds)
+                    assert not os.path.exists(os.path.join(container.basedir, 
+                                ds, mds.core.persistence.pddatafile))
 
         class TestNumpy:
             """Test pandas datastructure storage and retrieval.
@@ -191,9 +165,6 @@ class TestContainer:
 
             """
             pass
-
-
-
 
 class TestSim:
     """Test Sim-specific features.
