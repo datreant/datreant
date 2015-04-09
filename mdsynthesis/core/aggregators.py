@@ -30,10 +30,10 @@ class Tags(Aggregator):
 
     """
     def __repr__(self):
-        return "<Tags({})>".format(self.list())
+        return "<Tags({})>".format(self._list())
 
     def __str__(self):
-        tags = self.list()
+        tags = self._list()
         agg = "Tags"
         majsep = "="
         seplength = len(agg)
@@ -53,7 +53,7 @@ class Tags(Aggregator):
     def __len__(self):
         return len(self._containerfile.get_tags())
 
-    def list(self):
+    def _list(self):
         """Get all tags for the Container as a list.
     
         :Returns:
@@ -105,10 +105,10 @@ class Categories(Aggregator):
 
     """
     def __repr__(self):
-        return "<Categories({})>".format(self.dict())
+        return "<Categories({})>".format(self._dict())
 
     def __str__(self):
-        categories = self.dict()
+        categories = self._dict()
         agg = "Categories"
         majsep = "="
         seplength = len(agg)
@@ -158,7 +158,7 @@ class Categories(Aggregator):
     def __len__(self):
         return len(self._containerfile.get_categories())
 
-    def dict(self):
+    def _dict(self):
         """Get all categories for the Container as a dictionary.
 
         :Returns:
@@ -234,7 +234,7 @@ class Universes(Aggregator):
 
     """
     def __repr__(self):
-        return "<Universes({})>".format(self.list())
+        return "<Universes({})>".format(self._list())
 
     def __str__(self):
         universes = self.list()
@@ -328,7 +328,7 @@ class Universes(Aggregator):
             if self.default() == item:
                 self._containerfile.update_default()
     
-    def list(self):
+    def _list(self):
         """Get handles for all universe definitions as a list.
     
         :Returns:
@@ -438,7 +438,7 @@ class Universes(Aggregator):
         
         return self._containerfile.get_default()
     
-    def define(self, handle):
+    def show(self, handle):
         """Get the topology and trajectory used for the specified universe.
 
         :Arguments:
@@ -462,7 +462,7 @@ class Selections(Aggregator):
 
     """
     def __repr__(self):
-        return "<Selections({})>".format({x: self.define(x) for x in self.keys()})
+        return "<Selections({})>".format({x: self.show(x) for x in self.keys()})
 
     def __str__(self):
         selections = self.keys()
@@ -481,7 +481,7 @@ class Selections(Aggregator):
             out = out + majsep*seplength + '\n'
             for selection in selections:
                 out = out + "'{}'\n".format(selection)
-                for item in self.define(selection):
+                for item in self.show(selection):
                     out = out + subsep + "'{}'\n".format(item)
                 out = out + minsep*seplength + '\n'
 
@@ -567,7 +567,7 @@ class Selections(Aggregator):
         selstring = self._containerfile.get_selection(self._container._uname, handle)
         return self._container.universe.selectAtoms(*selstring)
 
-    def define(self, handle):
+    def show(self, handle):
         """Get selection definition for given handle and the active universe.
     
         :Arguments:
@@ -653,7 +653,7 @@ class Members(Aggregator):
 
         return member
 
-    def list(self):
+    def _list(self):
         """Return a list of members.
 
         Note: modifications of this list won't modify the members of the Group!
@@ -735,10 +735,10 @@ class Data(Aggregator):
 
     """
     def __repr__(self):
-        return "<Data({})>".format(self.list())
+        return "<Data({})>".format(self._list())
 
     def _repr_html_(self):
-        data = self.list()
+        data = self._list()
         agg = "Data"
         if not data:
             out = "No Data"
@@ -751,7 +751,7 @@ class Data(Aggregator):
         return out
 
     def __str__(self):
-        data = self.list()
+        data = self._list()
         agg = "Data"
         majsep = "="
         seplength = len(agg)
@@ -766,7 +766,7 @@ class Data(Aggregator):
         return out
 
     def __iter__(self):
-        return self.list().__iter__()
+        return self._list().__iter__()
 
     def _makedirs(self, p):
         """Make directories and all parents necessary.
@@ -864,19 +864,29 @@ class Data(Aggregator):
         return inner
 
     def __getitem__(self, handle):
-        """Get dataset corresponding to given handle.
+        """Get dataset corresponding to given handle(s).
 
         If dataset doesn't exist, ``None`` is returned.
         
         :Arguments:
             *handle*
-                name of data to retrieve
+                name of data to retrieve; may also be a list of names
 
         :Returns:
             *data*
-                stored data; ``None`` if nonexistent
+                stored data; if *handle* was a list, will be a list
+                of equal length with the stored data as members; will yield
+                ``None`` if requested data is nonexistent
+                
         """
-        return self.retrieve(handle)
+        if isinstance(handle, list):
+            out = list()
+            for item in handle:
+                out.append(self.retrieve(item))
+        elif isinstance(handle, basestring):
+            out = self.retrieve(handle)
+
+        return out
 
     def __setitem__(self, handle, data):
         """Set dataset corresponding to given handle.
@@ -1086,7 +1096,7 @@ class Data(Aggregator):
         """
         self._datafile.append_data('main', data)
     
-    def list(self):
+    def _list(self):
         """List available datasets.
 
         :Returns:
