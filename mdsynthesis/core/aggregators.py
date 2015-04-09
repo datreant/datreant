@@ -730,6 +730,12 @@ class Members(Aggregator):
 
         self._containerfile.del_member(*uuids)
 
+class MemberData(object):
+    """
+
+    """
+    pass
+
 class Data(Aggregator):
     """Interface to stored data.
 
@@ -1153,6 +1159,8 @@ class Data(Aggregator):
         """
         return os.path.join(os.path.dirname(self._get_datafile(handle)[0]), filename)
 
+
+#NOTE: OUT OF DATE; UNUSED AT MOMENT
 class Database(Aggregator):
     """Database object for tracking and coordinating Containers.
 
