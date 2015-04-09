@@ -864,19 +864,29 @@ class Data(Aggregator):
         return inner
 
     def __getitem__(self, handle):
-        """Get dataset corresponding to given handle.
+        """Get dataset corresponding to given handle(s).
 
         If dataset doesn't exist, ``None`` is returned.
         
         :Arguments:
             *handle*
-                name of data to retrieve
+                name of data to retrieve; may also be a list of names
 
         :Returns:
             *data*
-                stored data; ``None`` if nonexistent
+                stored data; if *handle* was a list, will be a list
+                of equal length with the stored data as members; will yield
+                ``None`` if requested data is nonexistent
+                
         """
-        return self.retrieve(handle)
+        if isinstance(handle, list):
+            out = list()
+            for item in handle:
+                out.append(self.retrieve(item))
+        elif isinstance(handle, basestring):
+            out = self.retrieve(handle)
+
+        return out
 
     def __setitem__(self, handle, data):
         """Set dataset corresponding to given handle.
