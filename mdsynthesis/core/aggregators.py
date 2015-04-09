@@ -30,10 +30,10 @@ class Tags(Aggregator):
 
     """
     def __repr__(self):
-        return "<Tags({})>".format(self.list())
+        return "<Tags({})>".format(self._list())
 
     def __str__(self):
-        tags = self.list()
+        tags = self._list()
         agg = "Tags"
         majsep = "="
         seplength = len(agg)
@@ -53,7 +53,7 @@ class Tags(Aggregator):
     def __len__(self):
         return len(self._containerfile.get_tags())
 
-    def list(self):
+    def _list(self):
         """Get all tags for the Container as a list.
     
         :Returns:
@@ -105,10 +105,10 @@ class Categories(Aggregator):
 
     """
     def __repr__(self):
-        return "<Categories({})>".format(self.dict())
+        return "<Categories({})>".format(self._dict())
 
     def __str__(self):
-        categories = self.dict()
+        categories = self._dict()
         agg = "Categories"
         majsep = "="
         seplength = len(agg)
@@ -158,7 +158,7 @@ class Categories(Aggregator):
     def __len__(self):
         return len(self._containerfile.get_categories())
 
-    def dict(self):
+    def _dict(self):
         """Get all categories for the Container as a dictionary.
 
         :Returns:
@@ -234,7 +234,7 @@ class Universes(Aggregator):
 
     """
     def __repr__(self):
-        return "<Universes({})>".format(self.list())
+        return "<Universes({})>".format(self._list())
 
     def __str__(self):
         universes = self.list()
@@ -328,7 +328,7 @@ class Universes(Aggregator):
             if self.default() == item:
                 self._containerfile.update_default()
     
-    def list(self):
+    def _list(self):
         """Get handles for all universe definitions as a list.
     
         :Returns:
@@ -653,7 +653,7 @@ class Members(Aggregator):
 
         return member
 
-    def list(self):
+    def _list(self):
         """Return a list of members.
 
         Note: modifications of this list won't modify the members of the Group!
@@ -735,10 +735,10 @@ class Data(Aggregator):
 
     """
     def __repr__(self):
-        return "<Data({})>".format(self.list())
+        return "<Data({})>".format(self._list())
 
     def _repr_html_(self):
-        data = self.list()
+        data = self._list()
         agg = "Data"
         if not data:
             out = "No Data"
@@ -751,7 +751,7 @@ class Data(Aggregator):
         return out
 
     def __str__(self):
-        data = self.list()
+        data = self._list()
         agg = "Data"
         majsep = "="
         seplength = len(agg)
@@ -766,7 +766,7 @@ class Data(Aggregator):
         return out
 
     def __iter__(self):
-        return self.list().__iter__()
+        return self._list().__iter__()
 
     def _makedirs(self, p):
         """Make directories and all parents necessary.
@@ -1096,7 +1096,7 @@ class Data(Aggregator):
         """
         self._datafile.append_data('main', data)
     
-    def list(self):
+    def _list(self):
         """List available datasets.
 
         :Returns:
