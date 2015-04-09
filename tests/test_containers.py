@@ -110,77 +110,110 @@ class TestContainer:
 
         """
         class DataMixin:
-            """Base class for data storage tests.
+            """Mixin class for data storage tests.
+
+            Contains general tests to be used for all storable data formats.
             
             """
-            def test_add_data(self, container, datastructs):
-                for ds in datastructs:
-                    container.data.add(ds, datastructs[ds])
-                    assert os.path.exists(os.path.join(container.basedir, 
-                                ds, self.datafile))
+            handle = 'testdata'
 
-            def test_remove_data(self, container, datastructs):
-                for ds in datastructs:
-                    container.data.add(ds, datastructs[ds])
-                    assert os.path.exists(os.path.join(container.basedir, 
-                                ds, self.datafile))
+            def test_add_data(self, container, datastruct):
+                container.data.add(self.handle, datastruct)
+                assert os.path.exists(os.path.join(container.basedir, self.handle,
+                    self.datafile))
 
-                    container.data.remove(ds)
-                    assert not os.path.exists(os.path.join(container.basedir, 
-                                ds, self.datafile))
+            def test_remove_data(self, container, datastruct):
+                container.data.add(self.handle, datastruct)
+                assert os.path.exists(os.path.join(container.basedir, self.handle,
+                    self.datafile))
 
-        class TestPandas(DataMixin):
-            """Test pandas datastructure storage and retrieval.
+                container.data.remove('testdata')
+                assert not os.path.exists(os.path.join(container.basedir,
+                    self.handle, self.datafile))
+
+        class PandasMixin(DataMixin):
+            """Mixin class for pandas tests
 
             """
             datafile = mds.core.persistence.pddatafile
 
+        class Test_Series(PandasMixin):
             @pytest.fixture
-            def datastructs(self):
-                ds = dict()
-
+            def datastruct(self):
                 data = np.random.rand(10000)
-                ds['series'] = pd.Series(data)
+                return pd.Series(data)
 
+        class Test_DataFrame(PandasMixin):
+            @pytest.fixture
+            def datastruct(self):
                 data = np.random.rand(10000,3)
-                ds['dataframe'] = pd.DataFrame(data, columns=('A', 'B', 'C'))
+                return pd.DataFrame(data, columns=('A', 'B', 'C'))
 
-                ds['blank_dataframe'] =  pd.DataFrame(np.zeros((10,10)))
-                ds['wide_blank_dataframe'] =  pd.DataFrame(np.zeros((1,10)))
-                ds['thin_blank_dataframe'] = pd.DataFrame(np.zeros((10,1)))
+        class Test_Blank_DataFrame(PandasMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return pd.DataFrame(np.zeros((10,10)))
 
+        class Test_Wide_Blank_DataFrame(PandasMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return pd.DataFrame(np.zeros((1,10)))
+
+        class Test_Thin_Blank_DataFrame(PandasMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return pd.DataFrame(np.zeros((10,1)))
+
+        class Test_Panel(PandasMixin):
+            @pytest.fixture
+            def datastruct(self):
                 data = np.random.rand(4,10000,3)
-                ds['panel'] = pd.Panel(data, items=('I', 'II', 'III', 'IV'), 
+                return pd.Panel(data, items=('I', 'II', 'III', 'IV'), 
                                     minor_axis=('A', 'B', 'C'))
 
+        class Test_Panel4D(PandasMixin):
+            @pytest.fixture
+            def datastruct(self):
                 data = np.random.rand(2,4,10000,3)
-                ds['panel4d'] = pd.Panel4D(data, labels=('gallahad', 'lancelot'), 
-                                    items=('I', 'II', 'III', 'IV'),
-                                    minor_axis=('A', 'B', 'C'))
+                return pd.Panel4D(data, labels=('gallahad', 'lancelot'), 
+                                items=('I', 'II', 'III', 'IV'),
+                                minor_axis=('A', 'B', 'C'))
 
-                return ds
-
-        class TestNumpy(DataMixin):
-            """Test pandas datastructure storage and retrieval.
+        class NumpyMixin(DataMixin):
+            """Test numpy datastructure storage and retrieval.
 
             """
             datafile = mds.core.persistence.npdatafile
 
+        class Test_Numpy1D(NumpyMixin):
             @pytest.fixture
-            def datastructs(self):
-                ds = dict()
+            def datastruct(self):
+                return np.random.rand(10000)
 
-                ds['1d'] = np.random.rand(10000)
+        class Test_Numpy2D(NumpyMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return np.random.rand(10000,500)
 
-                ds['2d'] = np.random.rand(10000,500)
+        class Test_Wide_Numpy2D(NumpyMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return  np.zeros((1,10))
 
-                ds['wide_blank'] =  np.zeros((1,10))
-                ds['thin_blank'] = np.zeros((10,1))
+        class Test_Thin_Numpy2D(NumpyMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return np.zeros((10,1))
 
-                ds['3d'] = np.random.rand(4,10000,45)
-                ds['4d'] = np.random.rand(2,4,10000,45)
+        class Test_Numpy3D(NumpyMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return np.random.rand(4,10000,45)
 
-                return ds
+        class Test_Numpy4D(NumpyMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return np.random.rand(2,4,10000,45)
 
         class TestPython:
             """Test pandas datastructure storage and retrieval.
