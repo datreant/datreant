@@ -215,11 +215,38 @@ class TestContainer:
             def datastruct(self):
                 return np.random.rand(2,4,10000,45)
 
-        class TestPython:
+        class PythonMixin(DataMixin):
             """Test pandas datastructure storage and retrieval.
 
             """
-            pass
+            datafile = mds.core.persistence.pydatafile
+
+        class Test_List(PythonMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return ['galahad', 'lancelot', 42, 'arthur', 3.14159]
+
+        class Test_Dict(PythonMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return {'pure': 'galahad', 'brave': 'lancelot', 'answer': 42,
+                        'king': 'arthur', 'pi-ish': 3.14159}
+
+        class Test_Tuple(PythonMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return ('arthur', 3.14159)
+
+        class Test_Set(PythonMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return {'arthur', 3.14159, 'seahorses'}
+
+        class Test_Dict_Mix(PythonMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return {'an array': np.random.rand(100, 46),
+                        'another' : np.random.rand(3, 45, 2)}
 
 class TestSim:
     """Test Sim-specific features.
