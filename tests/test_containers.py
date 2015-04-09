@@ -126,6 +126,18 @@ class TestContainer:
                 return df
 
             @pytest.fixture
+            def blank_dataframe(self):
+                return pd.DataFrame(np.zeros((10,10)))
+
+            @pytest.fixture
+            def wide_blank_dataframe(self):
+                return pd.DataFrame(np.zeros((1,10)))
+
+            @pytest.fixture
+            def thin_blank_dataframe(self):
+                return pd.DataFrame(np.zeros((10,1)))
+
+            @pytest.fixture
             def panel(self):
                 data = np.random.rand(4,10000,3)
                 p = pd.Panel(data, items=('I', 'II', 'III', 'IV'), minor_axis=('A', 'B', 'C'))
@@ -140,7 +152,7 @@ class TestContainer:
             # TODO: is there a convenient way to make pytest loop through our data
             # structures instead of explicitly making the same methods for each
             # one?
-            def test_add_series(self, container, series):
+            def test_add_data(self, container, series):
                 handle = 'seriesdata'
                 container.data.add(handle, series)
                 assert os.path.exists(os.path.join(container.basedir, 
