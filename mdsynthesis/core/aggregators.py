@@ -438,7 +438,7 @@ class Universes(Aggregator):
         
         return self._containerfile.get_default()
     
-    def define(self, handle):
+    def show(self, handle):
         """Get the topology and trajectory used for the specified universe.
 
         :Arguments:
@@ -462,7 +462,7 @@ class Selections(Aggregator):
 
     """
     def __repr__(self):
-        return "<Selections({})>".format({x: self.define(x) for x in self.keys()})
+        return "<Selections({})>".format({x: self.show(x) for x in self.keys()})
 
     def __str__(self):
         selections = self.keys()
@@ -481,7 +481,7 @@ class Selections(Aggregator):
             out = out + majsep*seplength + '\n'
             for selection in selections:
                 out = out + "'{}'\n".format(selection)
-                for item in self.define(selection):
+                for item in self.show(selection):
                     out = out + subsep + "'{}'\n".format(item)
                 out = out + minsep*seplength + '\n'
 
@@ -567,7 +567,7 @@ class Selections(Aggregator):
         selstring = self._containerfile.get_selection(self._container._uname, handle)
         return self._container.universe.selectAtoms(*selstring)
 
-    def define(self, handle):
+    def show(self, handle):
         """Get selection definition for given handle and the active universe.
     
         :Arguments:
