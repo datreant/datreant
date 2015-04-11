@@ -18,7 +18,7 @@ before_install:
 install:
   - pip install numpy numexpr Cython
   - pip install tables
-  - pip install pandas h5py MDAnalysis
+  - pip install pandas h5py MDAnalysis MDAnalysisTests
   - pip install .
 
 # run tests
