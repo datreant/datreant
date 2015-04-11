@@ -639,4 +639,3 @@ class Group(Container):
         super(Group, self)._placeholders()
     
         self._members = None
-        self._cache = dict()    # member cache

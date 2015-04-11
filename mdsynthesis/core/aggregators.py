@@ -14,6 +14,7 @@ from functools import wraps
 
 import persistence
 import filesystem
+import pandas as pd
 import mdsynthesis as mds
 
 class Aggregator(object):
@@ -24,6 +25,14 @@ class Aggregator(object):
         self._container = container
         self._containerfile = containerfile
         self._logger = logger
+
+        self._placeholders()
+
+    def _placeholders(self):
+        """Initialize any hidden elements.
+
+        """
+        pass
 
 class Tags(Aggregator):
     """Interface to tags.
@@ -598,6 +607,12 @@ class Members(Aggregator):
     """Member manager for Groups.
 
     """
+
+    def _placeholders(self):
+        # member cache
+        self._cache = dict()
+        self._data = None
+
     def __repr__(self):
         return "<Members({})>".format(self.names())
 
@@ -627,7 +642,7 @@ class Members(Aggregator):
 
         if isinstance(uuid, basestring):
             try:
-                member = self._container._cache[uuid]
+                member = self._cache[uuid]
             except KeyError:
                 memberdet = self._containerfile.get_member(uuid)
                 memberpath = os.path.join(memberdet['abspath'], memberdet['name'])
@@ -635,12 +650,12 @@ class Members(Aggregator):
                     member = mds.Sim(memberpath)
                 elif memberdet['containertype'] == 'Group':
                     member = mds.Group(memberpath)
-                self._container._cache[uuid] = member
+                self._cache[uuid] = member
         elif isinstance(uuid, list):
             member = list()
             for item in uuid:
                 try:
-                    member.append(self._container._cache[item])
+                    member.append(self._cache[item])
                 except KeyError:
                     memberdet = self._containerfile.get_member(item)
                     memberpath = os.path.join(memberdet['abspath'], memberdet['name'])
@@ -649,7 +664,7 @@ class Members(Aggregator):
                     elif memberdet['containertype'] == 'Group':
                         new = mds.Group(memberpath)
                     member.append(new)
-                    self._container._cache[item] = new
+                    self._cache[item] = new
 
         return member
 
@@ -664,7 +679,7 @@ class Members(Aggregator):
         members = list()
         for uuid in self._containerfile.get_members_uuid():
             try:
-                members.append(self._container._cache[uuid])
+                members.append(self._cache[uuid])
             except KeyError:
                 member = self._containerfile.get_member(uuid)
                 memberpath = os.path.join(member['abspath'], member['name'])
@@ -673,9 +688,23 @@ class Members(Aggregator):
                 elif member['containertype'] == 'Group':
                     new = mds.Group(memberpath)
                 members.append(new)
-                self._container._cache[uuid] = new
+                self._cache[uuid] = new
         
         return members
+
+    @property
+    def data(self):
+        """The data of the Container.
+
+        Data are user-generated pandas objects (e.g. Series, DataFrames), numpy
+        arrays, or any pickleable python object that are stored in the Container
+        for easy recall later.  Each data instance is given its own directory
+        in the Container's tree.
+        
+        """
+        if not self._data:
+            self._data = MemberData(self)
+        return self._data
 
     def containertypes(self):
         """Return a list of member containertypes.
@@ -730,11 +759,94 @@ class Members(Aggregator):
 
         self._containerfile.del_member(*uuids)
 
-class MemberData(object):
-    """
+class MemberAgg(object):
+    """Core functionality for member aggregators.
 
     """
-    pass
+    def __init__(self, members):
+        self._members = members
+
+class MemberData(MemberAgg):
+    """Manipulators for member data.
+
+    """
+    def _list(self):
+        """List available datasets.
+
+        :Returns:
+            *handles*
+                list of handles to available datasets
+
+        """
+        datasets = list()
+        top = self._containerfile.get_location()
+        for root, dirs, files in os.walk(top):
+            if (persistence.pddatafile in files) or (persistence.npdatafile in files) or (persistence.pydatafile in files):
+                datasets.append(os.path.relpath(root, start=top))
+
+    def retrieve(self, handle, **kwargs):
+        """Retrieve stored data.
+
+        The stored data structure is read from disk and returned. 
+
+        If dataset doesn't exist, ``None`` is returned.
+
+        For pandas objects (Series, DataFrame, or Panel) subsets of the whole
+        dataset can be returned using keywords such as *start* and *stop* for
+        ranges of rows, and *columns* for selected columns.
+
+        Also for pandas objects, the *where* keyword takes a string as input
+        and can be used to filter out rows and columns without loading the full
+        object into memory. For example, given a DataFrame with handle 'mydata'
+        with columns (A, B, C, D), one could return all rows for columns A and
+        C for which column D is greater than .3 with::
+
+            retrieve('mydata', where='columns=[A,C] & D > .3')
+
+        Or, if we wanted all rows with index = 3 (there could be more than
+        one)::
+
+            retrieve('mydata', where='index = 3')
+
+        See :meth:pandas.HDFStore.select() for more information.
+        
+        :Arguments:
+            *handle*
+                name of data to retrieve
+
+        :Keywords:
+            *where*
+                conditions for what rows/columns to return
+            *start* 
+                row number to start selection
+            *stop*  
+                row number to stop selection
+            *columns*
+                list of columns to return; all columns returned by default
+            *iterator* 
+                if True, return an iterator [``False``]
+            *chunksize*
+                number of rows to include in iteration; implies
+                ``iterator=True`` 
+
+        :Returns:
+            *data*
+                stored data; ``None`` if nonexistent
+
+        """
+        agg = None
+        for member in self._members:
+            df = member.data.retrieve(handle, **kwargs)
+            label = len(df.index)*[member.name]
+            index = pd.MultiIndex.from_arrays([label, df.index])
+            df = df.set_index(index)
+
+            if agg is not None:
+                agg = agg.append(df)
+            else:
+                agg = df
+
+        return agg
 
 class Data(Aggregator):
     """Interface to stored data.
