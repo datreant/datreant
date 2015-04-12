@@ -612,6 +612,7 @@ class Members(Aggregator):
         # member cache
         self._cache = dict()
         self._data = None
+        self._backend = self._containerfile
 
     def __repr__(self):
         return "<Members({})>".format(self.names())

@@ -38,7 +38,25 @@ class _CollectionBase(object):
                     outconts.append(c)
 
         for container in outconts:
-            self.backend.add_member(container.uuid, container.name, container.containertype, container.location)
+            self._backend.add_member(container.uuid, container.name, container.containertype, container.location)
+
+    def remove(self, *indices, **kwargs): 
+        """Remove any number of members from the Group.
+    
+        :Arguments:
+            *indices*
+                the indices of the members to remove
+
+        :Keywords:
+            *all*
+                When True, remove all members [``False``]
+
+        """
+        uuids = self._containerfile.get_members_uuid()
+        if not kwargs.pop('all', False):
+            uuids = [ uuids[x] for x in indices ]
+
+        self._backend.del_member(*uuids)
 
 #TODO: use an in-memory SQLite db instead of a list for this?
 class _BundleBackend():
@@ -97,38 +115,23 @@ class _BundleBackend():
                 When True, remove all members [``False``]
 
         """
-        table = self.handle.get_node('/', 'members')
         purge = kwargs.pop('all', False)
 
         if purge:
-            table.remove()
-            table = self.handle.create_table('/', 'members', self._Members, 'members')
-            
+            self.table = list()
         else:
             # remove redundant uuids from given list if present
             uuids = set([ str(uid) for uid in uuid ])
 
-            # get matching rows
-            #TODO: possibly faster to use table.where
-            rowlist = list()
-            for row in table:
+            # remove matching elements
+            matches = list()
+            for element in self.table:
                 for uuid in uuids:
-                    if (row['uuid'] == uuid):
-                        rowlist.append(row.nrow)
+                    if (element['uuid'] == uuid):
+                        matches.append(element)
 
-            # must include a separate condition in case all rows will be removed
-            # due to a limitation of PyTables
-            if len(rowlist) == table.nrows:
-                table.remove()
-                table = self.handle.create_table('/', 'members', self._Members, 'members')
-            else:
-                rowlist.sort()
-                j = 0
-                # delete matching rows; have to use j to shift the register as we
-                # delete rows
-                for i in rowlist:
-                    table.remove_row(i-j)
-                    j=j+1
+            for element in matches:
+                self.table.remove(element)
 
     @File._read_state
     def get_member(self, uuid):
@@ -146,14 +149,12 @@ class _BundleBackend():
                 a dictionary containing all information stored for the
                 specified member
         """
-        table = self.handle.get_node('/', 'members')
-
         # check if uuid present
-        rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
-        if rownum:
-            memberinfo = { x: table.colinstances[x][rownum[0]] for x in table.colinstances.keys() }
+        index = [ self.table.index(item) for item in self.table if item['uuid'] == uuid ]
+        if index:
+            memberinfo = self.table[index]
         else:
-            self.logger.info('No such member in this Group.')
+            self.logger.info('No such member.')
             memberinfo = None
 
         return memberinfo
@@ -167,8 +168,7 @@ class _BundleBackend():
                 list giving uuids of all members, in order
 
         """
-        table = self.handle.get_node('/', 'members')
-        return [ x['uuid'] for x in table.iterrows() ]
+        return [ x['uuid'] for x in self.table ]
 
     @File._read_state
     def get_members_name(self):
@@ -179,8 +179,7 @@ class _BundleBackend():
                 list giving names of all members, in order
 
         """
-        table = self.handle.get_node('/', 'members')
-        return [ x['name'] for x in table.iterrows() ]
+        return [ x['name'] for x in self.table ]
 
     @File._read_state
     def get_members_containertype(self):
@@ -191,8 +190,7 @@ class _BundleBackend():
                 list giving containertypes of all members, in order
 
         """
-        table = self.handle.get_node('/', 'members')
-        return [ x['containertype'] for x in table.iterrows() ]
+        return [ x['containertype'] for x in self.table ]
 
     @File._read_state
     def get_members_location(self, path='abspath'):
@@ -200,18 +198,15 @@ class _BundleBackend():
 
         :Arguments:
             *path*
-                type of paths to return; either absolute paths (abspath) or
-                paths relative to the Group object (relGroup) ['abspath']
+                type of paths to return; only absolute paths (abspath)
+                are stored for Bundles
 
         :Returns:
             *locations*
                 list giving locations of all members, in order
 
         """
-        table = self.handle.get_node('/', 'members')
         return [ x[path] for x in table.iterrows() ]
-
-
 
 class Bundle(object):
     """Non-persistent Container for Sims and Groups.
@@ -236,7 +231,7 @@ class Bundle(object):
                 only Sims will be present in the bunch 
          
         """
-        self.backend = _BundleBackend()
+        self._backend = _BundleBackend()
 
         self.add(*containers)
 
