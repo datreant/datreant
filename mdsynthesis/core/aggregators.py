@@ -770,45 +770,37 @@ class MemberData(MemberAgg):
     """Manipulators for member data.
 
     """
-    def _list(self):
+    def _list(self, mode='any'):
         """List available datasets.
+
+        :Arguments:
+            *mode*
+                'any' returns a list of all handles present in at least one
+                member; 'all' returns only handles that are present in all
+                members
 
         :Returns:
             *handles*
                 list of handles to available datasets
 
         """
-        datasets = list()
-        top = self._containerfile.get_location()
-        for root, dirs, files in os.walk(top):
-            if (persistence.pddatafile in files) or (persistence.npdatafile in files) or (persistence.pydatafile in files):
-                datasets.append(os.path.relpath(root, start=top))
+        datasets = [ set(member.data) for member in self._members ]
+        if mode == 'any':
+            out = set.union(*datasets)
+        elif mode == 'all':
+            out = set.intersection(*datasets)
 
+        return list(out)
+
+    #TODO: needs to work for more than just dataframes, series
     def retrieve(self, handle, **kwargs):
-        """Retrieve stored data.
+        """Retrieve aggregated dataset from all members.
 
-        The stored data structure is read from disk and returned. 
+        The stored data structure for each member is read from disk
+        and aggregated. The aggregation scheme is dependent on the
+        form of the data structure.
 
-        If dataset doesn't exist, ``None`` is returned.
-
-        For pandas objects (Series, DataFrame, or Panel) subsets of the whole
-        dataset can be returned using keywords such as *start* and *stop* for
-        ranges of rows, and *columns* for selected columns.
-
-        Also for pandas objects, the *where* keyword takes a string as input
-        and can be used to filter out rows and columns without loading the full
-        object into memory. For example, given a DataFrame with handle 'mydata'
-        with columns (A, B, C, D), one could return all rows for columns A and
-        C for which column D is greater than .3 with::
-
-            retrieve('mydata', where='columns=[A,C] & D > .3')
-
-        Or, if we wanted all rows with index = 3 (there could be more than
-        one)::
-
-            retrieve('mydata', where='index = 3')
-
-        See :meth:pandas.HDFStore.select() for more information.
+        See :meth:`Data.retrieve` for more information on keyword usage.
         
         :Arguments:
             *handle*
@@ -831,7 +823,7 @@ class MemberData(MemberAgg):
 
         :Returns:
             *data*
-                stored data; ``None`` if nonexistent
+                aggregated data
 
         """
         agg = None
@@ -839,7 +831,7 @@ class MemberData(MemberAgg):
             df = member.data.retrieve(handle, **kwargs)
             label = len(df.index)*[member.name]
             index = pd.MultiIndex.from_arrays([label, df.index])
-            df = df.set_index(index)
+            df = df.reindex_axis(index)
 
             if agg is not None:
                 agg = agg.append(df)
