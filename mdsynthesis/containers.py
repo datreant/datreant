@@ -580,7 +580,7 @@ class Group(Container):
                     coordinator=coordinator, categories=categories, tags=tags)
 
     def __repr__(self):
-        members = self._containerfile.get_members_containertype()
+        members = list(self._containerfile.get_members_containertype())
 
         sims = members.count('Sim')
         groups = members.count('Group')

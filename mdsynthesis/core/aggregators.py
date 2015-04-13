@@ -10,6 +10,7 @@ be used as a backend by a Container, too.
 """
 from MDAnalysis import Universe
 import os
+import numpy as np
 from functools import wraps
 
 import persistence
@@ -368,9 +369,40 @@ class Universes(Aggregator):
     
         if handle:
             udef = self._containerfile.get_universe(handle)
-            self._container._universe = Universe(udef[0], *udef[1])
+                
+            # get a working path to the topology from last known locations
+            topology = None
+            for top in udef[0]:
+                found = False
+                for path in top:
+                    if os.path.exists(path):
+                        topology = path
+                        found = True
+                        break
+
+                if not found:
+                    raise IOError("Topology file could not be found for universe '{}'; cannot activate!".format(handle))
+
+            # get a working path to each trajectory from last known locations
+            trajectory = list()
+            for traj in udef[1]:
+                found = False
+                for path in traj:
+                    if os.path.exists(path):
+                        trajectory.append(path)
+                        found = True
+                        break
+
+                if not found:
+                    raise IOError("At least one trajectory file could not be found for universe '{}'; cannot activate!".format(handle))
+        
+            self._container._universe = Universe(topology, *trajectory)
             self._container._uname = handle
             self._apply_resnums()
+            
+            # update the universe definition; will automatically build current
+            # path variants for each file
+            self._containerfile.add_universe(handle, topology, *trajectory)
     
     def current(self):
         """Return the name of the currently active universe.
@@ -635,37 +667,60 @@ class Members(Aggregator):
         return out
 
     def __getitem__(self, index):
-        """Get member corresponding to the given index.
+        """Get member corresponding to the given index or slice.
         
         """
-        uuids = self._containerfile.get_members_uuid()
-        uuid = uuids[index] 
+        allrecords = self._containerfile.get_members()
+        records = allrecords[index]
+        uuids = records['uuid']
 
-        if isinstance(uuid, basestring):
-            try:
-                member = self._cache[uuid]
-            except KeyError:
-                memberdet = self._containerfile.get_member(uuid)
-                memberpath = os.path.join(memberdet['abspath'], memberdet['name'])
-                if memberdet['containertype'] == 'Sim':
-                    member = mds.Sim(memberpath)
-                elif memberdet['containertype'] == 'Group':
-                    member = mds.Group(memberpath)
-                self._cache[uuid] = member
-        elif isinstance(uuid, list):
+        if isinstance(uuids, basestring):
+            member = None
+            # if member already cached, use cached member
+            if uuids in self._container._cache:
+                member = self._container._cache[uuids]
+            else:
+                for pathtype in self._containerfile.memberpaths:
+                    # use full path to state file in case there are multiples
+                    path = os.path.join(records[pathtype], 
+                            filesystem.statefilename(records['containertype'], records['uuid']))
+
+                    # returns a (possibly empty) list
+                    member = filesystem.path2container(path)
+                    if member:
+                        member = member[0]
+                        # add to cache
+                        self._container._cache[uuids] = member
+                        break
+
+                if not member:
+                    raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(index, uuids))
+
+        elif isinstance(uuids, np.ndarray):
             member = list()
-            for item in uuid:
-                try:
-                    member.append(self._cache[item])
-                except KeyError:
-                    memberdet = self._containerfile.get_member(item)
-                    memberpath = os.path.join(memberdet['abspath'], memberdet['name'])
-                    if memberdet['containertype'] == 'Sim':
-                        new = mds.Sim(memberpath)
-                    elif memberdet['containertype'] == 'Group':
-                        new = mds.Group(memberpath)
-                    member.append(new)
-                    self._cache[item] = new
+            for uuid, record in zip(uuids, records):
+                # if member already cached, use cached member
+                if uuid in self._container._cache:
+                    member.append(self._container._cache[uuid])
+                else:
+                    newmember = None
+                    for pathtype in self._containerfile.memberpaths:
+                        # use full path to state file in case there are multiples, and to avoid
+                        # loading a replacement (checks uuid)
+                        path = os.path.join(record[pathtype], 
+                                filesystem.statefilename(record['containertype'], record['uuid']))
+
+                        # returns a (possibly empty) list
+                        newmember = filesystem.path2container(path)
+                        if newmember:
+                            member.append(newmember[0])
+                            # add to cache
+                            self._container._cache[uuid] = newmember[0]
+                            break
+
+                    if not newmember:
+                        ind = list(allrecords['uuid']).index(uuid)
+                        raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
 
         return member
 
@@ -674,24 +729,40 @@ class Members(Aggregator):
 
         Note: modifications of this list won't modify the members of the Group!
 
+        Missing members will be present in the list as ``None``. This method is not intended
+        for user-level use.
+
         """
-        #TODO: need to route these through Finder.
-        #TODO: need uuid checks
-        members = list()
-        for uuid in self._containerfile.get_members_uuid():
-            try:
-                members.append(self._cache[uuid])
-            except KeyError:
-                member = self._containerfile.get_member(uuid)
-                memberpath = os.path.join(member['abspath'], member['name'])
-                if member['containertype'] == 'Sim':
-                    new = mds.Sim(memberpath)
-                elif member['containertype'] == 'Group':
-                    new = mds.Group(memberpath)
-                members.append(new)
-                self._cache[uuid] = new
-        
-        return members
+        #TODO: need to route these through Foxhound
+        members = self._containerfile.get_members()
+        uuids = members['uuid']
+
+        memberlist = list()
+
+        for i in xrange(len(uuids)):
+            if uuids[i] in self._container._cache:
+                memberlist.append(self._container._cache[uuids[i]])
+            else:
+                newmember = None
+                for pathtype in self._containerfile.memberpaths:
+                    # use full path to state file in case there are multiples, and to avoid
+                    # loading a replacement (checks uuid)
+                    path = os.path.join(members[pathtype][i], 
+                            filesystem.statefilename(members['containertype'][i], 
+                            members['uuid'][i]))
+
+                    # returns a (possibly empty) list
+                    newmember = filesystem.path2container(path)
+                    if newmember:
+                        memberlist.append(newmember[0])
+                        # add to cache
+                        self._container._cache[uuids[i]] = newmember[0]
+                        break
+
+                if not newmember:
+                    memberlist.append(None)
+
+        return memberlist
 
     @property
     def data(self):
@@ -716,8 +787,22 @@ class Members(Aggregator):
     def names(self):
         """Return a list of member names.
 
+        Members that can't be found will have name ``None``.
+
+        :Returns:
+            *names*
+                list giving the name of each member, in order;
+                members that are missing will have name ``None``
+
         """
-        return self._containerfile.get_members_name()
+        names = list()
+        for member in self._list():
+            if member:
+                names.append(member.name)
+            else:
+                names.append(None)
+
+        return names
 
     def add(self, *containers):
         """Add any number of members to the Group.
@@ -740,7 +825,7 @@ class Members(Aggregator):
                     outconts.append(c)
 
         for container in outconts:
-            self._containerfile.add_member(container.uuid, container.name, container.containertype, container.location)
+            self._containerfile.add_member(container.uuid, container.containertype, container.basedir)
     
     def remove(self, *indices, **kwargs): 
         """Remove any number of members from the Group.
@@ -759,6 +844,10 @@ class Members(Aggregator):
             uuids = [ uuids[x] for x in indices ]
 
         self._containerfile.del_member(*uuids)
+
+        # remove from cache
+        for uuid in uuids:
+            self._container._cache.pop(uuid, None)
 
 class MemberAgg(object):
     """Core functionality for member aggregators.

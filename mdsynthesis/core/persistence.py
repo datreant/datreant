@@ -360,11 +360,11 @@ class ContainerFile(File):
                 table.row.append()
 
     def get_location(self):
-        """Get Container location.
+        """Get Container basedir.
 
         :Returns:
             *location*
-                absolute path to Container directory
+                absolute path to Container basedir
     
         """
         return os.path.dirname(self.filename)
@@ -814,30 +814,32 @@ class SimFile(ContainerFile):
         return group.__members__
 
     @File._read_state
-    def get_universe(self, universe, path='abspath'):
+    def get_universe(self, universe):
         """Get topology and trajectory paths for the desired universe.
+
+        Returns multiple path types, including absolute paths (abspath)
+        and paths relative to the Sim object (relSim).
 
         :Arguments:
             *universe*
                 given name for selecting the universe
-            *path*
-                type of paths to return; either absolute paths (abspath) or
-                paths relative to the Sim object (relSim) ['abspath']
 
         :Returns:
             *topology*
-                path to the topology file
+                structured array containing all paths to topology
             *trajectory*
-                list of paths to trajectory files
+                structured array containing all paths to trajectory(s)
                 
         """
+        paths = dict()
+
         # get topology file
         table = self.handle.get_node('/universes/{}'.format(universe), 'topology')
-        topology = table.colinstances[path][0]
+        topology = table.read()
 
         # get trajectory files
         table = self.handle.get_node('/universes/{}'.format(universe), 'trajectory')
-        trajectory = [ x[path] for x in table.iterrows() ]
+        trajectory = table.read()
 
         return (topology, trajectory)
 
@@ -866,7 +868,6 @@ class SimFile(ContainerFile):
         try:
             group = self.handle.create_group('/universes', universe, universe, createparents=True)
         except tables.NodeError:
-            self.logger.info("Replacing existing universe definition '{}'; retaining selections.".format(universe))
             self.handle.remove_node('/universes/{}'.format(universe), 'topology')
             self.handle.remove_node('/universes/{}'.format(universe), 'trajectory')
 
@@ -1067,6 +1068,8 @@ class GroupFile(ContainerFile):
     elements of the data structure, as well as the data structure definition.
     
     """
+    # add new paths to include them in member searches
+    memberpaths = ['abspath', 'relGroup']
 
     class _Members(tables.IsDescription):
         """Table definition for the members of the Group.
@@ -1075,14 +1078,11 @@ class GroupFile(ContainerFile):
         the path to the member container: the absolute path (abspath) and the
         relative path from the Group object's directory (relGroup). This allows
         the Group object to use some heuristically good starting points when
-        trying to find missing files using Finder.
+        trying to find missing files using a Foxhound.
         
         """
         # unique identifier for container
         uuid = tables.StringCol(36)
-
-        # name of container; not necessarily unique, but immutable
-        name = tables.StringCol(128)
 
         # container type; Sim or Group
         containertype = tables.StringCol(36)
@@ -1118,7 +1118,7 @@ class GroupFile(ContainerFile):
 
         :Keywords:
            *name*
-              user-given name of Sim object
+              user-given name of Group object
            *coordinator*
               directory in which Coordinator state file can be found [``None``]
            *categories*
@@ -1148,19 +1148,19 @@ class GroupFile(ContainerFile):
             table = self.handle.create_table('/', 'members', self._Members, 'members')
 
     @File._write_state
-    def add_member(self, uuid, name, containertype, location):
+    def add_member(self, uuid, containertype, basedir):
         """Add a member to the Group.
 
-        If the member is already present, its location will be updated with
-        the given location.
+        If the member is already present, its basedir paths will be updated with
+        the given basedir.
 
         :Arguments:
             *uuid*
                 the uuid of the new member
             *containertype*
                 the container type of the new member (Sim or Group)
-            *location*
-                location of the new member in the filesystem
+            *basedir*
+                basedir of the new member in the filesystem
     
         """
         try:
@@ -1172,14 +1172,13 @@ class GroupFile(ContainerFile):
         rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
         if rownum:
             # if present, update location
-            table.cols.abspath[rownum[0]] = os.path.abspath(location)
-            table.cols.relGroup[rownum[0]] = os.path.relpath(location, self.get_location())
+            table.cols.abspath[rownum[0]] = os.path.abspath(basedir)
+            table.cols.relGroup[rownum[0]] = os.path.relpath(basedir, self.get_location())
         else:
             table.row['uuid'] = uuid
-            table.row['name'] = name
             table.row['containertype'] = containertype
-            table.row['abspath'] = os.path.abspath(location)
-            table.row['relGroup'] = os.path.relpath(location, self.get_location())
+            table.row['abspath'] = os.path.abspath(basedir)
+            table.row['relGroup'] = os.path.relpath(basedir, self.get_location())
             table.row.append()
 
     @File._write_state
@@ -1245,16 +1244,31 @@ class GroupFile(ContainerFile):
                 specified member
         """
         table = self.handle.get_node('/', 'members')
+        fields = table.dtype.names
 
-        # check if uuid present
-        rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
-        if rownum:
-            memberinfo = { x: table.colinstances[x][rownum[0]] for x in table.colinstances.keys() }
-        else:
-            self.logger.info('No such member in this Group.')
-            memberinfo = None
+        memberinfo = None
+        for row in table.where("uuid == '{}'".format(uuid)):
+            memberinfo = row.fetch_all_fields()
+
+        if memberinfo:
+            memberinfo = { x: y for x, y in zip(fields, memberinfo) }
 
         return memberinfo
+
+    @File._read_state
+    def get_members(self):
+        """Get full member table.
+
+        Sometimes it is useful to read the whole member table in one go instead
+        of doing multiple reads.
+
+        :Returns:
+            *memberdata*
+                structured array giving full member data, with
+                each row corresponding to a member
+        """
+        table = self.handle.get_node('/', 'members')
+        return table.read()
 
     @File._read_state
     def get_members_uuid(self):
@@ -1262,23 +1276,10 @@ class GroupFile(ContainerFile):
 
         :Returns:
             *uuids*
-                list giving uuids of all members, in order
-
+                array giving containertype of each member, in order
         """
         table = self.handle.get_node('/', 'members')
-        return [ x['uuid'] for x in table.iterrows() ]
-
-    @File._read_state
-    def get_members_name(self):
-        """List name for each member.
-
-        :Returns:
-            *names*
-                list giving names of all members, in order
-
-        """
-        table = self.handle.get_node('/', 'members')
-        return [ x['name'] for x in table.iterrows() ]
+        return table.read()['uuid']
 
     @File._read_state
     def get_members_containertype(self):
@@ -1286,28 +1287,21 @@ class GroupFile(ContainerFile):
 
         :Returns:
             *containertypes*
-                list giving containertypes of all members, in order
-
+                array giving containertype of each member, in order
         """
         table = self.handle.get_node('/', 'members')
-        return [ x['containertype'] for x in table.iterrows() ]
+        return table.read()['containertype']
 
     @File._read_state
-    def get_members_location(self, path='abspath'):
-        """List stored location for each member. 
-
-        :Arguments:
-            *path*
-                type of paths to return; either absolute paths (abspath) or
-                paths relative to the Group object (relGroup) ['abspath']
+    def get_members_basedir(self):
+        """List basedir for each member. 
 
         :Returns:
-            *locations*
-                list giving locations of all members, in order
-
+            *basedirs*
+                structured array containing all paths to member basedirs
         """
         table = self.handle.get_node('/', 'members')
-        return [ x[path] for x in table.iterrows() ]
+        return table.read()[self.memberpaths]
 
 class DatabaseFile(File):
     """Database file object; syncronized access to Database data.
