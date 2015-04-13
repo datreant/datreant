@@ -829,15 +829,16 @@ class MemberData(MemberAgg):
         """
         agg = None
         for member in self._members:
-            df = member.data.retrieve(handle, **kwargs)
-            label = len(df.index)*[member.name]
-            index = pd.MultiIndex.from_arrays([label, df.index])
-            df = df.reindex_axis(index)
+            d = member.data.retrieve(handle, **kwargs)
+            label = len(d.index)*[member.name]
+            index = pd.MultiIndex.from_arrays([label, d.index])
+            #FIXME: BROKEN!
+            d.index = index
 
             if agg is not None:
-                agg = agg.append(df)
+                agg = agg.append(d)
             else:
-                agg = df
+                agg = d
 
         return agg
 
