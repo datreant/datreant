@@ -84,20 +84,24 @@ class Foxhound(object):
     in their last known location.
 
     """
-    def __init__(self, uuids, locations, coordinators=None):
+    def __init__(self, caller, uuids, locations, coordinators=None):
         """Generate a foxhound to track down Containers.
 
         :Arguments:
+            *caller*
+                object that summoned the Foxhound; needed to make sense
+                of some path types, as well as for automated context
+                for conducting the search
             *uuids*
                 list of unique identifiers of Containers to find
             *locations*
-                list of locations to start searching around; these need not
-                be in any particular order, nor must their number match that
-                of the given uuids
+                dict of locations to start searching around; keys may be
+                'abspath' or 'relCont', and values should be lists of paths
             *coordinators*
                 list of Coordinators to consult; if ``None``, involve no Coordinators
 
         """
+        self.container = container
         self.uuids = uuids
         self.locations = locations
         self.coordinators = coordinators

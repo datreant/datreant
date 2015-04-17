@@ -217,10 +217,9 @@ class Container(object):
     def name(self):
         """The name of the Container.
 
-        The name of a Container is the only immutable element stored in the
-        object's state file (aside from its unique id). It need not be unique
-        with respect to other Containers, but is used as part of Container's
-        displayed representation.
+        The name of a Container need not be unique with respect to other
+        Containers, but is used as part of Container's displayed
+        representation.
         
         """
         return os.path.basename(os.path.dirname(self._containerfile.filename))
@@ -229,10 +228,9 @@ class Container(object):
     def name(self, name):
         """The name of the Container.
 
-        The name of a Container is the only immutable element stored in the
-        object's state file (aside from its unique id). It need not be unique
-        with respect to other Containers, but is used as part of Container's
-        displayed representation.
+        The name of a Container need not be unique with respect to other
+        Containers, but is used as part of Container's displayed
+        representation.
         
         """
         olddir = os.path.dirname(self._containerfile.filename)

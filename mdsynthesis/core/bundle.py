@@ -17,6 +17,45 @@ class _CollectionBase(object):
     :class:`aggregators.Members` and :class:`Bundle` both use this interface.
 
     """
+
+    def __getitem__(self, index):
+        """Get member corresponding to the given index or slice.
+        
+        """
+        allrecords = self._backend.get_members()
+        records = allrecords[index]
+        uuids = records['uuid']
+
+        if isinstance(uuids, basestring):
+            member = None
+            # if member already cached, use cached member
+            if uuids in self._cache:
+                member = self._cache[uuids]
+            else:
+                #TODO: STOPPED HERE
+
+        elif isinstance(uuids, np.ndarray):
+            member = list()
+            for uuid, record in zip(uuids, records):
+                # if member already cached, use cached member
+                if uuid in self._cache:
+                    member.append(self._cache[uuid])
+                else:
+                    newmember = None
+                    for pathtype in self._backend.memberpaths:
+                        # use full path to state file in case there are multiples, and to avoid
+                        # loading a replacement (checks uuid)
+                        path = os.path.join(record[pathtype], 
+                                filesystem.statefilename(record['containertype'], record['uuid']))
+
+                    if not newmember:
+                        ind = list(allrecords['uuid']).index(uuid)
+                        raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
+
+        raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(index, uuids))
+
+        return member
+
     def add(self, *containers):
         """Add any number of members to this collection.
 
@@ -38,7 +77,7 @@ class _CollectionBase(object):
                     outconts.append(c)
 
         for container in outconts:
-            self._backend.add_member(container.uuid, container.name, container.containertype, container.location)
+            self._backend.add_member(container.uuid, container.containertype, container.location)
 
     def remove(self, *indices, **kwargs): 
         """Remove any number of members from the Group.
@@ -52,11 +91,78 @@ class _CollectionBase(object):
                 When True, remove all members [``False``]
 
         """
-        uuids = self._containerfile.get_members_uuid()
+        uuids = self._backend.get_members_uuid()
         if not kwargs.pop('all', False):
             uuids = [ uuids[x] for x in indices ]
 
         self._backend.del_member(*uuids)
+
+        # remove from cache
+        for uuid in uuids:
+            self._cache.pop(uuid, None)
+
+    def containertypes(self):
+        """Return a list of member containertypes.
+
+        """
+        return self._backend.get_members_containertype()
+
+    def names(self):
+        """Return a list of member names.
+
+        Members that can't be found will have name ``None``.
+
+        :Returns:
+            *names*
+                list giving the name of each member, in order;
+                members that are missing will have name ``None``
+
+        """
+        names = list()
+        for member in self._list():
+            if member:
+                names.append(member.name)
+            else:
+                names.append(None)
+
+        return names
+
+    def _list(self):
+        """Return a list of members.
+
+        Note: modifications of this list won't modify the members of the Group!
+
+        Missing members will be present in the list as ``None``. This method is not intended
+        for user-level use.
+
+        """
+        members = self._backend.get_members()
+        uuids = members['uuid']
+
+        findlist = list()
+        memberlist = list()
+
+        for uuid in uuids:
+            if uuid in self._cache:
+                memberlist.append(self._cache[uuid])
+            else:
+                memberlist.append(None)
+                findlist.append(uuid)
+
+        # track down our non-cached containers
+        foxhound = filesystem.Foxhound(self, findlist, locations, coordinators=self.coordinators)
+        foundconts = foxhound.fetch()
+
+        # insert found containers into output list
+        for cont in foundconts:
+            memberlist[memberlist.index(None)] = cont
+
+        # add newly found containers to cache
+        for uuid, cont in zip(findlist, foundconts):
+            if cont:
+                self._cache[uuid] = cont
+
+        return memberlist
 
 #TODO: use an in-memory SQLite db instead of a list for this?
 class _BundleBackend():
@@ -73,8 +179,7 @@ class _BundleBackend():
         # our table will be a list of dicts
         self.table = list()
 
-    @File._write_state
-    def add_member(self, uuid, name, containertype, location):
+    def add_member(self, uuid, containertype, location):
         """Add a member to the Group.
 
         If the member is already present, its location will be updated with
@@ -102,7 +207,6 @@ class _BundleBackend():
                       
             self.table.append(newmem)
 
-    @File._write_state
     def del_member(self, *uuid, **kwargs):
         """Remove a member from the Group.
     
@@ -133,7 +237,6 @@ class _BundleBackend():
             for element in matches:
                 self.table.remove(element)
 
-    @File._read_state
     def get_member(self, uuid):
         """Get all stored information on the specified member.
         
@@ -159,7 +262,20 @@ class _BundleBackend():
 
         return memberinfo
 
-    @File._read_state
+    def get_members(self):
+        """Get full member table.
+
+        Sometimes it is useful to read the whole member table in one go instead
+        of doing multiple reads.
+
+        :Returns:
+            *memberdata*
+                structured array giving full member data, with
+                each row corresponding to a member
+        """
+        #TODO: STOPPED HERE; NEED RECORD ARRAY RETURNED
+        return table.read()
+
     def get_members_uuid(self):
         """List uuid for each member.
 
@@ -170,7 +286,6 @@ class _BundleBackend():
         """
         return [ x['uuid'] for x in self.table ]
 
-    @File._read_state
     def get_members_name(self):
         """List name for each member.
 
@@ -181,7 +296,6 @@ class _BundleBackend():
         """
         return [ x['name'] for x in self.table ]
 
-    @File._read_state
     def get_members_containertype(self):
         """List containertype for each member.
 
@@ -192,7 +306,6 @@ class _BundleBackend():
         """
         return [ x['containertype'] for x in self.table ]
 
-    @File._read_state
     def get_members_location(self, path='abspath'):
         """List stored location for each member. 
 
@@ -208,7 +321,7 @@ class _BundleBackend():
         """
         return [ x[path] for x in table.iterrows() ]
 
-class Bundle(object):
+class Bundle(_CollectionBase):
     """Non-persistent Container for Sims and Groups.
     
     A Bundle is basically an indexable set. It is often used to return the
@@ -232,36 +345,11 @@ class Bundle(object):
          
         """
         self._backend = _BundleBackend()
+        self._cache = dict()
 
         self.add(*containers)
-
-    #TODO: make more efficient by using ordered dict for storage?
-    def add(self, *containers):
-        outconts = list()
-        for container in containers:
-            if isinstance(container, list):
-                self.add(*container)
-            elif isinstance(container, mds.containers.Container):
-                uuid = container.uuid
-                if not (uuid in self._uuids):
-                    outconts.append(container)
-                    self._uuids.append(uuid)
-            elif os.path.exists(container):
-                conts = filesystem.path2container(container)
-                for cont in conts:
-                    uuid = cont.uuid
-                    if not (uuid in self._uuids):
-                        outconts.append(cont)
-                        self._uuids.append(uuid)
-
-        self._containers.extend(outconts)
-    
-    def _list(self):
-        """Return list representation.
-    
-        """
-        return list(self._containers)
 
     def __repr__(self):
         return "<Bundle({})>".format(self.list())
 
+    

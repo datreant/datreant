@@ -671,12 +671,12 @@ class SimFile(ContainerFile):
 
         Two versions of the path to a topology are stored: the absolute path
         (abspath) and the relative path from the Sim object's directory
-        (relSim). This allows the Sim object to use some heuristically good
+        (relCont). This allows the Sim object to use some heuristically good
         starting points when trying to find missing files using Finder.
         
         """
         abspath = tables.StringCol(255)
-        relSim = tables.StringCol(255)
+        relCont = tables.StringCol(255)
 
     class _Trajectory(tables.IsDescription):
         """Table definition for storing universe trajectory paths.
@@ -688,7 +688,7 @@ class SimFile(ContainerFile):
 
         """
         abspath = tables.StringCol(255)
-        relSim = tables.StringCol(255)
+        relCont = tables.StringCol(255)
 
     class _Selection(tables.IsDescription):
         """Table definition for storing selections.
@@ -818,7 +818,7 @@ class SimFile(ContainerFile):
         """Get topology and trajectory paths for the desired universe.
 
         Returns multiple path types, including absolute paths (abspath)
-        and paths relative to the Sim object (relSim).
+        and paths relative to the Sim object (relCont).
 
         :Arguments:
             *universe*
@@ -876,7 +876,7 @@ class SimFile(ContainerFile):
 
         # add topology paths to table
         table.row['abspath'] = os.path.abspath(topology)
-        table.row['relSim'] = os.path.relpath(topology, self.get_location())
+        table.row['relCont'] = os.path.relpath(topology, self.get_location())
         table.row.append()
 
         # construct trajectory table
@@ -885,7 +885,7 @@ class SimFile(ContainerFile):
         # add trajectory paths to table
         for segment in trajectory:
             table.row['abspath'] = os.path.abspath(segment)
-            table.row['relSim'] = os.path.relpath(segment, self.get_location())
+            table.row['relCont'] = os.path.relpath(segment, self.get_location())
             table.row.append()
 
         # construct selection group
@@ -1069,14 +1069,14 @@ class GroupFile(ContainerFile):
     
     """
     # add new paths to include them in member searches
-    memberpaths = ['abspath', 'relGroup']
+    memberpaths = ['abspath', 'relCont']
 
     class _Members(tables.IsDescription):
         """Table definition for the members of the Group.
 
         Stores for each member its container type, uuid, and two versions of
         the path to the member container: the absolute path (abspath) and the
-        relative path from the Group object's directory (relGroup). This allows
+        relative path from the Group object's directory (relCont). This allows
         the Group object to use some heuristically good starting points when
         trying to find missing files using a Foxhound.
         
@@ -1088,7 +1088,7 @@ class GroupFile(ContainerFile):
         containertype = tables.StringCol(36)
 
         abspath = tables.StringCol(255)
-        relGroup = tables.StringCol(255)
+        relCont = tables.StringCol(255)
 
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Group state file.
@@ -1173,12 +1173,12 @@ class GroupFile(ContainerFile):
         if rownum:
             # if present, update location
             table.cols.abspath[rownum[0]] = os.path.abspath(basedir)
-            table.cols.relGroup[rownum[0]] = os.path.relpath(basedir, self.get_location())
+            table.cols.relCont[rownum[0]] = os.path.relpath(basedir, self.get_location())
         else:
             table.row['uuid'] = uuid
             table.row['containertype'] = containertype
             table.row['abspath'] = os.path.abspath(basedir)
-            table.row['relGroup'] = os.path.relpath(basedir, self.get_location())
+            table.row['relCont'] = os.path.relpath(basedir, self.get_location())
             table.row.append()
 
     @File._write_state

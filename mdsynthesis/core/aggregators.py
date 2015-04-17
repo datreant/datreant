@@ -15,6 +15,7 @@ from functools import wraps
 
 import persistence
 import filesystem
+import bundle
 import pandas as pd
 import mdsynthesis as mds
 
@@ -635,7 +636,7 @@ class Selections(Aggregator):
                 seldef = self._containerfile.get_selection(universe, sel)
                 self._containerfile.add_selection(self._container._uname, sel, *seldef)
 
-class Members(Aggregator):
+class Members(Aggregator, bundle._CollectionBase):
     """Member manager for Groups.
 
     """
@@ -666,104 +667,6 @@ class Members(Aggregator):
 
         return out
 
-    def __getitem__(self, index):
-        """Get member corresponding to the given index or slice.
-        
-        """
-        allrecords = self._containerfile.get_members()
-        records = allrecords[index]
-        uuids = records['uuid']
-
-        if isinstance(uuids, basestring):
-            member = None
-            # if member already cached, use cached member
-            if uuids in self._container._cache:
-                member = self._container._cache[uuids]
-            else:
-                for pathtype in self._containerfile.memberpaths:
-                    # use full path to state file in case there are multiples
-                    path = os.path.join(records[pathtype], 
-                            filesystem.statefilename(records['containertype'], records['uuid']))
-
-                    # returns a (possibly empty) list
-                    member = filesystem.path2container(path)
-                    if member:
-                        member = member[0]
-                        # add to cache
-                        self._container._cache[uuids] = member
-                        break
-
-                if not member:
-                    raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(index, uuids))
-
-        elif isinstance(uuids, np.ndarray):
-            member = list()
-            for uuid, record in zip(uuids, records):
-                # if member already cached, use cached member
-                if uuid in self._container._cache:
-                    member.append(self._container._cache[uuid])
-                else:
-                    newmember = None
-                    for pathtype in self._containerfile.memberpaths:
-                        # use full path to state file in case there are multiples, and to avoid
-                        # loading a replacement (checks uuid)
-                        path = os.path.join(record[pathtype], 
-                                filesystem.statefilename(record['containertype'], record['uuid']))
-
-                        # returns a (possibly empty) list
-                        newmember = filesystem.path2container(path)
-                        if newmember:
-                            member.append(newmember[0])
-                            # add to cache
-                            self._container._cache[uuid] = newmember[0]
-                            break
-
-                    if not newmember:
-                        ind = list(allrecords['uuid']).index(uuid)
-                        raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
-
-        return member
-
-    def _list(self):
-        """Return a list of members.
-
-        Note: modifications of this list won't modify the members of the Group!
-
-        Missing members will be present in the list as ``None``. This method is not intended
-        for user-level use.
-
-        """
-        #TODO: need to route these through Foxhound
-        members = self._containerfile.get_members()
-        uuids = members['uuid']
-
-        memberlist = list()
-
-        for i in xrange(len(uuids)):
-            if uuids[i] in self._container._cache:
-                memberlist.append(self._container._cache[uuids[i]])
-            else:
-                newmember = None
-                for pathtype in self._containerfile.memberpaths:
-                    # use full path to state file in case there are multiples, and to avoid
-                    # loading a replacement (checks uuid)
-                    path = os.path.join(members[pathtype][i], 
-                            filesystem.statefilename(members['containertype'][i], 
-                            members['uuid'][i]))
-
-                    # returns a (possibly empty) list
-                    newmember = filesystem.path2container(path)
-                    if newmember:
-                        memberlist.append(newmember[0])
-                        # add to cache
-                        self._container._cache[uuids[i]] = newmember[0]
-                        break
-
-                if not newmember:
-                    memberlist.append(None)
-
-        return memberlist
-
     @property
     def data(self):
         """The data of the Container.
@@ -777,77 +680,6 @@ class Members(Aggregator):
         if not self._data:
             self._data = MemberData(self)
         return self._data
-
-    def containertypes(self):
-        """Return a list of member containertypes.
-
-        """
-        return self._containerfile.get_members_containertype()
-
-    def names(self):
-        """Return a list of member names.
-
-        Members that can't be found will have name ``None``.
-
-        :Returns:
-            *names*
-                list giving the name of each member, in order;
-                members that are missing will have name ``None``
-
-        """
-        names = list()
-        for member in self._list():
-            if member:
-                names.append(member.name)
-            else:
-                names.append(None)
-
-        return names
-
-    def add(self, *containers):
-        """Add any number of members to the Group.
-
-        :Arguments:
-            *containers*
-                Sims and/or Groups to be added; may be a list of Sims and/or
-                Groups; Sims or Groups can be given as either objects or paths
-                to directories that contain object statefiles
-        """
-        outconts = list()
-        for container in containers:
-            if isinstance(container, list):
-                self.add(*container)
-            elif isinstance(container, mds.Sim) or isinstance(container, mds.Group):
-                outconts.append(container)
-            elif os.path.exists(container):
-                cont = filesystem.path2container(container)
-                for c in cont:
-                    outconts.append(c)
-
-        for container in outconts:
-            self._containerfile.add_member(container.uuid, container.containertype, container.basedir)
-    
-    def remove(self, *indices, **kwargs): 
-        """Remove any number of members from the Group.
-    
-        :Arguments:
-            *indices*
-                the indices of the members to remove
-
-        :Keywords:
-            *all*
-                When True, remove all members [``False``]
-
-        """
-        uuids = self._containerfile.get_members_uuid()
-        if not kwargs.pop('all', False):
-            uuids = [ uuids[x] for x in indices ]
-
-        self._containerfile.del_member(*uuids)
-
-        # remove from cache
-        for uuid in uuids:
-            self._container._cache.pop(uuid, None)
 
 class MemberAgg(object):
     """Core functionality for member aggregators.
