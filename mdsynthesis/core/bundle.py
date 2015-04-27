@@ -77,7 +77,7 @@ class _CollectionBase(object):
                     outconts.append(c)
 
         for container in outconts:
-            self._backend.add_member(container.uuid, container.containertype, container.location)
+            self._backend.add_member(container.uuid, container.containertype, container.basedir)
 
     def remove(self, *indices, **kwargs): 
         """Remove any number of members from the Group.
@@ -164,7 +164,6 @@ class _CollectionBase(object):
 
         return memberlist
 
-#TODO: use an in-memory SQLite db instead of a list for this?
 class _BundleBackend():
     """Backend class for Bundle. 
     
@@ -176,10 +175,23 @@ class _BundleBackend():
     """
 
     def __init__(self):
-        # our table will be a list of dicts
-        self.table = list()
+        # our table will be a structured array matching the schema of the
+        # GroupFile _Members Table
+        self.table = None
 
-    def add_member(self, uuid, containertype, location):
+    def _member2record(uuid, containertype, basedir):
+        """Return a record array from a member's information.
+
+        This method defines the scheme for the Bundle's record array.
+
+        """
+        return np.array((uuid, containertype, os.path.abspath(basedir)),
+                        dtype={'names': ['uuid', 'containertype', 'abspath'],
+                               'formats':['a{}'.format(persistence.uuidlength),
+                                          'a{}'.format(persistence.namelength),
+                                          'a{}'.format(persistence.pathlength)]})
+
+    def add_member(self, uuid, containertype, basedir):
         """Add a member to the Group.
 
         If the member is already present, its location will be updated with
@@ -190,22 +202,21 @@ class _BundleBackend():
                 the uuid of the new member
             *containertype*
                 the container type of the new member (Sim or Group)
-            *location*
-                location of the new member in the filesystem
+            *basedir*
+                basedir of the new member in the filesystem
     
         """
-        # check if uuid already present
-        index = [ self.table.index(item) for item in self.table if item['uuid'] == uuid ]
-        if index:
-            # if present, update location
-            self.table[index]['abspath'] = os.path.abspath(location)
+        if self.table is None:
+            self.table = self._member2record(uuid, containertype, basedir)
         else:
-            newmem = {'uuid': uuid,
-                      'name': name,
-                      'containertype': containertype,
-                      'abspath': os.path.abspath(location)}
-                      
-            self.table.append(newmem)
+            # check if uuid already present
+            index = np.where(self.table['uuid'] == uuid)[0]
+            if index:
+                # if present, update location
+                self.table[index[0]]['abspath'] = os.path.abspath(basedir)
+            else:
+                newmem = self._member2record(uuid, containertype, basedir)
+                self.table = np.vstack(self.table, newmem)
 
     def del_member(self, *uuid, **kwargs):
         """Remove a member from the Group.
@@ -222,20 +233,19 @@ class _BundleBackend():
         purge = kwargs.pop('all', False)
 
         if purge:
-            self.table = list()
+            self.table = None
         else:
             # remove redundant uuids from given list if present
             uuids = set([ str(uid) for uid in uuid ])
 
             # remove matching elements
             matches = list()
-            for element in self.table:
-                for uuid in uuids:
-                    if (element['uuid'] == uuid):
-                        matches.append(element)
+            for uuid in uuids:
+                index = np.where(self.table['uuid'] == uuid)[0]
+                if index:
+                    matches.append(index)
 
-            for element in matches:
-                self.table.remove(element)
+            self.table = np.delete(self.table, matches)
 
     def get_member(self, uuid):
         """Get all stored information on the specified member.
@@ -252,12 +262,11 @@ class _BundleBackend():
                 a dictionary containing all information stored for the
                 specified member
         """
-        # check if uuid present
-        index = [ self.table.index(item) for item in self.table if item['uuid'] == uuid ]
-        if index:
-            memberinfo = self.table[index]
+        memberinfo = self.table[self.table[uuid] == uuid]
+
+        if memberinfo:
+            memberinfo = { x: memberinfo[x] for x in memberinfo.dtype.names }
         else:
-            self.logger.info('No such member.')
             memberinfo = None
 
         return memberinfo
@@ -273,53 +282,34 @@ class _BundleBackend():
                 structured array giving full member data, with
                 each row corresponding to a member
         """
-        #TODO: STOPPED HERE; NEED RECORD ARRAY RETURNED
-        return table.read()
+        return self.table
 
     def get_members_uuid(self):
         """List uuid for each member.
 
         :Returns:
             *uuids*
-                list giving uuids of all members, in order
-
+                array giving containertype of each member, in order
         """
-        return [ x['uuid'] for x in self.table ]
-
-    def get_members_name(self):
-        """List name for each member.
-
-        :Returns:
-            *names*
-                list giving names of all members, in order
-
-        """
-        return [ x['name'] for x in self.table ]
+        return self.table['uuid']
 
     def get_members_containertype(self):
         """List containertype for each member.
 
         :Returns:
             *containertypes*
-                list giving containertypes of all members, in order
-
+                array giving containertype of each member, in order
         """
-        return [ x['containertype'] for x in self.table ]
+        return self.table['containertype']
 
-    def get_members_location(self, path='abspath'):
-        """List stored location for each member. 
-
-        :Arguments:
-            *path*
-                type of paths to return; only absolute paths (abspath)
-                are stored for Bundles
+    def get_members_basedir(self):
+        """List basedir for each member. 
 
         :Returns:
-            *locations*
-                list giving locations of all members, in order
-
+            *basedirs*
+                structured array containing all paths to member basedirs
         """
-        return [ x[path] for x in table.iterrows() ]
+        return self.table['abspath']
 
 class Bundle(_CollectionBase):
     """Non-persistent Container for Sims and Groups.
@@ -352,4 +342,3 @@ class Bundle(_CollectionBase):
     def __repr__(self):
         return "<Bundle({})>".format(self.list())
 
-    

@@ -29,6 +29,9 @@ npdatafile = "npData.h5"
 # catchall DataFile
 pydatafile = "pyData.pkl"
 
+# number of characters required for uuids
+uuidlength = 36
+
 # max length in characters for all paths
 pathlength = 511
 
@@ -1088,7 +1091,7 @@ class GroupFile(ContainerFile):
         
         """
         # unique identifier for container
-        uuid = tables.StringCol(36)
+        uuid = tables.StringCol(uuidlength)
 
         # container type; Sim or Group
         containertype = tables.StringCol(namelength)
