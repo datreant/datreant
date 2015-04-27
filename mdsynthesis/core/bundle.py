@@ -25,34 +25,28 @@ class _CollectionBase(object):
         allrecords = self._backend.get_members()
         records = allrecords[index]
         uuids = records['uuid']
-
-        if isinstance(uuids, basestring):
-            member = None
+        
+        member = list()
+        for uuid, record in zip(uuids, records):
             # if member already cached, use cached member
-            if uuids in self._cache:
-                member = self._cache[uuids]
+            if uuid in self._cache:
+                member.append(self._cache[uuid])
             else:
-                #TODO: STOPPED HERE
+                paths = { path: records[path].flatten().tolist() for path in self._backend.memberpaths }
+                fxh = filesystem.Foxhound(self, uuids, paths)
+                containers = fxh.find(containers=True)
+                START HERE
 
-        elif isinstance(uuids, np.ndarray):
-            member = list()
-            for uuid, record in zip(uuids, records):
-                # if member already cached, use cached member
-                if uuid in self._cache:
-                    member.append(self._cache[uuid])
-                else:
-                    newmember = None
-                    for pathtype in self._backend.memberpaths:
-                        # use full path to state file in case there are multiples, and to avoid
-                        # loading a replacement (checks uuid)
-                        path = os.path.join(record[pathtype], 
-                                filesystem.statefilename(record['containertype'], record['uuid']))
+                newmember = None
+                for pathtype in self._backend.memberpaths:
+                    # use full path to state file in case there are multiples, and to avoid
+                    # loading a replacement (checks uuid)
+                    path = os.path.join(record[pathtype], 
+                            filesystem.statefilename(record['containertype'], record['uuid']))
 
-                    if not newmember:
-                        ind = list(allrecords['uuid']).index(uuid)
-                        raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
-
-        raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(index, uuids))
+                if not newmember:
+                    ind = list(allrecords['uuid']).index(uuid)
+                    raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
 
         return member
 
@@ -173,6 +167,7 @@ class _BundleBackend():
     Bundle.
 
     """
+    memberpaths = ['abspath']
 
     def __init__(self):
         # our table will be a structured array matching the schema of the

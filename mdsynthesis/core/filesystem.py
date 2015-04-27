@@ -78,14 +78,14 @@ def path2container(*paths):
     return containers
 
 class Foxhound(object):
-    """Locator for Containers that have gone missing.
+    """Locator for Containers.
 
-    This object is used by Containers to find Containers when they are no longer
-    in their last known location.
+    This object is used by Containers to find Containers, even when they are no
+    longer in their last known location.
 
     """
-    def __init__(self, caller, uuids, locations, coordinators=None):
-        """Generate a foxhound to track down Containers.
+    def __init__(self, caller, uuids, basedirs, coordinators=None):
+        """Generate a Foxhound to track down Containers.
 
         :Arguments:
             *caller*
@@ -94,20 +94,38 @@ class Foxhound(object):
                 for conducting the search
             *uuids*
                 list of unique identifiers of Containers to find
-            *locations*
-                dict of locations to start searching around; keys may be
+            *basedirs*
+                dict of basedirs to start searching around; keys may be
                 'abspath' or 'relCont', and values should be lists of paths
             *coordinators*
                 list of Coordinators to consult; if ``None``, involve no Coordinators
 
         """
-        self.container = container
+        self.caller = caller
         self.uuids = uuids
-        self.locations = locations
+        self.basedirs = basedirs
         self.coordinators = coordinators
 
         # once found: uuids as keys, absolute paths as values
         self.containers = dict()
+
+    def find(self, containers=True):
+        """Find the Containers.
+
+        :Keywords:
+            *containers*
+                if ``True``, return Container instances instead of absolute
+                paths to state files
+
+        :Returns:
+            *results*
+                dictionary giving Container uuids as keys and absolute paths to
+                their state files as values; ``None`` as a value indicates
+                that no state file could be found. Returns Container instances
+                instead of paths for *containers* == True.
+
+        """
+        START HERE!
 
     def _downward_search(self, path):
         """Check for Containers downward from specified path.
@@ -125,10 +143,10 @@ class Foxhound(object):
     def _consult_Coordinators(self):
         pass
 
-    def find_Group_members(self):
+    def _find_Group_members(self):
         pass
 
-    def find_Coordinator_members(self):
+    def _find_Coordinator_members(self):
         pass
 
     def discover(self, path):
