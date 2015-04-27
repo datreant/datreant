@@ -29,6 +29,12 @@ npdatafile = "npData.h5"
 # catchall DataFile
 pydatafile = "pyData.pkl"
 
+# max length in characters for all paths
+pathlength = 511
+
+# max character length of strings used for handles, tags, categories
+namelength = 55
+
 #TODO: add careful checks that file is actually a state file
 def containerfile(filename, logger=None, **kwargs):
     """Generate or regenerate the appropriate container file instance from filename.
@@ -227,7 +233,7 @@ class ContainerFile(File):
         # version of MDSynthesis object file data corresponds to 
         # allows future-proofing of old objects so that formats of new releases
         # can be automatically built from old ones
-        version = tables.StringCol(36)
+        version = tables.StringCol(15)
 
     class _Coordinator(tables.IsDescription):
         """Table definition for coordinator info.
@@ -239,20 +245,20 @@ class ContainerFile(File):
         Path length fixed size for now.
         """
         # absolute path of coordinator
-        abspath = tables.StringCol(256)
+        abspath = tables.StringCol(pathlength)
         
     class _Tags(tables.IsDescription):
         """Table definition for tags.
 
         """
-        tag = tables.StringCol(36)
+        tag = tables.StringCol(namelength)
 
     class _Categories(tables.IsDescription):
         """Table definition for categories.
 
         """
-        category = tables.StringCol(36)
-        value = tables.StringCol(36)
+        category = tables.StringCol(namelength)
+        value = tables.StringCol(namelength)
 
     def __init__(self, filename, logger=None, **kwargs): 
         """Initialize Container state file.
@@ -664,7 +670,7 @@ class SimFile(ContainerFile):
         Stores which universe is marked as default.
 
         """
-        default = tables.StringCol(255)
+        default = tables.StringCol(namelength)
 
     class _Topology(tables.IsDescription):
         """Table definition for storing universe topology paths.
@@ -675,8 +681,8 @@ class SimFile(ContainerFile):
         starting points when trying to find missing files using Finder.
         
         """
-        abspath = tables.StringCol(255)
-        relCont = tables.StringCol(255)
+        abspath = tables.StringCol(pathlength)
+        relCont = tables.StringCol(pathlength)
 
     class _Trajectory(tables.IsDescription):
         """Table definition for storing universe trajectory paths.
@@ -1085,10 +1091,10 @@ class GroupFile(ContainerFile):
         uuid = tables.StringCol(36)
 
         # container type; Sim or Group
-        containertype = tables.StringCol(36)
+        containertype = tables.StringCol(namelength)
 
-        abspath = tables.StringCol(255)
-        relCont = tables.StringCol(255)
+        abspath = tables.StringCol(pathlength)
+        relCont = tables.StringCol(pathlength)
 
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Group state file.
@@ -1303,11 +1309,7 @@ class GroupFile(ContainerFile):
         table = self.handle.get_node('/', 'members')
         return table.read()[self.memberpaths]
 
-class DatabaseFile(File):
-    """Database file object; syncronized access to Database data.
-
-    """
-
+#TODO: replace use of this class with a function that returns the proper data file
 class DataFile(object):
     """Interface to data files.
 
