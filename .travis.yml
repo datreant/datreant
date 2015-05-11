@@ -16,10 +16,17 @@ before_install:
 
 # install python dependencies
 install:
+  - pip install codecov
+  - pip install pytest-cov
+  - pip install pytest-pep8
   - pip install numpy numexpr Cython
   - pip install tables
   - pip install pandas h5py MDAnalysis MDAnalysisTests
   - pip install .
 
 # run tests
-script: py.test
+script: 
+  - py.test --cov mdsynthesis --pep8 mdsynthesis tests/
+
+after_success:
+  - codecov
