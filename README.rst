@@ -27,7 +27,7 @@ generated from raw trajectories (pandas objects, numpy arrays, or any pure
 python structure) can then be stored and easily recalled later. Under the hood,
 datasets are stored in the efficient HDF5 format when possible.
 
-.. _MDAnalysis: http://mdanalysis.googlecode.com
+.. _MDAnalysis: http://www.mdanalysis.org
 
 Collect aggregated data and keep track of it, too
 -------------------------------------------------
