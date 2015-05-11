@@ -5,6 +5,7 @@ scripts.
 """
 import mdsynthesis as mds
 
+
 def get(*containers):
     """Get instances of the given Containers.
 
@@ -19,4 +20,3 @@ def get(*containers):
 
     """
     return mds.Bundle(*containers)
-

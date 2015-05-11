@@ -11,11 +11,14 @@ from MDAnalysis import Universe
 
 import core
 
+
 class MultipleContainersError(Exception):
     pass
 
+
 class NoContainersError(Exception):
     pass
+
 
 class Container(object):
     """Core class for all Containers.
@@ -23,7 +26,7 @@ class Container(object):
     """
 
     def __init__(self, container, location='.', coordinator=None,
-            categories=None, tags=None):
+                 categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) generic Container
         object.
 
@@ -36,7 +39,7 @@ class Container(object):
         :Optional arguments when generating a new Container:
             *location*
                 directory to place Container object; default is the current
-                directory 
+                directory
             *coordinator*
                 directory of the Coordinator to associate with the Container;
                 if the Coordinator does not exist, it is created; if ``None``,
@@ -56,12 +59,13 @@ class Container(object):
             self._regenerate('Container', container)
         else:
             self._generate('Container', container, location=location,
-                    coordinator=coordinator, categories=categories, tags=tags)
+                           coordinator=coordinator, categories=categories,
+                           tags=tags)
 
     def _generate(self, containertype, container, location='.',
-            coordinator=None, categories=None, tags=None):
+                  coordinator=None, categories=None, tags=None):
         """Generate new generic Container object.
-         
+
         """
         self._placeholders()
 
@@ -72,37 +76,40 @@ class Container(object):
             tags = list()
 
         # generate state file
-        #TODO: need try, except for case where Container already exists
+        # TODO: need try, except for case where Container already exists
 
-        # TODO: need to raise exception where invalid characters used for directory
+        # TODO: need to raise exception where invalid characters used for
+        # directory
         os.makedirs(os.path.join(location, container))
         filename = core.filesystem.statefilename(containertype, str(uuid4()))
 
         statefile = os.path.join(location, container, filename)
         self._start_logger(containertype, container)
 
-        self._containerfile = core.persistence.containerfile(statefile, self._logger,
-                name=container, coordinator=coordinator, categories=categories,
-                tags=tags)
+        self._containerfile = core.persistence.containerfile(
+                statefile, self._logger, name=container,
+                coordinator=coordinator, categories=categories, tags=tags)
 
     def _regenerate(self, containertype, container):
         """Re-generate existing Container object.
-        
+
         """
         self._placeholders()
 
         # convenient to give only name of object (its directory name)
         if os.path.isdir(container):
             statefile = core.filesystem.glob_container(container)
-            
+
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
-                self._containerfile = core.persistence.containerfile(statefile[0])
+                self._containerfile = core.persistence.containerfile(
+                        statefile[0])
             elif len(statefile) == 0:
                 raise NoContainersError('No Containers found in directory.')
             else:
-                raise MultipleContainersError('Multiple Containers found in ' 
-                        'directory. Give path to a specific state file.')
+                raise MultipleContainersError('Multiple Containers found in '
+                                              'directory. Give path to a '
+                                              'specific state file.')
 
         # if a state file is given, try loading it
         elif os.path.exists(container):
@@ -121,7 +128,8 @@ class Container(object):
         self._categories = None
         self._data = None
 
-    def _start_logger(self, containertype, name, location=None, filehandler=False):
+    def _start_logger(self, containertype, name, location=None,
+                      filehandler=False):
         """Start up the logger.
 
         :Arguments:
@@ -141,17 +149,18 @@ class Container(object):
 
         if not self._logger.handlers:
             self._logger.setLevel(logging.INFO)
-    
+
             if filehandler:
                 location = os.path.abspath(location)
-                # file handler if desired; beware of problems with too many open files
-                # when a large number of Containers are at play
+                # file handler if desired; beware of problems with too many
+                # open files when a large number of Containers are at play
                 logfile = os.path.join(location, core.persistence.containerlog)
                 fh = logging.FileHandler(logfile)
-                ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+                ff = logging.Formatter('%(asctime)s %(name)-12s '
+                                       '%(levelname)-8s %(message)s')
                 fh.setFormatter(ff)
                 self._logger.addHandler(fh)
-    
+
             # output handler
             ch = logging.StreamHandler(sys.stdout)
             cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
@@ -172,7 +181,7 @@ class Container(object):
         """Get dataset corresponding to given handle.
 
         If dataset doesn't exist, ``None`` is returned.
-        
+
         :Arguments:
             *handle*
                 name of data to retrieve
@@ -185,7 +194,7 @@ class Container(object):
 
     def __setitem__(self, handle, data):
         """Set dataset corresponding to given handle.
-        
+
         A data instance must be either a pandas Series, DataFrame, or Panel
         object. If dataset doesn't exist, it is added. If a dataset already
         exists for the given handle, it is replaced.
@@ -198,7 +207,7 @@ class Container(object):
 
         """
         self.data.__setitem__(handle, data)
-    
+
     def __delitem__(self, handle):
         """Remove a dataset.
 
@@ -209,7 +218,7 @@ class Container(object):
         :Arguments:
             *handle*
                 name of dataset to delete
-    
+
         """
         self.data.__delitem__(handle)
 
@@ -220,7 +229,7 @@ class Container(object):
         The name of a Container need not be unique with respect to other
         Containers, but is used as part of Container's displayed
         representation.
-        
+
         """
         return os.path.basename(os.path.dirname(self._containerfile.filename))
 
@@ -231,12 +240,13 @@ class Container(object):
         The name of a Container need not be unique with respect to other
         Containers, but is used as part of Container's displayed
         representation.
-        
+
         """
         olddir = os.path.dirname(self._containerfile.filename)
         newdir = os.path.join(os.path.dirname(olddir), name)
         statefile = os.path.join(newdir,
-                core.filesystem.statefilename(self.containertype, self.uuid))
+                                 core.filesystem.statefilename(
+                                     self.containertype, self.uuid))
 
         os.rename(olddir, newdir)
         self._regenerate(self.containertype, statefile)
@@ -244,7 +254,7 @@ class Container(object):
     @property
     def containertype(self):
         """The type of the Container.
-    
+
         """
         return os.path.basename(self._containerfile.filename).split('.')[0]
 
@@ -255,14 +265,14 @@ class Container(object):
         Setting the location to a new path physically moves the Container to
         the given location. This only works if the new location is an empty or
         nonexistent directory.
-    
+
         """
         return os.path.dirname(self._containerfile.get_location())
 
     @location.setter
     def location(self, value):
-        """Set location of Container. 
-        
+        """Set location of Container.
+
         Physically moves the Container to the given location.
         Only works if the new location is an empty or nonexistent
         directory.
@@ -272,10 +282,11 @@ class Container(object):
         oldpath = self._containerfile.get_location()
         newpath = os.path.join(value, self.name)
         statefile = os.path.join(newpath,
-                core.filesystem.statefilename(self.containertype, self.uuid))
+                                 core.filesystem.statefilename(
+                                     self.containertype, self.uuid))
         os.rename(oldpath, newpath)
         self._regenerate(self.containertype, statefile)
-    
+
     @property
     def basedir(self):
         """Absolute path to the Container's base directory.
@@ -292,18 +303,18 @@ class Container(object):
 
         Change this to associate the Container with an existing
         or new Coordinator.
-    
+
         """
         return self._containerfile.get_coordinator()
 
-    #TODO: implement with Coordinator checking
+    # TODO: implement with Coordinator checking
     @coordinator.setter
     def coordinator(self, value):
-        """Set location of Coordinator. 
-        
+        """Set location of Coordinator.
+
         Setting this to ``None`` will dissociate the Container from any
-        Coordinator. 
-        
+        Coordinator.
+
         """
         pass
 
@@ -315,16 +326,17 @@ class Container(object):
         Containers from one another through Coordinator or Group queries.
         They can also be useful as flags for external code to determine
         how to handle the Container.
-        
+
         """
         if not self._tags:
-            self._tags = core.aggregators.Tags(self, self._containerfile, self._logger)
+            self._tags = core.aggregators.Tags(
+                    self, self._containerfile, self._logger)
         return self._tags
 
     @property
     def categories(self):
         """The categories of the Container.
-        
+
         Categories are user-added key-value pairs that can be used to and
         distinguish Containers from one another through Coordinator or Group
         queries. They can also be useful as flags for external code to
@@ -333,7 +345,8 @@ class Container(object):
         """
 
         if not self._categories:
-            self._categories = core.aggregators.Categories(self, self._containerfile, self._logger)
+            self._categories = core.aggregators.Categories(
+                    self, self._containerfile, self._logger)
         return self._categories
 
     @property
@@ -341,13 +354,14 @@ class Container(object):
         """The data of the Container.
 
         Data are user-generated pandas objects (e.g. Series, DataFrames), numpy
-        arrays, or any pickleable python object that are stored in the Container
-        for easy recall later.  Each data instance is given its own directory
-        in the Container's tree.
-        
+        arrays, or any pickleable python object that are stored in the
+        Container for easy recall later.  Each data instance is given its own
+        directory in the Container's tree.
+
         """
         if not self._data:
-            self._data = core.aggregators.Data(self, self._containerfile, self._logger)
+            self._data = core.aggregators.Data(self, self._containerfile,
+                                               self._logger)
         return self._data
 
     @property
@@ -366,7 +380,7 @@ class Container(object):
 
         Changing this string will alter the Container's uuid. This is not
         generally recommended.
-    
+
         :Returns:
             *uuid*
                 unique identifier string for this Container
@@ -384,14 +398,16 @@ class Container(object):
         new_id = str(uuid4())
         oldfile = self._containerfile.filename
         olddir = os.path.dirname(self._containerfile.filename)
-        newfile = os.path.join(olddir, 
-                core.filesystem.statefilename(self.containertype, uuid))
+        newfile = os.path.join(olddir,
+                               core.filesystem.statefilename(
+                                   self.containertype, uuid))
         os.rename(oldfile, newfile)
         self._regenerate(self.containertype, olddir)
 
+
 class Sim(Container):
     """The Sim object is an interface to data for single simulations.
-    
+
     """
 
     def __init__(self, sim, universe=None, uname='main', location='.',
@@ -424,21 +440,23 @@ class Sim(Container):
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
 
-        *Note*: optional arguments are ignored when regenerating an existing Sim
+        *Note*: optional arguments are ignored when regenerating an existing
+                Sim
 
         """
         if os.path.exists(sim):
             self._regenerate('Sim', sim)
         else:
             self._generate('Sim', sim, universe=universe, uname=uname,
-                    location=location, coordinator=coordinator,
-                    categories=categories, tags=tags)
+                           location=location, coordinator=coordinator,
+                           categories=categories, tags=tags)
 
     def __repr__(self):
         if not self._uname:
             out = "<Sim: '{}'>".format(self.name)
         else:
-            out = "<Sim: '{}' | active universe: '{}'>".format(self.name, self._uname)
+            out = "<Sim: '{}' | active universe: '{}'>".format(self.name,
+                                                               self._uname)
 
         return out
 
@@ -450,7 +468,7 @@ class Sim(Container):
         elif self.name > other.name:
             out = +1
         return out
-    
+
     @property
     def universe(self):
         """The active universe of the Sim.
@@ -465,9 +483,9 @@ class Sim(Container):
         To have more than one universe available as "active" at the same time,
         generate as many instances of the Sim object from the same statefile on
         disk as needed, and make a universe active for each one.
-    
+
         """
-        #TODO: include check for changes to universe definition, not just
+        # TODO: include check for changes to universe definition, not just
         # definition absence
         if self._uname in self._containerfile.list_universes():
             return self._universe
@@ -476,7 +494,8 @@ class Sim(Container):
             return self._universe
         else:
             self._universe = None
-            self._logger.info('This universe is no longer defined. It has been detached.')
+            self._logger.info('This universe is no longer defined. '
+                              'It has been detached.')
 
     @property
     def universes(self):
@@ -490,11 +509,14 @@ class Sim(Container):
         this universe directly available via ``Sim.selections``.
 
         The Sim can also store a preference for a "default" universe, which is
-        activated on a call to ``Sim.universe`` when no other universe is active.
-        
+        activated on a call to ``Sim.universe`` when no other universe is
+        active.
+
         """
         if not self._universes:
-            self._universes = core.aggregators.Universes(self, self._containerfile, self._logger)
+            self._universes = core.aggregators.Universes(
+                    self, self._containerfile, self._logger)
+
         return self._universes
 
     @property
@@ -511,16 +533,19 @@ class Sim(Container):
         # universe is present thereafter
         if self.universe:
             if not self._selections:
-                self._selections = core.aggregators.Selections(self, self._containerfile, self._logger)
+                self._selections = core.aggregators.Selections(
+                        self, self._containerfile, self._logger)
+
             return self._selections
 
-    def _generate(self, containertype, container, universe=None, uname='main', location='.',
-            coordinator=None, categories=None, tags=None):
+    def _generate(self, containertype, container, universe=None, uname='main',
+                  location='.', coordinator=None, categories=None, tags=None):
         """Generate new Sim object.
-         
+
         """
         super(Sim, self)._generate(containertype, container, location=location,
-                coordinator=coordinator, categories=categories, tags=tags)
+                                   coordinator=coordinator,
+                                   categories=categories, tags=tags)
 
         # add universe
         if (uname and universe):
@@ -536,14 +561,15 @@ class Sim(Container):
         self._universes = None
         self._selections = None
         self._universe = None     # universe 'dock'
-        self._uname = None        # attached universe name 
+        self._uname = None        # attached universe name
+
 
 class Group(Container):
     """The Group object is a collection of Sims and Groups.
 
     """
-    def __init__(self, group, members=None, location='.', coordinator=None, categories=None,
-                 tags=None):
+    def __init__(self, group, members=None, location='.', coordinator=None,
+                 categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Group object.
 
         :Required Arguments:
@@ -556,11 +582,12 @@ class Group(Container):
             *members*
                 a list of Sims and/or Groups to immediately add as members
             *location*
-                directory to place Group object; default is the current directory
+                directory to place Group object; default is the current
+                directory
             *coordinator*
-                directory of the Coordinator to associate with this object; if the
-                Coordinator does not exist, it is created; if ``None``, the Sim
-                will not associate with any Coordinator
+                directory of the Coordinator to associate with this object; if
+                the Coordinator does not exist, it is created; if ``None``, the
+                Sim will not associate with any Coordinator
             *categories*
                 dictionary with user-defined keys and values; used to give
                 Groups distinguishing characteristics
@@ -568,14 +595,16 @@ class Group(Container):
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
 
-        *Note*: optional arguments are ignored when regenerating an existing Group
+        *Note*: optional arguments are ignored when regenerating an existing
+                Group
 
         """
         if os.path.exists(group):
             self._regenerate('Group', group)
         else:
             self._generate('Group', group, members=members, location=location,
-                    coordinator=coordinator, categories=categories, tags=tags)
+                           coordinator=coordinator, categories=categories,
+                           tags=tags)
 
     def __repr__(self):
         members = list(self._containerfile.get_members_containertype())
@@ -585,7 +614,7 @@ class Group(Container):
 
         out = "<Group: '{}'".format(self.name, len(members))
         if members:
-            out = out +" | {} Members: ".format(len(members))
+            out = out + " | {} Members: ".format(len(members))
             if sims:
                 out = out + "{} Sim".format(sims)
                 if groups:
@@ -605,23 +634,26 @@ class Group(Container):
         they allow direct access to each member of that collection. Often
         a Group is used to store datasets derived from this collection as
         an aggregate.
-        
+
         Queries can also be made on the Group's members to return a
         subselection of the members based on some search criteria. This can be
         useful to define new Groups from members of existing ones.
-        
+
         """
         if not self._members:
-            self._members = core.aggregators.Members(self, self._containerfile, self._logger)
+            self._members = core.aggregators.Members(self, self._containerfile,
+                                                     self._logger)
         return self._members
 
-    def _generate(self, containertype, container, members=None, location='.', coordinator=None,
-                  categories=None, tags=None):
+    def _generate(self, containertype, container, members=None, location='.',
+                  coordinator=None, categories=None, tags=None):
         """Generate new Group.
-         
+
         """
-        super(Group, self)._generate(containertype, container, location=location,
-                coordinator=coordinator, categories=categories, tags=tags)
+        super(Group, self)._generate(containertype, container,
+                                     location=location,
+                                     coordinator=coordinator,
+                                     categories=categories, tags=tags)
 
         # process keywords
         if not members:
@@ -635,5 +667,5 @@ class Group(Container):
 
         """
         super(Group, self)._placeholders()
-    
+
         self._members = None

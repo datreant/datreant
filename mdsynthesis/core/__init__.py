@@ -13,7 +13,7 @@ may be used as interfaces in user-level objects.
 
 """
 # Bring everything into the core namespace
-import aggregators 
+import aggregators
 import persistence
 import filesystem
 import bundle
