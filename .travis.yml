@@ -22,7 +22,7 @@ install:
   - pip install numpy numexpr Cython
   - pip install tables
   - pip install pandas h5py MDAnalysis MDAnalysisTests
-  - pip install .
+  - pip install -e .
 
 # run tests
 script: 
