@@ -11,35 +11,37 @@ import persistence
 import filesystem
 import mdsynthesis as mds
 
+
 class Bundle(object):
     """Non-persistent Container for Sims and Groups.
-    
+
     A Bundle is basically an indexable set. It is often used to return the
     results of a query on a Coordinator or a Group, but can be used on its
     own as well.
 
     """
+
     def __init__(self, *containers, **kwargs):
         """Generate a Bundle from any number of Containers.
-    
+
         :Arguments:
             *containers*
                 list giving either Sims, Groups, or paths giving the
                 directories of the state files for such objects in the
                 filesystem
-    
+
         :Keywords:
             *flatten* [NOT IMPLEMENTED]
                 if ``True``, will recursively obtain members of any Groups;
-                only Sims will be present in the bunch 
-         
+                only Sims will be present in the bunch
+
         """
         self._containers = list()
         self._uuids = list()
 
         self.add(*containers)
 
-    #TODO: make more efficient by using ordered dict for storage?
+    # TODO: make more efficient by using ordered dict for storage?
     def add(self, *containers):
         outconts = list()
         for container in containers:
@@ -59,10 +61,10 @@ class Bundle(object):
                         self._uuids.append(uuid)
 
         self._containers.extend(outconts)
-    
+
     def list(self):
         """Return list representation.
-    
+
         """
         return list(self._containers)
 
