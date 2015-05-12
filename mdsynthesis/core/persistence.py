@@ -38,7 +38,7 @@ pathlength = 511
 # max character length of strings used for handles, tags, categories
 namelength = 55
 
-#TODO: add careful checks that file is actually a state file
+# TODO: add careful checks that file is actually a state file
 def containerfile(filename, logger=None, **kwargs):
     """Generate or regenerate the appropriate container file instance from filename.
 
@@ -60,6 +60,7 @@ def containerfile(filename, logger=None, **kwargs):
         statefileclass = GroupFile
     
     return statefileclass(filename, logger=logger, **kwargs)
+
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
@@ -222,6 +223,7 @@ class File(object):
             return out
 
         return inner
+
 
 class ContainerFile(File):
     """Container file object; syncronized access to Container data.
@@ -417,7 +419,11 @@ class ContainerFile(File):
     
         """
         table = self.handle.get_node('/', 'coordinator')
-        return table.cols.abspath[0]
+        out = table.cols.abspath[0]
+
+        if out == 'None':
+            out = None
+        return out
 
     @File._write_state
     def update_coordinator(self, coordinator):
@@ -658,6 +664,7 @@ class ContainerFile(File):
     
         """
         self.handle.close()
+
 
 class SimFile(ContainerFile):
     """Main Sim state file.
@@ -1069,6 +1076,7 @@ class SimFile(ContainerFile):
         """
         self.handle.remove_node('/universes/{}/selections'.format(universe), handle)
 
+
 class GroupFile(ContainerFile):
     """Main Group state file.
 
@@ -1312,7 +1320,8 @@ class GroupFile(ContainerFile):
         table = self.handle.get_node('/', 'members')
         return table.read()[self.memberpaths]
 
-#TODO: replace use of this class with a function that returns the proper data file
+
+# TODO: replace use of this class with a function that returns the proper data file
 class DataFile(object):
     """Interface to data files.
 
@@ -1501,6 +1510,7 @@ class DataFile(object):
         
         return out
 
+
 class pdDataFile(File):
     """Interface to pandas object data files.
 
@@ -1682,6 +1692,7 @@ class pdDataFile(File):
         keys = self.handle.keys()
         return [ i.lstrip('/') for i in keys ]
 
+
 class npDataFile(File):
     """Interface to numpy object data files.
 
@@ -1809,6 +1820,7 @@ class npDataFile(File):
         """
         keys = self.handle.keys()
         return keys
+
 
 class pyDataFile(File):
     """Interface to python object data files.

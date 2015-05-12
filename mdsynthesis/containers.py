@@ -298,11 +298,11 @@ class Container(object):
         return self._containerfile.get_location()
 
     @property
-    def coordinator(self):
-        """The location of the associated Coordinator.
+    def coordinators(self):
+        """The locations of the associated Coordinators.
 
         Change this to associate the Container with an existing
-        or new Coordinator.
+        or new Coordinator(s).
 
         """
         return self._containerfile.get_coordinator()
