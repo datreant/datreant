@@ -62,6 +62,114 @@ class Container(object):
                            coordinator=coordinator, categories=categories,
                            tags=tags)
 
+    def __repr__(self):
+        return "<Container: '{}'>".format(self.name)
+
+    def __lt__(self, other):
+        try:
+            if (self.name + self.uuid) < (other.name + other.uuid):
+                out = True
+            else:
+                out = False
+        except AttributeError:
+            out = NotImplemented
+        return out
+
+    def __le__(self, other):
+        try:
+            if (self.name + self.uuid) <= (other.name + other.uuid):
+                out = True
+            else:
+                out = False
+        except AttributeError:
+            out = NotImplemented
+        return out
+
+    def __eq__(self, other):
+        try:
+            if (self.name + self.uuid) == (other.name + other.uuid):
+                out = True
+            else:
+                out = False
+        except AttributeError:
+            out = NotImplemented
+        return out
+
+    def __ne__(self, other):
+        try:
+            if (self.name + self.uuid) != (other.name + other.uuid):
+                out = True
+            else:
+                out = False
+        except AttributeError:
+            out = NotImplemented
+        return out
+
+    def __ge__(self, other):
+        try:
+            if (self.name + self.uuid) >= (other.name + other.uuid):
+                out = True
+            else:
+                out = False
+        except AttributeError:
+            out = NotImplemented
+        return out
+
+    def __gt__(self, other):
+        try:
+            if (self.name + self.uuid) > (other.name + other.uuid):
+                out = True
+            else:
+                out = False
+        except AttributeError:
+            out = NotImplemented
+        return out
+
+    def __getitem__(self, handle):
+        """Get dataset corresponding to given handle.
+
+        If dataset doesn't exist, ``None`` is returned.
+
+        :Arguments:
+            *handle*
+                name of data to retrieve
+
+        :Returns:
+            *data*
+                stored data; ``None`` if nonexistent
+        """
+        return self.data.__getitem__(handle)
+
+    def __setitem__(self, handle, data):
+        """Set dataset corresponding to given handle.
+
+        A data instance must be either a pandas Series, DataFrame, or Panel
+        object. If dataset doesn't exist, it is added. If a dataset already
+        exists for the given handle, it is replaced.
+
+        :Arguments:
+            *handle*
+                name given to data; needed for retrieval
+            *data*
+                data to store; must be a pandas Series, DataFrame, or Panel
+
+        """
+        self.data.__setitem__(handle, data)
+
+    def __delitem__(self, handle):
+        """Remove a dataset.
+
+        Note: the directory containing the dataset file (``Data.h5``) will NOT
+        be removed if it still contains file after the removal of the dataset
+        file.
+
+        :Arguments:
+            *handle*
+                name of dataset to delete
+
+        """
+        self.data.__delitem__(handle)
+
     def _generate(self, containertype, container, location='.',
                   coordinator=None, categories=None, tags=None):
         """Generate new generic Container object.
@@ -177,51 +285,6 @@ class Container(object):
         if not os.path.exists(p):
             os.makedirs(p)
 
-    def __getitem__(self, handle):
-        """Get dataset corresponding to given handle.
-
-        If dataset doesn't exist, ``None`` is returned.
-
-        :Arguments:
-            *handle*
-                name of data to retrieve
-
-        :Returns:
-            *data*
-                stored data; ``None`` if nonexistent
-        """
-        return self.data.__getitem__(handle)
-
-    def __setitem__(self, handle, data):
-        """Set dataset corresponding to given handle.
-
-        A data instance must be either a pandas Series, DataFrame, or Panel
-        object. If dataset doesn't exist, it is added. If a dataset already
-        exists for the given handle, it is replaced.
-
-        :Arguments:
-            *handle*
-                name given to data; needed for retrieval
-            *data*
-                data to store; must be a pandas Series, DataFrame, or Panel
-
-        """
-        self.data.__setitem__(handle, data)
-
-    def __delitem__(self, handle):
-        """Remove a dataset.
-
-        Note: the directory containing the dataset file (``Data.h5``) will NOT
-        be removed if it still contains file after the removal of the dataset
-        file.
-
-        :Arguments:
-            *handle*
-                name of dataset to delete
-
-        """
-        self.data.__delitem__(handle)
-
     @property
     def name(self):
         """The name of the Container.
@@ -308,15 +371,16 @@ class Container(object):
         return self._containerfile.get_coordinator()
 
     # TODO: implement with Coordinator checking
-    @coordinator.setter
-    def coordinator(self, value):
-        """Set location of Coordinator.
+    @coordinators.setter
+    def coordinators(self, value):
+        """Set locations of Coordinators.
 
         Setting this to ``None`` will dissociate the Container from any
-        Coordinator.
+        Coordinators.
 
         """
-        pass
+        raise NotImplementedError("Coordinators are not yet implemented. This"
+                                  " is a placeholder")
 
     @property
     def tags(self):
@@ -458,15 +522,6 @@ class Sim(Container):
             out = "<Sim: '{}' | active universe: '{}'>".format(self.name,
                                                                self._uname)
 
-        return out
-
-    def __cmp__(self, other):
-        if self.name < other.name:
-            out = -1
-        elif self.name == other.name:
-            out = 0
-        elif self.name > other.name:
-            out = +1
         return out
 
     @property

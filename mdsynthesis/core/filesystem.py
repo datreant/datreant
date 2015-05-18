@@ -8,6 +8,7 @@ import time
 
 import aggregators
 import persistence
+import bundle
 import mdsynthesis as mds
 
 import scandir
@@ -50,16 +51,20 @@ def path2container(*paths):
     :Arguments:
         *paths*
             directories containing state files or full paths to state files to
-            load Containers from
+            load Containers from; if ``None`` is an element, then ``None`` returned
+            in output list
 
     :Returns:
         *containers*
-            list of Containers obtained from directories
+            list of Containers obtained from directories; ``None`` as an
+            element indicates that ``None`` was present in the list of paths
 
     """
     containers = list()
     for path in paths:
-        if os.path.isdir(path):
+        if path is None:
+            containers.append(None)
+        elif os.path.isdir(path):
             files = glob_container(path)
             for item in files:
                 basename = os.path.basename(item)
@@ -87,7 +92,7 @@ class Foxhound(object):
     longer in their last known location.
 
     """
-    def __init__(self, caller, uuids, basedirs, coordinators=None, timeout=100):
+    def __init__(self, caller, uuids, basedirs, coordinators=None, timeout=10):
         """Generate a Foxhound to track down Containers.
 
         :Arguments:
@@ -134,14 +139,14 @@ class Foxhound(object):
                 instead of paths for *as_containers* == True.
 
         """
-        if isinstance(self.caller, mds.Group):
+        if isinstance(self.caller, aggregators.Members):
             results = self._find_Group_members()
-        elif isinstance(self.caller, mds.Bundle):
+        elif isinstance(self.caller, bundle.Bundle):
             results = self._find_Bundle_members()
 
         if as_containers:
-            paths = path2container(results.values())
-            results = { x: y for x, y in zip(results.keys(), paths) }
+            conts = path2container(*results.values())
+            results = { x: y for x, y in zip(results.keys(), conts) }
 
         return results
 
@@ -155,10 +160,40 @@ class Foxhound(object):
                 that no state file could be found.
         """
         # initialize output dictionary with None
-        outpaths = { x, y for x, y in zip(self.uuids, [None]*len(self.uuids)) }
+        outpaths = { x: y for x, y in zip(self.uuids, [None]*len(self.uuids)) }
 
+        uuids = [x for x in outpaths if not outpaths[x]]
+        if 'abspath' in self.basedirs:
+            for path in self.basedirs['abspath']:
+                found = []
+                for uuid in uuids:
+                    candidate = glob.glob(os.path.join(path, '*.{}.h5'.format(uuid)))
 
+                    if candidate:
+                        outpaths[uuid] = os.path.abspath(candidate[0])
+                        found.append(uuid)
 
+                for item in found:
+                    uuids.remove(item)
+
+        if 'relCont' in self.basedirs:
+            # get uuids for which paths haven't been found
+            for path in self.basedirs['relCont']:
+                found = []
+                for uuid in uuids:
+                    candidate = glob.glob(
+                            os.path.join(
+                                self.caller._containerfile.get_location(), 
+                                path, '*.{}.h5'.format(uuid)))
+
+                    if candidate:
+                        outpaths[uuid] = os.path.abspath(candidate[0])
+                        found.append(uuid)
+
+                for item in found:
+                    uuids.remove(item)
+
+        return outpaths
 
     def _downward_search(self, path):
         """Check for Containers downward from specified path.
@@ -213,20 +248,114 @@ class Foxhound(object):
         # get current time
         currtime = time.time()
 
+        # walk downwards on an upward path through filesystem from the Group's
+        # basedir
+        uuids = [x for x in outpaths if not outpaths[x]]
+        path = self.caller._containerfile.get_location()
+        prev = None
+        timedout = False
+        while prev != path and uuids and not timedout:
 
+            top = True
+            for root, dirs, files in scandir.walk(path):
+                # if search runs over timeout, call it off
+                if ((time.time() - currtime) > self.timeout):
+                    self.caller._logger.info("Search for missing members timed" + 
+                                             " out at {}".format(self.timeout) +
+                                             " seconds.")
+                    timedout = True
+                    break
+
+                # if we've found everything, finish
+                if not uuids:
+                    break
+
+                found = []
+                # no need to visit already-visited tree
+                if top and prev: 
+                    dirs.remove(os.path.basename(prev))
+                    top = False
+
+                for uuid in uuids:
+                    candidate = [os.path.join(root, x) for x in files if uuid in x]
+
+                    if candidate:
+                        outpaths[uuid] = os.path.abspath(candidate[0])
+                        found.append(uuid)
+
+                for item in found:
+                    uuids.remove(item)
+
+            prev = path
+            path = os.path.split(path)[0]
+        
+        # TODO: post-check? Since Groups know the containertypes of their
+        # members, should we compare these to what is in outpaths?
+
+        return outpaths
 
     def _find_Bundle_members(self):
         """Find Containers that are members of a Bundle.
 
-        For finding Group members, the Foxhound begins by looking for
+        For finding Bundle members, the Foxhound begins by looking for
         Containers among the paths it was given. Containers that can't be found
-        are then searched for starting downward from the Group's location, with
-        subsequent downward searches proceeding from the parent directory.
-        This process continues until either all members are found, the
-        filesystem is exhaustively searched, or the Foxhound times out.
+        are then searched for starting downward from the current working
+        directory with subsequent downward searches proceeding from the parent
+        directory. This process continues until either all members are found,
+        the filesystem is exhaustively searched, or the Foxhound times out.
+
+        :Returns:
+            *outpaths*
+                dictionary giving Container uuids as keys and absolute paths to
+                their state files as values; ``None`` as a value indicates
+                that no state file could be found. 
 
         """
-        pass
+        # search last-known locations
+        outpaths = self._check_basedirs()
+
+        # get current time
+        currtime = time.time()
+
+        # walk downwards on an upward trajectory through filesystem from the
+        # current working directory
+        uuids = [x for x in outpaths if not outpaths[x]]
+        path = os.path.abspath(os.curdir)
+        prev = None
+        while prev != path and uuids:
+
+            # if search runs over timeout, call it off
+            if ((time.time() - currtime) > self.timeout):
+                self.caller._logger.info("Search for missing members timed" + 
+                                         " out at {}".format(self.timeout) +
+                                         " seconds.")
+                break
+
+            top = True
+            for root, dirs, files in scandir.walk(path):
+                found = []
+                # no need to visit already-visited tree
+                if top and prev: 
+                    dirs.remove(os.path.basename(prev))
+                    top = False
+
+                for uuid in uuids:
+                    candidate = [os.path.join(root, x) for x in files if uuid in x]
+
+                    if candidate:
+                        outpaths[uuid] = os.path.abspath(candidate[0])
+                        found.append(uuid)
+
+                for item in found:
+                    uuids.remove(item)
+
+            prev = path
+            path = os.path.split(path)[0]
+        
+        # TODO: post-check? Since Bundles know the containertypes of their
+        # members, should we compare these to what is in outpaths?
+
+        return outpaths
 
     def _find_Coordinator_members(self):
         pass

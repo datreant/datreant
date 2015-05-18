@@ -648,11 +648,11 @@ class Members(Aggregator, bundle._CollectionBase):
         self._backend = self._containerfile
 
     def __repr__(self):
-        return "<Members({})>".format(self.names())
+        return "<Members({})>".format(self.names)
 
     def __str__(self):
-        names = self.names()
-        containertypes = self.containertypes()
+        names = self.names
+        containertypes = self.containertypes
         agg = "Members"
         majsep = "="
         seplength = len(agg)
