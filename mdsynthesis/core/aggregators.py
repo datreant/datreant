@@ -648,7 +648,7 @@ class Members(Aggregator, bundle._CollectionBase):
         self._backend = self._containerfile
 
     def __repr__(self):
-        return "<Members({})>".format(self.names)
+        return "<Members({})>".format(self._list())
 
     def __str__(self):
         names = self.names

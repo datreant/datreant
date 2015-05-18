@@ -664,18 +664,32 @@ class Group(Container):
     def __repr__(self):
         members = list(self._containerfile.get_members_containertype())
 
+        containers = members.count('Container')
         sims = members.count('Sim')
         groups = members.count('Group')
 
         out = "<Group: '{}'".format(self.name, len(members))
         if members:
             out = out + " | {} Members: ".format(len(members))
+            if containers:
+                if containers == 1:
+                    out = out + "{} Container".format(containers)
+                elif containers > 1:
+                    out = out + "{} Containers".format(containers)
+                if sims or groups:
+                    out = out + ", "
             if sims:
-                out = out + "{} Sim".format(sims)
+                if sims == 1:
+                    out = out + "{} Sim".format(sims)
+                elif sims > 1:
+                    out = out + "{} Sims".format(sims)
                 if groups:
-                    out = out + ", {} Group".format(groups)
-            elif groups:
-                out = out + "{} Group".format(groups)
+                    out = out + ", "
+            if groups:
+                if groups == 1:
+                    out = out + "{} Group".format(groups)
+                elif groups > 1:
+                    out = out + "{} Groups".format(groups)
 
         out = out + ">"
 

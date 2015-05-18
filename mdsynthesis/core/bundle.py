@@ -12,7 +12,6 @@ import filesystem
 import numpy as np
 import mdsynthesis as mds
 
-
 class _CollectionBase(object):
     """Common interface elements for ordered sets of Containers.
 
@@ -24,53 +23,10 @@ class _CollectionBase(object):
         """Get member corresponding to the given index or slice.
         
         """
-        allrecords = self._backend.get_members()
-        records = allrecords[index]
-        uuids = records['uuid']
-
-        # for the indexing case
-        if isinstance(uuids, basestring):
-            # first check that we have a cached container
-            if uuids in self._cache and self._cache[uuids]:
-                out = self._cache[uuids]
-            else:
-                # foxhound takes plurals of everything
-                paths = { path: [records[path]] for path in self._backend.memberpaths }
-                foxhound = filesystem.Foxhound(self, [uuids], paths)
-                foundconts = foxhound.fetch(as_containers=True)
-                self._cache.update(foundconts)
-
-                out = foundconts.values()[0]
-
-        # for the slicing case
-        elif isinstance(uuids, np.ndarray):
-            findlist = list()
-            out = list()
-            for uuid in uuids:
-                if uuid in self._cache and self._cache[uuid]:
-                    out.append(self._cache[uuid])
-                else:
-                    out.append(None)
-                    findlist.append(uuid)
-
-            # track down our non-cached containers
-            paths = { path: records[path].flatten().tolist() for path in self._backend.memberpaths }
-            foxhound = filesystem.Foxhound(self, findlist, paths)
-            foundconts = foxhound.fetch(as_containers=True)
-
-            # add to cache, and ensure we get updated paths with a re-add
-            self._cache.update(foundconts)
-            self.add(*foundconts.values())
-
-            # insert found containers into output list
-            for uuid in findlist:
-                result = foundconts[uuid]
-                if not result:
-                    ind = list(allrecords['uuid']).index(uuid)
-                    raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
-
-                out[list(uuids).index(uuid)] = foundconts[uuid]
-            out = Bundle(out)
+        if isinstance(index, int):
+            out = self._list()[index]
+        else:
+            out = Bundle(*self._list()[index])
 
         return out
 
@@ -182,7 +138,12 @@ class _CollectionBase(object):
 
         # insert found containers into output list
         for uuid in findlist:
-            memberlist[memberlist.index(None)] = foundconts[uuid]
+            result = foundconts[uuid]
+            if not result:
+                ind = list(members['uuid']).index(uuid)
+                raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
+
+            memberlist[list(uuids).index(uuid)] = result
 
         return memberlist
 
@@ -212,7 +173,8 @@ class _BundleBackend():
                         dtype={'names': ['uuid', 'containertype', 'abspath'],
                                'formats':['a{}'.format(persistence.uuidlength),
                                           'a{}'.format(persistence.namelength),
-                                          'a{}'.format(persistence.pathlength)]})
+                                          'a{}'.format(persistence.pathlength)]
+                               }).reshape(1, -1)
 
     def add_member(self, uuid, containertype, basedir):
         """Add a member to the Group.
@@ -234,7 +196,7 @@ class _BundleBackend():
         else:
             # check if uuid already present
             index = np.where(self.table['uuid'] == uuid)[0]
-            if index:
+            if index.size > 0:
                 # if present, update location
                 self.table[index[0]]['abspath'] = os.path.abspath(basedir)
             else:
@@ -314,7 +276,7 @@ class _BundleBackend():
             *uuids*
                 array giving containertype of each member, in order
         """
-        return self.table['uuid'].T
+        return self.table['uuid'].flatten()
 
     def get_members_containertype(self):
         """List containertype for each member.
@@ -323,7 +285,7 @@ class _BundleBackend():
             *containertypes*
                 array giving containertype of each member, in order
         """
-        return self.table['containertype'].T
+        return self.table['containertype'].flatten()
 
     def get_members_basedir(self):
         """List basedir for each member. 
@@ -332,7 +294,7 @@ class _BundleBackend():
             *basedirs*
                 structured array containing all paths to member basedirs
         """
-        return self.table['abspath'].T
+        return self.table['abspath'].flatten()
 
 class Bundle(_CollectionBase):
     """Non-persistent Container for Sims and Groups.
