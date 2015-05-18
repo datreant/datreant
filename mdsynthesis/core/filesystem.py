@@ -14,6 +14,7 @@ import mdsynthesis as mds
 
 import scandir
 
+
 def statefilename(containertype, uuid):
     """Return state file name given the type of container and its uuid.
 
@@ -56,8 +57,8 @@ def path2container(*paths):
     :Arguments:
         *paths*
             directories containing state files or full paths to state files to
-            load Containers from; if ``None`` is an element, then ``None`` returned
-            in output list
+            load Containers from; if ``None`` is an element, then ``None``
+            returned in output list
 
     :Returns:
         *containers*
@@ -114,8 +115,8 @@ class Foxhound(object):
 
         :Keywords:
             *coordinators*
-                list of Coordinators to consult; if ``None``, involve no Coordinators
-            *timeout*
+                list of Coordinators to consult; if ``None``, involve no
+                Coordinators *timeout*
                 maximum time, in seconds, the Foxhound will spend fetching.
 
         """
@@ -152,7 +153,7 @@ class Foxhound(object):
 
         if as_containers:
             conts = path2container(*results.values())
-            results = { x: y for x, y in zip(results.keys(), conts) }
+            results = {x: y for x, y in zip(results.keys(), conts)}
 
         return results
 
@@ -166,14 +167,15 @@ class Foxhound(object):
                 that no state file could be found.
         """
         # initialize output dictionary with None
-        outpaths = { x: y for x, y in zip(self.uuids, [None]*len(self.uuids)) }
+        outpaths = {x: y for x, y in zip(self.uuids, [None]*len(self.uuids))}
 
         uuids = [x for x in outpaths if not outpaths[x]]
         if 'abspath' in self.basedirs:
             for path in self.basedirs['abspath']:
                 found = []
                 for uuid in uuids:
-                    candidate = glob.glob(os.path.join(path, '*.{}.h5'.format(uuid)))
+                    candidate = glob.glob(
+                            os.path.join(path, '*.{}.h5'.format(uuid)))
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
@@ -189,7 +191,7 @@ class Foxhound(object):
                 for uuid in uuids:
                     candidate = glob.glob(
                             os.path.join(
-                                self.caller._containerfile.get_location(), 
+                                self.caller._containerfile.get_location(),
                                 path, '*.{}.h5'.format(uuid)))
 
                     if candidate:
@@ -245,7 +247,7 @@ class Foxhound(object):
             *outpaths*
                 dictionary giving Container uuids as keys and absolute paths to
                 their state files as values; ``None`` as a value indicates
-                that no state file could be found. 
+                that no state file could be found.
 
         """
         # search last-known locations
@@ -266,9 +268,10 @@ class Foxhound(object):
             for root, dirs, files in scandir.walk(path):
                 # if search runs over timeout, call it off
                 if ((time.time() - currtime) > self.timeout):
-                    self.caller._logger.info("Search for missing members timed" + 
-                                             " out at {}".format(self.timeout) +
-                                             " seconds.")
+                    self.caller._logger.info(
+                            "Search for missing members timed" +
+                            " out at {}".format(self.timeout) +
+                            " seconds.")
                     timedout = True
                     break
 
@@ -278,12 +281,13 @@ class Foxhound(object):
 
                 found = []
                 # no need to visit already-visited tree
-                if top and prev: 
+                if top and prev:
                     dirs.remove(os.path.basename(prev))
                     top = False
 
                 for uuid in uuids:
-                    candidate = [os.path.join(root, x) for x in files if uuid in x]
+                    candidate = [os.path.join(root, x)
+                                 for x in files if uuid in x]
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
@@ -294,7 +298,7 @@ class Foxhound(object):
 
             prev = path
             path = os.path.split(path)[0]
-        
+
         # TODO: post-check? Since Groups know the containertypes of their
         # members, should we compare these to what is in outpaths?
 
@@ -314,7 +318,7 @@ class Foxhound(object):
             *outpaths*
                 dictionary giving Container uuids as keys and absolute paths to
                 their state files as values; ``None`` as a value indicates
-                that no state file could be found. 
+                that no state file could be found.
 
         """
         # search last-known locations
@@ -332,7 +336,7 @@ class Foxhound(object):
 
             # if search runs over timeout, call it off
             if ((time.time() - currtime) > self.timeout):
-                self.caller._logger.info("Search for missing members timed" + 
+                self.caller._logger.info("Search for missing members timed" +
                                          " out at {}".format(self.timeout) +
                                          " seconds.")
                 break
@@ -341,12 +345,13 @@ class Foxhound(object):
             for root, dirs, files in scandir.walk(path):
                 found = []
                 # no need to visit already-visited tree
-                if top and prev: 
+                if top and prev:
                     dirs.remove(os.path.basename(prev))
                     top = False
 
                 for uuid in uuids:
-                    candidate = [os.path.join(root, x) for x in files if uuid in x]
+                    candidate = [os.path.join(root, x)
+                                 for x in files if uuid in x]
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
@@ -357,7 +362,7 @@ class Foxhound(object):
 
             prev = path
             path = os.path.split(path)[0]
-        
+
         # TODO: post-check? Since Bundles know the containertypes of their
         # members, should we compare these to what is in outpaths?
 

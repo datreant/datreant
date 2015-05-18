@@ -38,6 +38,7 @@ pathlength = 511
 # max character length of strings used for handles, tags, categories
 namelength = 55
 
+
 # TODO: add careful checks that file is actually a state file
 def containerfile(filename, logger=None, **kwargs):
     """Generate or regenerate the appropriate container file instance from
@@ -258,7 +259,7 @@ class ContainerFile(File):
         """
         # absolute path of coordinator
         abspath = tables.StringCol(pathlength)
-        
+
     class _Tags(tables.IsDescription):
         """Table definition for tags.
 
@@ -384,7 +385,7 @@ class ContainerFile(File):
         :Returns:
             *location*
                 absolute path to Container basedir
-    
+
         """
         return os.path.dirname(self.filename)
 
@@ -863,16 +864,18 @@ class SimFile(ContainerFile):
                 structured array containing all paths to topology
             *trajectory*
                 structured array containing all paths to trajectory(s)
-                
+
         """
         paths = dict()
 
         # get topology file
-        table = self.handle.get_node('/universes/{}'.format(universe), 'topology')
+        table = self.handle.get_node('/universes/{}'.format(universe),
+                                     'topology')
         topology = table.read()
 
         # get trajectory files
-        table = self.handle.get_node('/universes/{}'.format(universe), 'trajectory')
+        table = self.handle.get_node('/universes/{}'.format(universe),
+                                     'trajectory')
         trajectory = table.read()
 
         return (topology, trajectory)
@@ -930,7 +933,8 @@ class SimFile(ContainerFile):
         # add trajectory paths to table
         for segment in trajectory:
             table.row['abspath'] = os.path.abspath(segment)
-            table.row['relCont'] = os.path.relpath(segment, self.get_location())
+            table.row['relCont'] = os.path.relpath(segment,
+                                                   self.get_location())
             table.row.append()
 
         # construct selection group
@@ -1147,7 +1151,7 @@ class GroupFile(ContainerFile):
         relative path from the Group object's directory (relCont). This allows
         the Group object to use some heuristically good starting points when
         trying to find missing files using a Foxhound.
-        
+
         """
         # unique identifier for container
         uuid = tables.StringCol(uuidlength)
@@ -1220,8 +1224,8 @@ class GroupFile(ContainerFile):
     def add_member(self, uuid, containertype, basedir):
         """Add a member to the Group.
 
-        If the member is already present, its basedir paths will be updated with
-        the given basedir.
+        If the member is already present, its basedir paths will be updated
+        with the given basedir.
 
         :Arguments:
             *uuid*
@@ -1230,7 +1234,7 @@ class GroupFile(ContainerFile):
                 the container type of the new member (Sim or Group)
             *basedir*
                 basedir of the new member in the filesystem
-    
+
         """
         try:
             table = self.handle.get_node('/', 'members')
@@ -1325,7 +1329,7 @@ class GroupFile(ContainerFile):
             memberinfo = row.fetch_all_fields()
 
         if memberinfo:
-            memberinfo = { x: y for x, y in zip(fields, memberinfo) }
+            memberinfo = {x: y for x, y in zip(fields, memberinfo)}
 
         return memberinfo
 
@@ -1368,7 +1372,7 @@ class GroupFile(ContainerFile):
 
     @File._read_state
     def get_members_basedir(self):
-        """List basedir for each member. 
+        """List basedir for each member.
 
         :Returns:
             *basedirs*
@@ -1378,7 +1382,8 @@ class GroupFile(ContainerFile):
         return table.read()[self.memberpaths]
 
 
-# TODO: replace use of this class with a function that returns the proper data file
+# TODO: replace use of this class with a function that returns the proper data
+# file
 class DataFile(object):
     """Interface to data files.
 

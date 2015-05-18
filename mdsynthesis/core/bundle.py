@@ -12,6 +12,7 @@ import filesystem
 import numpy as np
 import mdsynthesis as mds
 
+
 class _CollectionBase(object):
     """Common interface elements for ordered sets of Containers.
 
@@ -21,7 +22,7 @@ class _CollectionBase(object):
 
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
-        
+
         """
         if isinstance(index, int):
             out = self._list()[index]
@@ -43,7 +44,8 @@ class _CollectionBase(object):
         for container in containers:
             if container is None:
                 pass
-            elif isinstance(container, (list, tuple, Bundle, aggregators.Members)):
+            elif isinstance(container,
+                            (list, tuple, Bundle, aggregators.Members)):
                 self.add(*container)
             elif isinstance(container, mds.Container):
                 outconts.append(container)
@@ -53,11 +55,13 @@ class _CollectionBase(object):
                     outconts.append(c)
 
         for container in outconts:
-            self._backend.add_member(container.uuid, container.containertype, container.basedir)
+            self._backend.add_member(container.uuid,
+                                     container.containertype,
+                                     container.basedir)
 
-    def remove(self, *indices, **kwargs): 
+    def remove(self, *indices, **kwargs):
         """Remove any number of members from the Group.
-    
+
         :Arguments:
             *indices*
                 the indices of the members to remove
@@ -69,7 +73,7 @@ class _CollectionBase(object):
         """
         uuids = self._backend.get_members_uuid()
         if not kwargs.pop('all', False):
-            uuids = [ uuids[x] for x in indices ]
+            uuids = [uuids[x] for x in indices]
 
         self._backend.del_member(*uuids)
 
@@ -110,8 +114,8 @@ class _CollectionBase(object):
 
         Note: modifications of this list won't modify the members of the Group!
 
-        Missing members will be present in the list as ``None``. This method is not intended
-        for user-level use.
+        Missing members will be present in the list as ``None``. This method is
+        not intended for user-level use.
 
         """
         members = self._backend.get_members()
@@ -128,7 +132,8 @@ class _CollectionBase(object):
                 findlist.append(uuid)
 
         # track down our non-cached containers
-        paths = { path: members[path].flatten().tolist() for path in self._backend.memberpaths }
+        paths = {path: members[path].flatten().tolist()
+                 for path in self._backend.memberpaths}
         foxhound = filesystem.Foxhound(self, findlist, paths)
         foundconts = foxhound.fetch(as_containers=True)
 
@@ -141,7 +146,9 @@ class _CollectionBase(object):
             result = foundconts[uuid]
             if not result:
                 ind = list(members['uuid']).index(uuid)
-                raise IOError("Could not find member {} (uuid: {}); re-add or remove it.".format(ind, uuid))
+                raise IOError("Could not find member" +
+                              " {} (uuid: {});".format(ind, uuid) +
+                              " re-add or remove it.")
 
             memberlist[list(uuids).index(uuid)] = result
 
@@ -149,8 +156,8 @@ class _CollectionBase(object):
 
 
 class _BundleBackend():
-    """Backend class for Bundle. 
-    
+    """Backend class for Bundle.
+
     Has same interface as Group-specific components of
     :class:`persistence.GroupFile`. Behaves practically like an in-memory
     version of a state-file, but with only the components needed for the
@@ -170,12 +177,13 @@ class _BundleBackend():
         This method defines the scheme for the Bundle's record array.
 
         """
-        return np.array((uuid, containertype, os.path.abspath(basedir)),
-                        dtype={'names': ['uuid', 'containertype', 'abspath'],
-                               'formats':['a{}'.format(persistence.uuidlength),
-                                          'a{}'.format(persistence.namelength),
-                                          'a{}'.format(persistence.pathlength)]
-                               }).reshape(1, -1)
+        return np.array(
+                (uuid, containertype, os.path.abspath(basedir)),
+                dtype={'names': ['uuid', 'containertype', 'abspath'],
+                       'formats': ['a{}'.format(persistence.uuidlength),
+                                   'a{}'.format(persistence.namelength),
+                                   'a{}'.format(persistence.pathlength)]
+                       }).reshape(1, -1)
 
     def add_member(self, uuid, containertype, basedir):
         """Add a member to the Group.
@@ -190,7 +198,7 @@ class _BundleBackend():
                 the container type of the new member (Sim or Group)
             *basedir*
                 basedir of the new member in the filesystem
-    
+
         """
         if self.table is None:
             self.table = self._member2record(uuid, containertype, basedir)
@@ -206,7 +214,7 @@ class _BundleBackend():
 
     def del_member(self, *uuid, **kwargs):
         """Remove a member from the Group.
-    
+
         :Arguments:
             *uuid*
                 the uuid(s) of the member(s) to remove
@@ -222,7 +230,7 @@ class _BundleBackend():
             self.table = None
         else:
             # remove redundant uuids from given list if present
-            uuids = set([ str(uid) for uid in uuid ])
+            uuids = set([str(uid) for uid in uuid])
 
             # remove matching elements
             matches = list()
@@ -235,7 +243,7 @@ class _BundleBackend():
 
     def get_member(self, uuid):
         """Get all stored information on the specified member.
-        
+
         Returns a dictionary whose keys are column names and values the
         corresponding values for the member.
 
@@ -251,7 +259,7 @@ class _BundleBackend():
         memberinfo = self.table[self.table[uuid] == uuid]
 
         if memberinfo:
-            memberinfo = { x: memberinfo[x] for x in memberinfo.dtype.names }
+            memberinfo = {x: memberinfo[x] for x in memberinfo.dtype.names}
         else:
             memberinfo = None
 
@@ -289,7 +297,7 @@ class _BundleBackend():
         return self.table['containertype'].flatten()
 
     def get_members_basedir(self):
-        """List basedir for each member. 
+        """List basedir for each member.
 
         :Returns:
             *basedirs*

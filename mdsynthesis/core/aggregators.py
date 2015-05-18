@@ -380,7 +380,7 @@ class Universes(Aggregator):
 
         if handle:
             udef = self._containerfile.get_universe(handle)
-                
+
             # get a working path to the topology from last known locations
             topology = None
             for top in udef[0]:
@@ -392,7 +392,9 @@ class Universes(Aggregator):
                         break
 
                 if not found:
-                    raise IOError("Topology file could not be found for universe '{}'; cannot activate!".format(handle))
+                    raise IOError(
+                            "Topology file could not be found for" +
+                            " universe '{}'; cannot activate!".format(handle))
 
             # get a working path to each trajectory from last known locations
             trajectory = list()
@@ -405,16 +407,19 @@ class Universes(Aggregator):
                         break
 
                 if not found:
-                    raise IOError("At least one trajectory file could not be found for universe '{}'; cannot activate!".format(handle))
-        
+                    raise IOError(
+                            "At least one trajectory file could not" +
+                            "be found for universe '{}';".format(handle) +
+                            " cannot activate!")
+
             self._container._universe = Universe(topology, *trajectory)
             self._container._uname = handle
             self._apply_resnums()
-            
+
             # update the universe definition; will automatically build current
             # path variants for each file
             self._containerfile.add_universe(handle, topology, *trajectory)
-    
+
     def current(self):
         """Return the name of the currently active universe.
 
@@ -704,6 +709,7 @@ class Members(Aggregator, bundle._CollectionBase):
             self._data = MemberData(self)
         return self._data
 
+
 class MemberAgg(object):
     """Core functionality for member aggregators.
 
@@ -731,7 +737,7 @@ class MemberData(MemberAgg):
                 list of handles to available datasets
 
         """
-        datasets = [ set(member.data) for member in self._members ]
+        datasets = [set(member.data) for member in self._members]
         if mode == 'any':
             out = set.union(*datasets)
         elif mode == 'all':
@@ -739,7 +745,7 @@ class MemberData(MemberAgg):
 
         return list(out)
 
-    #TODO: needs to work for more than just dataframes, series
+    # TODO: needs to work for more than just dataframes, series
     def retrieve(self, handle, **kwargs):
         """Retrieve aggregated dataset from all members.
 
@@ -748,7 +754,7 @@ class MemberData(MemberAgg):
         form of the data structure.
 
         See :meth:`Data.retrieve` for more information on keyword usage.
-        
+
         :Arguments:
             *handle*
                 name of data to retrieve
@@ -778,7 +784,7 @@ class MemberData(MemberAgg):
             d = member.data.retrieve(handle, **kwargs)
             label = len(d.index)*[member.name]
             index = pd.MultiIndex.from_arrays([label, d.index])
-            #FIXME: BROKEN!
+            # FIXME: BROKEN!
             d.index = index
 
             if agg is not None:
