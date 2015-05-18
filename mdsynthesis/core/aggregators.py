@@ -1,8 +1,8 @@
 """
 Aggregators are user interfaces for accessing stored data, as well as querying
 the state of an object (data loaded, universe attached, etc.). They are also
-used to aggregate the functionality of higher level objects (such as Sim) in ways
-that are user-friendly.
+used to aggregate the functionality of higher level objects (such as Sim) in
+ways that are user-friendly.
 
 In short, an Aggregator is designed to be user friendly on its own, but it can
 be used as a backend by a Container, too.
@@ -19,10 +19,12 @@ import bundle
 import pandas as pd
 import mdsynthesis as mds
 
+
 class Aggregator(object):
     """Core functionality for information aggregators.
 
     """
+
     def __init__(self, container, containerfile, logger):
         self._container = container
         self._containerfile = containerfile
@@ -36,10 +38,12 @@ class Aggregator(object):
         """
         pass
 
+
 class Tags(Aggregator):
     """Interface to tags.
 
     """
+
     def __repr__(self):
         return "<Tags({})>".format(self._list())
 
@@ -52,8 +56,8 @@ class Tags(Aggregator):
         if not tags:
             out = "No Tags"
         else:
-            out = agg +'\n'
-            out = out + majsep*seplength + '\n'
+            out = agg + '\n'
+            out = out + majsep * seplength + '\n'
             for i in xrange(len(tags)):
                 out = out + "'{}'\n".format(tags[i])
         return out
@@ -66,7 +70,7 @@ class Tags(Aggregator):
 
     def _list(self):
         """Get all tags for the Container as a list.
-    
+
         :Returns:
             *tags*
                 list of all tags
@@ -77,14 +81,14 @@ class Tags(Aggregator):
 
     def add(self, *tags):
         """Add any number of tags to the Container.
-    
+
         Tags are individual strings that serve to differentiate Containers from
         one another. Sometimes preferable to categories.
-    
+
         :Arguments:
            *tags*
-              Tags to add. Must be convertable to strings using the str() builtin.
-              May also be a list of tags.
+              Tags to add. Must be convertable to strings using the str()
+              builtin.  May also be a list of tags.
 
         """
         outtags = list()
@@ -94,10 +98,10 @@ class Tags(Aggregator):
             else:
                 outtags.append(tag)
         self._containerfile.add_tags(*outtags)
-    
+
     def remove(self, *tags, **kwargs):
         """Remove tags from Container.
-        
+
         Any number of tags can be given as arguments, and these will be
         deleted.
 
@@ -111,10 +115,12 @@ class Tags(Aggregator):
         """
         self._containerfile.del_tags(*tags, **kwargs)
 
+
 class Categories(Aggregator):
     """Interface to categories.
 
     """
+
     def __repr__(self):
         return "<Categories({})>".format(self._dict())
 
@@ -127,8 +133,8 @@ class Categories(Aggregator):
         if not categories:
             out = "No Categories"
         else:
-            out = agg +'\n'
-            out = out + majsep*seplength + '\n'
+            out = agg + '\n'
+            out = out + majsep * seplength + '\n'
             for key in categories.keys():
                 out = out + "'{}': '{}'\n".format(key, categories[key])
         return out
@@ -159,7 +165,7 @@ class Categories(Aggregator):
 
     def __delitem__(self, category):
         """Remove category from Container.
-    
+
         """
         self._containerfile.del_categories(category)
 
@@ -174,7 +180,8 @@ class Categories(Aggregator):
 
         :Returns:
             *categories*
-                dictionary of all categories 
+                dictionary of all categories
+
         """
         return self._containerfile.get_categories()
 
@@ -184,8 +191,8 @@ class Categories(Aggregator):
         Categories are key-value pairs of strings that serve to differentiate
         Containers from one another. Sometimes preferable to tags.
 
-        If a given category already exists (same key), the value given will replace
-        the value for that category.
+        If a given category already exists (same key), the value given will
+        replace the value for that category.
 
         :Keywords:
             *categorydict*
@@ -193,9 +200,9 @@ class Categories(Aggregator):
                 values. Both keys and values must be convertible to strings
                 using the str() builtin.
             *categories*
-                Categories to add. Keyword used as key, value used as value. Both
-                must be convertible to strings using the str() builtin.
-        
+                Categories to add. Keyword used as key, value used as value.
+                Both must be convertible to strings using the str() builtin.
+
         """
         outcats = dict()
         for categorydict in categorydicts:
@@ -204,13 +211,13 @@ class Categories(Aggregator):
 
         outcats.update(categories)
         self._containerfile.add_categories(**outcats)
-    
+
     def remove(self, *categories, **kwargs):
         """Remove categories from Container.
-        
+
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
-         
+
         :Arguments:
             *categories*
                 Categories to delete.
@@ -218,13 +225,13 @@ class Categories(Aggregator):
         :Keywords:
             *all*
                 When True, delete all categories [``False``]
-    
+
         """
         self._containerfile.del_categories(*categories, **kwargs)
-    
+
     def keys(self):
         """Get category keys.
-    
+
         :Returns:
             *keys*
                 keys present among categories
@@ -233,17 +240,19 @@ class Categories(Aggregator):
 
     def values(self):
         """Get category values.
-    
+
         :Returns:
             *values*
                 values present among categories
         """
         return self._containerfile.get_categories().values()
 
+
 class Universes(Aggregator):
     """Interface to universes.
 
     """
+
     def __repr__(self):
         return "<Universes({})>".format(self._list())
 
@@ -256,8 +265,8 @@ class Universes(Aggregator):
         if not universes:
             out = "No universes"
         else:
-            out = agg +'\n'
-            out = out + majsep*seplength + '\n'
+            out = agg + '\n'
+            out = out + majsep * seplength + '\n'
             for universe in universes:
                 out = out + "'{}'".format(universe)
                 if self._containerfile.get_default() == universe:
@@ -273,7 +282,7 @@ class Universes(Aggregator):
         :Arguments:
             *handle*
                 given name for selecting the universe
-        
+
         :Returns:
             *universe*
                 a reference to the newly attached universe
@@ -291,8 +300,9 @@ class Universes(Aggregator):
         convenient to have different post-processed versions of the same
         raw trajectory.
 
-        Using an existing universe handle will replace the topology and trajectory
-        for that definition; selections for that universe will be retained.
+        Using an existing universe handle will replace the topology and
+        trajectory for that definition; selections for that universe will be
+        retained.
 
         If there is no current default universe, then the added universe will
         become the default.
@@ -319,10 +329,10 @@ class Universes(Aggregator):
 
         if not self.default():
             self.default(handle)
-    
+
     def remove(self, *handle):
         """Remove a universe definition.
-    
+
         Also removes any selections associated with the universe.
 
         :Arguments:
@@ -331,17 +341,17 @@ class Universes(Aggregator):
         """
         for item in handle:
             self._containerfile.del_universe(item)
-    
+
             if self._container._uname == item:
                 self._container._universe = None
                 self._container._uname = None
 
             if self.default() == item:
                 self._containerfile.update_default()
-    
+
     def _list(self):
         """Get handles for all universe definitions as a list.
-    
+
         :Returns:
             *handles*
                 list of all universe handles
@@ -350,7 +360,7 @@ class Universes(Aggregator):
 
     def activate(self, handle=None):
         """Make the selected universe active.
-        
+
         Only one universe definition can be active in a Sim at one time. The
         active universe can be accessed from ``Sim.universe``. Stored
         selections for the active universe can be accessed as items in
@@ -359,7 +369,7 @@ class Universes(Aggregator):
         If no handle given, the default universe is loaded.
 
         If a resnum definition exists for the universe, it is applied.
-    
+
         :Arguments:
             *handle*
                 given name for selecting the universe; if ``None``, default
@@ -367,7 +377,7 @@ class Universes(Aggregator):
         """
         if not handle:
             handle = self._containerfile.get_default()
-    
+
         if handle:
             udef = self._containerfile.get_universe(handle)
                 
@@ -413,20 +423,20 @@ class Universes(Aggregator):
                 name of currently active universe
         """
         return self._container._uname
-                
+
     def deactivate(self):
         """Deactivate the current universe.
-        
+
         Deactivating the current universe may be necessary to conserve
         memory, since the universe can then be garbage collected.
 
         """
         self._container._universe = None
         self._container._uname = None
-    
+
     def _apply_resnums(self):
         """Apply resnum definition to active universe.
-    
+
         """
         resnums = self._containerfile.get_resnums(self._container._uname)
 
@@ -452,12 +462,12 @@ class Universes(Aggregator):
         """
         if resnums is None:
             self._containerfile.del_resnums(handle)
-            
+
         self._containerfile.update_resnums(handle, resnums)
-    
+
         if handle == self._container._uname:
             self._apply_resnums()
-        
+
     def default(self, handle=None):
         """Mark the selected universe as the default, or get the default universe.
 
@@ -477,16 +487,16 @@ class Universes(Aggregator):
         """
         if handle:
             self._containerfile.update_default(handle)
-        
+
         return self._containerfile.get_default()
-    
+
     def show(self, handle):
         """Get the topology and trajectory used for the specified universe.
 
         :Arguments:
             *handle*
                 name of universe to get definition for
-        
+
         :Returns:
             *topology*
                 path to the topology file
@@ -495,16 +505,19 @@ class Universes(Aggregator):
         """
         return self._containerfile.get_universe(handle)
 
+
 class Selections(Aggregator):
     """Selection manager for Sims.
 
     Selections are accessible as items using their handles. Each time they are
-    called, they are regenerated from the universe that is currently active. In this
-    way, changes in the universe topology are reflected in the selections.
+    called, they are regenerated from the universe that is currently active. In
+    this way, changes in the universe topology are reflected in the selections.
 
     """
+
     def __repr__(self):
-        return "<Selections({})>".format({x: self.show(x) for x in self.keys()})
+        return "<Selections({})>".format(
+                {x: self.show(x) for x in self.keys()})
 
     def __str__(self):
         selections = self.keys()
@@ -517,21 +530,22 @@ class Selections(Aggregator):
         if not self._container._uname:
             out = "No universe attached; no Selections to show"
         elif not selections:
-            out = "No selections for universe '{}'".format(self._container._uname)
+            out = "No selections for universe '{}'".format(
+                self._container._uname)
         else:
-            out = agg +'\n'
-            out = out + majsep*seplength + '\n'
+            out = agg + '\n'
+            out = out + majsep * seplength + '\n'
             for selection in selections:
                 out = out + "'{}'\n".format(selection)
                 for item in self.show(selection):
                     out = out + subsep + "'{}'\n".format(item)
-                out = out + minsep*seplength + '\n'
+                out = out + minsep * seplength + '\n'
 
         return out
 
     def __getitem__(self, handle):
         """Get selection as an AtomGroup for given handle and the active universe.
-    
+
         :Arguments:
             *handle*
                 name of selection to return as an AtomGroup
@@ -539,30 +553,32 @@ class Selections(Aggregator):
         :Returns:
             *AtomGroup*
                 the named selection as an AtomGroup of the active universe
-                
+
         """
         return self.asAtomGroup(handle)
 
     def __setitem__(self, handle, selection):
         """Selection for the given handle and the active universe.
-    
+
         """
         if isinstance(selection, basestring):
             selection = [selection]
-        self._containerfile.add_selection(self._container._uname, handle, *selection)
-    
+        self._containerfile.add_selection(
+            self._container._uname, handle, *selection)
+
     def __iter__(self):
-        return self._containerfile.list_selections(self._container._uname).__iter__()
+        return self._containerfile.list_selections(
+                self._container._uname).__iter__()
 
     def __delitem__(self, handle):
         """Remove stored selection for given handle and the active universe.
-    
+
         """
         self._containerfile.del_selection(self._container._uname, handle)
 
     def add(self, handle, *selection):
         """Add an atom selection for the attached universe.
-        
+
         AtomGroups are needed to obtain useful information from raw coordinate
         data. It is useful to store AtomGroup selections for later use, since
         they can be complex and atom order may matter.
@@ -572,30 +588,31 @@ class Selections(Aggregator):
                 name to use for the selection
             *selection*
                 selection string; multiple strings may be given and their
-                order will be preserved, which is useful for e.g. structural 
+                order will be preserved, which is useful for e.g. structural
                 alignments
         """
-        self._containerfile.add_selection(self._container._uname, handle, *selection)
-        
+        self._containerfile.add_selection(
+            self._container._uname, handle, *selection)
+
     def remove(self, *handle):
         """Remove an atom selection for the attached universe.
-        
+
         :Arguments:
             *handle*
                 name of selection(s) to remove
         """
         for item in handle:
             self._containerfile.del_selection(self._container._uname, item)
-    
+
     def keys(self):
         """Return a list of all selection handles.
-    
+
         """
         if self._container._uname:
             return self._containerfile.list_selections(self._container._uname)
 
     def asAtomGroup(self, handle):
-        """Get AtomGroup from active universe corresponding to the given named selection.
+        """Get AtomGroup from active universe from the given named selection.
 
         :Arguments:
             *handle*
@@ -604,14 +621,15 @@ class Selections(Aggregator):
         :Returns:
             *AtomGroup*
                 the named selection as an AtomGroup of the active universe
-        
+
         """
-        selstring = self._containerfile.get_selection(self._container._uname, handle)
+        selstring = self._containerfile.get_selection(
+            self._container._uname, handle)
         return self._container.universe.selectAtoms(*selstring)
 
     def show(self, handle):
         """Get selection definition for given handle and the active universe.
-    
+
         :Arguments:
             *handle*
                 name of selection to get definition of
@@ -620,21 +638,24 @@ class Selections(Aggregator):
             *definition*
                 list of strings defining the atom selection
         """
-        return self._containerfile.get_selection(self._container._uname, handle)
-    
+        return self._containerfile.get_selection(
+                self._container._uname, handle)
+
     def copy(self, universe):
         """Copy defined selections of another universe to the active universe.
-    
+
         :Arguments:
             *universe*
                 name of universe definition to copy selections from
         """
         if self._container._uname:
             selections = self._containerfile.list_selections(universe)
-    
+
             for sel in selections:
                 seldef = self._containerfile.get_selection(universe, sel)
-                self._containerfile.add_selection(self._container._uname, sel, *seldef)
+                self._containerfile.add_selection(
+                    self._container._uname, sel, *seldef)
+
 
 class Members(Aggregator, bundle._CollectionBase):
     """Member manager for Groups.
@@ -660,9 +681,11 @@ class Members(Aggregator, bundle._CollectionBase):
         if not names:
             out = "No Members"
         else:
-            out = agg +'\n'
-            out = out + majsep*seplength + '\n'
-            for i, name, containertype in zip(xrange(len(names)), names, containertypes):
+            out = agg + '\n'
+            out = out + majsep * seplength + '\n'
+            for i, name, containertype in zip(xrange(len(names)),
+                                              names,
+                                              containertypes):
                 out = out + "{}\t{}:\t{}\n".format(i, containertype, name)
 
         return out
@@ -672,10 +695,10 @@ class Members(Aggregator, bundle._CollectionBase):
         """The data of the Container.
 
         Data are user-generated pandas objects (e.g. Series, DataFrames), numpy
-        arrays, or any pickleable python object that are stored in the Container
-        for easy recall later.  Each data instance is given its own directory
-        in the Container's tree.
-        
+        arrays, or any pickleable python object that are stored in the
+        Container for easy recall later.  Each data instance is given its own
+        directory in the Container's tree.
+
         """
         if not self._data:
             self._data = MemberData(self)
@@ -685,8 +708,10 @@ class MemberAgg(object):
     """Core functionality for member aggregators.
 
     """
+
     def __init__(self, members):
         self._members = members
+
 
 class MemberData(MemberAgg):
     """Manipulators for member data.
@@ -731,17 +756,17 @@ class MemberData(MemberAgg):
         :Keywords:
             *where*
                 conditions for what rows/columns to return
-            *start* 
+            *start*
                 row number to start selection
-            *stop*  
+            *stop*
                 row number to stop selection
             *columns*
                 list of columns to return; all columns returned by default
-            *iterator* 
+            *iterator*
                 if True, return an iterator [``False``]
             *chunksize*
                 number of rows to include in iteration; implies
-                ``iterator=True`` 
+                ``iterator=True``
 
         :Returns:
             *data*
@@ -763,10 +788,12 @@ class MemberData(MemberAgg):
 
         return agg
 
+
 class Data(Aggregator):
     """Interface to stored data.
 
     """
+
     def __repr__(self):
         return "<Data({})>".format(self._list())
 
@@ -792,8 +819,8 @@ class Data(Aggregator):
         if not data:
             out = "No Data"
         else:
-            out = agg +'\n'
-            out = out + majsep*seplength + '\n'
+            out = agg + '\n'
+            out = out + majsep * seplength + '\n'
             for datum in data:
                 out = out + "'{}'\n".format(datum)
         return out
@@ -822,15 +849,16 @@ class Data(Aggregator):
             *datafile*
                 datafile path; None if does not exist
             *datafiletype*
-                datafile type; either ``persistence.pddatafile`` or 
+                datafile type; either ``persistence.pddatafile`` or
                 ``persistence.npdatafile``
 
         """
         datafile = None
         datafiletype = None
-        for dfiletype in (persistence.pddatafile, persistence.npdatafile, persistence.pydatafile):
-            dfile = os.path.join(self._containerfile.get_location(), 
-                                    handle, dfiletype) 
+        for dfiletype in (persistence.pddatafile, persistence.npdatafile,
+                          persistence.pydatafile):
+            dfile = os.path.join(self._containerfile.get_location(),
+                                 handle, dfiletype)
             if os.path.exists(dfile):
                 datafile = dfile
                 datafiletype = dfiletype
@@ -847,21 +875,25 @@ class Data(Aggregator):
 
         ``Note``: methods wrapped with this decorator need to have *handle*
         as the first argument.
-        
+
         """
         @wraps(func)
         def inner(self, handle, *args, **kwargs):
             filename, filetype = self._get_datafile(handle)
 
             if filename:
-                self._datafile = persistence.DataFile(os.path.join(self._containerfile.get_location(), handle), 
-                        logger=self._logger, datafiletype=filetype) 
+                self._datafile = persistence.DataFile(
+                        os.path.join(self._containerfile.get_location(),
+                                     handle),
+                        logger=self._logger,
+                        datafiletype=filetype)
                 try:
                     out = func(self, handle, *args, **kwargs)
                 finally:
                     del self._datafile
             else:
-                self._logger.warning("No data named '{}' present.".format(handle))
+                self._logger.warning(
+                    "No data named '{}' present.".format(handle))
                 out = None
 
             return out
@@ -878,7 +910,7 @@ class Data(Aggregator):
 
         ``Note``: methods wrapped with this decorator need to have *handle*
         as the first argument.
-        
+
         """
         @wraps(func)
         def inner(self, handle, *args, **kwargs):
@@ -900,7 +932,7 @@ class Data(Aggregator):
         """Get dataset corresponding to given handle(s).
 
         If dataset doesn't exist, ``None`` is returned.
-        
+
         :Arguments:
             *handle*
                 name of data to retrieve; may also be a list of names
@@ -910,7 +942,7 @@ class Data(Aggregator):
                 stored data; if *handle* was a list, will be a list
                 of equal length with the stored data as members; will yield
                 ``None`` if requested data is nonexistent
-                
+
         """
         if isinstance(handle, list):
             out = list()
@@ -923,7 +955,7 @@ class Data(Aggregator):
 
     def __setitem__(self, handle, data):
         """Set dataset corresponding to given handle.
-        
+
         A data instance must be either a pandas Series, DataFrame, or Panel
         object. If dataset doesn't exist, it is added. If a dataset already
         exists for the given handle, it is replaced.
@@ -936,7 +968,7 @@ class Data(Aggregator):
 
         """
         self.add(handle, data)
-    
+
     def __delitem__(self, handle):
         """Remove a dataset.
 
@@ -947,7 +979,7 @@ class Data(Aggregator):
         :Arguments:
             *handle*
                 name of dataset to delete
-    
+
         """
         self.remove(handle)
 
@@ -968,7 +1000,7 @@ class Data(Aggregator):
 
         """
         self._datafile.add_data('main', data)
-        
+
     def remove(self, handle, **kwargs):
         """Remove a dataset, or some subset of a dataset.
 
@@ -987,13 +1019,13 @@ class Data(Aggregator):
         :Keywords:
             *where*
                 conditions for what rows/columns to remove
-            *start* 
+            *start*
                 row number to start selection
-            *stop*  
+            *stop*
                 row number to stop selection
             *columns*
                 columns to remove
-    
+
         """
         datafile, datafiletype = self._get_datafile(handle)
 
@@ -1004,13 +1036,14 @@ class Data(Aggregator):
             top = self._containerfile.get_location()
             directory = os.path.dirname(datafile)
             while directory != top:
-                try: 
+                try:
                     os.rmdir(directory)
                     directory = os.path.dirname(directory)
                 except OSError:
                     break
         else:
-            self._logger.info("No data named '{}' present. Nothing to remove".format(handle))
+            self._logger.info(
+                "No data named '{}' present. Nothing to remove".format(handle))
 
     @_write_datafile
     def _delete_data(self, handle, **kwargs):
@@ -1032,9 +1065,9 @@ class Data(Aggregator):
         :Keywords:
             *where*
                 conditions for what rows/columns to remove
-            *start* 
+            *start*
                 row number to start selection
-            *stop*  
+            *stop*
                 row number to stop selection
             *columns*
                 columns to remove
@@ -1053,7 +1086,7 @@ class Data(Aggregator):
             top = self._containerfile.get_location()
             directory = os.path.dirname(datafile)
             while directory != top:
-                try: 
+                try:
                     os.rmdir(directory)
                     directory = os.path.dirname(directory)
                 except OSError:
@@ -1063,7 +1096,7 @@ class Data(Aggregator):
     def retrieve(self, handle, **kwargs):
         """Retrieve stored data.
 
-        The stored data structure is read from disk and returned. 
+        The stored data structure is read from disk and returned.
 
         If dataset doesn't exist, ``None`` is returned.
 
@@ -1085,7 +1118,7 @@ class Data(Aggregator):
             retrieve('mydata', where='index = 3')
 
         See :meth:pandas.HDFStore.select() for more information.
-        
+
         :Arguments:
             *handle*
                 name of data to retrieve
@@ -1093,17 +1126,17 @@ class Data(Aggregator):
         :Keywords:
             *where*
                 conditions for what rows/columns to return
-            *start* 
+            *start*
                 row number to start selection
-            *stop*  
+            *stop*
                 row number to stop selection
             *columns*
                 list of columns to return; all columns returned by default
-            *iterator* 
+            *iterator*
                 if True, return an iterator [``False``]
             *chunksize*
                 number of rows to include in iteration; implies
-                ``iterator=True`` 
+                ``iterator=True``
 
         :Returns:
             *data*
@@ -1115,7 +1148,7 @@ class Data(Aggregator):
     @_write_datafile
     def append(self, handle, data):
         """Append rows to an existing dataset.
-    
+
         The object must be of the same pandas class (Series, DataFrame, Panel)
         as the existing dataset, and it must have exactly the same columns
         (names included).
@@ -1128,7 +1161,7 @@ class Data(Aggregator):
 
         """
         self._datafile.append_data('main', data)
-    
+
     def _list(self):
         """List available datasets.
 
@@ -1140,11 +1173,13 @@ class Data(Aggregator):
         datasets = list()
         top = self._containerfile.get_location()
         for root, dirs, files in os.walk(top):
-            if (persistence.pddatafile in files) or (persistence.npdatafile in files) or (persistence.pydatafile in files):
+            if ((persistence.pddatafile in files) or
+                    (persistence.npdatafile in files) or
+                    (persistence.pydatafile in files)):
                 datasets.append(os.path.relpath(root, start=top))
 
         datasets.sort()
-    
+
         return datasets
 
     def locate(self, handle):
@@ -1170,8 +1205,8 @@ class Data(Aggregator):
         This method does the small but annoying work of generating a full path
         for the file.
 
-        This method doesn't care whether or not the path exists; it simply returns
-        the path it's asked to build.
+        This method doesn't care whether or not the path exists; it simply
+        returns the path it's asked to build.
 
         :Arguments:
             *handle*
@@ -1184,488 +1219,5 @@ class Data(Aggregator):
                 absolute path for file
 
         """
-        return os.path.join(os.path.dirname(self._get_datafile(handle)[0]), filename)
-
-
-#NOTE: OUT OF DATE; UNUSED AT MOMENT
-class Database(Aggregator):
-    """Database object for tracking and coordinating Containers.
-
-    The Database object stores information on all Containers it is made aware of.
-    This centralized storage allows Containers to find each other when necessary;
-    this is especially important for Groups.
-
-    This object is the interface of Container objects to the database file.
-
-    """
-
-    def __init__(self, database, **kwargs):
-        """Generate Database object for the first time, or interface with an existing one.
-
-        :Arguments:
-            *database*
-                directory containing a Database file; if no Database file is
-                found, a new one is generated
-
-        """
-        super(Database, self).__init__()
-        self._database = dict()              # the database data itself
-
-        database = os.path.abspath(database)
-        dbfile = os.path.join(database, self._databasefile)
-        if os.path.exists(dbfile):
-            self._regenerate(database, **kwargs)
-        else:
-            self._generate(database, **kwargs)
-
-    def _generate(self, database):
-        """Generate a new database.
-
-        """
-        self._database['basedir'] = database
-        self._build_metadata()
-        self._build_attributes()
-
-        # write to database file
-        self.commit()
-        self._start_logger(database)
-
-    def _regenerate(self, database):
-        """Re-generate existing database.
-
-        """
-        self.database['basedir'] = database
-        self.refresh()
-        self._start_logger(database)
-
-        self._check_location(database)
-
-        # rebuild missing parts
-        self._build_metadata()
-        self._build_attributes()
-
-    def _handshake(self):
-        """Run check to ensure that database is fine.
-
-        """
-        #TODO: add various checks to ensure things are in working order
-        return ('basedir' in self.database)
-
-    def search(self, searchstring):
-        """Search the Database for Containers that match certain criteria.
-
-        Results are printed in digest form to the screen. To print full
-        metadata for all matching containers, use print='full'
-
-        :Arguments:
-            *searchstring*
-                string giving the search query
-
-        :Keywords:
-            *print*
-                format of results printed to ouptut
-
-        :Returns:
-            *locations*
-                filesystem paths to Containers that match criteria
-
-        """
-        #TODO: Add in selection system similar to that implemented in
-        # MDAnalysis for atom selections. This one, however, will parse
-        # metadata elements, and shouldn't be quite so complex
-
-        return
-
-    def add(self, *containers, **kwargs):
-        """Add Container to Database.
-
-        :Arguments:
-            *containers*
-                Containers to add, each given as a path to a Container directory
-                or as a generated Container object
-
-        """
-        for container in containers:
-            if isinstance(container, basestring) and os.path.isdir(container):
-                with self.util.open(os.path.join(container, self._containerfile), 'r') as f:
-                    meta = yaml.load(f)
-                uuid = meta['uuid']
-                meta['basedir'] = os.path.abspath(container)
-                self.database['containers'][uuid] = meta
-                with self.util.open(os.path.join(container, self._containerfile), 'w') as f:
-                    yaml.dump(meta, f)
-            else:
-                uuid = container.metadata['uuid']
-                self.database['containers'][uuid] = container.metadata
-
-            self.database['containers'][uuid]['database'] = self.database['basedir']
-
-            # since this method is used for Container init, basedir may not
-            # be defined in metadata yet
-            if not ('basedir' in self.database['containers'][uuid]):
-                container.metadata['basedir'] = self._build_basedir(uuid)
-                self.database['containers'][uuid]['basedir'] = container.metadata['basedir']
-                with self.util.open(os.path.join(container.metadata['basedir'], self._containerfile), 'w') as f:
-                    yaml.dump(self.database['containers'][uuid], f)
-                self.commit()
-            else:
-                self.push(uuid)
-            self._logger.info("Added {} container '{}' to database.".format(self.database['containers'][uuid]['class'], self.database['containers'][uuid]['name']))
-
-    def remove(self, *containers, **kwargs):
-        """Remove Container from Database.
-
-        Note: if Container name is used to specify removal and more than one
-        Container has that name, then both will be removed.
-
-        :Arguments:
-            *containers*
-                Containers to remove, each given as a path to a Container directory,
-                a Container UUID, or a Container's given name
-
-        :Keywords:
-            *hard*
-                if True, delete Container object from filesystem too ``[False]``
-            *all*
-                if True, will remove all entries ``[False]``
-        """
-        all_conts = kwargs.pop('all', False)
-
-        if all_conts:
-            containers = [ x for x in self.database['containers'] ]
-
-        for container in containers:
-            if os.path.isdir(container):
-                basedir = os.path.abspath(container)
-                contype = ['basedir']
-            else:
-                contype = ['uuid', 'name']
-
-            matches = []
-            for entry in self.database['containers'].values():
-                for criteria in contype:
-                    if entry[criteria] == container:
-                        matches.append(entry['uuid'])
-
-            for match in matches:
-                self.database['containers'].pop(match, None)
-
-    def clean(self):
-        """Clear entries from Database corresponding to Containers that can't be found.
-
-        """
-        self._logger.info("Cleaning out entries that cannot be found.")
-
-        uuids = [ x for x in self.database['containers'] ]
-        self._get_containers(*uuids)
-
-        for uuid in uuids:
-            if not self.database['containers'][uuid]['basedir']:
-                self._logger.info("Removing: {} ({})".format(self.database['containers'][uuid]['name'], uuid))
-                self.database['containers'].pop(uuid)
-        self._logger.info("Database is clean.")
-
-    def commit(self):
-        """Save the current state of the database to its file.
-
-        """
-        self.util.makedirs(self.database['basedir'])
-        with self.util.open(os.path.join(self.database['basedir'], self._databasefile), 'w') as f:
-            yaml.dump(self.database, f)
-
-    def refresh(self):
-        """Reload contents of database file.
-
-        """
-        dbfile = os.path.join(self.database['basedir'], self._databasefile)
-        with self.util.open(dbfile, 'r') as f:
-            self.database = yaml.load(f)
-
-    def pull(self, *containers, **kwargs):
-        """Update information stored in Database from Container metadata.
-
-        Note: if Container name is used to specify the update, all Containers
-        with that name will be updated in the Database.
-
-        :Arguments:
-            *args*
-                Containers to update, each given as a path to a Container directory,
-                a Container UUID, or a Container's given name
-
-        :Keywords:
-            *all*
-                if True, will update entries for all known Containers from metadata files
-        """
-        all_conts = kwargs.pop('all', False)
-
-        if all_conts:
-            containers = [ x for x in self.database['containers'] ]
-
-        matches = []
-        for container in containers:
-            if os.path.isdir(container):
-                basedir = os.path.abspath(container)
-                contype = ['basedir']
-            else:
-                contype = ['uuid', 'name']
-
-            for entry in self.database['containers'].values():
-                for criteria in contype:
-                    if entry[criteria] == container:
-                        matches.append(entry['uuid'])
-
-        # ensure we are finding the right Container
-        basedirs = self._get_containers(*matches)
-
-        for i in xrange(len(matches)):
-            if basedirs[i]:
-                with self.util.open(os.path.join(basedirs[i], self._containerfile), 'r') as f:
-                    self.database['containers'][matches[i]] = yaml.load(f)
-        self.commit()
-
-    def push(self, *containers, **kwargs):
-        """Update Container metadata with information stored in Database.
-
-        This is the opposite of `:meth:self.pull()`
-
-        Note: if Container name is used to specify the update, all Containers
-        with that name will have metadata updated.
-
-        :Arguments:
-            *containers*
-                Containers to update; either a path to a Container directory,
-                Container UUID, or a Container's given name
-        :Keywords:
-            *all*
-                if True, will update all known Container metadata files from entries
-        """
-        all_conts = kwargs.pop('all', False)
-
-        if all_conts:
-            containers = [ x for x in self.database['containers'] ]
-
-        matches = []
-        for container in containers:
-            if os.path.isdir(container):
-                basedir = os.path.abspath(container)
-                contype = ['basedir']
-            else:
-                contype = ['uuid', 'name']
-
-            for entry in self.database['containers'].values():
-                for criteria in contype:
-                    if entry[criteria] == container:
-                        matches.append(entry['uuid'])
-
-        # since this method is used for Container init, basedir may not
-        # be defined in metadata yet
-        for match in matches:
-            if not ('basedir' in self.database['containers'][match]):
-                self.database['containers'][match]['basedir'] = self._build_basedir(match)
-
-        # ensure we are finding the right Container
-        basedirs = self._get_containers(*matches)
-
-        for i in xrange(len(matches)):
-            if basedirs[i]:
-                with self.util.open(os.path.join(basedirs[i], self._containerfile), 'w') as f:
-                    yaml.dump(self.database['containers'][matches[i]], f)
-        self.commit()
-
-    def _get_containers(self, *uuids):
-        """Get path to Containers.
-
-        Will perform checks to ensure the Container returned matches the uuid given.
-        It will go looking for the Container if not found at last known location.
-
-        :Arguments:
-            *uuids*
-                unique ids for Containers to return
-
-        :Returns:
-            *containers*
-                tuple giving paths to Containers
-        """
-        containers = [None]*len(uuids)
-        missing = [None]*len(uuids)
-        for i in xrange(len(uuids)):
-            if not self.database['containers'][uuids[i]]['basedir']:
-                continue
-
-            if os.path.exists(os.path.join(self.database['containers'][uuids[i]]['basedir'], self._containerfile)):
-                with self.util.open(os.path.join(self.database['containers'][uuids[i]]['basedir'], self._containerfile), 'r') as f:
-                    meta = yaml.load(f)
-                if meta['uuid'] == uuids[i]:
-                    containers[i] = self.database['containers'][uuids[i]]['basedir']
-                else:
-                    self._logger.info("Missing: {} ({})".format(self.database['containers'][uuids[i]]['name'], uuids[i]))
-                    missing[i] = uuids[i]
-            else:
-                self._logger.info("Missing: {} ({})".format(self.database['containers'][uuids[i]]['name'], uuids[i]))
-                missing[i] = uuids[i]
-
-        if any(missing):
-            missing = self._locate_containers(*missing)
-
-        # build final list of paths
-        for i in xrange(len(uuids)):
-            if not containers[i]:
-                containers[i] = missing[i]
-
-        return containers
-
-    def discover(self):
-        """Traverse filesystem downward from Database directory and add all new Containers found.
-
-        """
-        for root, dirs, files in os.walk(self.database['basedir']):
-            if self._containerfile in files:
-                dirs = []
-                self.add(root)
-        self.commit()
-
-    def merge(self, database):
-        """Merge another database's contents into this one.
-
-        :Arguments:
-            *database*
-                path to database or Database object
-
-        """
-
-    def split(self, database):
-        """Split selected Containers off of database into another.
-
-        :Arguments:
-            *database*
-                path to destination database or Database object
-        """
-
-    def _check_location(self, database, **kwargs):
-        """Check Database location; if changed, send new location to all Containers.
-
-        :Keywords:
-            *force*
-                if True, new location sent to all Containers even if unchanged;
-                default False
-        """
-        force = kwargs.pop('force', False)
-        database = os.path.abspath(database)
-
-        if (database != self.database['basedir']) or force:
-            self.database['basedir'] = database
-
-            # update entries first
-            self.pull(all=True)
-
-            for entry in self.database['containers'].values():
-                entry['database'] = self.database['basedir']
-
-            self.commit()
-            self.push(all=True)
-
-    def _build_metadata(self, **kwargs):
-        """Build metadata. Runs each time object is generated.
-
-        Only adds keys; never modifies existing ones.
-
-        """
-        attributes = {'class': self.__class__.__name__,
-                      'name': kwargs.pop('name', os.path.basename(self.database['basedir'])),
-                      'containers': dict(),
-                      }
-
-        for key in attributes:
-            if not key in self.database:
-                self.database[key] = attributes[key]
-
-    def _build_attributes(self):
-        """Build attributes of Database. Runs each time object is generated.
-
-        """
-
-    def _locate_containers(self, *uuids):
-        """Find Containers by traversing downward through the filesystem.
-
-        Looks in each directory below the Database. If found, the basedir for the
-        Container is updated in both metadata and the Database.
-
-        :Arguments:
-            *uuids*
-                unique ids for Containers to return
-        """
-        self._logger.info("Searching for {} Containers.".format(len(uuids) - uuids.count(None)))
-        containers = [None]*len(uuids)
-        for root, dirs, files in os.walk(self.database['basedir']):
-            if self._containerfile in files:
-                dirs = []
-                with self.util.open(os.path.join(root, self._containerfile), 'r') as f:
-                    meta = yaml.load(f)
-                try:
-                    i = uuids.index(meta['uuid'])
-                    containers[i] = os.path.abspath(root)
-                    meta['basedir'] = containers[i]
-
-                    # update basedir in Container metadata and in Database
-                    with self.util.open(os.path.join(root, self._containerfile), 'w') as f:
-                        yaml.dump(meta, f)
-                    self.database['containers'][uuids[i]]['basedir'] = containers[i]
-                    self._logger.info("Found: {} ({})\nLocation: {}".format(meta['name'], uuids[i], meta['basedir']))
-                except ValueError:
-                    pass
-
-        for i in xrange(len(containers)):
-            if uuids[i]:
-                if not containers[i]:
-                    self.database['containers'][uuids[i]]['basedir'] = None
-                    self._logger.warning("Not found: {} ({})".format(self.database['containers'][uuids[i]]['name'], uuids[i]))
-
-        self._logger.info("{} Containers not found.".format(containers.count(None) - uuids.count(None)))
-        return containers
-
-    def _build_basedir(self, uuid):
-        """Build basedir location based on database location, Container class, and Container name.
-
-        :Arguments:
-            *database*
-                directory where database resides
-            *name*
-        """
-        database = self.database['basedir']
-        container = self.database['containers'][uuid]
-
-        # if name given and directory with name doesn't already exist, make named basedir
-        if container['name'] and not os.path.exists(os.path.join(database, container['class'], container['name'])):
-            dest = container['name']
-        # if basedir already exists, use UUID instead
-        else:
-            dest = container['uuid']
-
-        dest = os.path.join(database, container['class'], dest)
-        self.util.makedirs(dest)
-
-        return dest
-
-    def _start_logger(self, basedir):
-        """Start up the logger.
-
-        """
-        # set up logging
-        self._logger = logging.getLogger('{}.{}'.format(self.__class__.__name__, self.database['name']))
-
-        if not self._logger.handlers:
-            self._logger.setLevel(logging.INFO)
-
-            # file handler
-            logfile = os.path.join(basedir, self._containerlog)
-            fh = logging.FileHandler(logfile)
-            ff = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-            fh.setFormatter(ff)
-            self._logger.addHandler(fh)
-
-            # output handler
-            ch = logging.StreamHandler(sys.stdout)
-            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-            ch.setFormatter(cf)
-            self._logger.addHandler(ch)
-
+        return os.path.join(os.path.dirname(self._get_datafile(handle)[0]),
+                            filename)

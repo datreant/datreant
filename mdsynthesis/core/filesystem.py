@@ -2,7 +2,8 @@
 Functions and classes for finding Containers in the filesystem.
 
 """
-import os, sys
+import os
+import sys
 import glob
 import time
 
@@ -18,6 +19,7 @@ def statefilename(containertype, uuid):
 
     """
     return "{}.{}.{}".format(containertype, uuid, persistence.statefile_ext)
+
 
 def glob_container(container):
     """Given a Container's directory, get its state file.
@@ -36,17 +38,20 @@ def glob_container(container):
     """
     fileglob = list()
     for containertype in ('Container', 'Sim', 'Group'):
-        fileglob.extend(glob.glob(os.path.join(container, '{}.*.h5'.format(containertype))))
+        fileglob.extend(
+            glob.glob(os.path.join(container,
+                                   '{}.*.h5'.format(containertype))))
 
-    paths = [ os.path.abspath(x) for x in fileglob ]
+    paths = [os.path.abspath(x) for x in fileglob]
     return paths
+
 
 def path2container(*paths):
     """Return Containers from directories or full paths containing Container
         state files.
 
     *Note*: If there are multiple state files in a given directory, Containers
-    will be returned for each. 
+            will be returned for each.
 
     :Arguments:
         *paths*
@@ -84,6 +89,7 @@ def path2container(*paths):
                 containers.append(mds.Group(path))
 
     return containers
+
 
 class Foxhound(object):
     """Locator for Containers.
@@ -363,14 +369,14 @@ class Foxhound(object):
     def discover(self, path):
         pass
 
-    #OLD
+    # OLD
     def _locate_database(self, **kwargs):
         """Find database; to be used if it can't be found.
 
         The Container looks upward from its location on the filesystem through
-        the file heirarchy, looking for a Database file. The directory containing
-        the first such file found will be returned. None is returned if no such
-        files found.
+        the file heirarchy, looking for a Database file. The directory
+        containing the first such file found will be returned. None is returned
+        if no such files found.
 
         :Keywords:
             *startdir*
@@ -380,10 +386,10 @@ class Foxhound(object):
         :Returns:
             *database*
                 directory of located Database; if no Database found, is None
-        
+
         """
         startdir = kwargs.pop('startdir', None)
-        
+
         if not startdir:
             startdir = self.metadata['basedir']
 
@@ -391,19 +397,21 @@ class Foxhound(object):
         startdir = os.path.abspath(startdir)
         directory = startdir
         found = False
-        
-        self._logger.info("Beginning search for database from {}".format(directory))
+
+        self._logger.info(
+            "Beginning search for database from {}".format(directory))
 
         while (directory != '/') and (not found):
             directory, tail = os.path.split(directory)
             candidates = glob.glob(os.path.join(directory, self._databasefile))
-            
+
             if candidates:
-                self._logger.info("Database candidate located: {}".format(candidates[0]))
+                self._logger.info(
+                    "Database candidate located: {}".format(candidates[0]))
                 basedir = os.path.dirname(candidates[0])
                 db = Database.Database(basedir)
                 found = db._handshake()
-        
+
         if not found:
             self._logger.warning("No database found!")
             basedir = None

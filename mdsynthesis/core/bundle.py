@@ -147,6 +147,7 @@ class _CollectionBase(object):
 
         return memberlist
 
+
 class _BundleBackend():
     """Backend class for Bundle. 
     
@@ -296,28 +297,30 @@ class _BundleBackend():
         """
         return self.table['abspath'].flatten()
 
+
 class Bundle(_CollectionBase):
     """Non-persistent Container for Sims and Groups.
-    
+
     A Bundle is basically an indexable set. It is often used to return the
     results of a query on a Coordinator or a Group, but can be used on its
     own as well.
 
     """
+
     def __init__(self, *containers, **kwargs):
         """Generate a Bundle from any number of Containers.
-    
+
         :Arguments:
             *containers*
                 list giving either Sims, Groups, or paths giving the
                 directories of the state files for such objects in the
                 filesystem
-    
+
         :Keywords:
             *flatten* [NOT IMPLEMENTED]
                 if ``True``, will recursively obtain members of any Groups;
-                only Sims will be present in the bunch 
-         
+                only Sims will be present in the bunch
+
         """
         self._backend = _BundleBackend()
         self._cache = dict()
@@ -326,4 +329,3 @@ class Bundle(_CollectionBase):
 
     def __repr__(self):
         return "<Bundle({})>".format(self._list())
-

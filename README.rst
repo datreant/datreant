@@ -2,7 +2,7 @@
 MDSynthesis: a persistence engine for intermediate molecular dynamics data
 ==========================================================================
 
-|docs| |build|
+|docs| |build| |cov|
 
 Although the raw data for any study involving molecular dynamics simulations are
 the full trajectories themselves, often we are most interested in
@@ -67,7 +67,11 @@ edges and bugs. Issues and pull requests welcome!
     :scale: 100%
     :target: https://readthedocs.org/projects/mdsynthesis
 
-.. |build| image:: https://travis-ci.org/Becksteinlab/MDSynthesis.svg?branch=develop
+.. |build| image:: https://travis-ci.org/Becksteinlab/MDSynthesis.svg?branch=master
     :alt: Build Status
-    :scale: 100%
     :target: https://travis-ci.org/Becksteinlab/MDSynthesis
+
+.. |cov| image:: http://codecov.io/github/Becksteinlab/MDSynthesis/coverage.svg?branch=master
+    :alt: Code Coverage
+    :scale: 100%
+    :target: http://codecov.io/github/Becksteinlab/MDSynthesis?branch=master

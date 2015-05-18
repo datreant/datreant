@@ -40,11 +40,13 @@ namelength = 55
 
 # TODO: add careful checks that file is actually a state file
 def containerfile(filename, logger=None, **kwargs):
-    """Generate or regenerate the appropriate container file instance from filename.
+    """Generate or regenerate the appropriate container file instance from
+    filename.
 
     :Arguments:
         *filename*
-            path to state file (existing or to be created), including the filename
+            path to state file (existing or to be created), including the
+            filename
         *logger*
             logger instance to pass to container file instance
 
@@ -58,29 +60,30 @@ def containerfile(filename, logger=None, **kwargs):
         statefileclass = SimFile
     elif 'Group' in basename:
         statefileclass = GroupFile
-    
+
     return statefileclass(filename, logger=logger, **kwargs)
 
 
 class File(object):
     """File object base class. Implements file locking and reloading methods.
-    
+
     """
+
     def __init__(self, filename, logger=None, **kwargs):
         """Create File instance for interacting with file on disk.
 
-        All files in MDSynthesis should be accessible by high-level
-        methods without having to worry about simultaneous reading and writing by
-        other processes. The File object includes methods and infrastructure
-        for ensuring shared and exclusive locks are consistently applied before
+        All files in MDSynthesis should be accessible by high-level methods
+        without having to worry about simultaneous reading and writing by other
+        processes. The File object includes methods and infrastructure for
+        ensuring shared and exclusive locks are consistently applied before
         reads and writes, respectively. It handles any other low-level tasks
         for maintaining file integrity.
 
         :Arguments:
-           *filename*
-              name of file on disk object corresponds to 
-           *logger*
-              logger to send warnings and errors to
+            *filename*
+                name of file on disk object corresponds to
+            *logger*
+                logger to send warnings and errors to
 
         """
         # filter NaturalNameWarnings from pytables, when they arrive
@@ -96,14 +99,15 @@ class File(object):
 
         """
         # delete current logger
-        try: 
+        try:
             del self.logger
         except AttributeError:
             pass
 
         # log to standard out if no logger given
         if not logger:
-            self.logger = logging.getLogger('{}'.format(self.__class__.__name__))
+            self.logger = logging.getLogger(
+                '{}'.format(self.__class__.__name__))
             self.logger.setLevel(logging.INFO)
 
             ch = logging.StreamHandler(sys.stdout)
@@ -122,11 +126,11 @@ class File(object):
 
         :Arguments:
             *f*
-              file handle
+                file handle
 
         :Returns:
-           *success*
-              True if shared lock successfully obtained
+            *success*
+                True if shared lock successfully obtained
         """
         fcntl.lockf(f, fcntl.LOCK_SH)
 
@@ -134,7 +138,7 @@ class File(object):
 
     def _exlock(self, f):
         """Get exclusive lock on file.
-    
+
         Using fcntl.lockf, an exclusive lock on the file is obtained. If a
         shared or exclusive lock is already held on the file by another
         process, then the method waits until it can obtain the lock.
@@ -144,28 +148,28 @@ class File(object):
                 file handle
 
         :Returns:
-           *success*
-              True if exclusive lock successfully obtained
+            *success*
+                True if exclusive lock successfully obtained
         """
         fcntl.lockf(f, fcntl.LOCK_EX)
-    
+
         return True
 
     def _unlock(self, f):
         """Remove exclusive or shared lock on file.
 
-        WARNING: It is very rare that this is necessary, since a file must be unlocked
-        before it is closed. Furthermore, locks disappear when a file is closed anyway.
-        This method will remain here for now, but may be removed in the future if
-        not needed (likely).
+        WARNING: It is very rare that this is necessary, since a file must be
+        unlocked before it is closed. Furthermore, locks disappear when a file
+        is closed anyway.  This method will remain here for now, but may be
+        removed in the future if not needed (likely).
 
         :Arguments:
             *f*
-              file handle
+                file handle
 
         :Returns:
-           *success*
-              True if lock removed
+            *success*
+                True if lock removed
         """
         fcntl.lockf(f, fcntl.LOCK_UN)
 
@@ -173,14 +177,15 @@ class File(object):
 
     def _check_existence(self):
         """Check for existence of file.
-    
+
         """
         return os.path.exists(self.filename)
 
     @staticmethod
     def _read_state(func):
-        """Decorator for opening state file for reading and applying shared lock.
-        
+        """Decorator for opening state file for reading and applying shared
+        lock.
+
         Applying this decorator to a method will ensure that the file is opened
         for reading and that a shared lock is obtained before that method is
         executed. It also ensures that the lock is removed and the file closed
@@ -201,15 +206,15 @@ class File(object):
             return out
 
         return inner
-    
+
     @staticmethod
     def _write_state(func):
         """Decorator for opening state file for writing and applying exclusive lock.
-        
+
         Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
+        for appending and that an exclusive lock is obtained before that method
+        is executed. It also ensures that the lock is removed and the file
+        closed after the method returns.
 
         """
         @wraps(func)
@@ -230,17 +235,19 @@ class ContainerFile(File):
 
     """
     class _Meta(tables.IsDescription):
+
         """Table definition for metadata.
 
         All strings limited to hardcoded size for now.
 
         """
-        # version of MDSynthesis object file data corresponds to 
+        # version of MDSynthesis object file data corresponds to
         # allows future-proofing of old objects so that formats of new releases
         # can be automatically built from old ones
         version = tables.StringCol(15)
 
     class _Coordinator(tables.IsDescription):
+
         """Table definition for coordinator info.
 
         This information is kept separate from other metadata to allow the
@@ -265,34 +272,34 @@ class ContainerFile(File):
         category = tables.StringCol(namelength)
         value = tables.StringCol(namelength)
 
-    def __init__(self, filename, logger=None, **kwargs): 
+    def __init__(self, filename, logger=None, **kwargs):
         """Initialize Container state file.
 
-        This is the base class for all Container state files. It generates 
-        data structure elements common to all Containers. It also implements
+        This is the base class for all Container state files. It generates data
+        structure elements common to all Containers. It also implements
         low-level I/O functionality.
 
         :Arguments:
-           *filename*
-              path to file
-           *logger*
-              Container's logger instance
+            *filename*
+                path to file
+            *logger*
+                Container's logger instance
 
         :Keywords:
-           *containertype*
-              Container type: Sim or Group
-           *name*
-              user-given name of Container object
-           *coordinator*
-              directory in which coordinator state file can be found [None]
-           *categories*
-              user-given dictionary with custom keys and values; used to
-              give distinguishing characteristics to object for search
-           *tags*
-              user-given list with custom elements; used to give distinguishing
-              characteristics to object for search
-           *version*
-              version of MDSynthesis file was generated with
+            *containertype*
+                Container type: Sim or Group
+            *name*
+                user-given name of Container object
+            *coordinator*
+                directory in which coordinator state file can be found [None]
+            *categories*
+                user-given dictionary with custom keys and values; used to
+                give distinguishing characteristics to object for search
+            *tags*
+                user-given list with custom elements; used to give
+                distinguishing characteristics to object for search
+            *version*
+                version of MDSynthesis file was generated with
 
         .. Note:: kwargs passed to :meth:`create`
 
@@ -311,20 +318,20 @@ class ContainerFile(File):
         """Build state file and common data structure elements.
 
         :Keywords:
-           *containertype*
-              Container type: Sim or Group
-           *name*
-              user-given name of Container object
-           *coordinator*
-              directory in which coordinator state file can be found [None]
-           *categories*
-              user-given dictionary with custom keys and values; used to
-              give distinguishing characteristics to object for search
-           *tags*
-              user-given list with custom elements; used to give distinguishing
-              characteristics to object for search
-           *version*
-              version of MDSynthesis file was generated with
+            *containertype*
+                Container type: Sim or Group
+            *name*
+                user-given name of Container object
+            *coordinator*
+                directory in which coordinator state file can be found [None]
+            *categories*
+                user-given dictionary with custom keys and values; used to
+                give distinguishing characteristics to object for search
+            *tags*
+                user-given list with custom elements; used to give
+                distinguishing characteristics to object for search
+            *version*
+                version of MDSynthesis file was generated with
         """
         containertype = kwargs.pop('containertype', None)
 
@@ -341,11 +348,11 @@ class ContainerFile(File):
         # categories table
         categories = kwargs.pop('categories', dict())
         self.add_categories(**categories)
-    
+
     @File._read_state
     def get_containertype(self):
         """Get Container type: Sim or Group.
-    
+
         """
         table = self.handle.get_node('/', 'meta')
         return table.cols.containertype[0]
@@ -366,7 +373,8 @@ class ContainerFile(File):
                 table = self.handle.get_node('/', 'meta')
                 table.cols.containertype[0] = containertype
             except tables.NoSuchNodeError:
-                table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+                table = self.handle.create_table(
+                    '/', 'meta', self._Meta, 'metadata')
                 table.row['containertype'] = containertype
                 table.row.append()
 
@@ -405,7 +413,8 @@ class ContainerFile(File):
             table = self.handle.get_node('/', 'meta')
             table.cols.version[0] = version
         except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'meta', self._Meta, 'metadata')
+            table = self.handle.create_table(
+                '/', 'meta', self._Meta, 'metadata')
             table.row['version'] = version
             table.row.append()
 
@@ -416,7 +425,7 @@ class ContainerFile(File):
         :Returns:
             *coordinator*
                 absolute path to Coordinator directory
-    
+
         """
         table = self.handle.get_node('/', 'coordinator')
         out = table.cols.abspath[0]
@@ -440,13 +449,15 @@ class ContainerFile(File):
             else:
                 table.cols.abspath[0] = None
         except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'coordinator', self._Coordinator, 'coordinator information')
+            table = self.handle.create_table(
+                '/', 'coordinator', self._Coordinator,
+                'coordinator information')
             if coordinator:
                 table.row['abspath'] = os.path.abspath(coordinator)
             else:
                 table.row['abspath'] = None
             table.row.append()
-    
+
     @File._read_state
     def get_tags(self):
         """Get all tags as a list.
@@ -456,8 +467,8 @@ class ContainerFile(File):
                 list of all tags
         """
         table = self.handle.get_node('/', 'tags')
-        return [ x['tag'] for x in table.iterrows() ]
-        
+        return [x['tag'] for x in table.iterrows()]
+
     @File._write_state
     def add_tags(self, *tags):
         """Add any number of tags to the Container.
@@ -466,8 +477,9 @@ class ContainerFile(File):
         one another. Sometimes preferable to categories.
 
         :Arguments:
-           *tags*
-              Tags to add. Must be convertable to strings using the str() builtin.
+            *tags*
+                Tags to add. Must be convertable to strings using the str()
+                builtin.
 
         """
         try:
@@ -476,10 +488,10 @@ class ContainerFile(File):
             table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
 
         # ensure tags are unique (we don't care about order)
-        tags = set([ str(tag) for tag in tags ])
+        tags = set([str(tag) for tag in tags])
 
         # remove tags already present in metadata from list
-        #TODO: more efficient way to do this?
+        # TODO: more efficient way to do this?
         tags_present = list()
         for row in table:
             for tag in tags:
@@ -515,10 +527,10 @@ class ContainerFile(File):
         if purge:
             table.remove()
             table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
-            
+
         else:
             # remove redundant tags from given list if present
-            tags = set([ str(tag) for tag in tags ])
+            tags = set([str(tag) for tag in tags])
 
             # get matching rows
             rowlist = list()
@@ -527,19 +539,20 @@ class ContainerFile(File):
                     if (row['tag'] == tag):
                         rowlist.append(row.nrow)
 
-            # must include a separate condition in case all rows will be removed
-            # due to a limitation of PyTables
+            # must include a separate condition in case all rows will be
+            # removed due to a limitation of PyTables
             if len(rowlist) == table.nrows:
                 table.remove()
-                table = self.handle.create_table('/', 'tags', self._Tags, 'tags')
+                table = self.handle.create_table(
+                    '/', 'tags', self._Tags, 'tags')
             else:
                 rowlist.sort()
                 j = 0
-                # delete matching rows; have to use j to shift the register as we
-                # delete rows
+                # delete matching rows; have to use j to shift the register as
+                # we delete rows
                 for i in rowlist:
-                    table.remove_row(i-j)
-                    j=j+1
+                    table.remove_row(i - j)
+                    j = j + 1
 
     @File._read_state
     def get_categories(self):
@@ -547,10 +560,10 @@ class ContainerFile(File):
 
         :Returns:
             *categories*
-                dictionary of all categories 
+                dictionary of all categories
         """
         table = self.handle.get_node('/', 'categories')
-        return { x['category']: x['value'] for x in table.iterrows() }
+        return {x['category']: x['value'] for x in table.iterrows()}
 
     @File._write_state
     def add_categories(self, **categories):
@@ -559,24 +572,25 @@ class ContainerFile(File):
         Categories are key-value pairs of strings that serve to differentiate
         Containers from one another. Sometimes preferable to tags.
 
-        If a given category already exists (same key), the value given will replace
-        the value for that category.
+        If a given category already exists (same key), the value given will
+        replace the value for that category.
 
         :Keywords:
             *categories*
-                Categories to add. Keyword used as key, value used as value. Both
-                must be convertible to strings using the str() builtin.
+                Categories to add. Keyword used as key, value used as value.
+                Both must be convertible to strings using the str() builtin.
 
         """
         try:
             table = self.handle.get_node('/', 'categories')
         except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
+            table = self.handle.create_table(
+                '/', 'categories', self._Categories, 'categories')
 
         table = self.handle.get_node('/', 'categories')
 
-        # remove categories already present in metadata from dictionary 
-        #TODO: more efficient way to do this?
+        # remove categories already present in metadata from dictionary
+        # TODO: more efficient way to do this?
         for row in table:
             for key in categories.keys():
                 if (row['category'] == key):
@@ -585,7 +599,7 @@ class ContainerFile(File):
                     # dangerous? or not since we are iterating through
                     # categories.keys() and not categories?
                     categories.pop(key)
-        
+
         # add new categories
         for key in categories.keys():
             table.row['category'] = key
@@ -595,10 +609,10 @@ class ContainerFile(File):
     @File._write_state
     def del_categories(self, *categories, **kwargs):
         """Delete categories from Container.
-    
+
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
-         
+
         :Arguments:
             *categories*
                 Categories to delete.
@@ -606,17 +620,18 @@ class ContainerFile(File):
         :Keywords:
             *all*
                 When True, delete all categories [``False``]
-    
+
         """
         table = self.handle.get_node('/', 'categories')
         purge = kwargs.pop('all', False)
 
         if purge:
             table.remove()
-            table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
+            table = self.handle.create_table(
+                '/', 'categories', self._Categories, 'categories')
         else:
             # remove redundant categories from given list if present
-            categories = set([ str(category) for category in categories ])
+            categories = set([str(category) for category in categories])
 
             # get matching rows
             rowlist = list()
@@ -625,20 +640,21 @@ class ContainerFile(File):
                     if (row['category'] == category):
                         rowlist.append(row.nrow)
 
-            # must include a separate condition in case all rows will be removed
-            # due to a limitation of PyTables
+            # must include a separate condition in case all rows will be
+            # removed due to a limitation of PyTables
             if len(rowlist) == table.nrows:
                 table.remove()
-                table = self.handle.create_table('/', 'categories', self._Categories, 'categories')
+                table = self.handle.create_table(
+                    '/', 'categories', self._Categories, 'categories')
             else:
                 rowlist.sort()
                 j = 0
-                # delete matching rows; have to use j to shift the register as we
-                # delete rows
+                # delete matching rows; have to use j to shift the register as
+                # we delete rows
                 for i in rowlist:
-                    table.remove_row(i-j)
-                    j=j+1
-    
+                    table.remove_row(i - j)
+                    j = j + 1
+
     def _open_r(self):
         """Open file with intention to write.
 
@@ -650,18 +666,18 @@ class ContainerFile(File):
 
     def _open_w(self):
         """Open file with intention to write.
-    
+
         Not to be used except for debugging files.
-         
+
         """
         self.handle = tables.open_file(self.filename, 'a')
         self._exlock(self.handle)
-    
+
     def _close(self):
         """Close file.
-    
+
         Not to be used except for debugging files.
-    
+
         """
         self.handle.close()
 
@@ -672,7 +688,7 @@ class SimFile(ContainerFile):
     This file contains all the information needed to store the state of a
     Sim object. It includes accessors, setters, and modifiers for all
     elements of the data structure, as well as the data structure definition.
-    
+
     """
     class _Default(tables.IsDescription):
         """Table definition for storing default universe preference.
@@ -689,7 +705,7 @@ class SimFile(ContainerFile):
         (abspath) and the relative path from the Sim object's directory
         (relCont). This allows the Sim object to use some heuristically good
         starting points when trying to find missing files using Finder.
-        
+
         """
         abspath = tables.StringCol(pathlength)
         relCont = tables.StringCol(pathlength)
@@ -727,40 +743,41 @@ class SimFile(ContainerFile):
         """Initialize Sim state file.
 
         :Arguments:
-           *filename*
-              path to file
-           *logger*
-              logger to send warnings and errors to
+            *filename*
+                path to file
+            *logger*
+                logger to send warnings and errors to
 
         :Keywords:
-           *name*
-              user-given name of Container object
-           *coordinator*
-              directory in which coordinator state file can be found [None]
-           *categories*
-              user-given dictionary with custom keys and values; used to
-              give distinguishing characteristics to object for search
-           *tags*
-              user-given list with custom elements; used to give distinguishing
-              characteristics to object for search
+            *name*
+                user-given name of Container object
+            *coordinator*
+                directory in which coordinator state file can be found [None]
+            *categories*
+                user-given dictionary with custom keys and values; used to
+                give distinguishing characteristics to object for search
+            *tags*
+                user-given list with custom elements; used to give
+                distinguishing characteristics to object for search
 
         """
         super(SimFile, self).__init__(filename, logger=logger, **kwargs)
-    
+
     def create(self, **kwargs):
         """Build Sim data structure.
 
         :Keywords:
-           *name*
-              user-given name of Sim object
-           *coordinator*
-              directory in which Coordinator state file can be found [``None``]
-           *categories*
-              user-given dictionary with custom keys and values; used to
-              give distinguishing characteristics to object for search
-           *tags*
-              user-given list with custom elements; used to give distinguishing
-              characteristics to object for search
+            *name*
+                user-given name of Sim object
+            *coordinator*
+                directory in which Coordinator state file can be found
+                [``None``]
+            *categories*
+                user-given dictionary with custom keys and values; used to give
+                distinguishing characteristics to object for search
+            *tags*
+                user-given list with custom elements; used to give
+                distinguishing characteristics to object for search
 
         .. Note:: kwargs passed to :meth:`create`
 
@@ -795,7 +812,8 @@ class SimFile(ContainerFile):
             table = self.handle.get_node('/', 'default')
             table.cols.default[0] = universe
         except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'default', self._Default, 'default')
+            table = self.handle.create_table(
+                '/', 'default', self._Default, 'default')
             table.row['default'] = universe
             table.row.append()
 
@@ -805,12 +823,12 @@ class SimFile(ContainerFile):
 
         :Returns:
             *default*
-                name of default universe 
+                name of default universe
 
         """
         table = self.handle.get_node('/', 'default')
         default = table.cols.default[0]
-        
+
         if default == 'None':
             default = None
 
@@ -880,15 +898,24 @@ class SimFile(ContainerFile):
 
         """
 
-        # build this universe's group; if it exists, do nothing 
+        # build this universe's group; if it exists, do nothing
         try:
-            group = self.handle.create_group('/universes', universe, universe, createparents=True)
+            group = self.handle.create_group(
+                '/universes', universe, universe, createparents=True)
         except tables.NodeError:
-            self.handle.remove_node('/universes/{}'.format(universe), 'topology')
-            self.handle.remove_node('/universes/{}'.format(universe), 'trajectory')
+            self.logger.info(
+                "Replacing existing universe" +
+                " definition '{}';".format(universe) +
+                " selections retained.")
+            self.handle.remove_node(
+                '/universes/{}'.format(universe), 'topology')
+            self.handle.remove_node(
+                '/universes/{}'.format(universe), 'trajectory')
 
-        # construct topology table 
-        table = self.handle.create_table('/universes/{}'.format(universe), 'topology', self._Topology, 'topology')
+        # construct topology table
+        table = self.handle.create_table(
+            '/universes/{}'.format(universe), 'topology', self._Topology,
+            'topology')
 
         # add topology paths to table
         table.row['abspath'] = os.path.abspath(topology)
@@ -896,7 +923,9 @@ class SimFile(ContainerFile):
         table.row.append()
 
         # construct trajectory table
-        table = self.handle.create_table('/universes/{}'.format(universe), 'trajectory', self._Trajectory, 'trajectory')
+        table = self.handle.create_table(
+            '/universes/{}'.format(universe), 'trajectory', self._Trajectory,
+            'trajectory')
 
         # add trajectory paths to table
         for segment in trajectory:
@@ -906,7 +935,8 @@ class SimFile(ContainerFile):
 
         # construct selection group
         try:
-            group = self.handle.create_group('/universes/{}'.format(universe), 'selections', 'selections')
+            group = self.handle.create_group(
+                '/universes/{}'.format(universe), 'selections', 'selections')
         except tables.NodeError:
             pass
 
@@ -941,14 +971,22 @@ class SimFile(ContainerFile):
                 order
         """
         try:
-            table = self.handle.create_table('/universes/{}'.format(universe), 'resnums', self._Resnums, 'resnums')
+            table = self.handle.create_table(
+                '/universes/{}'.format(universe), 'resnums', self._Resnums,
+                'resnums')
         except tables.NoSuchNodeError:
-            self.logger.info("Universe definition '{}' does not exist. Add it first.".format(universe))
+            self.logger.info(
+                "Universe definition '{}'".format(universe) +
+                " does not exist. Add it first.")
             return
         except tables.NodeError:
-            self.logger.info("Replacing existing resnums for '{}'.".format(universe))
-            self.handle.remove_node('/universes/{}'.format(universe), 'resnums')
-            table = self.handle.create_table('/universes/{}'.format(universe), 'resnums', self._Resnums, 'resnums')
+            self.logger.info(
+                "Replacing existing resnums for '{}'.".format(universe))
+            self.handle.remove_node(
+                '/universes/{}'.format(universe), 'resnums')
+            table = self.handle.create_table(
+                '/universes/{}'.format(universe), 'resnums', self._Resnums,
+                'resnums')
 
         # add resnums to table
         for item in resnums:
@@ -969,8 +1007,9 @@ class SimFile(ContainerFile):
                 no resnums defined
         """
         try:
-            table = self.handle.get_node('/universes/{}'.format(universe), 'resnums')
-            resnums = [ x['resnum'] for x in table.iterrows() ]
+            table = self.handle.get_node(
+                '/universes/{}'.format(universe), 'resnums')
+            resnums = [x['resnum'] for x in table.iterrows()]
         except tables.NoSuchNodeError:
             resnums = None
 
@@ -1000,7 +1039,8 @@ class SimFile(ContainerFile):
                 universe
 
         """
-        group = self.handle.get_node('/universes/{}'.format(universe), 'selections')
+        group = self.handle.get_node(
+            '/universes/{}'.format(universe), 'selections')
 
         return group.__members__
 
@@ -1018,8 +1058,9 @@ class SimFile(ContainerFile):
             *selection*
                 list of the selection strings making up the atom selection
         """
-        table = self.handle.get_node('/universes/{}/selections'.format(universe), handle)
-        selection = [ x['selection'] for x in table.iterrows() ]
+        table = self.handle.get_node(
+            '/universes/{}/selections'.format(universe), handle)
+        selection = [x['selection'] for x in table.iterrows()]
 
         return selection
 
@@ -1040,29 +1081,37 @@ class SimFile(ContainerFile):
                 name to use for the selection
             *selection*
                 selection string; multiple strings may be given and their
-                order will be preserved, which is useful for e.g. structural 
+                order will be preserved, which is useful for e.g. structural
                 alignments
 
         """
-        #TODO: add check for existence of selection table
-        #TODO: add check for selections as strings; use finally statements
+        # TODO: add check for existence of selection table
+        # TODO: add check for selections as strings; use finally statements
         # to delete table in case of failure
         # construct selection table
         try:
-            table = self.handle.create_table('/universes/{}/selections'.format(universe), handle, self._Selection, handle)
+            table = self.handle.create_table(
+                '/universes/{}/selections'.format(universe), handle,
+                self._Selection, handle)
         except tables.NoSuchNodeError:
-            self.logger.info("Universe definition '{}' does not exist. Add it first.".format(universe))
+            self.logger.info(
+                "Universe definition '{}'".format(universe) +
+                " does not exist. Add it first.")
             return
         except tables.NodeError:
-            self.logger.info("Replacing existing selection '{}'.".format(handle))
-            self.handle.remove_node('/universes/{}/selections'.format(universe), handle)
-            table = self.handle.create_table('/universes/{}/selections'.format(universe), handle, self._Selection, handle)
+            self.logger.info(
+                "Replacing existing selection '{}'.".format(handle))
+            self.handle.remove_node(
+                '/universes/{}/selections'.format(universe), handle)
+            table = self.handle.create_table(
+                '/universes/{}/selections'.format(universe), handle,
+                self._Selection, handle)
 
         # add selections to table
         for item in selection:
             table.row['selection'] = item
             table.row.append()
-    
+
     @File._write_state
     def del_selection(self, universe, handle):
         """Delete an atom selection from the specified universe.
@@ -1074,7 +1123,8 @@ class SimFile(ContainerFile):
                 name of the selection
 
         """
-        self.handle.remove_node('/universes/{}/selections'.format(universe), handle)
+        self.handle.remove_node(
+            '/universes/{}/selections'.format(universe), handle)
 
 
 class GroupFile(ContainerFile):
@@ -1083,12 +1133,13 @@ class GroupFile(ContainerFile):
     This file contains all the information needed to store the state of a
     Group object. It includes accessors, setters, and modifiers for all
     elements of the data structure, as well as the data structure definition.
-    
+
     """
     # add new paths to include them in member searches
     memberpaths = ['abspath', 'relCont']
 
     class _Members(tables.IsDescription):
+
         """Table definition for the members of the Group.
 
         Stores for each member its container type, uuid, and two versions of
@@ -1129,7 +1180,7 @@ class GroupFile(ContainerFile):
               characteristics to object for search
         """
         super(GroupFile, self).__init__(filename, logger=logger, **kwargs)
-    
+
     def create(self, **kwargs):
         """Build Group data structure.
 
@@ -1162,7 +1213,8 @@ class GroupFile(ContainerFile):
         try:
             table = self.handle.get_node('/', 'members')
         except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'members', self._Members, 'members')
+            table = self.handle.create_table(
+                '/', 'members', self._Members, 'members')
 
     @File._write_state
     def add_member(self, uuid, containertype, basedir):
@@ -1183,25 +1235,28 @@ class GroupFile(ContainerFile):
         try:
             table = self.handle.get_node('/', 'members')
         except tables.NoSuchNodeError:
-            table = self.handle.create_table('/', 'members', self._Members, 'members')
+            table = self.handle.create_table(
+                '/', 'members', self._Members, 'members')
 
         # check if uuid already present
-        rownum = [ row.nrow for row in table.where("uuid=='{}'".format(uuid)) ]
+        rownum = [row.nrow for row in table.where("uuid=='{}'".format(uuid))]
         if rownum:
             # if present, update location
             table.cols.abspath[rownum[0]] = os.path.abspath(basedir)
-            table.cols.relCont[rownum[0]] = os.path.relpath(basedir, self.get_location())
+            table.cols.relCont[rownum[0]] = os.path.relpath(
+                    basedir, self.get_location())
         else:
             table.row['uuid'] = uuid
             table.row['containertype'] = containertype
             table.row['abspath'] = os.path.abspath(basedir)
-            table.row['relCont'] = os.path.relpath(basedir, self.get_location())
+            table.row['relCont'] = os.path.relpath(
+                    basedir, self.get_location())
             table.row.append()
 
     @File._write_state
     def del_member(self, *uuid, **kwargs):
         """Remove a member from the Group.
-    
+
         :Arguments:
             *uuid*
                 the uuid(s) of the member(s) to remove
@@ -1216,38 +1271,40 @@ class GroupFile(ContainerFile):
 
         if purge:
             table.remove()
-            table = self.handle.create_table('/', 'members', self._Members, 'members')
-            
+            table = self.handle.create_table(
+                '/', 'members', self._Members, 'members')
+
         else:
             # remove redundant uuids from given list if present
-            uuids = set([ str(uid) for uid in uuid ])
+            uuids = set([str(uid) for uid in uuid])
 
             # get matching rows
-            #TODO: possibly faster to use table.where
+            # TODO: possibly faster to use table.where
             rowlist = list()
             for row in table:
                 for uuid in uuids:
                     if (row['uuid'] == uuid):
                         rowlist.append(row.nrow)
 
-            # must include a separate condition in case all rows will be removed
-            # due to a limitation of PyTables
+            # must include a separate condition in case all rows will be
+            # removed due to a limitation of PyTables
             if len(rowlist) == table.nrows:
                 table.remove()
-                table = self.handle.create_table('/', 'members', self._Members, 'members')
+                table = self.handle.create_table(
+                    '/', 'members', self._Members, 'members')
             else:
                 rowlist.sort()
                 j = 0
-                # delete matching rows; have to use j to shift the register as we
-                # delete rows
+                # delete matching rows; have to use j to shift the register as
+                # we delete rows
                 for i in rowlist:
-                    table.remove_row(i-j)
-                    j=j+1
+                    table.remove_row(i - j)
+                    j = j + 1
 
     @File._read_state
     def get_member(self, uuid):
         """Get all stored information on the specified member.
-        
+
         Returns a dictionary whose keys are column names and values the
         corresponding values for the member.
 
@@ -1330,7 +1387,8 @@ class DataFile(object):
     whether to use pandas storers, numpy storers, or pickle.
 
     """
-    def __init__(self, datadir, logger=None, datafiletype=None, **kwargs): 
+
+    def __init__(self, datadir, logger=None, datafiletype=None, **kwargs):
         """Initialize data interface.
 
         :Arguments:
@@ -1355,7 +1413,7 @@ class DataFile(object):
         or pickleable python object to the data file.
 
         If data already exists for the given key, then it is overwritten.
-    
+
         :Arguments:
             *key*
                 name given to the data; used as the index for retrieving
@@ -1365,11 +1423,14 @@ class DataFile(object):
                 DataFrame, Panel, or a numpy array
         """
         if isinstance(data, np.ndarray):
-            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
+            self.datafile = npDataFile(
+                os.path.join(self.datadir, npdatafile), logger=self.logger)
         elif isinstance(data, (pd.Series, pd.DataFrame, pd.Panel, pd.Panel4D)):
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
+            self.datafile = pdDataFile(
+                os.path.join(self.datadir, pddatafile), logger=self.logger)
         else:
-            self.datafile = pyDataFile(os.path.join(self.datadir, pydatafile), logger=self.logger)
+            self.datafile = pyDataFile(
+                os.path.join(self.datadir, pydatafile), logger=self.logger)
 
         self.datafile.add_data(key, data)
 
@@ -1382,21 +1443,22 @@ class DataFile(object):
         Note that column names of new data must match those of the existing
         data. Columns cannot be appended due to the technical details of the
         HDF5 standard. To add new columns, store as a new dataset.
-    
+
         :Arguments:
             *key*
                 name of existing data object to append to
             *data*
                 the data object whose rows are to be appended to the existing
                 stored data; must have same columns (with names) as existing
-                data 
+                data
 
         """
-        #TODO: add exceptions where appending isn't possible
+        # TODO: add exceptions where appending isn't possible
         if isinstance(data, np.ndarray):
             self.logger.info('Cannot append numpy arrays.')
         elif isinstance(data, (pd.Series, pd.DataFrame, pd.Panel, pd.Panel4D)):
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
+            self.datafile = pdDataFile(
+                os.path.join(self.datadir, pddatafile), logger=self.logger)
             self.datafile.append_data(key, data)
         else:
             self.logger.info('Cannot append python object.')
@@ -1410,41 +1472,44 @@ class DataFile(object):
         :Arguments:
             *key*
                 name of data to retrieve
-        
+
         :Keywords:
             *where*
                 for pandas objects, conditions for what rows/columns to return
-            *start* 
+            *start*
                 for pandas objects, row number to start selection
-            *stop*  
+            *stop*
                 for pandas objects, row number to stop selection
             *columns*
                 for pandas objects, list of columns to return; all columns
-                returned by default 
-            *iterator* 
+                returned by default
+            *iterator*
                 for pandas objects, if True, return an iterator [``False``]
             *chunksize*
                 for pandas objects, number of rows to include in iteration;
-                implies ``iterator=True`` 
+                implies ``iterator=True``
 
         :Returns:
             *data*
                 the selected data
         """
         if self.datafiletype == npdatafile:
-            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
+            self.datafile = npDataFile(
+                os.path.join(self.datadir, npdatafile), logger=self.logger)
             out = self.datafile.get_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pddatafile:
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
+            self.datafile = pdDataFile(
+                os.path.join(self.datadir, pddatafile), logger=self.logger)
             out = self.datafile.get_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pydatafile:
-            self.datafile = pyDataFile(os.path.join(self.datadir, pydatafile), logger=self.logger)
+            self.datafile = pyDataFile(
+                os.path.join(self.datadir, pydatafile), logger=self.logger)
             out = self.datafile.get_data(key)
             self.datafile = None
         else:
-            #TODO: add exception here
+            # TODO: add exception here
             self.logger.info('Cannot return data without knowing datatype.')
             out = None
 
@@ -1460,28 +1525,30 @@ class DataFile(object):
         :Keywords:
             *where*
                 for pandas objects, conditions for what rows/columns to remove
-            *start* 
+            *start*
                 for pandas objecs, row number to start selection
-            *stop*  
+            *stop*
                 for pandas objects, row number to stop selection
-        
+
         """
         if self.datafiletype == npdatafile:
-            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
+            self.datafile = npDataFile(
+                os.path.join(self.datadir, npdatafile), logger=self.logger)
             out = self.datafile.del_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pddatafile:
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
+            self.datafile = pdDataFile(
+                os.path.join(self.datadir, pddatafile), logger=self.logger)
             out = self.datafile.del_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pydatafile:
             pass
         else:
-            #TODO: add exception here
+            # TODO: add exception here
             self.logger.info('Cannot return data without knowing datatype.')
             out = None
 
-    #TODO: remove this; since we only place one datastructure in an HDF5 file,
+    # TODO: remove this; since we only place one datastructure in an HDF5 file,
     # we don't need it
     def list_data(self):
         """List names of all stored datasets.
@@ -1494,11 +1561,13 @@ class DataFile(object):
 
         """
         if self.datafiletype == npdatafile:
-            self.datafile = npDataFile(os.path.join(self.datadir, npdatafile), logger=self.logger)
+            self.datafile = npDataFile(
+                os.path.join(self.datadir, npdatafile), logger=self.logger)
             out = self.datafile.list_data(key, data, **kwargs)
             self.datafile = None
         elif self.datafiletype == pddatafile:
-            self.datafile = pdDataFile(os.path.join(self.datadir, pddatafile), logger=self.logger)
+            self.datafile = pdDataFile(
+                os.path.join(self.datadir, pddatafile), logger=self.logger)
             out = self.datafile.list_data(key, data, **kwargs)
             self.datafile = None
         elif self.datafiletype == pydatafile:
@@ -1507,7 +1576,7 @@ class DataFile(object):
         else:
             self.logger.info('Cannot return data without knowing datatype.')
             out = None
-        
+
         return out
 
 
@@ -1520,7 +1589,8 @@ class pdDataFile(File):
     backend.
 
     """
-    def __init__(self, filename, logger=None, **kwargs): 
+
+    def __init__(self, filename, logger=None, **kwargs):
         """Initialize data file.
 
         :Arguments:
@@ -1538,7 +1608,7 @@ class pdDataFile(File):
 
     def _read_pddata(func):
         """Decorator for opening data file for reading and applying shared lock.
-        
+
         Applying this decorator to a method will ensure that the file is opened
         for reading and that a shared lock is obtained before that method is
         executed. It also ensures that the lock is removed and the file closed
@@ -1559,14 +1629,14 @@ class pdDataFile(File):
             return out
 
         return inner
-    
+
     def _write_pddata(func):
         """Decorator for opening data file for writing and applying exclusive lock.
-        
+
         Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
+        for appending and that an exclusive lock is obtained before that method
+        is executed. It also ensures that the lock is removed and the file
+        closed after the method returns.
 
         """
         @wraps(func)
@@ -1586,7 +1656,7 @@ class pdDataFile(File):
         """Add a pandas data object (Series, DataFrame, Panel) to the data file.
 
         If data already exists for the given key, then it is overwritten.
-    
+
         :Arguments:
             *key*
                 name given to the data; used as the index for retrieving
@@ -1599,12 +1669,16 @@ class pdDataFile(File):
         try:
             # FIXME: band-aid heuristic to catch a known corner case that
             # HDFStore doesn't catch; see ``Issue 20``
-            if isinstance(data, pd.DataFrame) and data.columns.dtype == np.dtype('int64'):
+            if (isinstance(data, pd.DataFrame) and
+                    data.columns.dtype == np.dtype('int64')):
                 raise AttributeError
 
-            self.handle.put(key, data, format='table', data_columns=True, complevel=5, complib='blosc')
+            self.handle.put(
+                key, data, format='table', data_columns=True, complevel=5,
+                complib='blosc')
         except AttributeError:
-            self.handle.put(key, data, format='table', complevel=5, complib='blosc')
+            self.handle.put(
+                key, data, format='table', complevel=5, complib='blosc')
 
     @_write_pddata
     def append_data(self, key, data):
@@ -1613,18 +1687,19 @@ class pdDataFile(File):
         Note that column names of new data must match those of the existing
         data. Columns cannot be appended due to the technical details of the
         HDF5 standard. To add new columns, store as a new dataset.
-    
+
         :Arguments:
             *key*
                 name of existing data object to append to
             *data*
                 the data object whose rows are to be appended to the existing
                 stored data; must have same columns (with names) as existing
-                data 
+                data
 
         """
         try:
-            self.handle.append(key, data, data_columns=True, complevel=5, complib='blosc')
+            self.handle.append(
+                key, data, data_columns=True, complevel=5, complib='blosc')
         except AttributeError:
             self.handle.append(key, data, complevel=5, complib='blosc')
 
@@ -1635,21 +1710,21 @@ class pdDataFile(File):
         :Arguments:
             *key*
                 name of data to retrieve
-        
+
         :Keywords:
             *where*
                 conditions for what rows/columns to return
-            *start* 
+            *start*
                 row number to start selection
-            *stop*  
+            *stop*
                 row number to stop selection
             *columns*
                 list of columns to return; all columns returned by default
-            *iterator* 
+            *iterator*
                 if True, return an iterator [``False``]
             *chunksize*
                 number of rows to include in iteration; implies
-                ``iterator=True`` 
+                ``iterator=True``
 
         :Returns:
             *data*
@@ -1668,15 +1743,15 @@ class pdDataFile(File):
         :Keywords:
             *where*
                 conditions for what rows/columns to remove
-            *start* 
+            *start*
                 row number to start selection
-            *stop*  
+            *stop*
                 row number to stop selection
-        
+
         """
         self.handle.remove(key, **kwargs)
-    
-    #TODO: remove this; since we only place one datastructure in an HDF5 file,
+
+    # TODO: remove this; since we only place one datastructure in an HDF5 file,
     # we don't need it
     @_read_pddata
     def list_data(self):
@@ -1690,7 +1765,7 @@ class pdDataFile(File):
 
         """
         keys = self.handle.keys()
-        return [ i.lstrip('/') for i in keys ]
+        return [i.lstrip('/') for i in keys]
 
 
 class npDataFile(File):
@@ -1701,7 +1776,8 @@ class npDataFile(File):
     its backend.
 
     """
-    def __init__(self, filename, logger=None, **kwargs): 
+
+    def __init__(self, filename, logger=None, **kwargs):
         """Initialize data file.
 
         :Arguments:
@@ -1716,10 +1792,10 @@ class npDataFile(File):
         # open file for the first time to initialize handle
         self.handle = h5py.File(self.filename, 'a')
         self.handle.close()
-    
+
     def _read_npdata(func):
         """Decorator for opening data file for reading and applying shared lock.
-        
+
         Applying this decorator to a method will ensure that the file is opened
         for reading and that a shared lock is obtained before that method is
         executed. It also ensures that the lock is removed and the file closed
@@ -1741,14 +1817,14 @@ class npDataFile(File):
             return out
 
         return inner
-    
+
     def _write_npdata(func):
         """Decorator for opening data file for writing and applying exclusive lock.
-        
+
         Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
+        for appending and that an exclusive lock is obtained before that method
+        is executed. It also ensures that the lock is removed and the file
+        closed after the method returns.
 
         """
         @wraps(func)
@@ -1762,13 +1838,13 @@ class npDataFile(File):
             return out
 
         return inner
-    
+
     @_write_npdata
     def add_data(self, key, data):
         """Add a numpy array to the data file.
 
         If data already exists for the given key, then it is overwritten.
-    
+
         :Arguments:
             *key*
                 name given to the data; used as the index for retrieving
@@ -1789,7 +1865,7 @@ class npDataFile(File):
         :Arguments:
             *key*
                 name of data to retrieve
-        
+
         :Returns:
             *data*
                 the selected data
@@ -1806,7 +1882,7 @@ class npDataFile(File):
 
         """
         del self.handle[key]
-    
+
     @_read_npdata
     def list_data(self):
         """List names of all stored datasets.
@@ -1826,12 +1902,13 @@ class pyDataFile(File):
     """Interface to python object data files.
 
     Arbitrary python objects are stored as pickled objects on disk. This class
-    gives the needed components for storing and retrieving stored data in the same
-    basic way as for pandas and numpy objects. It uses pickle files for
+    gives the needed components for storing and retrieving stored data in the
+    same basic way as for pandas and numpy objects. It uses pickle files for
     serialization.
 
     """
-    def __init__(self, filename, logger=None, **kwargs): 
+
+    def __init__(self, filename, logger=None, **kwargs):
         """Initialize data file.
 
         :Arguments:
@@ -1849,7 +1926,7 @@ class pyDataFile(File):
 
     def _read_pydata(func):
         """Decorator for opening data file for reading and applying shared lock.
-        
+
         Applying this decorator to a method will ensure that the file is opened
         for reading and that a shared lock is obtained before that method is
         executed. It also ensures that the lock is removed and the file closed
@@ -1871,14 +1948,14 @@ class pyDataFile(File):
             return out
 
         return inner
-    
+
     def _write_pydata(func):
         """Decorator for opening data file for writing and applying exclusive lock.
-        
+
         Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
+        for appending and that an exclusive lock is obtained before that method
+        is executed. It also ensures that the lock is removed and the file
+        closed after the method returns.
 
         """
         @wraps(func)
@@ -1898,7 +1975,7 @@ class pyDataFile(File):
         """Add a numpy array to the data file.
 
         If data already exists for the given key, then it is overwritten.
-    
+
         :Arguments:
             *key*
                 not used, but needed to give consistent interface
@@ -1914,7 +1991,7 @@ class pyDataFile(File):
         :Arguments:
             *key*
                 not used, but needed to give consistent interface
-        
+
         :Returns:
             *data*
                 the selected data
