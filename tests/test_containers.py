@@ -12,29 +12,26 @@ import shutil
 import MDAnalysis
 from MDAnalysisTests.datafiles import GRO, XTC
 
-containername = 'testcontainer'
-simname = 'testsim'
-groupname = 'testgroup'
-
 
 class TestContainer:
-    """Test generic Container features.
+    """Test generic Container features"""
+    containername = 'testcontainer'
+    containertype = 'Container'
+    containerclass = mds.containers.Container
 
-    """
     @pytest.fixture
     def container(self, tmpdir):
         with tmpdir.as_cwd():
-            c = mds.containers.Container(containername)
+            c = mds.containers.Container(TestContainer.containername)
         return c
 
     def test_init(self, container, tmpdir):
-        """Test basic Container init.
-
-        """
-        assert container.name == containername
+        """Test basic Container init"""
+        assert container.name == self.containername
         assert container.location == tmpdir.strpath
-        assert container.containertype == 'Container'
-        assert container.basedir == os.path.join(tmpdir.strpath, containername)
+        assert container.containertype == self.containertype
+        assert container.basedir == os.path.join(tmpdir.strpath,
+                                                 self.containername)
 
     def test_regen(self, tmpdir):
         """Test regenerating Container.
@@ -45,18 +42,25 @@ class TestContainer:
         - check that modifications were saved
         """
         with tmpdir.as_cwd():
-            C1 = mds.Container('regen')
+            C1 = self.containerclass('regen')
             C1.tags.add('fantastic')
-            C2 = mds.Container('regen')  # should be regen of C1
+            C2 = self.containerclass('regen')  # should be regen of C1
             assert 'fantastic' in C2.tags
 
             # they point to the same file, but they are not the same object
             assert C1 is not C2
 
-    class TestTags:
-        """Test container tags.
+    def test_cmp(self, tmpdir):
+        """Test the comparison of Sims when sorting"""
+        with tmpdir.as_cwd():
+            c1 = self.containerclass('a')
+            c2 = self.containerclass('b')
+            c3 = self.containerclass('c')
 
-        """
+        assert sorted([c3, c2, c1]) == [c1, c2, c3]
+
+    class TestTags:
+        """Test container tags"""
 
         def test_add_tags(self, container):
             container.tags.add('marklar')
@@ -92,9 +96,7 @@ class TestContainer:
             assert len(container.tags) == 0
 
     class TestCategories:
-        """Test container categories.
-
-        """
+        """Test container categories"""
 
         def test_add_categories(self, container):
             container.categories.add(marklar=42)
@@ -129,11 +131,9 @@ class TestContainer:
             assert len(container.categories) == 0
 
     class TestData:
-        """Test data storage and retrieval.
+        """Test data storage and retrieval"""
 
-        """
         class DataMixin:
-
             """Mixin class for data storage tests.
 
             Contains general tests to be used for all storable data formats.
@@ -159,46 +159,37 @@ class TestContainer:
                                                        self.datafile))
 
         class PandasMixin(DataMixin):
-
-            """Mixin class for pandas tests
-
-            """
+            """Mixin class for pandas tests"""
             datafile = mds.core.persistence.pddatafile
 
         class Test_Series(PandasMixin):
-
             @pytest.fixture
             def datastruct(self):
                 data = np.random.rand(10000)
                 return pd.Series(data)
 
         class Test_DataFrame(PandasMixin):
-
             @pytest.fixture
             def datastruct(self):
                 data = np.random.rand(10000, 3)
                 return pd.DataFrame(data, columns=('A', 'B', 'C'))
 
         class Test_Blank_DataFrame(PandasMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return pd.DataFrame(np.zeros((10, 10)))
 
         class Test_Wide_Blank_DataFrame(PandasMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return pd.DataFrame(np.zeros((1, 10)))
 
         class Test_Thin_Blank_DataFrame(PandasMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return pd.DataFrame(np.zeros((10, 1)))
 
         class Test_Panel(PandasMixin):
-
             @pytest.fixture
             def datastruct(self):
                 data = np.random.rand(4, 10000, 3)
@@ -206,7 +197,6 @@ class TestContainer:
                                 minor_axis=('A', 'B', 'C'))
 
         class Test_Panel4D(PandasMixin):
-
             @pytest.fixture
             def datastruct(self):
                 data = np.random.rand(2, 4, 10000, 3)
@@ -215,179 +205,176 @@ class TestContainer:
                                   minor_axis=('A', 'B', 'C'))
 
         class NumpyMixin(DataMixin):
-
-            """Test numpy datastructure storage and retrieval.
-
-            """
+            """Test numpy datastructure storage and retrieval"""
             datafile = mds.core.persistence.npdatafile
 
         class Test_Numpy1D(NumpyMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return np.random.rand(10000)
 
         class Test_Numpy2D(NumpyMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return np.random.rand(10000, 500)
 
         class Test_Wide_Numpy2D(NumpyMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return np.zeros((1, 10))
 
         class Test_Thin_Numpy2D(NumpyMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return np.zeros((10, 1))
 
         class Test_Numpy3D(NumpyMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return np.random.rand(4, 10000, 45)
 
         class Test_Numpy4D(NumpyMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return np.random.rand(2, 4, 10000, 45)
 
         class PythonMixin(DataMixin):
-
-            """Test pandas datastructure storage and retrieval.
-
-            """
+            """Test pandas datastructure storage and retrieval"""
             datafile = mds.core.persistence.pydatafile
 
         class Test_List(PythonMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return ['galahad', 'lancelot', 42, 'arthur', 3.14159]
 
         class Test_Dict(PythonMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return {'pure': 'galahad', 'brave': 'lancelot', 'answer': 42,
                         'king': 'arthur', 'pi-ish': 3.14159}
 
         class Test_Tuple(PythonMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return ('arthur', 3.14159)
 
         class Test_Set(PythonMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return {'arthur', 3.14159, 'seahorses'}
 
         class Test_Dict_Mix(PythonMixin):
-
             @pytest.fixture
             def datastruct(self):
                 return {'an array': np.random.rand(100, 46),
                         'another': np.random.rand(3, 45, 2)}
 
 
-class TestSim:
-    """Test Sim-specific features.
+class TestSim(TestContainer):
+    """Test Sim-specific features"""
+    containername = 'testsim'
+    containertype = 'Sim'
+    containerclass = mds.Sim
 
-    """
     @pytest.fixture
-    def sim(self, tmpdir):
+    def container(self, tmpdir):
         with tmpdir.as_cwd():
-            s = mds.Sim(simname)
+            s = mds.Sim(TestSim.containername)
         return s
 
-    def test_init(self, sim, tmpdir):
-        """Test basic Container init.
+    class TestUniverses:
+        """Test universe functionality"""
 
-        """
-        assert sim.name == simname
-        assert sim.location == tmpdir.strpath
-        assert sim.containertype == 'Sim'
+        def test_add_universe(self, container):
+            """Test adding new unverse definitions"""
+            container.universes.add('spam', GRO, XTC)
 
-    def test_add_universe(self, sim):
-        sim.universes.add('spam', GRO, XTC)
+            assert 'spam' in container.universes
+            assert isinstance(container.universes['spam'], MDAnalysis.Universe)
 
-        assert 'spam' in sim.universes
-        assert isinstance(sim.universes['spam'], MDAnalysis.Universe)
+            assert container.universe.filename == GRO
+            assert container.universe.trajectory.filename == XTC
 
-        assert sim.universe.filename == GRO
-        assert sim.universe.trajectory.filename == XTC
+        def test_remove_universe(self, container):
+            """Test universe removal"""
+            container.universes.add('spam', GRO, XTC)
+            container.universes.add('eggs', GRO, XTC)
 
-    def test_cmp(self, tmpdir):
-        """Test the comparison of Sims when sorting"""
-        with tmpdir.as_cwd():
-            s1 = mds.Sim('a')
-            s2 = mds.Sim('b')
-            s3 = mds.Sim('c')
+            assert 'spam' in container.universes
 
-        assert sorted([s3, s2, s1]) == [s1, s2, s3]
+            container.universes.remove('spam')
 
-    def test_regen(self, tmpdir):
-        """Test regenerating Sim
+            assert 'spam' not in container.universes
+            assert 'eggs' in container.universes
 
-        - create Sim
-        - modify Sim a little
-        - create same Sim (should regenerate)
-        - check that modifications were saved
-        """
-        with tmpdir.as_cwd():
-            S1 = mds.Sim('regen')
-            S1.tags.add('fantastic')
-            S2 = mds.Sim('regen')  # should be regen of S1
-            assert 'fantastic' in S2.tags
+        def test_set_default_universe(self, container):
+            """Test that a default universe exists, and that it's settable"""
+            container.universes.add('lolcats', GRO, XTC)
+
+            assert container.universe.filename == GRO
+            assert container.universe.trajectory.filename == XTC
+            assert container._uname == 'lolcats'
+            container.universes.deactivate()
+
+            container.universes.add('megaman', GRO)
+            container.universes.default('megaman')
+
+            assert container.universes.default() == 'megaman'
+
+            assert container.universe.filename == GRO
+            assert container.universe.trajectory.filename == GRO
+            assert container._uname == 'megaman'
 
 
-class TestGroup:
-    """Test Sim-specific features.
+class TestGroup(TestContainer):
+    """Test Group-specific features.
 
     """
+    containername = 'testgroup'
+    containertype = 'Group'
+    containerclass = mds.Group
+
     @pytest.fixture
-    def sim(self, tmpdir):
+    def container(self, tmpdir):
         with tmpdir.as_cwd():
-            s = mds.Sim(simname)
-        return s
+            g = mds.Group(TestGroup.containername)
+        return g
 
-    def test_init(self, sim, tmpdir):
-        """Test basic Container init.
+    class TestMembers:
+        """Test member functionality"""
 
-        """
-        assert sim.name == simname
-        assert sim.location == tmpdir.strpath
-        assert sim.containertype == 'Sim'
+        def test_add_members(self, container, tmpdir):
+            """Try adding members in a number of ways"""
+            with tmpdir.as_cwd():
+                s1 = mds.Sim('lark')
+                s2 = mds.Sim('hark')
+                g3 = mds.Group('linus')
 
-    def test_add_universe(self, sim):
-        pass
+                container.members.add(s1, [g3, s2])
 
-    def test_cmp(self, tmpdir):
-        """Test the comparison of Sims when sorting"""
-        with tmpdir.as_cwd():
-            s1 = mds.Sim('a')
-            s2 = mds.Sim('b')
-            s3 = mds.Sim('c')
+                for cont in (s1, s2, g3):
+                    assert cont in container.members
 
-        assert sorted([s3, s2, s1]) == [s1, s2, s3]
+                s4 = mds.Sim('snoopy')
+                container.members.add([[s4], s2])
+                assert s4 in container.members
 
-    def test_regen(self, tmpdir):
-        """Test regenerating Sim
+        def test_get_members(self, container, tmpdir):
+            """Access members with indexing and slicing"""
+            with tmpdir.as_cwd():
+                s1 = mds.Sim('larry')
+                g2 = mds.Group('curly')
+                s3 = mds.Sim('moe')
 
-        - create Sim
-        - modify Sim a little
-        - create same Sim (should regenerate)
-        - check that modifications were saved
-        """
-        with tmpdir.as_cwd():
-            S1 = mds.Sim('regen')
-            S1.tags.add('fantastic')
-            S2 = mds.Sim('regen')  # should be regen of S1
-            assert 'fantastic' in S2.tags
+                container.members.add([[[s1, [g2, [s3]]]]])
+
+                assert container.members[1] == g2
+
+                c4 = mds.containers.Container('shemp')
+                container.members.add(c4)
+
+                for member in (s1, g2, s3):
+                    assert member in container.members[:3]
+
+                assert c4 not in container.members[:3]
+                assert c4 == container.members[-1]
