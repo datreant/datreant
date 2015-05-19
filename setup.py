@@ -17,5 +17,5 @@ setup(name='mdsynthesis',
       scripts=['scripts/mds_convert_pre_to_0.5.0.py'],
       license='GPL 2',
       long_description=open('README.rst').read(),
-      requires=['pandas', 'tables', 'h5py', 'MDAnalysis']
+      requires=['pandas', 'tables', 'h5py', 'MDAnalysis', 'scandir']
      )

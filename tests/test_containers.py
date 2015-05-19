@@ -9,6 +9,9 @@ import pytest
 import os
 import shutil
 
+import MDAnalysis
+from MDAnalysisTests.datafiles import GRO, XTC
+
 containername = 'testcontainer'
 simname = 'testsim'
 groupname = 'testgroup'
@@ -32,6 +35,23 @@ class TestContainer:
         assert container.location == tmpdir.strpath
         assert container.containertype == 'Container'
         assert container.basedir == os.path.join(tmpdir.strpath, containername)
+
+    def test_regen(self, tmpdir):
+        """Test regenerating Container.
+
+        - create Container
+        - modify Container a little
+        - create same Container (should regenerate)
+        - check that modifications were saved
+        """
+        with tmpdir.as_cwd():
+            C1 = mds.Container('regen')
+            C1.tags.add('fantastic')
+            C2 = mds.Container('regen')  # should be regen of C1
+            assert 'fantastic' in C2.tags
+
+            # they point to the same file, but they are not the same object
+            assert C1 is not C2
 
     class TestTags:
         """Test container tags.
@@ -278,6 +298,57 @@ class TestContainer:
 
 
 class TestSim:
+    """Test Sim-specific features.
+
+    """
+    @pytest.fixture
+    def sim(self, tmpdir):
+        with tmpdir.as_cwd():
+            s = mds.Sim(simname)
+        return s
+
+    def test_init(self, sim, tmpdir):
+        """Test basic Container init.
+
+        """
+        assert sim.name == simname
+        assert sim.location == tmpdir.strpath
+        assert sim.containertype == 'Sim'
+
+    def test_add_universe(self, sim):
+        sim.universes.add('spam', GRO, XTC)
+
+        assert 'spam' in sim.universes
+        assert isinstance(sim.universes['spam'], MDAnalysis.Universe)
+
+        assert sim.universe.filename == GRO
+        assert sim.universe.trajectory.filename == XTC
+
+    def test_cmp(self, tmpdir):
+        """Test the comparison of Sims when sorting"""
+        with tmpdir.as_cwd():
+            s1 = mds.Sim('a')
+            s2 = mds.Sim('b')
+            s3 = mds.Sim('c')
+
+        assert sorted([s3, s2, s1]) == [s1, s2, s3]
+
+    def test_regen(self, tmpdir):
+        """Test regenerating Sim
+
+        - create Sim
+        - modify Sim a little
+        - create same Sim (should regenerate)
+        - check that modifications were saved
+        """
+        with tmpdir.as_cwd():
+            S1 = mds.Sim('regen')
+            S1.tags.add('fantastic')
+            S2 = mds.Sim('regen')  # should be regen of S1
+            assert 'fantastic' in S2.tags
+
+
+class TestGroup:
     """Test Sim-specific features.
 
     """
