@@ -378,3 +378,39 @@ class TestGroup(TestContainer):
 
                 assert c4 not in container.members[:3]
                 assert c4 == container.members[-1]
+
+        def test_remove_members(self, container, tmpdir):
+            """Try removing members"""
+            with tmpdir.as_cwd():
+                g1 = mds.Group('lion-o')
+                s2 = mds.Sim('cheetara')
+                s3 = mds.Container('snarf')
+
+                container.members.add(s3, g1, s2)
+
+                for cont in (g1, s2, s3):
+                    assert cont in container.members
+
+                container.members.remove(1)
+                assert g1 not in container.members
+
+                container.members.remove(s2)
+                assert s2 not in container.members
+
+        def test_member_attributes(self, container, tmpdir):
+            """Get member uuids, names, and containertypes"""
+            with tmpdir.as_cwd():
+                c1 = mds.containers.Container('bigger')
+                g2 = mds.Group('faster')
+                s3 = mds.Sim('stronger')
+
+            container.members.add(c1, g2, s3)
+
+            uuids = [cont.uuid for cont in [c1, g2, s3]]
+            assert container.members.uuids == uuids
+
+            names = [cont.name for cont in [c1, g2, s3]]
+            assert container.members.names == names
+
+            containertypes = [cont.containertype for cont in [c1, g2, s3]]
+            assert container.members.containertypes == containertypes

@@ -59,12 +59,12 @@ class _CollectionBase(object):
                                      container.containertype,
                                      container.basedir)
 
-    def remove(self, *indices, **kwargs):
+    def remove(self, *members, **kwargs):
         """Remove any number of members from the Group.
 
         :Arguments:
-            *indices*
-                the indices of the members to remove
+            *members*
+                instances or indices of the members to remove
 
         :Keywords:
             *all*
@@ -72,13 +72,22 @@ class _CollectionBase(object):
 
         """
         uuids = self._backend.get_members_uuid()
-        if not kwargs.pop('all', False):
-            uuids = [uuids[x] for x in indices]
+        if kwargs.pop('all', False):
+            remove = uuids
+        else:
+            remove = list()
+            for member in members:
+                if isinstance(member, int):
+                    remove.append(uuids[member])
+                elif isinstance(member, mds.containers.Container):
+                    remove.append(member.uuid)
+                else:
+                    raise TypeError('Only an integer or container acceptable')
 
-        self._backend.del_member(*uuids)
+        self._backend.del_member(*remove)
 
         # remove from cache
-        for uuid in uuids:
+        for uuid in remove:
             self._cache.pop(uuid, None)
 
     @property
@@ -108,6 +117,17 @@ class _CollectionBase(object):
                 names.append(None)
 
         return names
+
+    @property
+    def uuids(self):
+        """Return a list of member uuids.
+
+        :Returns:
+            *uuids*
+                list giving the uuid of each member, in order
+
+        """
+        return self._backend.get_members_uuid().tolist()
 
     def _list(self):
         """Return a list of members.
