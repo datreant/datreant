@@ -191,7 +191,7 @@ class Foxhound(object):
                 for uuid in uuids:
                     candidate = glob.glob(
                             os.path.join(
-                                self.caller._containerfile.get_location(),
+                                self.caller._backend.get_location(),
                                 path, '*.{}.h5'.format(uuid)))
 
                     if candidate:
@@ -259,7 +259,7 @@ class Foxhound(object):
         # walk downwards on an upward path through filesystem from the Group's
         # basedir
         uuids = [x for x in outpaths if not outpaths[x]]
-        path = self.caller._containerfile.get_location()
+        path = self.caller._backend.get_location()
         prev = None
         timedout = False
         while prev != path and uuids and not timedout:

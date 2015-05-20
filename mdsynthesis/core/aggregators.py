@@ -27,7 +27,7 @@ class Aggregator(object):
 
     def __init__(self, container, containerfile, logger):
         self._container = container
-        self._containerfile = containerfile
+        self._backend = containerfile
         self._logger = logger
 
         self._placeholders()
@@ -63,10 +63,10 @@ class Tags(Aggregator):
         return out
 
     def __iter__(self):
-        return self._containerfile.get_tags().__iter__()
+        return self._backend.get_tags().__iter__()
 
     def __len__(self):
-        return len(self._containerfile.get_tags())
+        return len(self._backend.get_tags())
 
     def _list(self):
         """Get all tags for the Container as a list.
@@ -75,7 +75,7 @@ class Tags(Aggregator):
             *tags*
                 list of all tags
         """
-        tags = self._containerfile.get_tags()
+        tags = self._backend.get_tags()
         tags.sort()
         return tags
 
@@ -97,7 +97,7 @@ class Tags(Aggregator):
                 outtags.extend(tag)
             else:
                 outtags.append(tag)
-        self._containerfile.add_tags(*outtags)
+        self._backend.add_tags(*outtags)
 
     def remove(self, *tags, **kwargs):
         """Remove tags from Container.
@@ -113,7 +113,7 @@ class Tags(Aggregator):
             *all*
                 When True, delete all tags [``False``]
         """
-        self._containerfile.del_tags(*tags, **kwargs)
+        self._backend.del_tags(*tags, **kwargs)
 
 
 class Categories(Aggregator):
@@ -150,7 +150,7 @@ class Categories(Aggregator):
             *value*
                 value corresponding to given key
         """
-        categories = self._containerfile.get_categories()
+        categories = self._backend.get_categories()
         return categories[key]
 
     def __setitem__(self, key, value):
@@ -161,19 +161,19 @@ class Categories(Aggregator):
                 key of value to set
         """
         outdict = {key: value}
-        self._containerfile.add_categories(**outdict)
+        self._backend.add_categories(**outdict)
 
     def __delitem__(self, category):
         """Remove category from Container.
 
         """
-        self._containerfile.del_categories(category)
+        self._backend.del_categories(category)
 
     def __iter__(self):
-        return self._containerfile.get_categories().__iter__()
+        return self._backend.get_categories().__iter__()
 
     def __len__(self):
-        return len(self._containerfile.get_categories())
+        return len(self._backend.get_categories())
 
     def _dict(self):
         """Get all categories for the Container as a dictionary.
@@ -183,7 +183,7 @@ class Categories(Aggregator):
                 dictionary of all categories
 
         """
-        return self._containerfile.get_categories()
+        return self._backend.get_categories()
 
     def add(self, *categorydicts, **categories):
         """Add any number of categories to the Container.
@@ -210,7 +210,7 @@ class Categories(Aggregator):
                 outcats.update(categorydict)
 
         outcats.update(categories)
-        self._containerfile.add_categories(**outcats)
+        self._backend.add_categories(**outcats)
 
     def remove(self, *categories, **kwargs):
         """Remove categories from Container.
@@ -227,7 +227,7 @@ class Categories(Aggregator):
                 When True, delete all categories [``False``]
 
         """
-        self._containerfile.del_categories(*categories, **kwargs)
+        self._backend.del_categories(*categories, **kwargs)
 
     def keys(self):
         """Get category keys.
@@ -236,7 +236,7 @@ class Categories(Aggregator):
             *keys*
                 keys present among categories
         """
-        return self._containerfile.get_categories().keys()
+        return self._backend.get_categories().keys()
 
     def values(self):
         """Get category values.
@@ -245,7 +245,7 @@ class Categories(Aggregator):
             *values*
                 values present among categories
         """
-        return self._containerfile.get_categories().values()
+        return self._backend.get_categories().values()
 
 
 class Universes(Aggregator):
@@ -269,7 +269,7 @@ class Universes(Aggregator):
             out = out + majsep * seplength + '\n'
             for universe in universes:
                 out = out + "'{}'".format(universe)
-                if self._containerfile.get_default() == universe:
+                if self._backend.get_default() == universe:
                     out = out + ' (default)'
                 if self._container._uname == universe:
                     out = out + ' (active)'
@@ -277,7 +277,7 @@ class Universes(Aggregator):
         return out
 
     def __contains__(self, item):
-        return (item in self._containerfile.list_universes())
+        return (item in self._backend.list_universes())
 
     def __getitem__(self, handle):
         """Attach universe and return a reference to it.
@@ -328,7 +328,7 @@ class Universes(Aggregator):
             else:
                 outtraj.append(traj)
 
-        self._containerfile.add_universe(handle, topology, *outtraj)
+        self._backend.add_universe(handle, topology, *outtraj)
 
         if not self.default():
             self.default(handle)
@@ -343,14 +343,14 @@ class Universes(Aggregator):
                 name of universe(s) to delete
         """
         for item in handle:
-            self._containerfile.del_universe(item)
+            self._backend.del_universe(item)
 
             if self._container._uname == item:
                 self._container._universe = None
                 self._container._uname = None
 
             if self.default() == item:
-                self._containerfile.update_default()
+                self._backend.update_default()
 
     def _list(self):
         """Get handles for all universe definitions as a list.
@@ -359,7 +359,7 @@ class Universes(Aggregator):
             *handles*
                 list of all universe handles
         """
-        return self._containerfile.list_universes()
+        return self._backend.list_universes()
 
     def activate(self, handle=None):
         """Make the selected universe active.
@@ -379,10 +379,10 @@ class Universes(Aggregator):
                 universe selected
         """
         if not handle:
-            handle = self._containerfile.get_default()
+            handle = self._backend.get_default()
 
         if handle:
-            udef = self._containerfile.get_universe(handle)
+            udef = self._backend.get_universe(handle)
 
             # get a working path to the topology from last known locations
             topology = None
@@ -421,7 +421,7 @@ class Universes(Aggregator):
 
             # update the universe definition; will automatically build current
             # path variants for each file
-            self._containerfile.add_universe(handle, topology, *trajectory)
+            self._backend.add_universe(handle, topology, *trajectory)
 
     def current(self):
         """Return the name of the currently active universe.
@@ -446,7 +446,7 @@ class Universes(Aggregator):
         """Apply resnum definition to active universe.
 
         """
-        resnums = self._containerfile.get_resnums(self._container._uname)
+        resnums = self._backend.get_resnums(self._container._uname)
 
         if resnums:
             self._container._universe.residues.set_resnum(resnums)
@@ -469,9 +469,9 @@ class Universes(Aggregator):
                 atom index order; giving ``None`` will delete resnum definition
         """
         if resnums is None:
-            self._containerfile.del_resnums(handle)
+            self._backend.del_resnums(handle)
 
-        self._containerfile.update_resnums(handle, resnums)
+        self._backend.update_resnums(handle, resnums)
 
         if handle == self._container._uname:
             self._apply_resnums()
@@ -494,9 +494,9 @@ class Universes(Aggregator):
                 handle of the default universe
         """
         if handle:
-            self._containerfile.update_default(handle)
+            self._backend.update_default(handle)
 
-        return self._containerfile.get_default()
+        return self._backend.get_default()
 
     def define(self, handle):
         """Get the topology and trajectory used for the specified universe.
@@ -511,7 +511,7 @@ class Universes(Aggregator):
             *trajectory*
                 list of paths to trajectory files
         """
-        return self._containerfile.get_universe(handle)
+        return self._backend.get_universe(handle)
 
 
 class Selections(Aggregator):
@@ -571,18 +571,18 @@ class Selections(Aggregator):
         """
         if isinstance(selection, basestring):
             selection = [selection]
-        self._containerfile.add_selection(
+        self._backend.add_selection(
             self._container._uname, handle, *selection)
 
     def __iter__(self):
-        return self._containerfile.list_selections(
+        return self._backend.list_selections(
                 self._container._uname).__iter__()
 
     def __delitem__(self, handle):
         """Remove stored selection for given handle and the active universe.
 
         """
-        self._containerfile.del_selection(self._container._uname, handle)
+        self._backend.del_selection(self._container._uname, handle)
 
     def add(self, handle, *selection):
         """Add an atom selection for the attached universe.
@@ -599,7 +599,7 @@ class Selections(Aggregator):
                 order will be preserved, which is useful for e.g. structural
                 alignments
         """
-        self._containerfile.add_selection(
+        self._backend.add_selection(
             self._container._uname, handle, *selection)
 
     def remove(self, *handle):
@@ -610,14 +610,14 @@ class Selections(Aggregator):
                 name of selection(s) to remove
         """
         for item in handle:
-            self._containerfile.del_selection(self._container._uname, item)
+            self._backend.del_selection(self._container._uname, item)
 
     def keys(self):
         """Return a list of all selection handles.
 
         """
         if self._container._uname:
-            return self._containerfile.list_selections(self._container._uname)
+            return self._backend.list_selections(self._container._uname)
 
     def asAtomGroup(self, handle):
         """Get AtomGroup from active universe from the given named selection.
@@ -631,7 +631,7 @@ class Selections(Aggregator):
                 the named selection as an AtomGroup of the active universe
 
         """
-        selstring = self._containerfile.get_selection(
+        selstring = self._backend.get_selection(
             self._container._uname, handle)
         return self._container.universe.selectAtoms(*selstring)
 
@@ -646,7 +646,7 @@ class Selections(Aggregator):
             *definition*
                 list of strings defining the atom selection
         """
-        return self._containerfile.get_selection(
+        return self._backend.get_selection(
                 self._container._uname, handle)
 
     def copy(self, universe):
@@ -657,11 +657,11 @@ class Selections(Aggregator):
                 name of universe definition to copy selections from
         """
         if self._container._uname:
-            selections = self._containerfile.list_selections(universe)
+            selections = self._backend.list_selections(universe)
 
             for sel in selections:
-                seldef = self._containerfile.get_selection(universe, sel)
-                self._containerfile.add_selection(
+                seldef = self._backend.get_selection(universe, sel)
+                self._backend.add_selection(
                     self._container._uname, sel, *seldef)
 
 
@@ -674,7 +674,6 @@ class Members(Aggregator, bundle._CollectionBase):
         # member cache
         self._cache = dict()
         self._data = None
-        self._backend = self._containerfile
 
     def __repr__(self):
         return "<Members({})>".format(self._list())
@@ -866,7 +865,7 @@ class Data(Aggregator):
         datafiletype = None
         for dfiletype in (persistence.pddatafile, persistence.npdatafile,
                           persistence.pydatafile):
-            dfile = os.path.join(self._containerfile.get_location(),
+            dfile = os.path.join(self._backend.get_location(),
                                  handle, dfiletype)
             if os.path.exists(dfile):
                 datafile = dfile
@@ -892,7 +891,7 @@ class Data(Aggregator):
 
             if filename:
                 self._datafile = persistence.DataFile(
-                        os.path.join(self._containerfile.get_location(),
+                        os.path.join(self._backend.get_location(),
                                      handle),
                         logger=self._logger,
                         datafiletype=filetype)
@@ -923,7 +922,7 @@ class Data(Aggregator):
         """
         @wraps(func)
         def inner(self, handle, *args, **kwargs):
-            dirname = os.path.join(self._containerfile.get_location(), handle)
+            dirname = os.path.join(self._backend.get_location(), handle)
 
             self._makedirs(dirname)
             self._datafile = persistence.DataFile(dirname, logger=self._logger)
@@ -1042,7 +1041,7 @@ class Data(Aggregator):
             self._delete_data(handle, **kwargs)
         elif datafile:
             os.remove(datafile)
-            top = self._containerfile.get_location()
+            top = self._backend.get_location()
             directory = os.path.dirname(datafile)
             while directory != top:
                 try:
@@ -1092,7 +1091,7 @@ class Data(Aggregator):
             datafile = self._get_datafile(handle)[0]
 
             os.remove(datafile)
-            top = self._containerfile.get_location()
+            top = self._backend.get_location()
             directory = os.path.dirname(datafile)
             while directory != top:
                 try:
@@ -1180,7 +1179,7 @@ class Data(Aggregator):
 
         """
         datasets = list()
-        top = self._containerfile.get_location()
+        top = self._backend.get_location()
         for root, dirs, files in os.walk(top):
             if ((persistence.pddatafile in files) or
                     (persistence.npdatafile in files) or

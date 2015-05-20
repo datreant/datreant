@@ -194,7 +194,7 @@ class Container(object):
         statefile = os.path.join(location, container, filename)
         self._start_logger(containertype, container)
 
-        self._containerfile = core.persistence.containerfile(
+        self._backend = core.persistence.containerfile(
                 statefile, self._logger, name=container,
                 coordinator=coordinator, categories=categories, tags=tags)
 
@@ -210,7 +210,7 @@ class Container(object):
 
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
-                self._containerfile = core.persistence.containerfile(
+                self._backend = core.persistence.containerfile(
                         statefile[0])
             elif len(statefile) == 0:
                 raise NoContainersError('No Containers found in directory.')
@@ -221,10 +221,10 @@ class Container(object):
 
         # if a state file is given, try loading it
         elif os.path.exists(container):
-            self._containerfile = core.persistence.containerfile(container)
+            self._backend = core.persistence.containerfile(container)
 
         self._start_logger(containertype, self.name)
-        self._containerfile._start_logger(self._logger)
+        self._backend._start_logger(self._logger)
 
         self._placeholders()
 
@@ -294,7 +294,7 @@ class Container(object):
         representation.
 
         """
-        return os.path.basename(os.path.dirname(self._containerfile.filename))
+        return os.path.basename(os.path.dirname(self._backend.filename))
 
     @name.setter
     def name(self, name):
@@ -305,7 +305,7 @@ class Container(object):
         representation.
 
         """
-        olddir = os.path.dirname(self._containerfile.filename)
+        olddir = os.path.dirname(self._backend.filename)
         newdir = os.path.join(os.path.dirname(olddir), name)
         statefile = os.path.join(newdir,
                                  core.filesystem.statefilename(
@@ -319,7 +319,7 @@ class Container(object):
         """The type of the Container.
 
         """
-        return os.path.basename(self._containerfile.filename).split('.')[0]
+        return os.path.basename(self._backend.filename).split('.')[0]
 
     @property
     def location(self):
@@ -330,7 +330,7 @@ class Container(object):
         nonexistent directory.
 
         """
-        return os.path.dirname(self._containerfile.get_location())
+        return os.path.dirname(self._backend.get_location())
 
     @location.setter
     def location(self, value):
@@ -342,7 +342,7 @@ class Container(object):
 
         """
         self._makedirs(value)
-        oldpath = self._containerfile.get_location()
+        oldpath = self._backend.get_location()
         newpath = os.path.join(value, self.name)
         statefile = os.path.join(newpath,
                                  core.filesystem.statefilename(
@@ -358,7 +358,7 @@ class Container(object):
         joining `:attr:location` and `:attr:name`.
 
         """
-        return self._containerfile.get_location()
+        return self._backend.get_location()
 
     @property
     def coordinators(self):
@@ -368,7 +368,7 @@ class Container(object):
         or new Coordinator(s).
 
         """
-        return self._containerfile.get_coordinator()
+        return self._backend.get_coordinator()
 
     # TODO: implement with Coordinator checking
     @coordinators.setter
@@ -394,7 +394,7 @@ class Container(object):
         """
         if not self._tags:
             self._tags = core.aggregators.Tags(
-                    self, self._containerfile, self._logger)
+                    self, self._backend, self._logger)
         return self._tags
 
     @property
@@ -410,7 +410,7 @@ class Container(object):
 
         if not self._categories:
             self._categories = core.aggregators.Categories(
-                    self, self._containerfile, self._logger)
+                    self, self._backend, self._logger)
         return self._categories
 
     @property
@@ -424,7 +424,7 @@ class Container(object):
 
         """
         if not self._data:
-            self._data = core.aggregators.Data(self, self._containerfile,
+            self._data = core.aggregators.Data(self, self._backend,
                                                self._logger)
         return self._data
 
@@ -449,7 +449,7 @@ class Container(object):
             *uuid*
                 unique identifier string for this Container
         """
-        return self._containerfile.filename.split('.')[1]
+        return self._backend.filename.split('.')[1]
 
     def _new_uuid(self):
         """Generate new uuid for Container.
@@ -460,8 +460,8 @@ class Container(object):
 
         """
         new_id = str(uuid4())
-        oldfile = self._containerfile.filename
-        olddir = os.path.dirname(self._containerfile.filename)
+        oldfile = self._backend.filename
+        olddir = os.path.dirname(self._backend.filename)
         newfile = os.path.join(olddir,
                                core.filesystem.statefilename(
                                    self.containertype, uuid))
@@ -542,7 +542,7 @@ class Sim(Container):
         """
         # TODO: include check for changes to universe definition, not just
         # definition absence
-        if self._uname in self._containerfile.list_universes():
+        if self._uname in self._backend.list_universes():
             return self._universe
         elif not self._universe:
             self.universes.activate()
@@ -570,7 +570,7 @@ class Sim(Container):
         """
         if not self._universes:
             self._universes = core.aggregators.Universes(
-                    self, self._containerfile, self._logger)
+                    self, self._backend, self._logger)
 
         return self._universes
 
@@ -589,7 +589,7 @@ class Sim(Container):
         if self.universe:
             if not self._selections:
                 self._selections = core.aggregators.Selections(
-                        self, self._containerfile, self._logger)
+                        self, self._backend, self._logger)
 
             return self._selections
 
@@ -662,7 +662,7 @@ class Group(Container):
                            tags=tags)
 
     def __repr__(self):
-        members = list(self._containerfile.get_members_containertype())
+        members = list(self._backend.get_members_containertype())
 
         containers = members.count('Container')
         sims = members.count('Sim')
@@ -710,7 +710,7 @@ class Group(Container):
 
         """
         if not self._members:
-            self._members = core.aggregators.Members(self, self._containerfile,
+            self._members = core.aggregators.Members(self, self._backend,
                                                      self._logger)
         return self._members
 
