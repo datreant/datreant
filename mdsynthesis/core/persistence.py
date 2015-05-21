@@ -906,10 +906,6 @@ class SimFile(ContainerFile):
             group = self.handle.create_group(
                 '/universes', universe, universe, createparents=True)
         except tables.NodeError:
-            self.logger.info(
-                "Replacing existing universe" +
-                " definition '{}';".format(universe) +
-                " selections retained.")
             self.handle.remove_node(
                 '/universes/{}'.format(universe), 'topology')
             self.handle.remove_node(
