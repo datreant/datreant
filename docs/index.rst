@@ -63,10 +63,11 @@ See the :doc:`installation instructions <install>` to set it up.
 
 Dependencies
 ============
-* MDAnalysis: 0.8.0 or higher
-* pandas: 0.15.0 or higher
-* PyTables: 3.1.0 or higher
-* h5py: 2.3.0 or higher
+* MDAnalysis: 0.9.1 or higher
+* pandas: 0.16.1 or higher
+* PyTables: 3.2.0 or higher
+* h5py: 2.5.0 or higher
+* scandir: 1.0 or higher
 
 Contributing
 ============

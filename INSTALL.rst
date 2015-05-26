@@ -24,7 +24,7 @@ dependencies. It is best to first install PyTables' dependencies explicitly ::
 Then install PyTables and everything else ::
     
     pip install tables 
-    pip install pandas h5py MDAnalysis
+    pip install pandas h5py MDAnalysis scandir
 
 Then clone the repository and switch to the master branch ::
 
