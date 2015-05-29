@@ -208,6 +208,11 @@ class TestContainer:
             """Test numpy datastructure storage and retrieval"""
             datafile = mds.core.persistence.npdatafile
 
+        class Test_NumpyScalar(NumpyMixin):
+            @pytest.fixture
+            def datastruct(self):
+                return np.array(20)
+
         class Test_Numpy1D(NumpyMixin):
             @pytest.fixture
             def datastruct(self):

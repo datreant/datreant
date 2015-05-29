@@ -1871,7 +1871,7 @@ class npDataFile(File):
             *data*
                 the selected data
         """
-        return self.handle[key][:]
+        return self.handle[key].value
 
     @_write_npdata
     def del_data(self, key, **kwargs):
