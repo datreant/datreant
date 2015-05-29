@@ -1961,7 +1961,7 @@ class pyDataFile(File):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            self.handle = open(self.filename, 'ab+')
+            self.handle = open(self.filename, 'wb+')
             self._exlock(self.handle)
             try:
                 out = func(self, *args, **kwargs)

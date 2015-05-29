@@ -247,6 +247,13 @@ class TestContainer:
             """Test pandas datastructure storage and retrieval"""
             datafile = mds.core.persistence.pydatafile
 
+            def test_overwrite_data(self, container, datastruct):
+                container.data[self.handle] = datastruct
+
+                # overwrite the data with a scalar
+                container.data[self.handle] = 23
+                assert container.data[self.handle] == 23
+
         class Test_List(PythonMixin):
             @pytest.fixture
             def datastruct(self):
