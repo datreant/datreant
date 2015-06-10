@@ -130,6 +130,13 @@ class TestContainer:
             container.categories.remove(all=True)
             assert len(container.categories) == 0
 
+        def test_add_wrong(self, container):
+            with pytest.raises(TypeError):
+                container.categories.add('temperature', 300)
+
+            with pytest.raises(TypeError):
+                container.categories.add(['mark', 'matt'])
+
     class TestData:
         """Test data storage and retrieval"""
 

@@ -208,6 +208,9 @@ class Categories(Aggregator):
         for categorydict in categorydicts:
             if isinstance(categorydict, dict):
                 outcats.update(categorydict)
+            else:
+                raise TypeError("Invalid arguments; non-keyword" +
+                                " arguments must be dicts")
 
         outcats.update(categories)
         self._backend.add_categories(**outcats)
