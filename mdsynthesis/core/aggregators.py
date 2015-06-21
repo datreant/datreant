@@ -585,7 +585,11 @@ class Selections(Aggregator):
         """Remove stored selection for given handle and the active universe.
 
         """
-        self._backend.del_selection(self._container._uname, handle)
+        try:
+            self._backend.del_selection(self._container._uname, handle)
+        except KeyError:
+            raise KeyError(
+                    "No such selection '{}'; add it first.".format(handle))
 
     def add(self, handle, *selection):
         """Add an atom selection for the attached universe.
@@ -593,6 +597,8 @@ class Selections(Aggregator):
         AtomGroups are needed to obtain useful information from raw coordinate
         data. It is useful to store AtomGroup selections for later use, since
         they can be complex and atom order may matter.
+
+        If a selection with the given *handle* already exists, it is replaced.
 
         :Arguments:
             *handle*
@@ -608,12 +614,18 @@ class Selections(Aggregator):
     def remove(self, *handle):
         """Remove an atom selection for the attached universe.
 
+        If named selection doesn't exist, :exc:KeyError raised.
+
         :Arguments:
             *handle*
                 name of selection(s) to remove
         """
         for item in handle:
-            self._backend.del_selection(self._container._uname, item)
+            try:
+                self._backend.del_selection(self._container._uname, item)
+            except KeyError:
+                raise KeyError(
+                        "No such selection '{}'; add it first.".format(item))
 
     def keys(self):
         """Return a list of all selection handles.
@@ -625,6 +637,8 @@ class Selections(Aggregator):
     def asAtomGroup(self, handle):
         """Get AtomGroup from active universe from the given named selection.
 
+        If named selection doesn't exist, :exc:KeyError raised.
+
         :Arguments:
             *handle*
                 name of selection to return as an AtomGroup
@@ -632,14 +646,20 @@ class Selections(Aggregator):
         :Returns:
             *AtomGroup*
                 the named selection as an AtomGroup of the active universe
-
         """
-        selstring = self._backend.get_selection(
-            self._container._uname, handle)
+        try:
+            selstring = self._backend.get_selection(
+                self._container._uname, handle)
+        except KeyError:
+            raise KeyError(
+                    "No such selection '{}'; add it first.".format(handle))
+
         return self._container.universe.selectAtoms(*selstring)
 
     def define(self, handle):
         """Get selection definition for given handle and the active universe.
+
+        If named selection doesn't exist, :exc:KeyError raised.
 
         :Arguments:
             *handle*
@@ -649,8 +669,14 @@ class Selections(Aggregator):
             *definition*
                 list of strings defining the atom selection
         """
-        return self._backend.get_selection(
-                self._container._uname, handle)
+        try:
+            selstring = self._backend.get_selection(
+                            self._container._uname, handle)
+        except KeyError:
+            raise KeyError(
+                    "No such selection '{}'; add it first.".format(handle))
+
+        return selstring
 
     def copy(self, universe):
         """Copy defined selections of another universe to the active universe.
@@ -660,7 +686,11 @@ class Selections(Aggregator):
                 name of universe definition to copy selections from
         """
         if self._container._uname:
-            selections = self._backend.list_selections(universe)
+            try:
+                selections = self._backend.list_selections(universe)
+            except KeyError:
+                raise KeyError("No such universe '{}';".format(universe) +
+                               " cannot copy selections.")
 
             for sel in selections:
                 seldef = self._backend.get_selection(universe, sel)
@@ -716,7 +746,7 @@ class Members(Aggregator, bundle._CollectionBase):
 
 
 class MemberAgg(object):
-    """Core functionality for member aggregators.
+    """Core functionality for aggregators attached to the Members aggregator.
 
     """
 

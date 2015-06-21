@@ -344,6 +344,71 @@ class TestSim(TestContainer):
             assert container.universe.trajectory.filename == GRO
             assert container._uname == 'megaman'
 
+    class TestSelections:
+        """Test stored selections functionality"""
+        @pytest.fixture
+        def container(self, tmpdir):
+            with tmpdir.as_cwd():
+                s = mds.Sim(TestSim.containername)
+                s.universes.add('spam', GRO, XTC)
+            return s
+
+        def test_add_selection(self, container):
+            """Test adding new selection definitions"""
+
+            container.selections.add('CA', 'protein and name CA')
+            container.selections.add('someres', 'resid 12')
+
+            CA = container.universe.selectAtoms('protein and name CA')
+            someres = container.universe.selectAtoms('resid 12')
+
+            assert (CA.indices() == container.selections['CA'].indices()).all()
+            assert (someres.indices() ==
+                    container.selections['someres'].indices()).all()
+
+        def test_remove_selection(self, container):
+            """Test universe removal"""
+
+            container.selections.add('CA', 'protein and name CA')
+            container.selections.add('someres', 'resid 12')
+
+            assert 'CA' in container.selections
+            assert 'someres' in container.selections
+
+            container.selections.remove('CA')
+
+            assert 'CA' not in container.selections
+            assert 'someres' in container.selections
+
+            del container.selections['someres']
+            container.selections.add('moreres', 'resid 12:20')
+
+            assert 'CA' not in container.selections
+            assert 'someres' not in container.selections
+            assert 'moreres' in container.selections
+
+            with pytest.raises(KeyError):
+                container.selections.remove('someres')
+
+            with pytest.raises(KeyError):
+                del container.selections['CA']
+
+        def test_selection_keys(self, container):
+            container.selections.add('CA', 'protein and name CA')
+            container.selections.add('someres', 'resid 12')
+
+            assert set(('CA', 'someres')) == set(container.selections.keys())
+
+        def test_selection_define(self, container):
+            CA = 'protein and name CA'
+            container.selections.add('CA', CA)
+
+            assert container.selections.define('CA')[0] == CA
+
+        def test_selection_get(self, container):
+            with pytest.raises(KeyError):
+                container.selections['CA']
+
 
 class TestGroup(TestContainer):
     """Test Group-specific features.

@@ -236,7 +236,6 @@ class ContainerFile(File):
 
     """
     class _Meta(tables.IsDescription):
-
         """Table definition for metadata.
 
         All strings limited to hardcoded size for now.
@@ -248,7 +247,6 @@ class ContainerFile(File):
         version = tables.StringCol(15)
 
     class _Coordinator(tables.IsDescription):
-
         """Table definition for coordinator info.
 
         This information is kept separate from other metadata to allow the
@@ -1039,8 +1037,12 @@ class SimFile(ContainerFile):
                 universe
 
         """
-        group = self.handle.get_node(
-            '/universes/{}'.format(universe), 'selections')
+        try:
+            group = self.handle.get_node(
+                '/universes/{}'.format(universe), 'selections')
+        except tables.NoSuchNodeError:
+            raise KeyError("No such universe '{}';".format(universe) +
+                           " cannot copy selections.")
 
         return group.__members__
 
@@ -1058,9 +1060,13 @@ class SimFile(ContainerFile):
             *selection*
                 list of the selection strings making up the atom selection
         """
-        table = self.handle.get_node(
-            '/universes/{}/selections'.format(universe), handle)
-        selection = [x['selection'] for x in table.iterrows()]
+        try:
+            table = self.handle.get_node(
+                '/universes/{}/selections'.format(universe), handle)
+            selection = [x['selection'] for x in table.iterrows()]
+        except tables.NoSuchNodeError:
+            raise KeyError(
+                    "No such selection '{}'; add it first.".format(handle))
 
         return selection
 
@@ -1093,11 +1099,6 @@ class SimFile(ContainerFile):
             table = self.handle.create_table(
                 '/universes/{}/selections'.format(universe), handle,
                 self._Selection, handle)
-        except tables.NoSuchNodeError:
-            self.logger.info(
-                "Universe definition '{}'".format(universe) +
-                " does not exist. Add it first.")
-            return
         except tables.NodeError:
             self.logger.info(
                 "Replacing existing selection '{}'.".format(handle))
@@ -1123,8 +1124,12 @@ class SimFile(ContainerFile):
                 name of the selection
 
         """
-        self.handle.remove_node(
-            '/universes/{}/selections'.format(universe), handle)
+        try:
+            self.handle.remove_node(
+                '/universes/{}/selections'.format(universe), handle)
+        except tables.NoSuchNodeError:
+            raise KeyError(
+                    "No such selection '{}'; add it first.".format(handle))
 
 
 class GroupFile(ContainerFile):
