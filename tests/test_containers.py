@@ -51,13 +51,15 @@ class TestContainer:
             assert C1 is not C2
 
     def test_cmp(self, tmpdir):
-        """Test the comparison of Sims when sorting"""
+        """Test the comparison of Containers when sorting"""
         with tmpdir.as_cwd():
             c1 = self.containerclass('a')
             c2 = self.containerclass('b')
             c3 = self.containerclass('c')
 
         assert sorted([c3, c2, c1]) == [c1, c2, c3]
+        assert c1 <= c2 < c3
+        assert c3 >= c2 > c1
 
     class TestTags:
         """Test container tags"""
@@ -423,6 +425,9 @@ class TestGroup(TestContainer):
         with tmpdir.as_cwd():
             g = mds.Group(TestGroup.containername)
         return g
+
+    def test_repr(self, container):
+        pass
 
     class TestMembers:
         """Test member functionality"""

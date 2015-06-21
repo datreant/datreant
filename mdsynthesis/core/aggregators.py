@@ -385,38 +385,10 @@ class Universes(Aggregator):
             handle = self._backend.get_default()
 
         if handle:
-            udef = self._backend.get_universe(handle)
-
-            # get a working path to the topology from last known locations
-            topology = None
-            for top in udef[0]:
-                found = False
-                for path in top:
-                    if os.path.exists(path):
-                        topology = path
-                        found = True
-                        break
-
-                if not found:
-                    raise IOError(
-                            "Topology file could not be found for" +
-                            " universe '{}'; cannot activate!".format(handle))
-
-            # get a working path to each trajectory from last known locations
-            trajectory = list()
-            for traj in udef[1]:
-                found = False
-                for path in traj:
-                    if os.path.exists(path):
-                        trajectory.append(path)
-                        found = True
-                        break
-
-                if not found:
-                    raise IOError(
-                            "At least one trajectory file could not" +
-                            "be found for universe '{}';".format(handle) +
-                            " cannot activate!")
+            uh = filesystem.Universehound(self, handle)
+            paths = uh.fetch()
+            topology = paths['top'][0]
+            trajectory = paths['traj']
 
             self._container._universe = Universe(topology, *trajectory)
             self._container._uname = handle
@@ -501,12 +473,21 @@ class Universes(Aggregator):
 
         return self._backend.get_default()
 
-    def define(self, handle):
-        """Get the topology and trajectory used for the specified universe.
+    def define(self, handle, pathtype='abspath'):
+        """Get the stored path to the topology and trajectory used for the
+        specified universe.
+
+        *Note*: Does no checking as to whether these paths are valid. To
+                check this, try activating the universe.
 
         :Arguments:
             *handle*
                 name of universe to get definition for
+
+        :Keywords:
+            *pathtype*
+                type of path to return; 'abspath' gives an absolute path,
+                'relCont' gives a path relative to the Sim's state file
 
         :Returns:
             *topology*
@@ -514,7 +495,9 @@ class Universes(Aggregator):
             *trajectory*
                 list of paths to trajectory files
         """
-        return self._backend.get_universe(handle)
+        topology, trajectory = self._backend.get_universe(handle)
+
+        return topology[pathtype][0], trajectory[pathtype].tolist()
 
 
 class Selections(Aggregator):
@@ -614,7 +597,7 @@ class Selections(Aggregator):
     def remove(self, *handle):
         """Remove an atom selection for the attached universe.
 
-        If named selection doesn't exist, :exc:KeyError raised.
+        If named selection doesn't exist, :exc:`KeyError` raised.
 
         :Arguments:
             *handle*
@@ -637,7 +620,7 @@ class Selections(Aggregator):
     def asAtomGroup(self, handle):
         """Get AtomGroup from active universe from the given named selection.
 
-        If named selection doesn't exist, :exc:KeyError raised.
+        If named selection doesn't exist, :exc:`KeyError` raised.
 
         :Arguments:
             *handle*
@@ -659,7 +642,7 @@ class Selections(Aggregator):
     def define(self, handle):
         """Get selection definition for given handle and the active universe.
 
-        If named selection doesn't exist, :exc:KeyError raised.
+        If named selection doesn't exist, :exc:`KeyError` raised.
 
         :Arguments:
             *handle*
