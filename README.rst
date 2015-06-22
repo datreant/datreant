@@ -2,7 +2,7 @@
 MDSynthesis: a persistence engine for intermediate molecular dynamics data
 ==========================================================================
 
-|docs| |build| |cov|
+|zen| |docs| |build| |cov|
 
 Although the raw data for any study involving molecular dynamics simulations are
 the full trajectories themselves, often we are most interested in
@@ -76,3 +76,7 @@ edges and bugs. Issues and pull requests welcome!
     :alt: Code Coverage
     :scale: 100%
     :target: http://codecov.io/github/Becksteinlab/MDSynthesis?branch=master
+
+.. |zen| image:: https://zenodo.org/badge/doi/10.5281/zenodo.18851.svg   
+    :alt: Citation
+    :target: http://dx.doi.org/10.5281/zenodo.18851
