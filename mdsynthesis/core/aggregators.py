@@ -396,7 +396,13 @@ class Universes(Aggregator):
 
             # update the universe definition; will automatically build current
             # path variants for each file
-            self._backend.add_universe(handle, topology, *trajectory)
+            # if read-only, move on
+            try:
+                self._backend.add_universe(handle, topology, *trajectory)
+            except IOError:
+                self._logger.info(
+                    "Cannot update paths for universe '{}';".format(handle) +
+                    " state file is read-only.")
 
     def current(self):
         """Return the name of the currently active universe.

@@ -19,6 +19,8 @@ class _CollectionBase(object):
     :class:`aggregators.Members` and :class:`Bundle` both use this interface.
 
     """
+    def __len__(self):
+        return len(self._list())
 
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
@@ -158,8 +160,13 @@ class _CollectionBase(object):
         foundconts = foxhound.fetch(as_containers=True)
 
         # add to cache, and ensure we get updated paths with a re-add
+        # in case of an IOError, skip (probably due to permissions, but will
+        # need something more robust later
         self._cache.update(foundconts)
-        self.add(*foundconts.values())
+        try:
+            self.add(*foundconts.values())
+        except IOError:
+            pass
 
         # insert found containers into output list
         for uuid in findlist:

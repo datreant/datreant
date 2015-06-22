@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 import os
 import shutil
+import py
 
 import MDAnalysis
 from MDAnalysisTests.datafiles import GRO, XTC
@@ -503,3 +504,73 @@ class TestGroup(TestContainer):
 
             containertypes = [cont.containertype for cont in [c1, g2, s3]]
             assert container.members.containertypes == containertypes
+
+
+class TestReadOnly:
+    """Test Container functionality when read-only"""
+
+    GRO = 'md.gro'
+    XTC = 'md.xtc'
+
+    @pytest.fixture
+    def container(self, tmpdir):
+        with tmpdir.as_cwd():
+            c = mds.containers.Container('testcontainer')
+            py.path.local(c.basedir).chmod(0550, rec=True)
+        return c
+
+    @pytest.fixture
+    def sim(self, tmpdir):
+        with tmpdir.as_cwd():
+            c = mds.Sim('testsim')
+
+            # copy universe files to within the Sim's tree
+            sub = py.path.local(c.basedir).mkdir('sub')
+            GRO_t = sub.join(self.GRO)
+            XTC_t = sub.join(self.XTC)
+            py.path.local(GRO).copy(GRO_t)
+            py.path.local(XTC).copy(XTC_t)
+
+            c.universes.add('main', GRO_t.strpath, XTC_t.strpath)
+
+            py.path.local(c.basedir).chmod(0550, rec=True)
+        return c
+
+    @pytest.fixture
+    def group(self, tmpdir):
+        with tmpdir.as_cwd():
+            c = mds.Group('testgroup')
+            c.members.add(mds.Sim('lark'), mds.Group('bark'))
+            py.path.local(c.basedir).chmod(0550, rec=True)
+        return c
+
+    def test_sim_universe_access(self, sim):
+        """Test that Sim can access Universe when read-only.
+        """
+        assert isinstance(sim.universe, MDAnalysis.Universe)
+
+    def test_sim_moved_universe_access(self, sim, tmpdir):
+        """Test that Sim can access Universe when read-only, especially
+        when universe files have moved with it (stale paths).
+        """
+        py.path.local(sim.basedir).chmod(0770, rec=True)
+        sim.location = tmpdir.mkdir('test').strpath
+        py.path.local(sim.basedir).chmod(0550, rec=True)
+
+        assert isinstance(sim.universe, MDAnalysis.Universe)
+
+    def test_group_member_access(self, group):
+        """Test that Group can access members when the Group is read-only.
+        """
+        assert len(group.members) == 2
+
+    def test_group_moved_member_access(self, group, tmpdir):
+        """Test that Group can access members when the Group is read-only,
+        and when a member has been moved since the Group was last used with
+        write-permissions.
+        """
+        with tmpdir.as_cwd():
+            s = mds.Sim('lark')
+            s.location = 'somewhere/else'
+
+        assert len(group.members) == 2
