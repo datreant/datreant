@@ -348,35 +348,6 @@ class ContainerFile(File):
         categories = kwargs.pop('categories', dict())
         self.add_categories(**categories)
 
-    @File._read_state
-    def get_containertype(self):
-        """Get Container type: Sim or Group.
-
-        """
-        table = self.handle.get_node('/', 'meta')
-        return table.cols.containertype[0]
-
-    @File._write_state
-    def update_containertype(self, containertype):
-        """Update Container type: Sim or Group.
-
-        Note: will only take 'Sim' or 'Group' as values.
-
-        :Arugments:
-            *containertype*
-                type of Container: Sim or Group
-
-        """
-        if (containertype == 'Sim') or (containertype == 'Group'):
-            try:
-                table = self.handle.get_node('/', 'meta')
-                table.cols.containertype[0] = containertype
-            except tables.NoSuchNodeError:
-                table = self.handle.create_table(
-                    '/', 'meta', self._Meta, 'metadata')
-                table.row['containertype'] = containertype
-                table.row.append()
-
     def get_location(self):
         """Get Container basedir.
 

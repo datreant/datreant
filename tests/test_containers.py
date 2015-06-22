@@ -347,6 +347,34 @@ class TestSim(TestContainer):
             assert container.universe.trajectory.filename == GRO
             assert container._uname == 'megaman'
 
+        def test_set_resnums(self, container):
+            """Test that we can add resnums to a universe."""
+            container.universes.add('lolcats', GRO, XTC)
+
+            protein = container.universe.selectAtoms('protein')
+            resids = protein.residues.resids()
+            protein.residues.set_resnum(resids + 3)
+
+            container.universes.resnums('lolcats',
+                                        container.universe.atoms.resnums())
+
+            container.universes['lolcats']
+
+            protein = container.universe.selectAtoms('protein')
+            assert (resids + 3 == protein.residues.resnums()).all()
+
+            # BUG IN MDANALYSIS PREVENTS RESETTING OF RESNUMS
+            # protein.residues.set_resnum(resids + 6)
+
+            # assert (protein.residues.resnums == resids + 6).all()
+            # container.universes.resnums('lolcats',
+            #                            container.universe.atoms.resnums())
+
+            # container.universes['lolcats']
+
+            # protein = container.universe.selectAtoms('protein')
+            # assert (resids + 6 == protein.residues.resnums()).all()
+
     class TestSelections:
         """Test stored selections functionality"""
         @pytest.fixture
