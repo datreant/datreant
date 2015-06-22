@@ -10,7 +10,7 @@ For a basic installation just type the command::
 from setuptools import setup
 
 setup(name='mdsynthesis',
-      version='0.4.0-dev',
+      version='0.5.0',
       author='David Dotson', 
       author_email='dotsdl@gmail.com',
       packages=['mdsynthesis', 'mdsynthesis.core'],
