@@ -62,7 +62,7 @@ class Container(object):
                            coordinator=coordinator, categories=categories,
                            tags=tags)
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return "<Container: '{}'>".format(self.name)
 
     def __lt__(self, other):
@@ -515,7 +515,7 @@ class Sim(Container):
                            location=location, coordinator=coordinator,
                            categories=categories, tags=tags)
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         if not self._uname:
             out = "<Sim: '{}'>".format(self.name)
         else:
@@ -661,7 +661,7 @@ class Group(Container):
                            coordinator=coordinator, categories=categories,
                            tags=tags)
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         members = list(self._backend.get_members_containertype())
 
         containers = members.count('Container')
