@@ -44,10 +44,10 @@ class Tags(Aggregator):
 
     """
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return "<Tags({})>".format(self._list())
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         tags = self._list()
         agg = "Tags"
         majsep = "="
@@ -121,10 +121,10 @@ class Categories(Aggregator):
 
     """
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return "<Categories({})>".format(self._dict())
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         categories = self._dict()
         agg = "Categories"
         majsep = "="
@@ -256,10 +256,10 @@ class Universes(Aggregator):
 
     """
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return "<Universes({})>".format(self._list())
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         universes = self.list()
         agg = "Universes"
         majsep = "="
@@ -515,11 +515,11 @@ class Selections(Aggregator):
 
     """
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return "<Selections({})>".format(
                 {x: self.define(x) for x in self.keys()})
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         selections = self.keys()
         agg = "Selections"
         majsep = "="
@@ -697,10 +697,10 @@ class Members(Aggregator, bundle._CollectionBase):
         self._cache = dict()
         self._data = None
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return "<Members({})>".format(self._list())
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         names = self.names
         containertypes = self.containertypes
         agg = "Members"
@@ -824,10 +824,10 @@ class Data(Aggregator):
 
     """
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return "<Data({})>".format(self._list())
 
-    def _repr_html_(self):
+    def _repr_html_(self):  # pragma: no cover
         data = self._list()
         agg = "Data"
         if not data:
@@ -840,7 +840,7 @@ class Data(Aggregator):
             out = out + "</ul>"
         return out
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         data = self._list()
         agg = "Data"
         majsep = "="
