@@ -63,19 +63,19 @@ Contributing
 This project is still under heavy development, and there are certainly rough
 edges and bugs. Issues and pull requests welcome!
 
-.. |docs| image:: https://readthedocs.org/projects/mdsynthesis/badge/?version=latest
+.. |docs| image:: https://readthedocs.org/projects/mdsynthesis/badge/?version=develop
     :alt: Documentation Status
     :scale: 100%
     :target: https://readthedocs.org/projects/mdsynthesis
 
-.. |build| image:: https://travis-ci.org/Becksteinlab/MDSynthesis.svg?branch=master
+.. |build| image:: https://travis-ci.org/Becksteinlab/MDSynthesis.svg?branch=develop
     :alt: Build Status
     :target: https://travis-ci.org/Becksteinlab/MDSynthesis
 
-.. |cov| image:: http://codecov.io/github/Becksteinlab/MDSynthesis/coverage.svg?branch=master
+.. |cov| image:: http://codecov.io/github/Becksteinlab/MDSynthesis/coverage.svg?branch=develop
     :alt: Code Coverage
     :scale: 100%
-    :target: http://codecov.io/github/Becksteinlab/MDSynthesis?branch=master
+    :target: http://codecov.io/github/Becksteinlab/MDSynthesis?branch=develop
 
 .. |zen| image:: https://zenodo.org/badge/doi/10.5281/zenodo.18851.svg   
     :alt: Citation
