@@ -8,6 +8,7 @@ import shutil
 from uuid import uuid4
 import logging
 from MDAnalysis import Universe
+import functools
 
 import core
 
@@ -20,6 +21,7 @@ class NoContainersError(Exception):
     pass
 
 
+@functools.total_ordering
 class Container(object):
     """Core class for all Containers.
 
@@ -65,65 +67,17 @@ class Container(object):
     def __repr__(self):
         return "<Container: '{}'>".format(self.name)
 
-    def __lt__(self, other):
-        try:
-            if (self.name + self.uuid) < (other.name + other.uuid):
-                out = True
-            else:
-                out = False
-        except AttributeError:
-            out = NotImplemented
-        return out
-
-    def __le__(self, other):
-        try:
-            if (self.name + self.uuid) <= (other.name + other.uuid):
-                out = True
-            else:
-                out = False
-        except AttributeError:
-            out = NotImplemented
-        return out
-
     def __eq__(self, other):
         try:
-            if (self.name + self.uuid) == (other.name + other.uuid):
-                out = True
-            else:
-                out = False
+            return (self.name + self.uuid) == (other.name + other.uuid)
         except AttributeError:
-            out = NotImplemented
-        return out
+            return NotImplemented
 
-    def __ne__(self, other):
+    def __lt__(self, other):
         try:
-            if (self.name + self.uuid) != (other.name + other.uuid):
-                out = True
-            else:
-                out = False
+            return (self.name + self.uuid) < (other.name + other.uuid)
         except AttributeError:
-            out = NotImplemented
-        return out
-
-    def __ge__(self, other):
-        try:
-            if (self.name + self.uuid) >= (other.name + other.uuid):
-                out = True
-            else:
-                out = False
-        except AttributeError:
-            out = NotImplemented
-        return out
-
-    def __gt__(self, other):
-        try:
-            if (self.name + self.uuid) > (other.name + other.uuid):
-                out = True
-            else:
-                out = False
-        except AttributeError:
-            out = NotImplemented
-        return out
+            return NotImplemented
 
     def __getitem__(self, handle):
         """Get dataset corresponding to given handle.
