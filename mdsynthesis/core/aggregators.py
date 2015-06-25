@@ -9,6 +9,7 @@ be used as a backend by a Container, too.
 
 """
 from MDAnalysis import Universe
+from MDAnalysis.core.AtomGroup import AtomGroup
 import os
 import numpy as np
 from functools import wraps
@@ -561,10 +562,9 @@ class Selections(Aggregator):
         """Selection for the given handle and the active universe.
 
         """
-        if isinstance(selection, basestring):
+        if isinstance(selection, (basestring, AtomGroup)):
             selection = [selection]
-        self._backend.add_selection(
-            self._container._uname, handle, *selection)
+        self.add(handle, *selection)
 
     def __iter__(self):
         return self._backend.list_selections(
@@ -593,12 +593,17 @@ class Selections(Aggregator):
             *handle*
                 name to use for the selection
             *selection*
-                selection string; multiple strings may be given and their
-                order will be preserved, which is useful for e.g. structural
-                alignments
+                selection string or AtomGroup; multiple selections may be given
+                and their order will be preserved, which is useful for e.g.
+                structural alignments
         """
+        # Conversion function, leave strings alone,
+        # turn AtomGroups into their indices
+        def conv(x):
+            return x if isinstance(x, basestring) else x.indices()
+
         self._backend.add_selection(
-            self._container._uname, handle, *selection)
+            self._container._uname, handle, *map(conv, selection))
 
     def remove(self, *handle):
         """Remove an atom selection for the attached universe.
@@ -643,7 +648,13 @@ class Selections(Aggregator):
             raise KeyError(
                     "No such selection '{}'; add it first.".format(handle))
 
-        return self._container.universe.selectAtoms(*selstring)
+        # Selections might be either
+        # - a list of strings
+        # - a numpy array of indices
+        if isinstance(selstring[0], basestring):
+            return self._container.universe.selectAtoms(*selstring)
+        else:
+            return self._container.universe.atoms[selstring]
 
     def define(self, handle):
         """Get selection definition for given handle and the active universe.

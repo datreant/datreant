@@ -440,6 +440,44 @@ class TestSim(TestContainer):
             with pytest.raises(KeyError):
                 container.selections['CA']
 
+        def test_add_selections_multiple_strings_via_add(self, container):
+            """Add a selection that has multiple selection strings"""
+            container.selections.add('funky town', 'name N', 'name CA')
+            assert 'funky town' in container.selections
+
+            ref = container.universe.selectAtoms('name N', 'name CA')
+            sel = container.selections['funky town']
+            assert (ref.indices() == sel.indices()).all()
+
+        def test_add_selections_multiple_strings_via_setitem(self, container):
+            """Add a selection that has multiple selection strings"""
+            container.selections['funky town 2'] = 'name N', 'name CA'
+            assert 'funky town 2' in container.selections
+
+            ref = container.universe.selectAtoms('name N', 'name CA')
+            sel = container.selections['funky town 2']
+            assert (ref.indices() == sel.indices()).all()
+
+        def test_add_selection_as_atomgroup_via_add(self, container):
+            """Make an arbitrary AtomGroup then save selection as AG"""
+            ag = container.universe.atoms[:10:2]
+
+            container.selections.add('ag sel', ag)
+            assert 'ag sel' in container.selections
+
+            ag2 = container.selections['ag sel']
+            assert (ag.indices() == ag2.indices()).all()
+
+        def test_add_selection_as_atomgroup_via_setitem(self, container):
+            """Make an arbitrary AtomGroup then save selection as AG"""
+            ag = container.universe.atoms[25:50:3]
+
+            container.selections['ag sel 2'] = ag
+            assert 'ag sel 2' in container.selections
+
+            ag2 = container.selections['ag sel 2']
+            assert (ag.indices() == ag2.indices()).all()
+
 
 class TestGroup(TestContainer):
     """Test Group-specific features.

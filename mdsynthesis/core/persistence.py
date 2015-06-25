@@ -703,6 +703,12 @@ class SimFile(ContainerFile):
         """
         selection = tables.StringCol(255)
 
+    class _SelectionAtoms(tables.IsDescription):
+        """Table definition for storing selections as indices.
+
+        """
+        selection = tables.UInt32Col()
+
     class _Resnums(tables.IsDescription):
         """Table definition for storing resnums.
 
@@ -1057,19 +1063,25 @@ class SimFile(ContainerFile):
             *handle*
                 name to use for the selection
             *selection*
-                selection string; multiple strings may be given and their
-                order will be preserved, which is useful for e.g. structural
-                alignments
+                selection string or numpy array of indices; multiple selections
+                may be given and their order will be preserved, which is
+                useful for e.g. structural alignments
 
         """
         # TODO: add check for existence of selection table
         # TODO: add check for selections as strings; use finally statements
         # to delete table in case of failure
         # construct selection table
+        if isinstance(selection[0], basestring):
+            seltype = self._Selection
+        elif isinstance(selection[0], np.ndarray):
+            seltype = self._SelectionAtoms
+            selection = selection[0]
+
         try:
             table = self.handle.create_table(
                 '/universes/{}/selections'.format(universe), handle,
-                self._Selection, handle)
+                seltype, handle)
         except tables.NodeError:
             self.logger.info(
                 "Replacing existing selection '{}'.".format(handle))
@@ -1077,7 +1089,7 @@ class SimFile(ContainerFile):
                 '/universes/{}/selections'.format(universe), handle)
             table = self.handle.create_table(
                 '/universes/{}/selections'.format(universe), handle,
-                self._Selection, handle)
+                seltype, handle)
 
         # add selections to table
         for item in selection:
