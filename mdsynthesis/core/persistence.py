@@ -692,23 +692,6 @@ class SimFile(ContainerFile):
         abspath = tables.StringCol(255)
         relCont = tables.StringCol(255)
 
-    class _Selection(tables.IsDescription):
-        """Table definition for storing selections.
-
-        A single table corresponds to a single selection. Each row in the
-        column contains a selection string. This allows one to store a list
-        of selections so as to preserve selection order, which is often
-        required for e.g. structural alignments.
-
-        """
-        selection = tables.StringCol(255)
-
-    class _SelectionAtoms(tables.IsDescription):
-        """Table definition for storing selections as indices.
-
-        """
-        selection = tables.UInt32Col()
-
     class _Resnums(tables.IsDescription):
         """Table definition for storing resnums.
 
@@ -908,7 +891,9 @@ class SimFile(ContainerFile):
                                                    self.get_location())
             table.row.append()
 
-        # construct selection group
+        # construct selection group; necessary to catch NodError
+        # exception when a Universe is re-added because selections are
+        # maintained
         try:
             group = self.handle.create_group(
                 '/universes/{}'.format(universe), 'selections', 'selections')
@@ -1040,7 +1025,7 @@ class SimFile(ContainerFile):
         try:
             table = self.handle.get_node(
                 '/universes/{}/selections'.format(universe), handle)
-            selection = [x['selection'] for x in table.iterrows()]
+            selection = [x for x in table.read()]
         except tables.NoSuchNodeError:
             raise KeyError(
                     "No such selection '{}'; add it first.".format(handle))
@@ -1068,33 +1053,22 @@ class SimFile(ContainerFile):
                 useful for e.g. structural alignments
 
         """
-        # TODO: add check for existence of selection table
-        # TODO: add check for selections as strings; use finally statements
-        # to delete table in case of failure
         # construct selection table
-        if isinstance(selection[0], basestring):
-            seltype = self._Selection
-        elif isinstance(selection[0], np.ndarray):
-            seltype = self._SelectionAtoms
+        if isinstance(selection[0], np.ndarray):
             selection = selection[0]
 
         try:
-            table = self.handle.create_table(
-                '/universes/{}/selections'.format(universe), handle,
-                seltype, handle)
+            array = self.handle.create_array(
+                '/universes/{}/selections'.format(universe), handle, selection,
+                handle)
         except tables.NodeError:
             self.logger.info(
                 "Replacing existing selection '{}'.".format(handle))
             self.handle.remove_node(
                 '/universes/{}/selections'.format(universe), handle)
-            table = self.handle.create_table(
-                '/universes/{}/selections'.format(universe), handle,
-                seltype, handle)
-
-        # add selections to table
-        for item in selection:
-            table.row['selection'] = item
-            table.row.append()
+            table = self.handle.create_array(
+                '/universes/{}/selections'.format(universe), handle, selection,
+                handle)
 
     @File._write_state
     def del_selection(self, universe, handle):
