@@ -437,7 +437,7 @@ class ContainerFile(File):
                 list of all tags
         """
         table = self.handle.get_node('/', 'tags')
-        return [x['tag'] for x in table.iterrows()]
+        return [x['tag'] for x in table.read()]
 
     @File._write_state
     def add_tags(self, *tags):
@@ -533,7 +533,7 @@ class ContainerFile(File):
                 dictionary of all categories
         """
         table = self.handle.get_node('/', 'categories')
-        return {x['category']: x['value'] for x in table.iterrows()}
+        return {x['category']: x['value'] for x in table.read()}
 
     @File._write_state
     def add_categories(self, **categories):
