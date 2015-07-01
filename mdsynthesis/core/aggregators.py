@@ -258,7 +258,7 @@ class Universes(Aggregator):
     """
 
     def __repr__(self):
-        return "<Universes({})>".format(self._list())
+        return "<Universes({})>".format(self.keys())
 
     def __str__(self):
         universes = self.list()
@@ -361,7 +361,7 @@ class Universes(Aggregator):
             if self.default() == item:
                 self._backend.update_default()
 
-    def _list(self):
+    def keys(self):
         """Get handles for all universe definitions as a list.
 
         :Returns:
@@ -851,10 +851,10 @@ class Data(Aggregator):
     """
 
     def __repr__(self):
-        return "<Data({})>".format(self._list())
+        return "<Data({})>".format(self.keys())
 
     def _repr_html_(self):
-        data = self._list()
+        data = self.keys()
         agg = "Data"
         if not data:
             out = "No Data"
@@ -867,7 +867,7 @@ class Data(Aggregator):
         return out
 
     def __str__(self):
-        data = self._list()
+        data = self.keys()
         agg = "Data"
         majsep = "="
         seplength = len(agg)
@@ -882,7 +882,7 @@ class Data(Aggregator):
         return out
 
     def __iter__(self):
-        return self._list().__iter__()
+        return self.keys().__iter__()
 
     def _makedirs(self, p):
         """Make directories and all parents necessary.
@@ -1218,7 +1218,7 @@ class Data(Aggregator):
         """
         self._datafile.append_data('main', data)
 
-    def _list(self):
+    def keys(self):
         """List available datasets.
 
         :Returns:
