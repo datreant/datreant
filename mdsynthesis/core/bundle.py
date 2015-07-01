@@ -181,6 +181,15 @@ class _CollectionBase(object):
 
         return memberlist
 
+    @property
+    def data(self):
+        """Access the data of each member, collectively.
+
+        """
+        if not self._data:
+            self._data = aggregators.MemberData(self)
+        return self._data
+
 
 class _BundleBackend():
     """Backend class for Bundle.
@@ -359,6 +368,7 @@ class Bundle(_CollectionBase):
         """
         self._backend = _BundleBackend()
         self._cache = dict()
+        self._data = None
 
         self.add(*containers)
 

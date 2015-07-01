@@ -745,20 +745,6 @@ class Members(Aggregator, bundle._CollectionBase):
 
         return out
 
-    @property
-    def data(self):
-        """The data of the Container.
-
-        Data are user-generated pandas objects (e.g. Series, DataFrames), numpy
-        arrays, or any pickleable python object that are stored in the
-        Container for easy recall later.  Each data instance is given its own
-        directory in the Container's tree.
-
-        """
-        if not self._data:
-            self._data = MemberData(self)
-        return self._data
-
 
 class MemberAgg(object):
     """Core functionality for aggregators attached to the Members aggregator.
@@ -773,7 +759,10 @@ class MemberData(MemberAgg):
     """Manipulators for member data.
 
     """
-    def _list(self, mode='any'):
+    def __repr__(self):
+        return "<Data({})>".format(self.keys(mode='any'))
+
+    def keys(self, mode='any'):
         """List available datasets.
 
         :Arguments:
