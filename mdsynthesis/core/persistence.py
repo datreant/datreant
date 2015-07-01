@@ -782,7 +782,8 @@ class SimFile(ContainerFile):
 
         :Returns:
             *default*
-                name of default universe
+                name of default universe; if no default
+                universe, returns ``None``
 
         """
         table = self.handle.get_node('/', 'default')
@@ -824,17 +825,20 @@ class SimFile(ContainerFile):
                 structured array containing all paths to trajectory(s)
 
         """
-        paths = dict()
+        try:
+            # get topology file
+            table = self.handle.get_node('/universes/{}'.format(universe),
+                                         'topology')
+            topology = table.read()
 
-        # get topology file
-        table = self.handle.get_node('/universes/{}'.format(universe),
-                                     'topology')
-        topology = table.read()
+            # get trajectory files
+            table = self.handle.get_node('/universes/{}'.format(universe),
+                                         'trajectory')
+            trajectory = table.read()
 
-        # get trajectory files
-        table = self.handle.get_node('/universes/{}'.format(universe),
-                                     'trajectory')
-        trajectory = table.read()
+        except tables.NoSuchNodeError:
+            raise KeyError(
+                    "No such universe '{}'; add it first.".format(universe))
 
         return (topology, trajectory)
 
@@ -910,7 +914,12 @@ class SimFile(ContainerFile):
             *universe*
                 name of universe to delete
         """
-        self.handle.remove_node('/universes', universe, recursive=True)
+        try:
+            self.handle.remove_node('/universes', universe, recursive=True)
+        except tables.NoSuchNodeError:
+            raise KeyError(
+                    "No such universe '{}';".format(universe) +
+                    " nothing to remove.")
 
     @File._write_state
     def update_resnums(self, universe, resnums):
@@ -1086,7 +1095,8 @@ class SimFile(ContainerFile):
                 '/universes/{}/selections'.format(universe), handle)
         except tables.NoSuchNodeError:
             raise KeyError(
-                    "No such selection '{}'; add it first.".format(handle))
+                    "No such selection '{}';".format(handle) +
+                    " nothing to remove.")
 
 
 class GroupFile(ContainerFile):

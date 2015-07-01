@@ -347,7 +347,12 @@ class Universes(Aggregator):
                 name of universe(s) to delete
         """
         for item in handle:
-            self._backend.del_universe(item)
+            try:
+                self._backend.del_universe(item)
+            except KeyError:
+                raise KeyError(
+                        "No such universe '{}';".format(handle) +
+                        " nothing to remove.")
 
             if self._container._uname == item:
                 self._container._universe = None
@@ -377,6 +382,9 @@ class Universes(Aggregator):
 
         If a resnum definition exists for the universe, it is applied.
 
+        Raises :exc:`ValueError` if no handle given and no universe is set
+        as the default.
+
         :Arguments:
             *handle*
                 given name for selecting the universe; if ``None``, default
@@ -404,13 +412,19 @@ class Universes(Aggregator):
                 self._logger.info(
                     "Cannot update paths for universe '{}';".format(handle) +
                     " state file is read-only.")
+        else:
+            raise ValueError("No handle given, and no default universe set;" +
+                             " no universe activated.")
 
     def current(self):
         """Return the name of the currently active universe.
 
+        If no universe is active; returns ``None``.
+
         :Returns:
             *handle*
-                name of currently active universe
+                name of currently active universe; ``None`` if no universe
+                is active
         """
         return self._container._uname
 
@@ -619,7 +633,8 @@ class Selections(Aggregator):
                 self._backend.del_selection(self._container._uname, item)
             except KeyError:
                 raise KeyError(
-                        "No such selection '{}'; add it first.".format(item))
+                        "No such selection '{}';".format(item) +
+                        " nothing to remove.")
 
     def keys(self):
         """Return a list of all selection handles.

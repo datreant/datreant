@@ -140,6 +140,10 @@ class TestContainer:
             with pytest.raises(TypeError):
                 container.categories.add(['mark', 'matt'])
 
+        def test_KeyError(self, container):
+            with pytest.raises(KeyError):
+                container.categories['hello?']
+
     class TestData:
         """Test data storage and retrieval"""
 
@@ -329,6 +333,9 @@ class TestSim(TestContainer):
             assert 'spam' not in container.universes
             assert 'eggs' in container.universes
 
+            with pytest.raises(KeyError):
+                container.universes.remove('ham')
+
         def test_set_default_universe(self, container):
             """Test that a default universe exists, and that it's settable"""
             container.universes.add('lolcats', GRO, XTC)
@@ -346,6 +353,10 @@ class TestSim(TestContainer):
             assert container.universe.filename == GRO
             assert container.universe.trajectory.filename == GRO
             assert container._uname == 'megaman'
+
+            container.universes.remove('megaman')
+
+            assert container.universes.default() == None
 
         def test_set_resnums(self, container):
             """Test that we can add resnums to a universe."""
@@ -374,6 +385,18 @@ class TestSim(TestContainer):
 
             # protein = container.universe.selectAtoms('protein')
             # assert (resids + 6 == protein.residues.resnums()).all()
+
+        def test_KeyError(self, container):
+            """Test that a KeyError raised when trying to activate a Universe
+            that doesn't exist.
+            """
+            with pytest.raises(KeyError):
+                container.universes.activate('ham')
+
+            container.universes.add('lolcats', GRO, XTC)
+
+            with pytest.raises(KeyError):
+                container.universes.activate('eggs')
 
     class TestSelections:
         """Test stored selections functionality"""
@@ -579,14 +602,20 @@ class TestReadOnly:
     XTC = 'md.xtc'
 
     @pytest.fixture
-    def container(self, tmpdir):
+    def container(self, tmpdir, request):
         with tmpdir.as_cwd():
             c = mds.containers.Container('testcontainer')
             py.path.local(c.basedir).chmod(0550, rec=True)
+
+        def fin():
+            py.path.local(c.basedir).chmod(0770, rec=True)
+
+        request.addfinalizer(fin)
+
         return c
 
     @pytest.fixture
-    def sim(self, tmpdir):
+    def sim(self, tmpdir, request):
         with tmpdir.as_cwd():
             c = mds.Sim('testsim')
 
@@ -600,14 +629,26 @@ class TestReadOnly:
             c.universes.add('main', GRO_t.strpath, XTC_t.strpath)
 
             py.path.local(c.basedir).chmod(0550, rec=True)
+
+        def fin():
+            py.path.local(c.basedir).chmod(0770, rec=True)
+
+        request.addfinalizer(fin)
+
         return c
 
     @pytest.fixture
-    def group(self, tmpdir):
+    def group(self, tmpdir, request):
         with tmpdir.as_cwd():
             c = mds.Group('testgroup')
             c.members.add(mds.Sim('lark'), mds.Group('bark'))
             py.path.local(c.basedir).chmod(0550, rec=True)
+
+        def fin():
+            py.path.local(c.basedir).chmod(0770, rec=True)
+
+        request.addfinalizer(fin)
+
         return c
 
     def test_sim_universe_access(self, sim):
@@ -624,6 +665,8 @@ class TestReadOnly:
         py.path.local(sim.basedir).chmod(0550, rec=True)
 
         assert isinstance(sim.universe, MDAnalysis.Universe)
+
+        py.path.local(sim.basedir).chmod(0770, rec=True)
 
     def test_group_member_access(self, group):
         """Test that Group can access members when the Group is read-only.
