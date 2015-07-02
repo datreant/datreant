@@ -233,7 +233,7 @@ class _CollectionBase(object):
             results = dict()
             for member in self:
                 results[member.uuid] = pool.apply_async(
-                        function, args=(member.filename,), kwds=kwargs)
+                        function, args=(member.filepath,), kwds=kwargs)
             pool.close()
             pool.join()
 
