@@ -10,6 +10,7 @@ import aggregators
 import persistence
 import filesystem
 import numpy as np
+import multiprocessing as mp
 import mdsynthesis as mds
 
 
