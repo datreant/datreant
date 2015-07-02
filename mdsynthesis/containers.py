@@ -26,6 +26,7 @@ class Container(object):
     """Core class for all Containers.
 
     """
+    _containertype = 'Container'
 
     def __init__(self, container, location='.', coordinator=None,
                  categories=None, tags=None):
@@ -58,14 +59,20 @@ class Container(object):
 
         """
         if os.path.exists(container):
-            self._regenerate('Container', container)
+            self._regenerate(self._containertype, container)
         else:
-            self._generate('Container', container, location=location,
+            self._generate(self._containertype, container, location=location,
                            coordinator=coordinator, categories=categories,
                            tags=tags)
 
     def __repr__(self):
         return "<Container: '{}'>".format(self.name)
+
+    def __getstate__(self):
+        return self.filepath
+
+    def __setstate__(self, state):
+        self._regenerate(self._containertype, state)
 
     def __eq__(self, other):
         try:
@@ -434,6 +441,7 @@ class Sim(Container):
     """The Sim object is an interface to data for single simulations.
 
     """
+    _containertype = 'Sim'
 
     def __init__(self, sim, universe=None, uname='main', location='.',
                  coordinator=None, categories=None, tags=None):
@@ -584,6 +592,8 @@ class Group(Container):
     """The Group object is a collection of Sims and Groups.
 
     """
+    _containertype = 'Group'
+
     def __init__(self, group, members=None, location='.', coordinator=None,
                  categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Group object.

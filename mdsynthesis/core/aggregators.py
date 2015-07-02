@@ -807,7 +807,10 @@ class MemberData(MemberAgg):
         elif mode == 'all':
             out = set.intersection(*datasets)
 
-        return list(out)
+        out = list(out)
+        out.sort()
+
+        return out
 
     # TODO: needs to work for more than just dataframes, series
     def retrieve(self, handle, by='name', **kwargs):

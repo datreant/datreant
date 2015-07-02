@@ -218,22 +218,11 @@ class _CollectionBase(object):
                 in member order
         """
         if processes > 1:
-            # since we can't (yet) pickle containers, we make the function take
-            # a path instead
-            def containerpath_arg(func):
-                def inner(container_path, **kwargs):
-                    container = filesystem.path2container(container_path)[0]
-                    out = func(container, **kwargs)
-                    return out
-                return inner
-
-            function = containerpath_arg(function)
-
             pool = mp.Pool(processes=processes)
             results = dict()
             for member in self:
                 results[member.uuid] = pool.apply_async(
-                        function, args=(member.filepath,), kwds=kwargs)
+                        function, args=(member,), kwds=kwargs).get()
             pool.close()
             pool.join()
 
