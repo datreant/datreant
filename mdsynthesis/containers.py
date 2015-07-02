@@ -315,6 +315,13 @@ class Container(object):
         return self._backend.get_location()
 
     @property
+    def filepath(self):
+        """Absolute path to the Container's state file.
+
+        """
+        return self._backend.filename
+
+    @property
     def coordinators(self):
         """The locations of the associated Coordinators.
 

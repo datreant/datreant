@@ -762,6 +762,31 @@ class MemberData(MemberAgg):
     def __repr__(self):
         return "<Data({})>".format(self.keys(mode='any'))
 
+    def __getitem__(self, handle):
+        """Retrieve aggreggated dataset from all members.
+
+        Raises :exc:`KeyError` if dataset doesn't exist for any members.
+
+        :Arguments:
+            *handle*
+                name of data to retrieve; may also be a list of names
+
+        :Returns:
+            *data*
+                aggregated data, indexed by member name; if *handle* was a
+                list, will be a list of equal length with the stored data as
+                members
+
+        """
+        if isinstance(handle, list):
+            out = list()
+            for item in handle:
+                out.append(self.retrieve(item))
+        elif isinstance(handle, basestring):
+            out = self.retrieve(handle)
+
+        return out
+
     def keys(self, mode='any'):
         """List available datasets.
 
@@ -785,20 +810,44 @@ class MemberData(MemberAgg):
         return list(out)
 
     # TODO: needs to work for more than just dataframes, series
-    def retrieve(self, handle, **kwargs):
+    def retrieve(self, handle, by='name', **kwargs):
         """Retrieve aggregated dataset from all members.
 
-        The stored data structure for each member is read from disk
-        and aggregated. The aggregation scheme is dependent on the
-        form of the data structure.
+        This is a convenience method. The stored data structure for each member
+        is read from disk and aggregated. The aggregation scheme is dependent
+        on the form of the data structures pulled from each member:
 
-        See :meth:`Data.retrieve` for more information on keyword usage.
+        pandas DataFrames or Series
+            the structures are appended together, with a new level added
+            to the index giving the member (see *by*) each set of rows
+            came from
+
+        pandas Panel or Panel4D, numpy arrays, pickled python objects
+            the structures are returned as a dictionary, with keys giving
+            the member (see *by*) and each value giving the corresponding
+            data structure
+
+        This method tries to do smart things with the data it reads from each
+        member. In particular:
+            - members for which there is no data with the given handle are
+              skipped
+            - the lowest-common-denominator data structure is output; this
+              means that if all data structures read are pandas DataFrames,
+              then a multi-index DataFrame is returned; if some structures are
+              pandas DataFrames, while some are anything else, a dictionary is
+              returned
 
         :Arguments:
             *handle*
                 name of data to retrieve
+            *by*
+                top-level index of output data structure; 'name' uses member
+                names, 'uuid' uses member uuids; if names are not unique,
+                it is better to go with 'uuid'
 
-        :Keywords:
+        See :meth:`Data.retrieve` for more information on keyword usage.
+
+        :Keywords for pandas data structures:
             *where*
                 conditions for what rows/columns to return
             *start*
@@ -815,9 +864,14 @@ class MemberData(MemberAgg):
 
         :Returns:
             *data*
-                aggregated data
+                aggregated data structure
 
         """
+        # first, check for existence in any member
+        if handle not in self.keys('any'):
+            raise KeyError(
+                    "No dataset '{}' found in any member".format(handle))
+
         agg = None
         for member in self._members:
             d = member.data.retrieve(handle, **kwargs)

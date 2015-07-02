@@ -190,6 +190,59 @@ class _CollectionBase(object):
             self._data = aggregators.MemberData(self)
         return self._data
 
+    def map(self, function, processes=1, **kwargs):
+        """Apply a function to each member, perhaps in parallel.
+
+        A pool of processes is created for *processes* > 1; for example,
+        with 40 members and 'processes=4', 4 processes will be created,
+        each working on a single member at any given time. When each process
+        completes work on a member, it grabs another, until no members remain.
+
+        *kwargs* are passed to the given function
+
+        :Arguments:
+            *function*
+                function to apply to each member; must take only a single
+                container instance as input, but may take any number of keyword
+                arguments
+
+        :Keywords:
+            *processes*
+                how many processes to use; if 1, applies function to each
+                member in member order
+
+        :Returns:
+            *results*
+                list giving the result of the function for each member,
+                in member order
+        """
+        if processes > 1:
+            # since we can't (yet) pickle containers, we make the function take
+            # a path instead
+            def containerpath_arg(func):
+                def inner(container_path, **kwargs):
+                    container = filesystem.path2container(container_path)[0]
+                    out = func(container, **kwargs)
+                    return out
+                return inner
+
+            function = containerpath_arg(function)
+
+            pool = mp.Pool(processes=processes)
+            results = dict()
+            for member in self:
+                results[member.uuid] = pool.apply_async(
+                        function, args=(member.filename,), kwds=kwargs)
+            pool.close()
+            pool.join()
+
+            # sort by member order
+            results = [results[uuid] for uuid in self.uuids]
+        else:
+            results = [function(member, **kwargs) for member in self]
+
+        return results
+
 
 class _BundleBackend():
     """Backend class for Bundle.
