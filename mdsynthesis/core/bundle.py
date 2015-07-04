@@ -199,7 +199,7 @@ class _CollectionBase(object):
         each working on a single member at any given time. When each process
         completes work on a member, it grabs another, until no members remain.
 
-        *kwargs* are passed to the given function
+        *kwargs* are passed to the given function when applied to each member
 
         :Arguments:
             *function*
@@ -215,8 +215,9 @@ class _CollectionBase(object):
         :Returns:
             *results*
                 list giving the result of the function for each member,
-                in member order
-        """
+                in member order; if the function returns ``None`` for each
+                member, then only ``None`` is returned instead of a list
+            """
         if processes > 1:
             pool = mp.Pool(processes=processes)
             results = dict()
@@ -230,6 +231,10 @@ class _CollectionBase(object):
             results = [results[uuid] for uuid in self.uuids]
         else:
             results = [function(member, **kwargs) for member in self]
+
+        # check if list is all ``None``: if so, we return ``None``
+        if all([(i is None) for i in results]):
+            results = None
 
         return results
 
