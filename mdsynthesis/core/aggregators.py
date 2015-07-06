@@ -765,7 +765,7 @@ class MemberData(MemberAgg):
     def __getitem__(self, handle):
         """Retrieve aggreggated dataset from all members.
 
-        Returns datasets indexed according to member uuids. 
+        Returns datasets indexed according to member uuids.
         See :meth:`MemberData.retrieve` for more information.
 
         Raises :exc:`KeyError` if dataset doesn't exist for any members.
@@ -896,9 +896,9 @@ class MemberData(MemberAgg):
 
         # get indexer from *by* keyword
         if by == 'uuid':
-            get_index = lambda member: member.uuid
+            def get_index(member): member.uuid
         elif by == 'name':
-            get_index = lambda member: member.name
+            def get_index(member): member.name
             names = [member.name for member in self._members]
             if len(set(names)) != len(names):
                 self._members._logger.warning(

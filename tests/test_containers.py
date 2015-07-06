@@ -172,9 +172,25 @@ class TestContainer:
                                                        self.handle,
                                                        self.datafile))
 
+            def test_retrieve_data(self, container, datastruct):
+                container.data.add(self.handle, datastruct)
+                np.testing.assert_equal(container.data.retrieve(self.handle),
+                                        datastruct)
+                np.testing.assert_equal(container.data[self.handle],
+                                        datastruct)
+
         class PandasMixin(DataMixin):
             """Mixin class for pandas tests"""
             datafile = mds.core.persistence.pddatafile
+
+            def test_retrieve_data(self, container, datastruct):
+                container.data.add(self.handle, datastruct)
+                np.testing.assert_equal(
+                        container.data.retrieve(self.handle).values,
+                        datastruct.values)
+                np.testing.assert_equal(
+                        container.data[self.handle].values,
+                        datastruct.values)
 
         class Test_Series(PandasMixin):
             @pytest.fixture
@@ -593,6 +609,28 @@ class TestGroup(TestContainer):
 
             containertypes = [cont.containertype for cont in [c1, g2, s3]]
             assert container.members.containertypes == containertypes
+
+        def test_map(self, container, tmpdir)
+            with tmpdir.as_cwd():
+                s1 = mds.Sim('lark')
+                s2 = mds.Sim('hark')
+                g3 = mds.Group('linus')
+
+            def do_stuff(cont):
+                return cont.name + cont.uuid
+
+            def return_nothing(cont):
+                b = cont.name + cont.uuid
+
+            comp = [cont.name + cont.uuid for cont in container.members]
+            assert container.members.map(do_stuff) == comp
+            assert container.members.map(do_stuff, processes=2) == comp
+
+            assert container.members.map(return_nothing) is None
+            assert container.members.map(return_nothing, processes=2) is None
+
+        class TestMemberData:
+            """Test member data functionality"""
 
 
 class TestReadOnly:
