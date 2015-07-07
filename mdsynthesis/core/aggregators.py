@@ -896,9 +896,9 @@ class MemberData(MemberAgg):
 
         # get indexer from *by* keyword
         if by == 'uuid':
-            def get_index(member): member.uuid
+            def get_index(member): return member.uuid
         elif by == 'name':
-            def get_index(member): member.name
+            def get_index(member): return member.name
             names = [member.name for member in self._members]
             if len(set(names)) != len(names):
                 self._members._logger.warning(

@@ -203,10 +203,12 @@ class TestContainer:
         class Test_Blank_DataFrame(test_data.Blank_DataFrame, PandasMixin):
             pass
 
-        class Test_Wide_Blank_DataFrame(test_data.Wide_Blank_DataFrame, PandasMixin):
+        class Test_Wide_Blank_DataFrame(test_data.Wide_Blank_DataFrame,
+                                        PandasMixin):
             pass
 
-        class Test_Thin_Blank_DataFrame(test_data.Thin_Blank_DataFrame, PandasMixin):
+        class Test_Thin_Blank_DataFrame(test_data.Thin_Blank_DataFrame,
+                                        PandasMixin):
             pass
 
         class Test_Panel(test_data.Panel, PandasMixin):

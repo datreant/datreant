@@ -253,7 +253,13 @@ class _BundleBackend():
     def __init__(self):
         # our table will be a structured array matching the schema of the
         # GroupFile _Members Table
-        self.table = None
+        self.table = np.array(
+                [],
+                dtype={'names': ['uuid', 'containertype', 'abspath'],
+                       'formats': ['a{}'.format(persistence.uuidlength),
+                                   'a{}'.format(persistence.namelength),
+                                   'a{}'.format(persistence.pathlength)]
+                       }).reshape(1, -1)
 
     def _member2record(self, uuid, containertype, basedir):
         """Return a record array from a member's information.
@@ -284,7 +290,7 @@ class _BundleBackend():
                 basedir of the new member in the filesystem
 
         """
-        if self.table is None:
+        if self.table.shape == (1, 0):
             self.table = self._member2record(uuid, containertype, basedir)
         else:
             # check if uuid already present
@@ -311,7 +317,7 @@ class _BundleBackend():
         purge = kwargs.pop('all', False)
 
         if purge:
-            self.table = None
+            self.__init__()
         else:
             # remove redundant uuids from given list if present
             uuids = set([str(uid) for uid in uuid])
