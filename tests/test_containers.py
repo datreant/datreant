@@ -9,6 +9,8 @@ import pytest
 import os
 import shutil
 import py
+import test_data
+import test_bundle
 
 import MDAnalysis
 from MDAnalysisTests.datafiles import GRO, XTC
@@ -172,90 +174,73 @@ class TestContainer:
                                                        self.handle,
                                                        self.datafile))
 
+            def test_retrieve_data(self, container, datastruct):
+                container.data.add(self.handle, datastruct)
+                np.testing.assert_equal(container.data.retrieve(self.handle),
+                                        datastruct)
+                np.testing.assert_equal(container.data[self.handle],
+                                        datastruct)
+
         class PandasMixin(DataMixin):
             """Mixin class for pandas tests"""
             datafile = mds.core.persistence.pddatafile
 
-        class Test_Series(PandasMixin):
-            @pytest.fixture
-            def datastruct(self):
-                data = np.random.rand(10000)
-                return pd.Series(data)
+            def test_retrieve_data(self, container, datastruct):
+                container.data.add(self.handle, datastruct)
+                np.testing.assert_equal(
+                        container.data.retrieve(self.handle).values,
+                        datastruct.values)
+                np.testing.assert_equal(
+                        container.data[self.handle].values,
+                        datastruct.values)
 
-        class Test_DataFrame(PandasMixin):
-            @pytest.fixture
-            def datastruct(self):
-                data = np.random.rand(10000, 3)
-                return pd.DataFrame(data, columns=('A', 'B', 'C'))
+        class Test_Series(test_data.Series, PandasMixin):
+            pass
 
-        class Test_Blank_DataFrame(PandasMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return pd.DataFrame(np.zeros((10, 10)))
+        class Test_DataFrame(test_data.DataFrame, PandasMixin):
+            pass
 
-        class Test_Wide_Blank_DataFrame(PandasMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return pd.DataFrame(np.zeros((1, 10)))
+        class Test_Blank_DataFrame(test_data.Blank_DataFrame, PandasMixin):
+            pass
 
-        class Test_Thin_Blank_DataFrame(PandasMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return pd.DataFrame(np.zeros((10, 1)))
+        class Test_Wide_Blank_DataFrame(test_data.Wide_Blank_DataFrame,
+                                        PandasMixin):
+            pass
 
-        class Test_Panel(PandasMixin):
-            @pytest.fixture
-            def datastruct(self):
-                data = np.random.rand(4, 10000, 3)
-                return pd.Panel(data, items=('I', 'II', 'III', 'IV'),
-                                minor_axis=('A', 'B', 'C'))
+        class Test_Thin_Blank_DataFrame(test_data.Thin_Blank_DataFrame,
+                                        PandasMixin):
+            pass
 
-        class Test_Panel4D(PandasMixin):
-            @pytest.fixture
-            def datastruct(self):
-                data = np.random.rand(2, 4, 10000, 3)
-                return pd.Panel4D(data, labels=('gallahad', 'lancelot'),
-                                  items=('I', 'II', 'III', 'IV'),
-                                  minor_axis=('A', 'B', 'C'))
+        class Test_Panel(test_data.Panel, PandasMixin):
+            pass
+
+        class Test_Panel4D(test_data.Panel4D, PandasMixin):
+            pass
 
         class NumpyMixin(DataMixin):
             """Test numpy datastructure storage and retrieval"""
             datafile = mds.core.persistence.npdatafile
 
-        class Test_NumpyScalar(NumpyMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return np.array(20)
+        class Test_NumpyScalar(test_data.NumpyScalar, NumpyMixin):
+            pass
 
-        class Test_Numpy1D(NumpyMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return np.random.rand(10000)
+        class Test_Numpy1D(test_data.Numpy1D, NumpyMixin):
+            pass
 
-        class Test_Numpy2D(NumpyMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return np.random.rand(10000, 500)
+        class Test_Numpy2D(test_data.Numpy2D, NumpyMixin):
+            pass
 
-        class Test_Wide_Numpy2D(NumpyMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return np.zeros((1, 10))
+        class Test_Wide_Numpy2D(test_data.Wide_Numpy2D, NumpyMixin):
+            pass
 
-        class Test_Thin_Numpy2D(NumpyMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return np.zeros((10, 1))
+        class Test_Thin_Numpy2D(test_data.Thin_Numpy2D, NumpyMixin):
+            pass
 
-        class Test_Numpy3D(NumpyMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return np.random.rand(4, 10000, 45)
+        class Test_Numpy3D(test_data.Numpy3D, NumpyMixin):
+            pass
 
-        class Test_Numpy4D(NumpyMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return np.random.rand(2, 4, 10000, 45)
+        class Test_Numpy4D(test_data.Numpy4D, NumpyMixin):
+            pass
 
         class PythonMixin(DataMixin):
             """Test pandas datastructure storage and retrieval"""
@@ -268,32 +253,20 @@ class TestContainer:
                 container.data[self.handle] = 23
                 assert container.data[self.handle] == 23
 
-        class Test_List(PythonMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return ['galahad', 'lancelot', 42, 'arthur', 3.14159]
+        class Test_List(test_data.List, PythonMixin):
+            pass
 
-        class Test_Dict(PythonMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return {'pure': 'galahad', 'brave': 'lancelot', 'answer': 42,
-                        'king': 'arthur', 'pi-ish': 3.14159}
+        class Test_Dict(test_data.Dict, PythonMixin):
+            pass
 
-        class Test_Tuple(PythonMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return ('arthur', 3.14159)
+        class Test_Tuple(test_data.Tuple, PythonMixin):
+            pass
 
-        class Test_Set(PythonMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return {'arthur', 3.14159, 'seahorses'}
+        class Test_Set(test_data.Set, PythonMixin):
+            pass
 
-        class Test_Dict_Mix(PythonMixin):
-            @pytest.fixture
-            def datastruct(self):
-                return {'an array': np.random.rand(100, 46),
-                        'another': np.random.rand(3, 45, 2)}
+        class Test_Dict_Mix(test_data.Dict_Mix, PythonMixin):
+            pass
 
 
 class TestSim(TestContainer):
@@ -519,80 +492,12 @@ class TestGroup(TestContainer):
     def test_repr(self, container):
         pass
 
-    class TestMembers:
+    class TestMembers(test_bundle.CollectionTests):
         """Test member functionality"""
 
-        def test_add_members(self, container, tmpdir):
-            """Try adding members in a number of ways"""
-            with tmpdir.as_cwd():
-                s1 = mds.Sim('lark')
-                s2 = mds.Sim('hark')
-                g3 = mds.Group('linus')
-
-                container.members.add(s1, [g3, s2])
-
-                for cont in (s1, s2, g3):
-                    assert cont in container.members
-
-                s4 = mds.Sim('snoopy')
-                container.members.add([[s4], s2])
-                assert s4 in container.members
-
-        def test_get_members(self, container, tmpdir):
-            """Access members with indexing and slicing"""
-            with tmpdir.as_cwd():
-                s1 = mds.Sim('larry')
-                g2 = mds.Group('curly')
-                s3 = mds.Sim('moe')
-
-                container.members.add([[[s1, [g2, [s3]]]]])
-
-                assert container.members[1] == g2
-
-                c4 = mds.containers.Container('shemp')
-                container.members.add(c4)
-
-                for member in (s1, g2, s3):
-                    assert member in container.members[:3]
-
-                assert c4 not in container.members[:3]
-                assert c4 == container.members[-1]
-
-        def test_remove_members(self, container, tmpdir):
-            """Try removing members"""
-            with tmpdir.as_cwd():
-                g1 = mds.Group('lion-o')
-                s2 = mds.Sim('cheetara')
-                s3 = mds.Container('snarf')
-
-                container.members.add(s3, g1, s2)
-
-                for cont in (g1, s2, s3):
-                    assert cont in container.members
-
-                container.members.remove(1)
-                assert g1 not in container.members
-
-                container.members.remove(s2)
-                assert s2 not in container.members
-
-        def test_member_attributes(self, container, tmpdir):
-            """Get member uuids, names, and containertypes"""
-            with tmpdir.as_cwd():
-                c1 = mds.containers.Container('bigger')
-                g2 = mds.Group('faster')
-                s3 = mds.Sim('stronger')
-
-            container.members.add(c1, g2, s3)
-
-            uuids = [cont.uuid for cont in [c1, g2, s3]]
-            assert container.members.uuids == uuids
-
-            names = [cont.name for cont in [c1, g2, s3]]
-            assert container.members.names == names
-
-            containertypes = [cont.containertype for cont in [c1, g2, s3]]
-            assert container.members.containertypes == containertypes
+        @pytest.fixture
+        def collection(self, container):
+            return container.members
 
 
 class TestReadOnly:

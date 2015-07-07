@@ -10,6 +10,7 @@ import aggregators
 import persistence
 import filesystem
 import numpy as np
+import multiprocessing as mp
 import mdsynthesis as mds
 
 
@@ -181,6 +182,62 @@ class _CollectionBase(object):
 
         return memberlist
 
+    @property
+    def data(self):
+        """Access the data of each member, collectively.
+
+        """
+        if not self._data:
+            self._data = aggregators.MemberData(self)
+        return self._data
+
+    def map(self, function, processes=1, **kwargs):
+        """Apply a function to each member, perhaps in parallel.
+
+        A pool of processes is created for *processes* > 1; for example,
+        with 40 members and 'processes=4', 4 processes will be created,
+        each working on a single member at any given time. When each process
+        completes work on a member, it grabs another, until no members remain.
+
+        *kwargs* are passed to the given function when applied to each member
+
+        :Arguments:
+            *function*
+                function to apply to each member; must take only a single
+                container instance as input, but may take any number of keyword
+                arguments
+
+        :Keywords:
+            *processes*
+                how many processes to use; if 1, applies function to each
+                member in member order
+
+        :Returns:
+            *results*
+                list giving the result of the function for each member,
+                in member order; if the function returns ``None`` for each
+                member, then only ``None`` is returned instead of a list
+            """
+        if processes > 1:
+            pool = mp.Pool(processes=processes)
+            results = dict()
+            for member in self:
+                results[member.uuid] = pool.apply_async(
+                        function, args=(member,), kwds=kwargs).get()
+            pool.close()
+            pool.join()
+
+            # sort by member order
+            results = [results[uuid] for uuid in self.uuids]
+        else:
+            results = [function(member, **kwargs) for member in self]
+
+        # check if list is all ``None``: if so, we return ``None``
+        if all([(i is None) for i in results]):
+            results = None
+
+        return results
+
 
 class _BundleBackend():
     """Backend class for Bundle.
@@ -196,7 +253,13 @@ class _BundleBackend():
     def __init__(self):
         # our table will be a structured array matching the schema of the
         # GroupFile _Members Table
-        self.table = None
+        self.table = np.array(
+                [],
+                dtype={'names': ['uuid', 'containertype', 'abspath'],
+                       'formats': ['a{}'.format(persistence.uuidlength),
+                                   'a{}'.format(persistence.namelength),
+                                   'a{}'.format(persistence.pathlength)]
+                       }).reshape(1, -1)
 
     def _member2record(self, uuid, containertype, basedir):
         """Return a record array from a member's information.
@@ -227,7 +290,7 @@ class _BundleBackend():
                 basedir of the new member in the filesystem
 
         """
-        if self.table is None:
+        if self.table.shape == (1, 0):
             self.table = self._member2record(uuid, containertype, basedir)
         else:
             # check if uuid already present
@@ -254,7 +317,7 @@ class _BundleBackend():
         purge = kwargs.pop('all', False)
 
         if purge:
-            self.table = None
+            self.__init__()
         else:
             # remove redundant uuids from given list if present
             uuids = set([str(uid) for uid in uuid])
@@ -359,6 +422,7 @@ class Bundle(_CollectionBase):
         """
         self._backend = _BundleBackend()
         self._cache = dict()
+        self._data = None
 
         self.add(*containers)
 
