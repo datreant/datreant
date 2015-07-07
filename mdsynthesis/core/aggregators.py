@@ -361,6 +361,32 @@ class Universes(Aggregator):
             if self.default() == item:
                 self._backend.update_default()
 
+    def rename(self, handle, newname):
+        """Rename a universe definition.
+
+        :Arguments:
+            *handle*
+                name of universe to rename
+            *newname*
+                new name of universe
+        """
+        try:
+            self._backend.rename_universe(handle, newname)
+        except KeyError:
+            raise KeyError(
+                    "No such universe '{}';".format(handle) +
+                    " nothing to rename.")
+        except ValueError:
+            raise ValueError(
+                    "A universe '{}' already exists;".format(handle) +
+                    " remove or rename it first.")
+
+        if self._container._uname == handle:
+            self._container._uname = newname
+
+            if self.default() == handle:
+                self._backend.update_default(newname)
+
     def keys(self):
         """Get handles for all universe definitions as a list.
 

@@ -309,6 +309,25 @@ class TestSim(TestContainer):
             with pytest.raises(KeyError):
                 container.universes.remove('ham')
 
+        def test_rename_universe(self, container):
+            """Test universe renaming"""
+            container.universes.add('spam', GRO, XTC)
+            container.universes.add('eggs', GRO, XTC)
+
+            assert 'spam' in container.universes
+
+            container.universes.rename('spam', 'boots')
+
+            assert 'spam' not in container.universes
+            assert 'boots' in container.universes
+            assert 'eggs' in container.universes
+
+            with pytest.raises(KeyError):
+                container.universes.rename('ham', 'lark')
+
+            with pytest.raises(ValueError):
+                container.universes.rename('boots', 'eggs')
+
         def test_set_default_universe(self, container):
             """Test that a default universe exists, and that it's settable"""
             container.universes.add('lolcats', GRO, XTC)

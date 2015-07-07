@@ -922,6 +922,27 @@ class SimFile(ContainerFile):
                     " nothing to remove.")
 
     @File._write_state
+    def rename_universe(self, universe, newname):
+        """Rename a universe definition.
+
+        :Arguments:
+            *universe*
+                name of universe to rename
+            *newname*
+                new name of universe
+        """
+        try:
+            self.handle.rename_node('/universes', newname, name=universe)
+        except tables.NoSuchNodeError:
+            raise KeyError(
+                    "No such universe '{}';".format(universe) +
+                    " nothing to rename.")
+        except tables.NodeError:
+            raise ValueError(
+                    "A universe '{}' already exists;".format(universe) +
+                    " remove or rename it first.")
+
+    @File._write_state
     def update_resnums(self, universe, resnums):
         """Update resnum definition for the given universe.
 
