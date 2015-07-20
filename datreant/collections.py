@@ -1,21 +1,20 @@
 """
-The Bundle object is the primary manipulator for Containers in aggregate.
+The Bundle object is the primary manipulator for Treants in aggregate.
 They are returned as queries to Groups, Coordinators, and other Bundles. They
-offer convenience methods for dealing with many Containers at once.
+offer convenience methods for dealing with many Treants at once.
 
 """
 import os
 
-import aggregators
-import persistence
-import filesystem
 import numpy as np
 import multiprocessing as mp
-import mdsynthesis as mds
+
+from datreant import persistence
+from datreant import filesystem
 
 
 class _CollectionBase(object):
-    """Common interface elements for ordered sets of Containers.
+    """Common interface elements for ordered sets of Treants.
 
     :class:`aggregators.Members` and :class:`Bundle` both use this interface.
 
@@ -34,33 +33,36 @@ class _CollectionBase(object):
 
         return out
 
-    def add(self, *containers):
+    def add(self, *treants):
         """Add any number of members to this collection.
 
         :Arguments:
-            *containers*
-                Sims and/or Groups to be added; may be a list of Sims and/or
-                Groups; Sims or Groups can be given as either objects or paths
-                to directories that contain object statefiles
+            *treants*
+                Treants and/or Groups to be added; may be a list of Treants
+                and/or Groups; Treants or Groups can be given as either objects
+                or paths to directories that contain object statefiles
         """
+        from datreant.aggregators import Members
+        from datreant.treants import Treant
+
         outconts = list()
-        for container in containers:
-            if container is None:
+        for treant in treants:
+            if treant is None:
                 pass
-            elif isinstance(container,
-                            (list, tuple, Bundle, aggregators.Members)):
-                self.add(*container)
-            elif isinstance(container, mds.Container):
-                outconts.append(container)
-            elif os.path.exists(container):
-                cont = filesystem.path2container(container)
+            elif isinstance(treant,
+                            (list, tuple, Bundle, Members)):
+                self.add(*treant)
+            elif isinstance(treant, Treant):
+                outconts.append(treant)
+            elif os.path.exists(treant):
+                cont = filesystem.path2treant(treant)
                 for c in cont:
                     outconts.append(c)
 
-        for container in outconts:
-            self._backend.add_member(container.uuid,
-                                     container.containertype,
-                                     container.basedir)
+        for treant in outconts:
+            self._backend.add_member(treant.uuid,
+                                     treant.treanttype,
+                                     treant.basedir)
 
     def remove(self, *members, **kwargs):
         """Remove any number of members from the Group.
@@ -74,6 +76,8 @@ class _CollectionBase(object):
                 When True, remove all members [``False``]
 
         """
+        from .treants import Treant
+
         uuids = self._backend.get_members_uuid()
         if kwargs.pop('all', False):
             remove = uuids
@@ -82,10 +86,10 @@ class _CollectionBase(object):
             for member in members:
                 if isinstance(member, int):
                     remove.append(uuids[member])
-                elif isinstance(member, mds.containers.Container):
+                elif isinstance(member, Treant):
                     remove.append(member.uuid)
                 else:
-                    raise TypeError('Only an integer or container acceptable')
+                    raise TypeError('Only an integer or treant acceptable')
 
         self._backend.del_member(*remove)
 
@@ -94,11 +98,11 @@ class _CollectionBase(object):
             self._cache.pop(uuid, None)
 
     @property
-    def containertypes(self):
-        """Return a list of member containertypes.
+    def treanttypes(self):
+        """Return a list of member treanttypes.
 
         """
-        return self._backend.get_members_containertype().tolist()
+        return self._backend.get_members_treanttype().tolist()
 
     @property
     def names(self):
@@ -154,11 +158,11 @@ class _CollectionBase(object):
                 memberlist.append(None)
                 findlist.append(uuid)
 
-        # track down our non-cached containers
+        # track down our non-cached treants
         paths = {path: members[path].flatten().tolist()
                  for path in self._backend.memberpaths}
         foxhound = filesystem.Foxhound(self, findlist, paths)
-        foundconts = foxhound.fetch(as_containers=True)
+        foundconts = foxhound.fetch(as_treants=True)
 
         # add to cache, and ensure we get updated paths with a re-add
         # in case of an IOError, skip (probably due to permissions, but will
@@ -169,7 +173,7 @@ class _CollectionBase(object):
         except IOError:
             pass
 
-        # insert found containers into output list
+        # insert found treants into output list
         for uuid in findlist:
             result = foundconts[uuid]
             if not result:
@@ -187,8 +191,9 @@ class _CollectionBase(object):
         """Access the data of each member, collectively.
 
         """
+        from .aggregators import MemberData
         if not self._data:
-            self._data = aggregators.MemberData(self)
+            self._data = MemberData(self)
         return self._data
 
     def map(self, function, processes=1, **kwargs):
@@ -204,7 +209,7 @@ class _CollectionBase(object):
         :Arguments:
             *function*
                 function to apply to each member; must take only a single
-                container instance as input, but may take any number of keyword
+                treant instance as input, but may take any number of keyword
                 arguments
 
         :Keywords:
@@ -255,27 +260,27 @@ class _BundleBackend():
         # GroupFile _Members Table
         self.table = np.array(
                 [],
-                dtype={'names': ['uuid', 'containertype', 'abspath'],
+                dtype={'names': ['uuid', 'treanttype', 'abspath'],
                        'formats': ['a{}'.format(persistence.uuidlength),
                                    'a{}'.format(persistence.namelength),
                                    'a{}'.format(persistence.pathlength)]
                        }).reshape(1, -1)
 
-    def _member2record(self, uuid, containertype, basedir):
+    def _member2record(self, uuid, treanttype, basedir):
         """Return a record array from a member's information.
 
         This method defines the scheme for the Bundle's record array.
 
         """
         return np.array(
-                (uuid, containertype, os.path.abspath(basedir)),
-                dtype={'names': ['uuid', 'containertype', 'abspath'],
+                (uuid, treanttype, os.path.abspath(basedir)),
+                dtype={'names': ['uuid', 'treanttype', 'abspath'],
                        'formats': ['a{}'.format(persistence.uuidlength),
                                    'a{}'.format(persistence.namelength),
                                    'a{}'.format(persistence.pathlength)]
                        }).reshape(1, -1)
 
-    def add_member(self, uuid, containertype, basedir):
+    def add_member(self, uuid, treanttype, basedir):
         """Add a member to the Group.
 
         If the member is already present, its location will be updated with
@@ -284,14 +289,14 @@ class _BundleBackend():
         :Arguments:
             *uuid*
                 the uuid of the new member
-            *containertype*
-                the container type of the new member (Sim or Group)
+            *treanttype*
+                the treant type of the new member
             *basedir*
                 basedir of the new member in the filesystem
 
         """
         if self.table.shape == (1, 0):
-            self.table = self._member2record(uuid, containertype, basedir)
+            self.table = self._member2record(uuid, treanttype, basedir)
         else:
             # check if uuid already present
             index = np.where(self.table['uuid'] == uuid)[0]
@@ -299,7 +304,7 @@ class _BundleBackend():
                 # if present, update location
                 self.table[index[0]]['abspath'] = os.path.abspath(basedir)
             else:
-                newmem = self._member2record(uuid, containertype, basedir)
+                newmem = self._member2record(uuid, treanttype, basedir)
                 self.table = np.vstack((self.table, newmem))
 
     def del_member(self, *uuid, **kwargs):
@@ -373,18 +378,18 @@ class _BundleBackend():
 
         :Returns:
             *uuids*
-                array giving containertype of each member, in order
+                array giving treanttype of each member, in order
         """
         return self.table['uuid'].flatten()
 
-    def get_members_containertype(self):
-        """List containertype for each member.
+    def get_members_treanttype(self):
+        """List treanttype for each member.
 
         :Returns:
-            *containertypes*
-                array giving containertype of each member, in order
+            *treanttypes*
+                array giving treanttype of each member, in order
         """
-        return self.table['containertype'].flatten()
+        return self.table['treanttype'].flatten()
 
     def get_members_basedir(self):
         """List basedir for each member.
@@ -397,7 +402,7 @@ class _BundleBackend():
 
 
 class Bundle(_CollectionBase):
-    """Non-persistent Container for Sims and Groups.
+    """Non-persistent Treant for Treants and Groups.
 
     A Bundle is basically an indexable set. It is often used to return the
     results of a query on a Coordinator or a Group, but can be used on its
@@ -405,26 +410,26 @@ class Bundle(_CollectionBase):
 
     """
 
-    def __init__(self, *containers, **kwargs):
-        """Generate a Bundle from any number of Containers.
+    def __init__(self, *treants, **kwargs):
+        """Generate a Bundle from any number of Treants.
 
         :Arguments:
-            *containers*
-                list giving either Sims, Groups, or paths giving the
+            *treants*
+                list giving either Treants, Groups, or paths giving the
                 directories of the state files for such objects in the
                 filesystem
 
         :Keywords:
             *flatten* [NOT IMPLEMENTED]
                 if ``True``, will recursively obtain members of any Groups;
-                only Sims will be present in the bunch
+                only Treants will be present in the bunch
 
         """
         self._backend = _BundleBackend()
         self._cache = dict()
         self._data = None
 
-        self.add(*containers)
+        self.add(*treants)
 
     def __repr__(self):
         return "<Bundle({})>".format(self._list())

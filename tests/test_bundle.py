@@ -2,7 +2,7 @@
 
 """
 
-import mdsynthesis as mds
+import datreant as dtr
 import pandas as pd
 import numpy as np
 import pytest
@@ -10,9 +10,6 @@ import os
 import shutil
 import py
 import test_data
-
-import MDAnalysis
-from MDAnalysisTests.datafiles import GRO, XTC
 
 
 def do_stuff(cont):
@@ -29,31 +26,31 @@ class CollectionTests():
     def test_add_members(self, collection, tmpdir):
         """Try adding members in a number of ways"""
         with tmpdir.as_cwd():
-            s1 = mds.Sim('lark')
-            s2 = mds.Sim('hark')
-            g3 = mds.Group('linus')
+            s1 = dtr.Treant('lark')
+            s2 = dtr.Treant('hark')
+            g3 = dtr.Group('linus')
 
             collection.add(s1, [g3, s2])
 
             for cont in (s1, s2, g3):
                 assert cont in collection
 
-            s4 = mds.Sim('snoopy')
+            s4 = dtr.Treant('snoopy')
             collection.add([[s4], s2])
             assert s4 in collection
 
     def test_get_members(self, collection, tmpdir):
         """Access members with indexing and slicing"""
         with tmpdir.as_cwd():
-            s1 = mds.Sim('larry')
-            g2 = mds.Group('curly')
-            s3 = mds.Sim('moe')
+            s1 = dtr.Treant('larry')
+            g2 = dtr.Group('curly')
+            s3 = dtr.Treant('moe')
 
             collection.add([[[s1, [g2, [s3]]]]])
 
             assert collection[1] == g2
 
-            c4 = mds.containers.Container('shemp')
+            c4 = dtr.treants.Treant('shemp')
             collection.add(c4)
 
             for member in (s1, g2, s3):
@@ -65,9 +62,9 @@ class CollectionTests():
     def test_remove_members(self, collection, tmpdir):
         """Try removing members"""
         with tmpdir.as_cwd():
-            g1 = mds.Group('lion-o')
-            s2 = mds.Sim('cheetara')
-            s3 = mds.Container('snarf')
+            g1 = dtr.Group('lion-o')
+            s2 = dtr.Treant('cheetara')
+            s3 = dtr.Treant('snarf')
 
             collection.add(s3, g1, s2)
 
@@ -81,11 +78,11 @@ class CollectionTests():
             assert s2 not in collection
 
     def test_member_attributes(self, collection, tmpdir):
-        """Get member uuids, names, and containertypes"""
+        """Get member uuids, names, and treanttypes"""
         with tmpdir.as_cwd():
-            c1 = mds.containers.Container('bigger')
-            g2 = mds.Group('faster')
-            s3 = mds.Sim('stronger')
+            c1 = dtr.treants.Treant('bigger')
+            g2 = dtr.Group('faster')
+            s3 = dtr.Treant('stronger')
 
         collection.add(c1, g2, s3)
 
@@ -95,14 +92,14 @@ class CollectionTests():
         names = [cont.name for cont in [c1, g2, s3]]
         assert collection.names == names
 
-        containertypes = [cont.containertype for cont in [c1, g2, s3]]
-        assert collection.containertypes == containertypes
+        treanttypes = [cont.treanttype for cont in [c1, g2, s3]]
+        assert collection.treanttypes == treanttypes
 
     def test_map(self, collection, tmpdir):
         with tmpdir.as_cwd():
-            s1 = mds.Sim('lark')
-            s2 = mds.Sim('hark')
-            g3 = mds.Group('linus')
+            s1 = dtr.Treant('lark')
+            s2 = dtr.Treant('hark')
+            g3 = dtr.Group('linus')
 
         collection.add(s1, s2, g3)
 
@@ -119,9 +116,9 @@ class CollectionTests():
         @pytest.fixture
         def collection(self, collection, tmpdir):
             with tmpdir.as_cwd():
-                s1 = mds.Sim('lark')
-                s2 = mds.Sim('hark')
-                g3 = mds.Group('linus')
+                s1 = dtr.Treant('lark')
+                s2 = dtr.Treant('hark')
+                g3 = dtr.Group('linus')
 
             collection.add(s1, [g3, s2])
             return collection
@@ -264,4 +261,4 @@ class TestBundle(CollectionTests):
 
     @pytest.fixture
     def collection(self):
-        return mds.Bundle()
+        return dtr.Bundle()

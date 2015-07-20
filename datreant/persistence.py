@@ -3,19 +3,18 @@ Interface classes for state files and data files.
 
 """
 
-import tables
-import h5py
-import pandas as pd
-import numpy as np
-import pickle
-import fcntl
 import os
 import sys
+import fcntl
+import pickle
 import logging
 import warnings
 from functools import wraps
 
-import mdsynthesis as mds
+import tables
+import h5py
+import pandas as pd
+import numpy as np
 
 # extension used for state files
 statefile_ext = 'h5'
@@ -40,8 +39,9 @@ namelength = 55
 
 
 # TODO: add careful checks that file is actually a state file
-def containerfile(filename, logger=None, **kwargs):
-    """Generate or regenerate the appropriate container file instance from
+# TODO: must be extendable in derived packages to give Treant subclasses
+def treantfile(filename, logger=None, **kwargs):
+    """Generate or regenerate the appropriate treant file instance from
     filename.
 
     :Arguments:
@@ -49,16 +49,14 @@ def containerfile(filename, logger=None, **kwargs):
             path to state file (existing or to be created), including the
             filename
         *logger*
-            logger instance to pass to container file instance
+            logger instance to pass to treant file instance
 
-    **kwargs passed to container file ``__init__()`` method
+    **kwargs passed to treant file ``__init__()`` method
 
     """
     basename = os.path.basename(filename)
-    if 'Container' in basename:
-        statefileclass = ContainerFile
-    elif 'Sim' in basename:
-        statefileclass = SimFile
+    if 'Treant' in basename:
+        statefileclass = TreantFile
     elif 'Group' in basename:
         statefileclass = GroupFile
 
@@ -231,8 +229,8 @@ class File(object):
         return inner
 
 
-class ContainerFile(File):
-    """Container file object; syncronized access to Container data.
+class TreantFile(File):
+    """Treant file object; syncronized access to Treant data.
 
     """
     class _Meta(tables.IsDescription):
@@ -272,23 +270,23 @@ class ContainerFile(File):
         value = tables.StringCol(namelength)
 
     def __init__(self, filename, logger=None, **kwargs):
-        """Initialize Container state file.
+        """Initialize Treant state file.
 
-        This is the base class for all Container state files. It generates data
-        structure elements common to all Containers. It also implements
+        This is the base class for all Treant state files. It generates data
+        structure elements common to all Treants. It also implements
         low-level I/O functionality.
 
         :Arguments:
             *filename*
                 path to file
             *logger*
-                Container's logger instance
+                Treant's logger instance
 
         :Keywords:
-            *containertype*
-                Container type: Sim or Group
+            *treanttype*
+                Treant type
             *name*
-                user-given name of Container object
+                user-given name of Treant object
             *coordinator*
                 directory in which coordinator state file can be found [None]
             *categories*
@@ -303,7 +301,7 @@ class ContainerFile(File):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(ContainerFile, self).__init__(filename, logger=logger)
+        super(TreantFile, self).__init__(filename, logger=logger)
 
         # if file does not exist, it is created
         if not self._check_existence():
@@ -317,10 +315,10 @@ class ContainerFile(File):
         """Build state file and common data structure elements.
 
         :Keywords:
-            *containertype*
-                Container type: Sim or Group
+            *treanttype*
+                Treant type
             *name*
-                user-given name of Container object
+                user-given name of Treant object
             *coordinator*
                 directory in which coordinator state file can be found [None]
             *categories*
@@ -332,10 +330,12 @@ class ContainerFile(File):
             *version*
                 version of MDSynthesis file was generated with
         """
-        containertype = kwargs.pop('containertype', None)
+        import datreant
+
+        treanttype = kwargs.pop('treanttype', None)
 
         # metadata table
-        self.update_version(kwargs.pop('version', mds.__version__))
+        self.update_version(kwargs.pop('version', datreant.__version__))
 
         # coordinator table
         self.update_coordinator(kwargs.pop('coordinator', None))
@@ -349,22 +349,22 @@ class ContainerFile(File):
         self.add_categories(**categories)
 
     def get_location(self):
-        """Get Container basedir.
+        """Get Treant basedir.
 
         :Returns:
             *location*
-                absolute path to Container basedir
+                absolute path to Treant basedir
 
         """
         return os.path.dirname(self.filename)
 
     @File._read_state
     def get_version(self):
-        """Get Container version.
+        """Get Treant version.
 
         :Returns:
             *version*
-                version of Container
+                version of Treant
 
         """
         table = self.handle.get_node('/', 'meta')
@@ -372,11 +372,11 @@ class ContainerFile(File):
 
     @File._write_state
     def update_version(self, version):
-        """Update version of Container.
+        """Update version of Treant.
 
         :Arugments:
             *version*
-                new version of Container
+                new version of Treant
 
         """
         try:
@@ -406,7 +406,7 @@ class ContainerFile(File):
 
     @File._write_state
     def update_coordinator(self, coordinator):
-        """Update Container location.
+        """Update Treant location.
 
         :Arguments:
             *coordinator*
@@ -441,9 +441,9 @@ class ContainerFile(File):
 
     @File._write_state
     def add_tags(self, *tags):
-        """Add any number of tags to the Container.
+        """Add any number of tags to the Treant.
 
-        Tags are individual strings that serve to differentiate Containers from
+        Tags are individual strings that serve to differentiate Treants from
         one another. Sometimes preferable to categories.
 
         :Arguments:
@@ -477,7 +477,7 @@ class ContainerFile(File):
 
     @File._write_state
     def del_tags(self, *tags, **kwargs):
-        """Delete tags from Container.
+        """Delete tags from Treant.
 
         Any number of tags can be given as arguments, and these will be
         deleted.
@@ -537,10 +537,10 @@ class ContainerFile(File):
 
     @File._write_state
     def add_categories(self, **categories):
-        """Add any number of categories to the Container.
+        """Add any number of categories to the Treant.
 
         Categories are key-value pairs of strings that serve to differentiate
-        Containers from one another. Sometimes preferable to tags.
+        Treants from one another. Sometimes preferable to tags.
 
         If a given category already exists (same key), the value given will
         replace the value for that category.
@@ -578,7 +578,7 @@ class ContainerFile(File):
 
     @File._write_state
     def del_categories(self, *categories, **kwargs):
-        """Delete categories from Container.
+        """Delete categories from Treant.
 
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
@@ -652,475 +652,7 @@ class ContainerFile(File):
         self.handle.close()
 
 
-class SimFile(ContainerFile):
-    """Main Sim state file.
-
-    This file contains all the information needed to store the state of a
-    Sim object. It includes accessors, setters, and modifiers for all
-    elements of the data structure, as well as the data structure definition.
-
-    """
-    class _Default(tables.IsDescription):
-        """Table definition for storing default universe preference.
-
-        Stores which universe is marked as default.
-
-        """
-        default = tables.StringCol(namelength)
-
-    class _Topology(tables.IsDescription):
-        """Table definition for storing universe topology paths.
-
-        Two versions of the path to a topology are stored: the absolute path
-        (abspath) and the relative path from the Sim object's directory
-        (relCont). This allows the Sim object to use some heuristically good
-        starting points when trying to find missing files using Finder.
-
-        """
-        abspath = tables.StringCol(pathlength)
-        relCont = tables.StringCol(pathlength)
-
-    class _Trajectory(tables.IsDescription):
-        """Table definition for storing universe trajectory paths.
-
-        The paths to trajectories used for generating the Universe
-        are stored in this table.
-
-        See UniverseTopology for path storage descriptions.
-
-        """
-        abspath = tables.StringCol(255)
-        relCont = tables.StringCol(255)
-
-    class _Resnums(tables.IsDescription):
-        """Table definition for storing resnums.
-
-        """
-        resnum = tables.UInt32Col()
-
-    def __init__(self, filename, logger=None, **kwargs):
-        """Initialize Sim state file.
-
-        :Arguments:
-            *filename*
-                path to file
-            *logger*
-                logger to send warnings and errors to
-
-        :Keywords:
-            *name*
-                user-given name of Container object
-            *coordinator*
-                directory in which coordinator state file can be found [None]
-            *categories*
-                user-given dictionary with custom keys and values; used to
-                give distinguishing characteristics to object for search
-            *tags*
-                user-given list with custom elements; used to give
-                distinguishing characteristics to object for search
-
-        """
-        super(SimFile, self).__init__(filename, logger=logger, **kwargs)
-
-    def create(self, **kwargs):
-        """Build Sim data structure.
-
-        :Keywords:
-            *name*
-                user-given name of Sim object
-            *coordinator*
-                directory in which Coordinator state file can be found
-                [``None``]
-            *categories*
-                user-given dictionary with custom keys and values; used to give
-                distinguishing characteristics to object for search
-            *tags*
-                user-given list with custom elements; used to give
-                distinguishing characteristics to object for search
-
-        .. Note:: kwargs passed to :meth:`create`
-
-        """
-        super(SimFile, self).create(containertype='Sim', **kwargs)
-
-        self._make_universegroup()
-        self.update_default()
-
-    @File._write_state
-    def _make_universegroup(self):
-        """Make universes and universe groups.
-
-        Used only on file creation.
-
-        """
-        try:
-            group = self.handle.get_node('/', 'universes')
-        except tables.NoSuchNodeError:
-            group = self.handle.create_group('/', 'universes', 'universes')
-
-    @File._write_state
-    def update_default(self, universe=None):
-        """Mark the given universe as the default.
-
-        :Arguments:
-            *universe*
-                name of universe to mark as default; if ``None``,
-                remove default preference
-        """
-        try:
-            table = self.handle.get_node('/', 'default')
-            table.cols.default[0] = universe
-        except tables.NoSuchNodeError:
-            table = self.handle.create_table(
-                '/', 'default', self._Default, 'default')
-            table.row['default'] = universe
-            table.row.append()
-
-    @File._read_state
-    def get_default(self):
-        """Get default universe.
-
-        :Returns:
-            *default*
-                name of default universe; if no default
-                universe, returns ``None``
-
-        """
-        table = self.handle.get_node('/', 'default')
-        default = table.cols.default[0]
-
-        if default == 'None':
-            default = None
-
-        return default
-
-    @File._read_state
-    def list_universes(self):
-        """List universe names.
-
-        :Returns:
-            *universes*
-                list giving names of all defined universes
-
-        """
-        group = self.handle.get_node('/', 'universes')
-
-        return group.__members__
-
-    @File._read_state
-    def get_universe(self, universe):
-        """Get topology and trajectory paths for the desired universe.
-
-        Returns multiple path types, including absolute paths (abspath)
-        and paths relative to the Sim object (relCont).
-
-        :Arguments:
-            *universe*
-                given name for selecting the universe
-
-        :Returns:
-            *topology*
-                structured array containing all paths to topology
-            *trajectory*
-                structured array containing all paths to trajectory(s)
-
-        """
-        try:
-            # get topology file
-            table = self.handle.get_node('/universes/{}'.format(universe),
-                                         'topology')
-            topology = table.read()
-
-            # get trajectory files
-            table = self.handle.get_node('/universes/{}'.format(universe),
-                                         'trajectory')
-            trajectory = table.read()
-
-        except tables.NoSuchNodeError:
-            raise KeyError(
-                    "No such universe '{}'; add it first.".format(universe))
-
-        return (topology, trajectory)
-
-    @File._write_state
-    def add_universe(self, universe, topology, *trajectory):
-        """Add a universe definition to the Sim object.
-
-        A Universe is an MDAnalysis object that gives access to the details
-        of a simulation trajectory. A Sim object can contain multiple universe
-        definitions (topology and trajectory pairs), since it is often
-        convenient to have different post-processed versions of the same
-        raw trajectory.
-
-        :Arguments:
-            *universe*
-                given name for selecting the universe
-            *topology*
-                path to the topology file
-            *trajectory*
-                path to the trajectory file; multiple files may be given
-                and these will be used in order as frames for the trajectory
-
-        """
-
-        # build this universe's group; if it exists, do nothing
-        try:
-            group = self.handle.create_group(
-                '/universes', universe, universe, createparents=True)
-        except tables.NodeError:
-            self.handle.remove_node(
-                '/universes/{}'.format(universe), 'topology')
-            self.handle.remove_node(
-                '/universes/{}'.format(universe), 'trajectory')
-
-        # construct topology table
-        table = self.handle.create_table(
-            '/universes/{}'.format(universe), 'topology', self._Topology,
-            'topology')
-
-        # add topology paths to table
-        table.row['abspath'] = os.path.abspath(topology)
-        table.row['relCont'] = os.path.relpath(topology, self.get_location())
-        table.row.append()
-
-        # construct trajectory table
-        table = self.handle.create_table(
-            '/universes/{}'.format(universe), 'trajectory', self._Trajectory,
-            'trajectory')
-
-        # add trajectory paths to table
-        for segment in trajectory:
-            table.row['abspath'] = os.path.abspath(segment)
-            table.row['relCont'] = os.path.relpath(segment,
-                                                   self.get_location())
-            table.row.append()
-
-        # construct selection group; necessary to catch NodError
-        # exception when a Universe is re-added because selections are
-        # maintained
-        try:
-            group = self.handle.create_group(
-                '/universes/{}'.format(universe), 'selections', 'selections')
-        except tables.NodeError:
-            pass
-
-    @File._write_state
-    def del_universe(self, universe):
-        """Delete a universe definition.
-
-        Deletes any selections associated with the universe.
-
-        :Arguments:
-            *universe*
-                name of universe to delete
-        """
-        try:
-            self.handle.remove_node('/universes', universe, recursive=True)
-        except tables.NoSuchNodeError:
-            raise KeyError(
-                    "No such universe '{}';".format(universe) +
-                    " nothing to remove.")
-
-    @File._write_state
-    def rename_universe(self, universe, newname):
-        """Rename a universe definition.
-
-        :Arguments:
-            *universe*
-                name of universe to rename
-            *newname*
-                new name of universe
-        """
-        try:
-            self.handle.rename_node('/universes', newname, name=universe)
-        except tables.NoSuchNodeError:
-            raise KeyError(
-                    "No such universe '{}';".format(universe) +
-                    " nothing to rename.")
-        except tables.NodeError:
-            raise ValueError(
-                    "A universe '{}' already exists;".format(universe) +
-                    " remove or rename it first.")
-
-    @File._write_state
-    def update_resnums(self, universe, resnums):
-        """Update resnum definition for the given universe.
-
-        Resnums are useful for referring to residues by their canonical resid,
-        for instance that stored in the PDB. By giving a resnum definition
-        for the universe, this definition can be applied to the universe
-        on activation.
-
-        Will overwrite existing definition if it exists.
-
-        :Arguments:
-            *universe*
-                name of universe to associate resnums with
-            *resnums*
-                list giving the resnum for each atom in the topology, in index
-                order
-        """
-        try:
-            table = self.handle.create_table(
-                '/universes/{}'.format(universe), 'resnums', self._Resnums,
-                'resnums')
-        except tables.NoSuchNodeError:
-            self.logger.info(
-                "Universe definition '{}'".format(universe) +
-                " does not exist. Add it first.")
-            return
-        except tables.NodeError:
-            self.logger.info(
-                "Replacing existing resnums for '{}'.".format(universe))
-            self.handle.remove_node(
-                '/universes/{}'.format(universe), 'resnums')
-            table = self.handle.create_table(
-                '/universes/{}'.format(universe), 'resnums', self._Resnums,
-                'resnums')
-
-        # add resnums to table
-        for item in resnums:
-            table.row['resnum'] = item
-            table.row.append()
-
-    @File._read_state
-    def get_resnums(self, universe):
-        """Get the resnum definition for the given universe.
-
-        :Arguments:
-            *universe*
-                name of universe the resnum definition applies to
-
-        :Returns:
-            *resnums*
-                list of the resnums for each atom in topology; None if
-                no resnums defined
-        """
-        try:
-            table = self.handle.get_node(
-                '/universes/{}'.format(universe), 'resnums')
-            resnums = [x['resnum'] for x in table.iterrows()]
-        except tables.NoSuchNodeError:
-            resnums = None
-
-        return resnums
-
-    @File._write_state
-    def del_resnums(self, universe):
-        """Delete resnum definition from specified universe.
-
-        :Arguments:
-            *universe*
-                name of universe to remove resnum definition from
-        """
-        self.handle.remove_node('/universes/{}'.format(universe), 'resnums')
-
-    @File._read_state
-    def list_selections(self, universe):
-        """List selection names.
-
-        :Arguments:
-            *universe*
-                name of universe the selections apply to
-
-        :Returns:
-            *selections*
-                list giving names of all defined selections for the given
-                universe
-
-        """
-        try:
-            group = self.handle.get_node(
-                '/universes/{}'.format(universe), 'selections')
-        except tables.NoSuchNodeError:
-            raise KeyError("No such universe '{}';".format(universe) +
-                           " cannot copy selections.")
-
-        return group.__members__
-
-    @File._read_state
-    def get_selection(self, universe, handle):
-        """Get a stored atom selection for the given universe.
-
-        :Arguments:
-            *universe*
-                name of universe the selection applies to
-            *handle*
-                name to use for the selection
-
-        :Returns:
-            *selection*
-                list of the selection strings making up the atom selection
-        """
-        try:
-            table = self.handle.get_node(
-                '/universes/{}/selections'.format(universe), handle)
-            selection = [x for x in table.read()]
-        except tables.NoSuchNodeError:
-            raise KeyError(
-                    "No such selection '{}'; add it first.".format(handle))
-
-        return selection
-
-    @File._write_state
-    def add_selection(self, universe, handle, *selection):
-        """Add an atom selection definition for the named Universe definition.
-
-        AtomGroups are needed to obtain useful information from raw coordinate
-        data. It is useful to store AtomGroup selections for later use, since
-        they can be complex and atom order may matter.
-
-        Will overwrite existing definition if it exists.
-
-        :Arguments:
-            *universe*
-                name of universe the selection applies to
-            *handle*
-                name to use for the selection
-            *selection*
-                selection string or numpy array of indices; multiple selections
-                may be given and their order will be preserved, which is
-                useful for e.g. structural alignments
-
-        """
-        # construct selection table
-        if isinstance(selection[0], np.ndarray):
-            selection = selection[0]
-
-        try:
-            array = self.handle.create_array(
-                '/universes/{}/selections'.format(universe), handle, selection,
-                handle)
-        except tables.NodeError:
-            self.logger.info(
-                "Replacing existing selection '{}'.".format(handle))
-            self.handle.remove_node(
-                '/universes/{}/selections'.format(universe), handle)
-            table = self.handle.create_array(
-                '/universes/{}/selections'.format(universe), handle, selection,
-                handle)
-
-    @File._write_state
-    def del_selection(self, universe, handle):
-        """Delete an atom selection from the specified universe.
-
-        :Arguments:
-            *universe*
-                name of universe the selection applies to
-            *handle*
-                name of the selection
-
-        """
-        try:
-            self.handle.remove_node(
-                '/universes/{}/selections'.format(universe), handle)
-        except tables.NoSuchNodeError:
-            raise KeyError(
-                    "No such selection '{}';".format(handle) +
-                    " nothing to remove.")
-
-
-class GroupFile(ContainerFile):
+class GroupFile(TreantFile):
     """Main Group state file.
 
     This file contains all the information needed to store the state of a
@@ -1135,18 +667,18 @@ class GroupFile(ContainerFile):
 
         """Table definition for the members of the Group.
 
-        Stores for each member its container type, uuid, and two versions of
-        the path to the member container: the absolute path (abspath) and the
+        Stores for each member its treant type, uuid, and two versions of
+        the path to the member treant: the absolute path (abspath) and the
         relative path from the Group object's directory (relCont). This allows
         the Group object to use some heuristically good starting points when
         trying to find missing files using a Foxhound.
 
         """
-        # unique identifier for container
+        # unique identifier for treant
         uuid = tables.StringCol(uuidlength)
 
-        # container type; Sim or Group
-        containertype = tables.StringCol(namelength)
+        # treant type
+        treanttype = tables.StringCol(namelength)
 
         abspath = tables.StringCol(pathlength)
         relCont = tables.StringCol(pathlength)
@@ -1162,7 +694,7 @@ class GroupFile(ContainerFile):
 
         :Keywords:
            *name*
-              user-given name of Container object
+              user-given name of Treant object
            *coordinator*
               directory in which coordinator state file can be found [None]
            *categories*
@@ -1192,7 +724,7 @@ class GroupFile(ContainerFile):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(GroupFile, self).create(containertype='Group', **kwargs)
+        super(GroupFile, self).create(treanttype='Group', **kwargs)
 
         self._make_membertable()
 
@@ -1210,7 +742,7 @@ class GroupFile(ContainerFile):
                 '/', 'members', self._Members, 'members')
 
     @File._write_state
-    def add_member(self, uuid, containertype, basedir):
+    def add_member(self, uuid, treanttype, basedir):
         """Add a member to the Group.
 
         If the member is already present, its basedir paths will be updated
@@ -1219,8 +751,8 @@ class GroupFile(ContainerFile):
         :Arguments:
             *uuid*
                 the uuid of the new member
-            *containertype*
-                the container type of the new member (Sim or Group)
+            *treanttype*
+                the treant type of the new member
             *basedir*
                 basedir of the new member in the filesystem
 
@@ -1240,7 +772,7 @@ class GroupFile(ContainerFile):
                     basedir, self.get_location())
         else:
             table.row['uuid'] = uuid
-            table.row['containertype'] = containertype
+            table.row['treanttype'] = treanttype
             table.row['abspath'] = os.path.abspath(basedir)
             table.row['relCont'] = os.path.relpath(
                     basedir, self.get_location())
@@ -1343,21 +875,21 @@ class GroupFile(ContainerFile):
 
         :Returns:
             *uuids*
-                array giving containertype of each member, in order
+                array giving treanttype of each member, in order
         """
         table = self.handle.get_node('/', 'members')
         return table.read()['uuid']
 
     @File._read_state
-    def get_members_containertype(self):
-        """List containertype for each member.
+    def get_members_treanttype(self):
+        """List treanttype for each member.
 
         :Returns:
-            *containertypes*
-                array giving containertype of each member, in order
+            *treanttypes*
+                array giving treanttype of each member, in order
         """
         table = self.handle.get_node('/', 'members')
-        return table.read()['containertype']
+        return table.read()['treanttype']
 
     @File._read_state
     def get_members_basedir(self):
@@ -1389,7 +921,7 @@ class DataFile(object):
            *datadir*
               path to data directory
            *logger*
-              Container's logger instance
+              Treant's logger instance
            *datafiletype*
               If known, either pddatafile or npdatafile
 
@@ -1591,7 +1123,7 @@ class pdDataFile(File):
            *filename*
               path to file
            *logger*
-              Container's logger instance
+              Treant's logger instance
 
         """
         super(pdDataFile, self).__init__(filename, logger=logger)
@@ -1778,7 +1310,7 @@ class npDataFile(File):
            *filename*
               path to file
            *logger*
-              Container's logger instance
+              Treant's logger instance
 
         """
         super(npDataFile, self).__init__(filename, logger=logger)
@@ -1909,7 +1441,7 @@ class pyDataFile(File):
            *filename*
               path to file
            *logger*
-              Container's logger instance
+              Treant's logger instance
 
         """
         super(pyDataFile, self).__init__(filename, logger=logger)

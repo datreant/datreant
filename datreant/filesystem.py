@@ -1,5 +1,5 @@
 """
-Functions and classes for finding Containers in the filesystem.
+Functions and classes for finding Treants in the filesystem.
 
 """
 import os
@@ -7,209 +7,99 @@ import sys
 import glob
 import time
 
-import aggregators
-import persistence
-import bundle
-import mdsynthesis as mds
-
 import scandir
 
+from datreant import persistence
 
-def statefilename(containertype, uuid):
-    """Return state file name given the type of container and its uuid.
+
+def statefilename(treanttype, uuid):
+    """Return state file name given the type of treant and its uuid.
 
     """
-    return "{}.{}.{}".format(containertype, uuid, persistence.statefile_ext)
+    return "{}.{}.{}".format(treanttype, uuid, persistence.statefile_ext)
 
 
-def glob_container(container):
-    """Given a Container's directory, get its state file.
+def glob_treant(treant):
+    """Given a Treant's directory, get its state file.
 
     Since state file names contain uuids, they vary. Multiple state files may
     therefore be present in a single directory. All will be returned as a list.
 
     :Arguments:
-        *container*
+        *treant*
             directory containing a state file
 
     :Returns:
-        *containerfile*
+        *treantfile*
             list giving absolute paths of state files found
             in directory
     """
     fileglob = list()
-    for containertype in ('Container', 'Sim', 'Group'):
+    for treanttype in ('Treant', 'Group'):
         fileglob.extend(
-            glob.glob(os.path.join(container,
-                                   '{}.*.h5'.format(containertype))))
+            glob.glob(os.path.join(treant,
+                                   '{}.*.h5'.format(treanttype))))
 
     paths = [os.path.abspath(x) for x in fileglob]
     return paths
 
 
-def path2container(*paths):
-    """Return Containers from directories or full paths containing Container
+# TODO: need mechanism for derived packages to add their classes
+# INTEROPERABILITY
+def path2treant(*paths):
+    """Return Treants from directories or full paths containing Treant
         state files.
 
-    *Note*: If there are multiple state files in a given directory, Containers
+    *Note*: If there are multiple state files in a given directory, Treants
             will be returned for each.
 
     :Arguments:
         *paths*
             directories containing state files or full paths to state files to
-            load Containers from; if ``None`` is an element, then ``None``
+            load Treants from; if ``None`` is an element, then ``None``
             returned in output list
 
     :Returns:
-        *containers*
-            list of Containers obtained from directories; ``None`` as an
+        *treants*
+            list of Treants obtained from directories; ``None`` as an
             element indicates that ``None`` was present in the list of paths
 
     """
-    containers = list()
+    from .treants import (Treant, Group)
+    treants = list()
     for path in paths:
         if path is None:
-            containers.append(None)
+            treants.append(None)
         elif os.path.isdir(path):
-            files = glob_container(path)
+            files = glob_treant(path)
             for item in files:
                 basename = os.path.basename(item)
-                if 'Container' in basename:
-                    containers.append(mds.Container(item))
-                elif 'Sim' in basename:
-                    containers.append(mds.Sim(item))
+                if 'Treant' in basename:
+                    treants.append(Treant(item))
                 elif 'Group' in basename:
-                    containers.append(mds.Group(item))
+                    treants.append(Group(item))
         elif os.path.exists(path):
             basename = os.path.basename(path)
-            if 'Container' in basename:
-                containers.append(mds.Container(path))
-            elif 'Sim' in basename:
-                containers.append(mds.Sim(path))
+            if 'Treant' in basename:
+                treants.append(Treant(path))
             elif 'Group' in basename:
-                containers.append(mds.Group(path))
+                treants.append(Group(path))
 
-    return containers
-
-
-class Universehound(object):
-    """Locator for Universe files.
-
-    This object is used by Sims to find their Universe files, even when
-    they go missing.
-
-    """
-    def __init__(self, caller, uname):
-        """Generate a Universehound to track down Universe files.
-
-        :Arguments:
-            *caller*
-                object that summoned the Univershound
-            *uname*
-                universe handle to find files for
-
-        """
-        self.caller = caller
-        self.uname = uname
-
-        # once found: uuids as keys, absolute paths as values
-        self.ufiles = list()
-
-    def fetch(self):
-        """Find the Universe files.
-
-        For finding Universe files, the Foxhound begins by looking for
-        the files with the same basename among the paths it was given.
-        If the files can't be found in those places, it stops looking.
-
-        Raises :exc:`IOError` if a file could not be found.
-
-        :Returns:
-            *results*
-                dictionary giving 'top' and 'traj' as keys, with
-                lists of topology and trajectory file(s) as
-                values, respectively; ``None`` as a member of
-                a list indicates that a particular file could not
-                be found
-
-        """
-        # search last-known locations
-        results = self._check_basedirs()
-
-        if (None in results['top']) or (None in results['traj']):
-            raise IOError("At least one file for" +
-                          " universe '{}' could not".format(self.uname) +
-                          " be found from stored absolute and relative" +
-                          " paths. Re-add the universe with correct paths.")
-
-        # TODO: include hash check; will require stored hashes for each
-        # universe file
-
-        return results
-
-    def _check_basedirs(self):
-        """Check last-known locations for Universe files.
-
-        :Returns:
-            *results*
-                dictionary giving 'top' and 'traj' as keys, with
-                lists of topology and trajectory file(s) as
-                values, respectively; ``None`` as a member of
-                a list indicates that a particular file could not
-                be found
-        """
-        paths = self.caller._backend.get_universe(self.uname)
-        paths = {'top': paths[0], 'traj': paths[1]}
-
-        # initialize output list with None
-        outpaths = dict()
-
-        # iterate through topology and trajectory files
-        for filetype in paths:
-            outpaths[filetype] = [None]*len(paths[filetype])
-
-            for i, entry in enumerate(paths[filetype]):
-
-                # check absolute path first
-                if 'abspath' in entry.dtype.names:
-                    if os.path.exists(entry['abspath']):
-                        outpaths[filetype][i] = entry['abspath']
-                if 'relCont' in entry.dtype.names:
-                    candidate = os.path.join(
-                        self.caller._backend.get_location(), entry['relCont'])
-
-                    # if both abspath and relCont exist, check that they point
-                    # to the same file. if so, accept; if not, choose abspath
-                    # and log a warning
-                    if os.path.exists(candidate):
-                        if outpaths[filetype][i]:
-                            if not os.path.samefile(candidate,
-                                                    outpaths[filetype][i]):
-                                outpaths[filetype][i] = entry['abspath']
-                                raise IOError(
-                                    "Absolute and relative paths for a file" +
-                                    " in universe '{}'".format(self.uname) +
-                                    " point to different files; update paths" +
-                                    " by re-adding this universe")
-                        # otherwise, accept relCont
-                        else:
-                            outpaths[filetype][i] = candidate
-
-        return outpaths
+    return treants
 
 
 class Foxhound(object):
-    """Locator for Containers.
+    """Locator for Treants.
 
-    This object is used by Containers to find Containers, even when they are no
+    This object is used by Treants to find Treants, even when they are no
     longer in their last known location.
 
     Groups and Bundles uses this class to find members that have moved. All
-    ContainerFiles use this class to find their file on disk when it moves.
+    TreantFiles use this class to find their file on disk when it moves.
 
     """
     def __init__(self, caller, uuids, basedirs, coordinators=None, timeout=10):
-        """Generate a Foxhound to track down Containers.
+        """Generate a Foxhound to track down Treants.
 
         :Arguments:
             *caller*
@@ -217,7 +107,7 @@ class Foxhound(object):
                 of some path types, as well as for automated context
                 for conducting the search
             *uuids*
-                list of unique identifiers of Containers to find
+                list of unique identifiers of Treants to find
             *basedirs*
                 dict of basedirs to start searching around; keys may be
                 'abspath' or 'relCont', and values should be lists of paths
@@ -238,41 +128,44 @@ class Foxhound(object):
         self.timeout = timeout
 
         # once found: uuids as keys, absolute paths as values
-        self.containers = dict()
+        self.treants = dict()
 
-    def fetch(self, as_containers=True):
-        """Find the Containers.
+    def fetch(self, as_treants=True):
+        """Find the Treants.
 
         :Keywords:
-            *as_containers*
-                if ``True``, return Container instances instead of absolute
+            *as_treants*
+                if ``True``, return Treant instances instead of absolute
                 paths to state files
 
         :Returns:
             *results*
-                dictionary giving Container uuids as keys and absolute paths to
+                dictionary giving Treant uuids as keys and absolute paths to
                 their state files as values; ``None`` as a value indicates
-                that no state file could be found. Returns Container instances
-                instead of paths for *as_containers* == True.
+                that no state file could be found. Returns Treant instances
+                instead of paths for *as_treants* == True.
 
         """
-        if isinstance(self.caller, aggregators.Members):
+        from .aggregators import Members
+        from .collections import Bundle
+
+        if isinstance(self.caller, Members):
             results = self._find_Group_members()
-        elif isinstance(self.caller, bundle.Bundle):
+        elif isinstance(self.caller, Bundle):
             results = self._find_Bundle_members()
 
-        if as_containers:
-            conts = path2container(*results.values())
+        if as_treants:
+            conts = path2treant(*results.values())
             results = {x: y for x, y in zip(results.keys(), conts)}
 
         return results
 
     def _check_basedirs(self):
-        """Check last-known locations for Containers.
+        """Check last-known locations for Treants.
 
         :Returns:
             *results*
-                dictionary giving Container uuids as keys and absolute paths to
+                dictionary giving Treant uuids as keys and absolute paths to
                 their state files as values; ``None`` as a value indicates
                 that no state file could be found.
         """
@@ -314,7 +207,7 @@ class Foxhound(object):
         return outpaths
 
     def _downward_search(self, path):
-        """Check for Containers downward from specified path.
+        """Check for Treants downward from specified path.
 
         :Arguments:
             *path*
@@ -329,13 +222,13 @@ class Foxhound(object):
     def _consult_Coordinators(self):
         pass
 
-    def _find_ContainerFile(self):
-        """Find Container for a ContainerFile.
+    def _find_TreantFile(self):
+        """Find Treant for a TreantFile.
 
-        If a Container's state file is moved by another process while a
-        Container instance exists, then the ContainerFile instance must
+        If a Treant's state file is moved by another process while a
+        Treant instance exists, then the TreantFile instance must
         find its state file when it discovers it has gone missing. The
-        Foxhound begins by searching downward from the Container's previous
+        Foxhound begins by searching downward from the Treant's previous
         location, with subsequent downward searches proceeding from the parent
         directory. This process continues until either the state file is found,
         the filesystem is exhaustively searched, or the Foxhound times out.
@@ -344,10 +237,10 @@ class Foxhound(object):
         pass
 
     def _find_Group_members(self):
-        """Find Containers that are members of a Group.
+        """Find Treants that are members of a Group.
 
         For finding Group members, the Foxhound begins by looking for
-        Containers among the paths it was given. Containers that can't be found
+        Treants among the paths it was given. Treants that can't be found
         are then searched for starting downward from the Group's location, with
         subsequent downward searches proceeding from the parent directory.
         This process continues until either all members are found, the
@@ -355,7 +248,7 @@ class Foxhound(object):
 
         :Returns:
             *outpaths*
-                dictionary giving Container uuids as keys and absolute paths to
+                dictionary giving Treant uuids as keys and absolute paths to
                 their state files as values; ``None`` as a value indicates
                 that no state file could be found.
 
@@ -409,16 +302,16 @@ class Foxhound(object):
             prev = path
             path = os.path.split(path)[0]
 
-        # TODO: post-check? Since Groups know the containertypes of their
+        # TODO: post-check? Since Groups know the treanttypes of their
         # members, should we compare these to what is in outpaths?
 
         return outpaths
 
     def _find_Bundle_members(self):
-        """Find Containers that are members of a Bundle.
+        """Find Treants that are members of a Bundle.
 
         For finding Bundle members, the Foxhound begins by looking for
-        Containers among the paths it was given. Containers that can't be found
+        Treants among the paths it was given. Treants that can't be found
         are then searched for starting downward from the current working
         directory with subsequent downward searches proceeding from the parent
         directory. This process continues until either all members are found,
@@ -426,7 +319,7 @@ class Foxhound(object):
 
         :Returns:
             *outpaths*
-                dictionary giving Container uuids as keys and absolute paths to
+                dictionary giving Treant uuids as keys and absolute paths to
                 their state files as values; ``None`` as a value indicates
                 that no state file could be found.
 
@@ -473,7 +366,7 @@ class Foxhound(object):
             prev = path
             path = os.path.split(path)[0]
 
-        # TODO: post-check? Since Bundles know the containertypes of their
+        # TODO: post-check? Since Bundles know the treanttypes of their
         # members, should we compare these to what is in outpaths?
 
         return outpaths
@@ -488,7 +381,7 @@ class Foxhound(object):
     def _locate_database(self, **kwargs):
         """Find database; to be used if it can't be found.
 
-        The Container looks upward from its location on the filesystem through
+        The Treant looks upward from its location on the filesystem through
         the file heirarchy, looking for a Database file. The directory
         containing the first such file found will be returned. None is returned
         if no such files found.
@@ -496,7 +389,7 @@ class Foxhound(object):
         :Keywords:
             *startdir*
                 directory from which to begin upward search; default is
-                Container basedir
+                Treant basedir
 
         :Returns:
             *database*

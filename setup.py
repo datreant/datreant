@@ -1,5 +1,5 @@
 #! /usr/bin/python
-"""Setuptools-based setup script for MDSynthesis.
+"""Setuptools-based setup script for datreant.
 
 For a basic installation just type the command::
 
@@ -9,13 +9,13 @@ For a basic installation just type the command::
 
 from setuptools import setup
 
-setup(name='mdsynthesis',
-      version='0.5.0',
+setup(name='datreant',
+      version='0.5.1',
       author='David Dotson', 
       author_email='dotsdl@gmail.com',
-      packages=['mdsynthesis', 'mdsynthesis.core'],
-      scripts=['scripts/mds_convert_pre_to_0.5.0.py'],
-      license='GPL 2',
+      packages=['datreant'],
+      scripts=[],
+      license='BSD',
       long_description=open('README.rst').read(),
-      requires=['pandas', 'tables', 'h5py', 'MDAnalysis', 'scandir']
+      requires=['pandas', 'tables', 'h5py', 'scandir']
      )

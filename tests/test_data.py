@@ -1,7 +1,7 @@
 """Data structures for storage and retrieval.
 
 """
-import mdsynthesis as mds
+import datreant as dtr
 import pandas as pd
 import numpy as np
 import pytest

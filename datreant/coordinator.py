@@ -7,7 +7,6 @@ them; this can remove the need to manually go hunting for Containers in the
 filesystem.
 
 """
-import core
 
 
 class Coordinator(object):

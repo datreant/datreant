@@ -1,10 +1,10 @@
-======================
-Installing MDSynthesis
-======================
-There are no official releases of MDSynthesis yet, but the master
+===================
+Installing datreant
+===================
+There are no official releases of datreant yet, but the master
 branch on GitHub gives the most current state of the package. 
 
-First install the dependencies. Since MDSynthesis uses HDF5 as the file format
+First install the dependencies. Since datreant uses HDF5 as the file format
 of choice for persistence, you will need to install the libraries either using
 your package manager or manually. 
 
@@ -28,8 +28,8 @@ Then install PyTables and everything else ::
 
 Then clone the repository and switch to the master branch ::
 
-    git clone git@github.com:dotsdl/MDSynthesis.git
-    cd MDSynthesis
+    git clone git@github.com:dotsdl/datreant.git
+    cd datreant
     git checkout master
 
 Installation of the packages is as simple as ::
@@ -37,7 +37,7 @@ Installation of the packages is as simple as ::
     python setup.py build
     python setup.py install
 
-This installs MDSynthesis in the system wide python directory; this may
+This installs datreant in the system wide python directory; this may
 require administrative privileges.
 
 It is also possible to use ``--prefix``, ``--home``, or ``--user`` options for
