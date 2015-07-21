@@ -2,6 +2,7 @@ language: python
 
 python:
   - "2.7"
+  - "3.4"
 
 # whitelist
 branches:
@@ -21,13 +22,12 @@ install:
   - pip install pytest-pep8
   - pip install numpy numexpr Cython
   - pip install tables
-  - pip install pandas h5py MDAnalysis MDAnalysisTests
   - pip install scandir
   - pip install -e .
 
 # run tests
 script: 
-  - py.test --cov mdsynthesis --pep8 mdsynthesis tests/
+  - py.test --cov datreant --pep8 datreant tests/
 
 after_success:
   - codecov

@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = mdsynthesis
+source = datreant
 exclude_lines =
     pragma: no cover
 
