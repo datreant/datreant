@@ -1,6 +1,11 @@
 language: python
 sudo: false
 
+addons:
+  apt:
+    packages:
+    - libhdf5-serial-dev
+
 python:
   - "2.7"
   - "3.4"
