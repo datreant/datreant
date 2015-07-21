@@ -1,58 +1,68 @@
-==========================================================================
-MDSynthesis: a persistence engine for intermediate molecular dynamics data
-==========================================================================
+==========================================================
+datreant: a persistence engine for heterogeneous data sets
+==========================================================
 
-|zen| |docs| |build| |cov|
+|build| |cov|
 
-Although the raw data for any study involving molecular dynamics simulations are
-the full trajectories themselves, often we are most interested in
-lower-dimensional measures of what is happening. These measures may be as simple
-as the distance between two specific atoms, or as complex as the percentage of
-contacts relative to some native structure. In any case, it may be time-consuming
-to obtain these lower-dimensional intermediate data, and so it is useful to store
-them.
+In many fields of science, especially those analyzing experimental or
+simulation data, there is often an existing ecosystem of specialized tools and 
+file formats which new tools must work around, for better or worse.
+Furthermore, centralized database solutions may be suboptimal for data
+storage for a number of reasons, including insufficient hardware
+infrastructure, variety and heterogeneaity of raw data, the need for data
+portability, etc. This is particularly the case for fields centered around
+simulation: simulation systems can vary widely in size, composition, rules,
+paramaters, and starting conditions. And with increases in computational power,
+it is often necessary to store intermediate results obtained from large amounts
+of simulation data so it can be used interactively.
+
+These problems make data management difficult, and serve as a barrier to using
+to answering scientific questions. To make things easier, **datreant** is a
+Python package that handles the tedious and time-consuming logistics of
+intermediate data storage and retrieval. It solves a boring problem, so 
+we can focus on interesting ones.
 
 Stay organized
 ==============
-MDSynthesis is designed to perform the logistics of medium-to-large-scale
-analysis of many trajectories, individually or as entire groups. It should
-allow the scientist to operate at a high level when working with the data,
-while MDSynthesis handles the details of storing and recalling this data.
+datreant is designed to perform the logistics of medium-to-large-scale analysis
+of data from many studies, whether they be individual simulations or data from
+field work. It is a library that is designed to be subclassed: the classes in
+datreant are useful on their own but vanilla by design, and are built to be
+easily extended into domain-specific objects.
 
-Efficiently store intermediate data from individual simulations for easy recall
--------------------------------------------------------------------------------
-For a given simulation trajectory, MDSynthesis gives an interface (the **Sim**
-object) to the simulation data itself through `MDAnalysis`_. Data structures
-generated from raw trajectories (pandas objects, numpy arrays, or any pure
-python structure) can then be stored and easily recalled later. Under the hood,
-datasets are stored in the efficient HDF5 format when possible.
+As an example: `MDSynthesis`_, a package for storing, recalling, and aggregating
+data from molecular dynamics simulations, is built on top of datreant.
 
-.. _MDAnalysis: http://www.mdanalysis.org
+.. _`MDSynthesis`: https://github.com/Becksteinlab/MDSynthesis 
+
+Efficiently store intermediate data from individual studies for easy recall
+---------------------------------------------------------------------------
+For handling data from a single study, datreant gives the **Treant** object.
+Data structures generated from raw data (pandas objects, numpy arrays, or any
+pure python structure) can then be stored and easily recalled later. Under the
+hood, datasets are stored in the efficient `HDF5`_ format when possible.
+
+.. _`HDF5`: https://www.hdfgroup.org/HDF5/whatishdf5.html
 
 Collect aggregated data and keep track of it, too
 -------------------------------------------------
-**Sim** objects can be gathered into arbitrary collections with **Group** objects.
+**Treant** objects can be gathered into arbitrary collections with **Group** objects.
 Groups can store datasets obtained from these collections, and can even contain
-other Groups as members.
+other Groups as members. Groups can keep track of any Treant-derived subclasses,
+even domain-specific ones that you've defined for getting your work done.
 
-Query for simulation results instead of manually hunting for them
------------------------------------------------------------------
+Query for study results instead of manually hunting for them
+------------------------------------------------------------
 **Note**: This feature is planned, but not yet present in the codebase.
 
-**Sim** and **Group** objects persistently store their data to disk automatically,
+**Treant** and **Group** objects persistently store their data to disk automatically,
 but it can be tedious to navigate around the filesystem to recall them later.
-The **Coordinator** object gives a single interface for querying all **Sim**
+The **Coordinator** object gives a single interface for querying all **Treant**
 and **Group** objects it is made aware of, allowing retrieval of specific
 datasets with a single line of code.
 
-Documentation
-=============
-A brief user guide is available on `Read the Docs
-<http://mdsynthesis.readthedocs.org/>`__.
-
 Dependencies
 ============
-* MDAnalysis: 0.9.1 or higher
 * pandas: 0.16.1 or higher
 * PyTables: 3.2.0 or higher
 * h5py: 2.5.0 or higher
@@ -63,20 +73,12 @@ Contributing
 This project is still under heavy development, and there are certainly rough
 edges and bugs. Issues and pull requests welcome!
 
-.. |docs| image:: https://readthedocs.org/projects/mdsynthesis/badge/?version=develop
-    :alt: Documentation Status
-    :scale: 100%
-    :target: https://readthedocs.org/projects/mdsynthesis
-
-.. |build| image:: https://travis-ci.org/Becksteinlab/MDSynthesis.svg?branch=develop
+.. |build| image:: https://travis-ci.org/dotsdl/datreant.svg?branch=develop
     :alt: Build Status
-    :target: https://travis-ci.org/Becksteinlab/MDSynthesis
+    :target: https://travis-ci.org/dotsdl/datreant
 
-.. |cov| image:: http://codecov.io/github/Becksteinlab/MDSynthesis/coverage.svg?branch=develop
+.. |cov| image:: http://codecov.io/github/dotsdl/datreant/coverage.svg?branch=develop
     :alt: Code Coverage
     :scale: 100%
-    :target: http://codecov.io/github/Becksteinlab/MDSynthesis?branch=develop
+    :target: http://codecov.io/github/dotsdl/datreant?branch=develop
 
-.. |zen| image:: https://zenodo.org/badge/doi/10.5281/zenodo.18851.svg   
-    :alt: Citation
-    :target: http://dx.doi.org/10.5281/zenodo.18851
