@@ -63,10 +63,15 @@ datasets with a single line of code.
 
 Dependencies
 ============
-* pandas: 0.16.1 or higher
-* PyTables: 3.2.0 or higher
-* h5py: 2.5.0 or higher
-* scandir: 1.0 or higher
+* `pandas`_: 0.16.1 or higher
+* `PyTables`_: 3.2.0 or higher
+* `h5py`_: 2.5.0 or higher
+* `scandir`_: 1.0 or higher
+
+.. _`pandas`: http://pandas.pydata.org/
+.. _`PyTables`: http://www.pytables.org/
+.. _`h5py`: http://www.h5py.org/
+.. _`scandir`: https://pypi.python.org/pypi/scandir
 
 Contributing
 ============
