@@ -146,8 +146,8 @@ class Foxhound(object):
                 instead of paths for *as_treants* == True.
 
         """
-        from .aggregators import Members
-        from .collections import Bundle
+        from datreant.aggregators import Members
+        from datreant.collections import Bundle
 
         if isinstance(self.caller, Members):
             results = self._find_Group_members()
