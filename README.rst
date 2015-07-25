@@ -16,11 +16,11 @@ paramaters, and starting conditions. And with increases in computational power,
 it is often necessary to store intermediate results obtained from large amounts
 of simulation data so it can be used interactively.
 
-These problems make data management difficult, and serve as a barrier to using
-to answering scientific questions. To make things easier, **datreant** is a
-Python package that handles the tedious and time-consuming logistics of
-intermediate data storage and retrieval. It solves a boring problem, so 
-we can focus on interesting ones.
+These problems make data management difficult, and serve as a barrier to
+answering scientific questions. To make things easier, **datreant** is a Python
+package that handles the tedious and time-consuming logistics of intermediate
+data storage and retrieval. It solves a boring problem, so we can focus on
+interesting ones.
 
 Stay organized
 ==============
