@@ -37,29 +37,30 @@ data from molecular dynamics simulations, is built on top of datreant.
 
 Efficiently store intermediate data from individual studies for easy recall
 ---------------------------------------------------------------------------
-For handling data from a single study, datreant gives the **Treant** object.
-Data structures generated from raw data (pandas objects, numpy arrays, or any
-pure python structure) can then be stored and easily recalled later. Under the
+For handling data from a single study, datreant gives the **Treant** object.  A
+**Treant** can store data structures generated from raw data (pandas objects,
+numpy arrays, or any pure python structure) for easy recall later. Under the
 hood, datasets are stored in the efficient `HDF5`_ format when possible.
 
 .. _`HDF5`: https://www.hdfgroup.org/HDF5/whatishdf5.html
 
 Collect aggregated data and keep track of it, too
 -------------------------------------------------
-**Treant** objects can be gathered into arbitrary collections with **Group** objects.
-Groups can store datasets obtained from these collections, and can even contain
-other Groups as members. Groups can keep track of any Treant-derived subclasses,
-even domain-specific ones that you've defined for getting your work done.
+**Treants** can be gathered into arbitrary collections with **Group** objects.
+**Groups** can store datasets obtained from these collections, and can even
+contain other **Groups** as members. **Groups** can keep track of any
+**Treant**-derived subclasses, even domain-specific ones that you've defined
+for getting your work done.
 
 Query for study results instead of manually hunting for them
 ------------------------------------------------------------
 **Note**: This feature is planned, but not yet present in the codebase.
 
-**Treant** and **Group** objects persistently store their data to disk automatically,
-but it can be tedious to navigate around the filesystem to recall them later.
-The **Coordinator** object gives a single interface for querying all **Treant**
-and **Group** objects it is made aware of, allowing retrieval of specific
-datasets with a single line of code.
+**Treant** and **Group** objects persistently store their data to disk
+automatically, but it can be tedious to navigate around the filesystem to
+recall them later.  The **Coordinator** object gives a single interface for
+querying all **Treants** and **Groups** it is made aware of, allowing retrieval
+of specific datasets with a single line of code.
 
 Dependencies
 ============
