@@ -2,7 +2,7 @@
 datreant: a persistence engine for heterogeneous data sets
 ==========================================================
 
-|build| |cov|
+|docs| |build| |cov|
 
 In many fields of science, especially those analyzing experimental or
 simulation data, there is often an existing ecosystem of specialized tools and 
@@ -78,6 +78,11 @@ Contributing
 ============
 This project is still under heavy development, and there are certainly rough
 edges and bugs. Issues and pull requests welcome!
+
+.. |docs| image:: https://readthedocs.org/projects/datreant/badge/?version=develop
+    :alt: Documentation Status
+    :scale: 100%
+    :target: https://readthedocs.org/projects/datreant
 
 .. |build| image:: https://travis-ci.org/dotsdl/datreant.svg?branch=develop
     :alt: Build Status
