@@ -62,6 +62,11 @@ recall them later.  The **Coordinator** object gives a single interface for
 querying all **Treants** and **Groups** it is made aware of, allowing retrieval
 of specific datasets with a single line of code.
 
+Documentation
+=============
+A brief user guide is available on `Read the Docs
+<http://datreant.readthedocs.org/>`__.
+
 Dependencies
 ============
 * `pandas`_: 0.16.1 or higher
