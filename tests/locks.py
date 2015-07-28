@@ -1,6 +1,7 @@
 """Stress tests for file locks.
 
 """
+# TESTS DISABLED FOR NOW; TROUBLESHOOTING LOCKS
 
 import random
 import string
