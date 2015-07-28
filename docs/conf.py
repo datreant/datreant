@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# MDSynthesis documentation build configuration file, created by
+# datreant documentation build configuration file, created by
 # sphinx-quickstart2 on Mon Dec 29 20:48:44 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -182,7 +182,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'MDSynthesisdoc'
+htmlhelp_basename = 'datreantdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -202,7 +202,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'MDSynthesis.tex', u'MDSynthesis Documentation',
+  ('index', 'datreant.tex', u'datreant Documentation',
    u'David Dotson', 'manual'),
 ]
 
@@ -232,7 +232,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'mdsynthesis', u'MDSynthesis Documentation',
+    ('index', 'mdsynthesis', u'datreant Documentation',
      [u'David Dotson'], 1)
 ]
 
@@ -246,8 +246,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'MDSynthesis', u'MDSynthesis Documentation',
-   u'David Dotson', 'MDSynthesis', 'One line description of project.',
+  ('index', 'datreant', u'datreant Documentation',
+   u'David Dotson', 'datreant', 'One line description of project.',
    'Miscellaneous'),
 ]
 
