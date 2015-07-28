@@ -109,10 +109,11 @@ class File(object):
                 '{}'.format(self.__class__.__name__))
             self.logger.setLevel(logging.INFO)
 
-            if not any([isinstance(x, logging.StreamHandler) 
+            if not any([isinstance(x, logging.StreamHandler)
                         for x in self.logger.handlers]):
                 ch = logging.StreamHandler(sys.stdout)
-                cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+                cf = logging.Formatter(
+                        '%(name)-12s: %(levelname)-8s %(message)s')
                 ch.setFormatter(cf)
                 self.logger.addHandler(ch)
         else:
