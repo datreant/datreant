@@ -170,7 +170,7 @@ class _CollectionBase(object):
         self._cache.update(foundconts)
         try:
             self.add(*foundconts.values())
-        except IOError:
+        except OSError:
             pass
 
         # insert found treants into output list

@@ -184,6 +184,32 @@ class File(object):
         """
         return os.path.exists(self.filename)
 
+    def _open_fd_r(self):
+        """Open read-only file descriptor for application of advisory locks.
+
+        Because we need an active file descriptor to apply advisory locks to a
+        file, and because we need to do this before opening a file with
+        PyTables due to the risk of caching stale state on open, we open
+        a separate file descriptor to the same file and apply the locks
+        to it.
+
+        """
+        self.fd = os.open(self.filename, os.O_RDONLY)
+
+    def _open_fd_rw(self):
+        """Open read-write file descriptor for application of advisory locks.
+
+        """
+        self.fd = os.open(self.filename, os.O_RDWR)
+
+    def _close_fd(self):
+        """Close file descriptor used for application of advisory locks.
+
+        """
+        # close file descriptor for locks
+        os.close(self.fd)
+        self.fd = None
+
     @staticmethod
     def _read_state(func):
         """Decorator for opening state file for reading and applying shared
@@ -200,13 +226,17 @@ class File(object):
             if self.handle.isopen:
                 out = func(self, *args, **kwargs)
             else:
+                self._open_fd_r()
                 self._shlock(self.fd)
+
+                # open the file using the actual reader
                 self.handle = tables.open_file(self.filename, 'r')
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
                     self.handle.close()
                     self._unlock(self.fd)
+                    self._close_fd()
             return out
 
         return inner
@@ -223,6 +253,7 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
+            self._open_fd_rw()
             self._exlock(self.fd)
             self.handle = tables.open_file(self.filename, 'a')
             try:
@@ -230,6 +261,7 @@ class File(object):
             finally:
                 self.handle.close()
                 self._unlock(self.fd)
+                self._close_fd()
             return out
 
         return inner
@@ -314,16 +346,10 @@ class TreantFile(File):
             self.handle = tables.open_file(self.filename, 'a')
             self.handle.close()
 
-            # open file descriptor for locks
-            self.fd = os.open(self.filename, os.O_RDWR)
-
             self.create(**kwargs)
         else:
             self.handle = tables.open_file(self.filename, 'r')
             self.handle.close()
-
-            # open file descriptor for locks
-            self.fd = os.open(self.filename, os.O_RDWR)
 
     def create(self, **kwargs):
         """Build state file and common data structure elements.
@@ -475,14 +501,7 @@ class TreantFile(File):
         tags = set([str(tag) for tag in tags])
 
         # remove tags already present in metadata from list
-        # TODO: more efficient way to do this?
-        tags_present = list()
-        for row in table:
-            for tag in tags:
-                if (row['tag'] == tag):
-                    tags_present.append(tag)
-
-        tags = list(tags - set(tags_present))
+        tags = tags.difference(set(table.read()['tag']))
 
         # add new tags
         for tag in tags:
@@ -516,6 +535,7 @@ class TreantFile(File):
             # remove redundant tags from given list if present
             tags = set([str(tag) for tag in tags])
 
+            # TODO: improve performance
             # get matching rows
             rowlist = list()
             for row in table:
@@ -1142,9 +1162,13 @@ class pdDataFile(File):
         """
         super(pdDataFile, self).__init__(filename, logger=logger)
 
-        # open file for the first time to initialize handle
-        self.handle = pd.HDFStore(self.filename, 'a')
-        self.handle.close()
+        # if file does not exist, it is created
+        if not self._check_existence():
+            self.handle = pd.HDFStore(self.filename, 'a')
+            self.handle.close()
+        else:
+            self.handle = pd.HDFStore(self.filename, 'r')
+            self.handle.close()
 
     def _read_pddata(func):
         """Decorator for opening data file for reading and applying shared lock.
@@ -1160,12 +1184,15 @@ class pdDataFile(File):
             if self.handle.is_open:
                 out = func(self, *args, **kwargs)
             else:
+                self._open_fd_r()
+                self._shlock(self.fd)
                 self.handle = pd.HDFStore(self.filename, 'r')
-                self._shlock(self.handle._handle)
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
                     self.handle.close()
+                    self._unlock(self.fd)
+                    self._close_fd()
             return out
 
         return inner
@@ -1181,12 +1208,15 @@ class pdDataFile(File):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
+            self._open_fd_rw()
+            self._exlock(self.fd)
             self.handle = pd.HDFStore(self.filename, 'a')
-            self._exlock(self.handle._handle)
             try:
                 out = func(self, *args, **kwargs)
             finally:
                 self.handle.close()
+                self._unlock(self.fd)
+                self._close_fd()
             return out
 
         return inner
@@ -1348,12 +1378,15 @@ class npDataFile(File):
                 self.handle.mode
                 out = func(self, *args, **kwargs)
             except ValueError:
+                self._open_fd_r()
+                self._shlock(self.fd)
                 self.handle = h5py.File(self.filename, 'r')
-                self._shlock(self.handle.fid.get_vfd_handle())
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
                     self.handle.close()
+                    self._unlock(self.fd)
+                    self._close_fd()
             return out
 
         return inner
@@ -1369,12 +1402,15 @@ class npDataFile(File):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
+            self._open_fd_rw()
+            self._exlock(self.fd)
             self.handle = h5py.File(self.filename, 'a')
-            self._exlock(self.handle.fid.get_vfd_handle())
             try:
                 out = func(self, *args, **kwargs)
             finally:
                 self.handle.close()
+                self._unlock(self.fd)
+                self._close_fd()
             return out
 
         return inner
@@ -1479,12 +1515,15 @@ class pyDataFile(File):
                 self.handle.fileno()
                 out = func(self, *args, **kwargs)
             except ValueError:
+                self._open_fd_r()
+                self._shlock(self.fd)
                 self.handle = open(self.filename, 'rb')
-                self._shlock(self.handle)
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
                     self.handle.close()
+                    self._unlock(self.fd)
+                    self._close_fd()
             return out
 
         return inner
@@ -1500,12 +1539,15 @@ class pyDataFile(File):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
+            self._open_fd_rw()
+            self._exlock(self.fd)
             self.handle = open(self.filename, 'wb+')
-            self._exlock(self.handle)
             try:
                 out = func(self, *args, **kwargs)
             finally:
                 self.handle.close()
+                self._unlock(self.fd)
+                self._close_fd()
             return out
 
         return inner
