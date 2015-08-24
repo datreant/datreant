@@ -90,6 +90,7 @@ class File(object):
 
         self.filename = os.path.abspath(filename)
         self.handle = None
+        self.fd = None
 
         self._start_logger(logger)
 
@@ -119,7 +120,7 @@ class File(object):
         else:
             self.logger = logger
 
-    def _shlock(self, f):
+    def _shlock(self, fd):
         """Get shared lock on file.
 
         Using fcntl.lockf, a shared lock on the file is obtained. If an
@@ -127,18 +128,18 @@ class File(object):
         then the method waits until it can obtain the lock.
 
         :Arguments:
-            *f*
-                file handle
+            *fd*
+                file descriptor
 
         :Returns:
             *success*
                 True if shared lock successfully obtained
         """
-        fcntl.lockf(f, fcntl.LOCK_SH)
+        fcntl.lockf(fd, fcntl.LOCK_SH)
 
         return True
 
-    def _exlock(self, f):
+    def _exlock(self, fd):
         """Get exclusive lock on file.
 
         Using fcntl.lockf, an exclusive lock on the file is obtained. If a
@@ -146,18 +147,18 @@ class File(object):
         process, then the method waits until it can obtain the lock.
 
         :Arguments:
-            *f*
-                file handle
+            *fd*
+                file descriptor
 
         :Returns:
             *success*
                 True if exclusive lock successfully obtained
         """
-        fcntl.lockf(f, fcntl.LOCK_EX)
+        fcntl.lockf(fd, fcntl.LOCK_EX)
 
         return True
 
-    def _unlock(self, f):
+    def _unlock(self, fd):
         """Remove exclusive or shared lock on file.
 
         WARNING: It is very rare that this is necessary, since a file must be
@@ -166,14 +167,14 @@ class File(object):
         removed in the future if not needed (likely).
 
         :Arguments:
-            *f*
-                file handle
+            *fd*
+                file descriptor
 
         :Returns:
             *success*
                 True if lock removed
         """
-        fcntl.lockf(f, fcntl.LOCK_UN)
+        fcntl.lockf(fd, fcntl.LOCK_UN)
 
         return True
 
@@ -199,12 +200,13 @@ class File(object):
             if self.handle.isopen:
                 out = func(self, *args, **kwargs)
             else:
+                self._shlock(self.fd)
                 self.handle = tables.open_file(self.filename, 'r')
-                self._shlock(self.handle)
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
                     self.handle.close()
+                    self._unlock(self.fd)
             return out
 
         return inner
@@ -221,12 +223,13 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
+            self._exlock(self.fd)
             self.handle = tables.open_file(self.filename, 'a')
-            self._exlock(self.handle)
             try:
                 out = func(self, *args, **kwargs)
             finally:
                 self.handle.close()
+                self._unlock(self.fd)
             return out
 
         return inner
@@ -308,11 +311,19 @@ class TreantFile(File):
 
         # if file does not exist, it is created
         if not self._check_existence():
+            self.handle = tables.open_file(self.filename, 'a')
+            self.handle.close()
+
+            # open file descriptor for locks
+            self.fd = os.open(self.filename, os.O_RDWR)
+
             self.create(**kwargs)
         else:
-            # open file for the first time to initialize handle
             self.handle = tables.open_file(self.filename, 'r')
             self.handle.close()
+
+            # open file descriptor for locks
+            self.fd = os.open(self.filename, os.O_RDWR)
 
     def create(self, **kwargs):
         """Build state file and common data structure elements.
