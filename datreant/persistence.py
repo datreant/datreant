@@ -94,6 +94,16 @@ class File(object):
 
         self._start_logger(logger)
 
+        # we apply locks to a proxy file to avoid creating an HDF5 file
+        # without an exclusive lock on something; important for multiprocessing
+        proxy = "." + os.path.basename(self.filename) + ".proxy"
+        self.proxy = os.path.join(os.path.dirname(self.filename), proxy)
+        try:
+            fd = os.open(self.proxy, os.O_CREAT | os.O_EXCL)
+            os.close(fd)
+        except OSError:
+            pass
+
     def _start_logger(self, logger):
         """Start up the logger.
 
@@ -194,13 +204,13 @@ class File(object):
         to it.
 
         """
-        self.fd = os.open(self.filename, os.O_RDONLY)
+        self.fd = os.open(self.proxy, os.O_RDONLY)
 
     def _open_fd_rw(self):
         """Open read-write file descriptor for application of advisory locks.
 
         """
-        self.fd = os.open(self.filename, os.O_RDWR)
+        self.fd = os.open(self.proxy, os.O_RDWR)
 
     def _close_fd(self):
         """Close file descriptor used for application of advisory locks.
@@ -223,7 +233,7 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            if self.handle.isopen:
+            if self.handle and self.handle.isopen:
                 out = func(self, *args, **kwargs)
             else:
                 self._open_fd_r()
@@ -342,14 +352,7 @@ class TreantFile(File):
         super(TreantFile, self).__init__(filename, logger=logger)
 
         # if file does not exist, it is created
-        if not self._check_existence():
-            self.handle = tables.open_file(self.filename, 'a')
-            self.handle.close()
-
-            self.create(**kwargs)
-        else:
-            self.handle = tables.open_file(self.filename, 'r')
-            self.handle.close()
+        self.create(**kwargs)
 
     def create(self, **kwargs):
         """Build state file and common data structure elements.
@@ -937,8 +940,6 @@ class GroupFile(TreantFile):
         return table.read()[self.memberpaths]
 
 
-# TODO: replace use of this class with a function that returns the proper data
-# file
 class DataFile(object):
     """Interface to data files.
 
@@ -1150,26 +1151,6 @@ class pdDataFile(File):
 
     """
 
-    def __init__(self, filename, logger=None, **kwargs):
-        """Initialize data file.
-
-        :Arguments:
-           *filename*
-              path to file
-           *logger*
-              Treant's logger instance
-
-        """
-        super(pdDataFile, self).__init__(filename, logger=logger)
-
-        proxy = "." + os.path.basename(self.filename) + ".proxy"
-        self.proxy = os.path.join(os.path.dirname(self.filename), proxy)
-        try:
-            fd = os.open(self.proxy, os.O_CREAT | os.O_EXCL)
-            os.close(fd)
-        except OSError:
-            pass
-
     def _read_pddata(func):
         """Decorator for opening data file for reading and applying shared lock.
 
@@ -1364,23 +1345,6 @@ class npDataFile(File):
     its backend.
 
     """
-
-    def __init__(self, filename, logger=None, **kwargs):
-        """Initialize data file.
-
-        :Arguments:
-           *filename*
-              path to file
-           *logger*
-              Treant's logger instance
-
-        """
-        super(npDataFile, self).__init__(filename, logger=logger)
-
-        # open file for the first time to initialize handle
-        self.handle = h5py.File(self.filename, 'a')
-        self.handle.close()
-
     def _read_npdata(func):
         """Decorator for opening data file for reading and applying shared lock.
 
@@ -1395,7 +1359,7 @@ class npDataFile(File):
             try:
                 self.handle.mode
                 out = func(self, *args, **kwargs)
-            except ValueError:
+            except AttributeError:
                 self._open_fd_r()
                 self._shlock(self.fd)
                 self.handle = h5py.File(self.filename, 'r')
@@ -1501,23 +1465,6 @@ class pyDataFile(File):
     serialization.
 
     """
-
-    def __init__(self, filename, logger=None, **kwargs):
-        """Initialize data file.
-
-        :Arguments:
-           *filename*
-              path to file
-           *logger*
-              Treant's logger instance
-
-        """
-        super(pyDataFile, self).__init__(filename, logger=logger)
-
-        # open file for the first time to initialize handle
-        self.handle = open(self.filename, 'ab+')
-        self.handle.close()
-
     def _read_pydata(func):
         """Decorator for opening data file for reading and applying shared lock.
 
@@ -1532,7 +1479,7 @@ class pyDataFile(File):
             try:
                 self.handle.fileno()
                 out = func(self, *args, **kwargs)
-            except ValueError:
+            except AttributeError:
                 self._open_fd_r()
                 self._shlock(self.fd)
                 self.handle = open(self.filename, 'rb')

@@ -66,3 +66,27 @@ def test_async_append(treant, dataframe):
     pool.join()
 
     assert len(treant.data['testdata']) == len(dataframe)*(num+0)
+
+
+def init_treant(tmpdir, tags):
+    with tmpdir.as_cwd():
+        tf = dtr.Treant('sprout', tags=tags)
+    return tf
+
+
+def test_init_treant(tmpdir):
+    pool = mp.Pool(processes=4)
+    num = 73
+
+    # TODO: eventually want this to work without initing the treant
+    # here
+    init_treant(tmpdir, ['bark'])
+    for i in range(num):
+        pool.apply_async(init_treant, args=(tmpdir, ['run_{}'.format(i)]))
+    pool.close()
+    pool.join()
+
+    with tmpdir.as_cwd():
+        tf = dtr.Treant('sprout')
+
+    assert len(tf.tags) == num + 1

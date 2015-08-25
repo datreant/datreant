@@ -60,7 +60,9 @@ class Treant(object):
 
         """
         if os.path.exists(treant):
-            self._regenerate(self._treanttype, treant)
+            self._regenerate(self._treanttype, treant,
+                             coordinator=coordinator, categories=categories,
+                             tags=tags)
         else:
             self._generate(self._treanttype, treant, location=location,
                            coordinator=coordinator, categories=categories,
@@ -150,7 +152,7 @@ class Treant(object):
 
         # TODO: need to raise exception where invalid characters used for
         # directory
-        os.makedirs(os.path.join(location, treant))
+        self._makedirs(os.path.join(location, treant))
         filename = filesystem.statefilename(treanttype, str(uuid4()))
 
         statefile = os.path.join(location, treant, filename)
@@ -160,11 +162,18 @@ class Treant(object):
                 statefile, self._logger, name=treant,
                 coordinator=coordinator, categories=categories, tags=tags)
 
-    def _regenerate(self, treanttype, treant):
+    def _regenerate(self, treanttype, treant,
+                    coordinator=None, categories=None, tags=None):
         """Re-generate existing Treant object.
 
         """
         self._placeholders()
+
+        # process keywords
+        if not categories:
+            categories = dict()
+        if not tags:
+            tags = list()
 
         # convenient to give only name of object (its directory name)
         if os.path.isdir(treant):
@@ -173,7 +182,8 @@ class Treant(object):
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
                 self._backend = persistence.treantfile(
-                        statefile[0])
+                        statefile[0], coordinator=coordinator,
+                        categories=categories, tags=tags)
             elif len(statefile) == 0:
                 raise NoTreantsError('No Treants found in directory.')
             else:
@@ -183,12 +193,12 @@ class Treant(object):
 
         # if a state file is given, try loading it
         elif os.path.exists(treant):
-            self._backend = persistence.treantfile(treant)
+            self._backend = persistence.treantfile(
+                    treant, coordinator=coordinator, categories=categories,
+                    tags=tags)
 
         self._start_logger(treanttype, self.name)
         self._backend._start_logger(self._logger)
-
-        self._placeholders()
 
     def _placeholders(self):
         """Necessary placeholders for aggregator instances.
@@ -244,8 +254,10 @@ class Treant(object):
             *p*
                 directory path to make
         """
-        if not os.path.exists(p):
+        try:
             os.makedirs(p)
+        except OSError:
+            pass
 
     @property
     def name(self):
