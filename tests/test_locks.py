@@ -24,7 +24,7 @@ def treant(tmpdir):
 
 @pytest.fixture
 def dataframe():
-    data = np.random.rand(100, 3)
+    data = np.random.rand(1000, 3)
     return pd.DataFrame(data, columns=('A', 'B', 'C'))
 
 
@@ -62,6 +62,7 @@ def test_async_append(treant, dataframe):
 
     num = 31
 
+    append(treant.filepath, dataframe)
     for i in range(num):
         pool.apply_async(append, args=(treant.filepath, dataframe))
     pool.close()
@@ -70,4 +71,4 @@ def test_async_append(treant, dataframe):
     #for i in range(9):
     #    append(treant.filepath, dataframe)
 
-    assert len(treant.data['testdata']) == len(dataframe)*num
+    assert len(treant.data['testdata']) == len(dataframe)*(num+1)
