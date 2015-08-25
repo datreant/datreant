@@ -508,8 +508,10 @@ class Data(Aggregator):
             *p*
                 directory path to make
         """
-        if not os.path.exists(p):
+        try:
             os.makedirs(p)
+        except OSError:
+            pass
 
     def _get_datafile(self, handle):
         """Return path to datafile corresponding to given handle.

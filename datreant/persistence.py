@@ -1162,13 +1162,13 @@ class pdDataFile(File):
         """
         super(pdDataFile, self).__init__(filename, logger=logger)
 
-        # if file does not exist, it is created
-        if not self._check_existence():
-            self.handle = pd.HDFStore(self.filename, 'a')
-            self.handle.close()
-        else:
-            self.handle = pd.HDFStore(self.filename, 'r')
-            self.handle.close()
+        proxy = "." + os.path.basename(self.filename) + ".proxy"
+        self.proxy = os.path.join(os.path.dirname(self.filename), proxy)
+        try:
+            fd = os.open(self.proxy, os.O_CREAT | os.O_EXCL)
+            os.close(fd)
+        except OSError:
+            pass
 
     def _read_pddata(func):
         """Decorator for opening data file for reading and applying shared lock.
@@ -1181,7 +1181,7 @@ class pdDataFile(File):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            if self.handle.is_open:
+            if self.handle and self.handle.is_open:
                 out = func(self, *args, **kwargs)
             else:
                 self._open_fd_r()
@@ -1220,6 +1220,24 @@ class pdDataFile(File):
             return out
 
         return inner
+
+    def _open_fd_r(self):
+        """Open read-only file descriptor for application of advisory locks.
+
+        Because we need an active file descriptor to apply advisory locks to a
+        file, and because we need to do this before opening a file with
+        PyTables due to the risk of caching stale state on open, we open
+        a separate file descriptor to the same file and apply the locks
+        to it.
+
+        """
+        self.fd = os.open(self.proxy, os.O_RDONLY)
+
+    def _open_fd_rw(self):
+        """Open read-write file descriptor for application of advisory locks.
+
+        """
+        self.fd = os.open(self.proxy, os.O_RDWR)
 
     @_write_pddata
     def add_data(self, key, data):
