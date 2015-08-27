@@ -10,6 +10,7 @@ import time
 import scandir
 
 from datreant import persistence
+import datreant
 
 
 def statefilename(treanttype, uuid):
@@ -35,7 +36,7 @@ def glob_treant(treant):
             in directory
     """
     fileglob = list()
-    for treanttype in ('Treant', 'Group'):
+    for treanttype in datreant._treants:
         fileglob.extend(
             glob.glob(os.path.join(treant,
                                    '{}.*.h5'.format(treanttype))))
@@ -74,16 +75,14 @@ def path2treant(*paths):
             files = glob_treant(path)
             for item in files:
                 basename = os.path.basename(item)
-                if 'Treant' in basename:
-                    treants.append(Treant(item))
-                elif 'Group' in basename:
-                    treants.append(Group(item))
+                for treanttype in datreant._treants:
+                    if treanttype in basename:
+                        treants.append(datreant._treants[treanttype](item))
         elif os.path.exists(path):
             basename = os.path.basename(path)
-            if 'Treant' in basename:
-                treants.append(Treant(path))
-            elif 'Group' in basename:
-                treants.append(Group(path))
+            for treanttype in datreant._treants:
+                if treanttype in basename:
+                    treants.append(datreant._treants[treanttype](path))
 
     return treants
 

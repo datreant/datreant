@@ -16,6 +16,8 @@ import h5py
 import pandas as pd
 import numpy as np
 
+import datreant
+
 # extension used for state files
 statefile_ext = 'h5'
 
@@ -55,10 +57,9 @@ def treantfile(filename, logger=None, **kwargs):
 
     """
     basename = os.path.basename(filename)
-    if 'Treant' in basename:
-        statefileclass = TreantFile
-    elif 'Group' in basename:
-        statefileclass = GroupFile
+    for item in datreant._treantfiles:
+        if item in basename:
+            statefileclass = datreant._treantfiles[item]
 
     return statefileclass(filename, logger=logger, **kwargs)
 
