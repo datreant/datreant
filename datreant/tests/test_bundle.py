@@ -2,14 +2,15 @@
 
 """
 
-import datreant as dtr
 import pandas as pd
 import numpy as np
 import pytest
 import os
 import shutil
 import py
-import test_data
+
+import datreant as dtr
+from datreant.tests import test_data
 
 
 def do_stuff(cont):
@@ -22,6 +23,43 @@ def return_nothing(cont):
 
 class CollectionTests():
     """Tests for common elements of Group.members and Bundle"""
+
+    @pytest.fixture
+    def testtreant(self, tmpdir, request):
+        with tmpdir.as_cwd():
+            t = dtr.Treant('dummytreant')
+        return t
+
+    @pytest.fixture
+    def testgroup(self, tmpdir, request):
+        with tmpdir.as_cwd():
+            g = dtr.Group('dummygroup')
+            g.members.add(dtr.Treant('bark'), dtr.Treant('leaf'))
+        return g
+
+    def test_additive(self, tmpdir, testtreant, testgroup, collection):
+        """Test that addition of treants and collections give Bundles.
+
+        """
+        with tmpdir.as_cwd():
+            assert isinstance(testtreant + testgroup, dtr.Bundle)
+            assert len(testtreant + testgroup) == 2
+
+            # subtle, but important; Group.members is a collection,
+            # while Group is a treant
+            assert len(testtreant + testgroup.members) != 2
+            assert (len(testtreant + testgroup.members) ==
+                    len(testgroup.members) + 1)
+
+            assert isinstance(testtreant + testgroup.members, dtr.Bundle)
+
+            b = collection + testtreant + testgroup
+
+            # beating a dead horse
+            assert len(b) == 2
+            assert (len(b + testgroup.members) ==
+                    len(b) + len(testgroup.members))
+            assert isinstance(b + testgroup.members, dtr.Bundle)
 
     def test_add_members(self, collection, tmpdir):
         """Try adding members in a number of ways"""
@@ -39,9 +77,23 @@ class CollectionTests():
             collection.add([[s4], s2])
             assert s4 in collection
 
-            # the group won't add members it alrady has 
+            # the group won't add members it alrady has
             # (operates as an ordered set)
             assert len(collection) == 4
+
+    def test_add_members_glob(self, collection, tmpdir):
+        """Try adding members with globbing"""
+        with tmpdir.as_cwd():
+            t1 = dtr.Treant('lark')
+            t2 = dtr.Treant('hark')
+            g3 = dtr.Group('linus')
+
+            collection.add('*ark')
+
+            for treant in (t1, t2):
+                assert treant in collection
+
+            assert g3 not in collection
 
     def test_get_members(self, collection, tmpdir):
         """Access members with indexing and slicing"""
@@ -80,6 +132,43 @@ class CollectionTests():
 
             collection.remove(s2)
             assert s2 not in collection
+
+    def test_remove_members_name(self, collection, tmpdir):
+        """Try removing members with names and globbing"""
+        with tmpdir.as_cwd():
+            t1 = dtr.Treant('lark')
+            t2 = dtr.Treant('lark', location='elsewhere')
+            t3 = dtr.Treant('hark')
+            g = dtr.Group('linus')
+
+            stuff = [t1, t2, t3, g]
+
+            # test removal by name
+            collection.add(stuff)
+            for item in stuff:
+                assert item in collection
+
+            # should remove both treants with name 'lark'
+            collection.remove('lark')
+
+            for item in (t3, g):
+                assert item in collection
+
+            for item in (t1, t2):
+                assert item not in collection
+
+            # test removal by a unix-style glob pattern
+            collection.add(stuff)
+            for item in stuff:
+                assert item in collection
+
+            # should remove 'lark' and 'hark' treants
+            collection.remove('*ark')
+
+            assert g in collection
+
+            for item in (t1, t2, t3):
+                assert item not in collection
 
     def test_member_attributes(self, collection, tmpdir):
         """Get member uuids, names, and treanttypes"""
@@ -264,42 +353,5 @@ class TestBundle(CollectionTests):
     """Test Bundle features"""
 
     @pytest.fixture
-    def treant(self, tmpdir, request):
-        with tmpdir.as_cwd():
-            t = dtr.Treant('testtreant')
-        return t
-
-    @pytest.fixture
-    def group(self, tmpdir, request):
-        with tmpdir.as_cwd():
-            g = dtr.Group('testgroup')
-            g.members.add(dtr.Treant('bark'), dtr.Treant('leaf'))
-        return g
-
-    @pytest.fixture
     def collection(self):
         return dtr.Bundle()
-
-    def test_add_treants(self, tmpdir, treant, group, collection):
-        """Test that addition of treants and collections give Bundles.
-
-        """
-        with tmpdir.as_cwd():
-            assert isinstance(treant + group, dtr.Bundle)
-            assert len(treant + group) == 2
-
-            # subtle, but important; Group.members is a collection,
-            # while Group is a treant
-            assert len(treant + group.members) != 2
-            assert len(treant + group.members) == len(group.members) + 1
-
-            assert isinstance(treant + group.members, dtr.Bundle)
-
-            b = collection + treant + group
-
-            # beating a dead horse
-            assert len(b) == 2
-            assert len(b + group.members) == len(b) + len(group.members)
-            assert isinstance(b + group.members, dtr.Bundle)
-
-

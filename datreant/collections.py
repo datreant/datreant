@@ -8,6 +8,8 @@ import os
 
 import numpy as np
 import multiprocessing as mp
+import glob
+import fnmatch
 
 from datreant import persistence
 from datreant import filesystem
@@ -38,10 +40,8 @@ class _CollectionBase(object):
         """Addition of collections with collections or treants yields Bundle.
 
         """
-        if (issubclass(a.__class__,
-                       (datreant.treants.Treant, _CollectionBase)) and
-           issubclass(b.__class__,
-                      (datreant.treants.Treant, _CollectionBase))):
+        if (isinstance(a, (datreant.treants.Treant, _CollectionBase)) and
+                isinstance(b, (datreant.treants.Treant, _CollectionBase))):
             return Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
@@ -51,9 +51,10 @@ class _CollectionBase(object):
 
         :Arguments:
             *treants*
-                Treants and/or Groups to be added; may be a list of Treants
-                and/or Groups; Treants or Groups can be given as either objects
-                or paths to directories that contain object statefiles
+                treants to be added, which may be nested lists of treants;
+                treants can be given as either objects or paths to directories
+                that contain treant statefiles; glob patterns are also allowed,
+                and all found treants will be added to the collection
         """
         from datreant.aggregators import Members
         from datreant.treants import Treant
@@ -63,14 +64,18 @@ class _CollectionBase(object):
             if treant is None:
                 pass
             elif isinstance(treant,
-                            (list, tuple, Bundle, Members)):
+                            (list, tuple, _CollectionBase)):
                 self.add(*treant)
             elif isinstance(treant, Treant):
                 outconts.append(treant)
             elif os.path.exists(treant):
-                cont = filesystem.path2treant(treant)
-                for c in cont:
-                    outconts.append(c)
+                tre = filesystem.path2treant(treant)
+                for t in tre:
+                    outconts.append(t)
+            else:
+                tre = filesystem.path2treant(*glob.glob(treant))
+                for t in tre:
+                    outconts.append(t)
 
         for treant in outconts:
             self._backend.add_member(treant.uuid,
@@ -101,6 +106,12 @@ class _CollectionBase(object):
                     remove.append(uuids[member])
                 elif isinstance(member, Treant):
                     remove.append(member.uuid)
+                elif isinstance(member, basestring):
+                    names = fnmatch.filter(self.names, member)
+                    uuids = [member.uuid for member in self
+                             if (member.name in names)]
+                    remove.extend(uuids)
+
                 else:
                     raise TypeError('Only an integer or treant acceptable')
 
@@ -294,7 +305,7 @@ class _BundleBackend():
                        }).reshape(1, -1)
 
     def add_member(self, uuid, treanttype, basedir):
-        """Add a member to the Group.
+        """Add a member to the Bundle.
 
         If the member is already present, its location will be updated with
         the given location.
@@ -344,10 +355,10 @@ class _BundleBackend():
             matches = list()
             for uuid in uuids:
                 index = np.where(self.table['uuid'] == uuid)[0]
-                if index:
+                if len(index) != 0:
                     matches.append(index)
 
-            self.table = np.delete(self.table, matches)
+            self.table = np.delete(self.table, matches, axis=0)
 
     def get_member(self, uuid):
         """Get all stored information on the specified member.
@@ -415,7 +426,7 @@ class _BundleBackend():
 
 
 class Bundle(_CollectionBase):
-    """Non-persistent Treant for Treants and Groups.
+    """Non-persistent collection of treants.
 
     A Bundle is basically an indexable set. It is often used to return the
     results of a query on a Coordinator or a Group, but can be used on its
@@ -428,15 +439,10 @@ class Bundle(_CollectionBase):
 
         :Arguments:
             *treants*
-                list giving either Treants, Groups, or paths giving the
-                directories of the state files for such objects in the
-                filesystem
-
-        :Keywords:
-            *flatten* [NOT IMPLEMENTED]
-                if ``True``, will recursively obtain members of any Groups;
-                only Treants will be present in the bunch
-
+                treants to be added, which may be nested lists of treants;
+                treants can be given as either objects or paths to directories
+                that contain treant statefiles; glob patterns are also allowed,
+                and all found treants will be added to the collection
         """
         self._backend = _BundleBackend()
         self._cache = dict()

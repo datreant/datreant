@@ -60,7 +60,7 @@ class Treant(object):
                 Treant
 
         """
-        if os.path.exists(treant):
+        if os.path.exists(os.path.join(location, treant)):
             self._regenerate(self._treanttype, treant,
                              coordinator=coordinator, categories=categories,
                              tags=tags)
@@ -139,8 +139,8 @@ class Treant(object):
         """Addition of treants with collections or treants yields Bundle.
 
         """
-        if (issubclass(a.__class__, (Treant, collections._CollectionBase)) and
-           issubclass(b.__class__, (Treant, collections._CollectionBase))):
+        if (isinstance(a, (Treant, collections._CollectionBase)) and
+           isinstance(b, (Treant, collections._CollectionBase))):
             return collections.Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
