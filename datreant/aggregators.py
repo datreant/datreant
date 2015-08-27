@@ -299,6 +299,19 @@ class MemberData(MemberAgg):
     def __repr__(self):
         return "<Data({})>".format(self.keys(mode='any'))
 
+    def _repr_html_(self):
+        data = self.keys(mode='any')
+        agg = "Data"
+        if not data:
+            out = "No Data"
+        else:
+            out = "<h3>{}</h3>".format(agg)
+            out = out + "<ul style='list-style-type:none'>"
+            for datum in data:
+                out = out + "<li>{}</li>".format(datum)
+            out = out + "</ul>"
+        return out
+
     def __getitem__(self, handle):
         """Retrieve aggreggated dataset from all members.
 

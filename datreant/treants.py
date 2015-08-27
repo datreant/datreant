@@ -30,7 +30,7 @@ class Treant(object):
     """
     _treanttype = 'Treant'
 
-    def __init__(self, treant, location='.', coordinator=None,
+    def __init__(self, treant, location=None, coordinator=None,
                  categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) generic Treant
         object.
@@ -41,9 +41,10 @@ class Treant(object):
                 if regenerating an existing Treant, string giving the path
                 to the directory containing the Treant object's state file
 
-        :Optional arguments when generating a new Treant:
+        :Optional arguments:
             *location*
-                directory to place Treant object; default is the current
+                directory to place Treant object; if not ``None``, will generate
+                a new Treant even if one already occupies the same destination
                 directory
             *coordinator*
                 directory of the Coordinator to associate with the Treant;
@@ -56,19 +57,21 @@ class Treant(object):
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
 
-        *Note*: optional arguments are ignored when regenerating an existing
-                Treant
-
         """
-        if os.path.exists(os.path.join(location, treant)):
-            self._regenerate(self._treanttype, treant,
-                             coordinator=coordinator, categories=categories,
-                             tags=tags)
-        else:
+        if location:
             self._generate(self._treanttype, treant, location=location,
                            coordinator=coordinator, categories=categories,
                            tags=tags)
 
+        else:
+            if not os.path.exists(treant):
+                self._generate(self._treanttype, treant, location='.',
+                               coordinator=coordinator, categories=categories,
+                               tags=tags)
+            else:
+                self._regenerate(self._treanttype, treant,
+                                 coordinator=coordinator, categories=categories,
+                                 tags=tags)
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
 
@@ -466,7 +469,7 @@ class Group(Treant):
     """
     _treanttype = 'Group'
 
-    def __init__(self, group, members=None, location='.', coordinator=None,
+    def __init__(self, group, members=None, location=None, coordinator=None,
                  categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Group object.
 
@@ -476,11 +479,12 @@ class Group(Treant):
                 if regenerating an existing Group, string giving the path
                 to the directory containing the Group object's state file
 
-        :Optional arguments when generating a new Group:
+        :Optional arguments:
             *members*
                 a list of Treants and/or Groups to immediately add as members
             *location*
-                directory to place Group object; default is the current
+                directory to place Group object; if not ``None``, will generate
+                a new Group even if one already occupies the same destination
                 directory
             *coordinator*
                 directory of the Coordinator to associate with this object; if
@@ -493,16 +497,20 @@ class Group(Treant):
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
 
-        *Note*: optional arguments are ignored when regenerating an existing
-                Group
-
         """
-        if os.path.exists(group):
-            self._regenerate('Group', group)
-        else:
+        if location: 
             self._generate('Group', group, members=members, location=location,
                            coordinator=coordinator, categories=categories,
                            tags=tags)
+        else:
+            if not os.path.exists(group):
+                self._generate('Group', group, members=members,
+                               location='.', coordinator=coordinator,
+                               categories=categories, tags=tags)
+            else:
+                self._regenerate('Group', group, members=members,
+                               coordinator=coordinator, categories=categories,
+                               tags=tags)
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())
@@ -557,6 +565,22 @@ class Group(Treant):
         """
         super(Group, self)._generate(treanttype, treant,
                                      location=location,
+                                     coordinator=coordinator,
+                                     categories=categories, tags=tags)
+
+        # process keywords
+        if not members:
+            members = list()
+
+        # add members
+        self.members.add(*members)
+
+    def _regenerate(self, treanttype, treant, members=None,
+                  coordinator=None, categories=None, tags=None):
+        """Re-generate existing Group.
+
+        """
+        super(Group, self)._regenerate(treanttype, treant,
                                      coordinator=coordinator,
                                      categories=categories, tags=tags)
 
