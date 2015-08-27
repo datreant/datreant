@@ -12,6 +12,7 @@ import functools
 from datreant import aggregators
 from datreant import filesystem
 from datreant import persistence
+from datreant import collections
 
 
 class MultipleTreantsError(Exception):
@@ -133,6 +134,16 @@ class Treant(object):
 
         """
         self.data.__delitem__(handle)
+
+    def __add__(a, b):
+        """Addition of treants with collections or treants yields Bundle.
+
+        """
+        if (issubclass(a.__class__, (Treant, collections._CollectionBase)) and
+           issubclass(b.__class__, (Treant, collections._CollectionBase))):
+            return collections.Bundle(a, b)
+        else:
+            raise TypeError("Operands must be Treant-derived or Bundles.")
 
     def _generate(self, treanttype, treant, location='.',
                   coordinator=None, categories=None, tags=None):

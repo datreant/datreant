@@ -11,6 +11,7 @@ import multiprocessing as mp
 
 from datreant import persistence
 from datreant import filesystem
+import datreant.treants
 
 
 class _CollectionBase(object):
@@ -32,6 +33,18 @@ class _CollectionBase(object):
             out = Bundle(*self._list()[index])
 
         return out
+
+    def __add__(a, b):
+        """Addition of collections with collections or treants yields Bundle.
+
+        """
+        if (issubclass(a.__class__,
+                       (datreant.treants.Treant, _CollectionBase)) and
+           issubclass(b.__class__,
+                      (datreant.treants.Treant, _CollectionBase))):
+            return Bundle(a, b)
+        else:
+            raise TypeError("Operands must be Treant-derived or Bundles.")
 
     def add(self, *treants):
         """Add any number of members to this collection.

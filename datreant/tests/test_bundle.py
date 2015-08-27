@@ -39,6 +39,10 @@ class CollectionTests():
             collection.add([[s4], s2])
             assert s4 in collection
 
+            # the group won't add members it alrady has 
+            # (operates as an ordered set)
+            assert len(collection) == 4
+
     def test_get_members(self, collection, tmpdir):
         """Access members with indexing and slicing"""
         with tmpdir.as_cwd():
@@ -260,5 +264,42 @@ class TestBundle(CollectionTests):
     """Test Bundle features"""
 
     @pytest.fixture
+    def treant(self, tmpdir, request):
+        with tmpdir.as_cwd():
+            t = dtr.Treant('testtreant')
+        return t
+
+    @pytest.fixture
+    def group(self, tmpdir, request):
+        with tmpdir.as_cwd():
+            g = dtr.Group('testgroup')
+            g.members.add(dtr.Treant('bark'), dtr.Treant('leaf'))
+        return g
+
+    @pytest.fixture
     def collection(self):
         return dtr.Bundle()
+
+    def test_add_treants(self, tmpdir, treant, group, collection):
+        """Test that addition of treants and collections give Bundles.
+
+        """
+        with tmpdir.as_cwd():
+            assert isinstance(treant + group, dtr.Bundle)
+            assert len(treant + group) == 2
+
+            # subtle, but important; Group.members is a collection,
+            # while Group is a treant
+            assert len(treant + group.members) != 2
+            assert len(treant + group.members) == len(group.members) + 1
+
+            assert isinstance(treant + group.members, dtr.Bundle)
+
+            b = collection + treant + group
+
+            # beating a dead horse
+            assert len(b) == 2
+            assert len(b + group.members) == len(b) + len(group.members)
+            assert isinstance(b + group.members, dtr.Bundle)
+
+
