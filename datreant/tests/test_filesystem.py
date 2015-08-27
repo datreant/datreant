@@ -14,17 +14,11 @@ class TestFoxhound:
     @pytest.fixture
     def treant(self, tmpdir):
         with tmpdir.as_cwd():
-            c = dtr.treants.Container('testtreant')
-        return c
-
-    @pytest.fixture
-    def sim(self, tmpdir):
-        with tmpdir.as_cwd():
-            c = dtr.Treant('testsim')
-        return c
+            t = dtr.treants.Container('testtreant')
+        return t
 
     @pytest.fixture
     def group(self, tmpdir):
         with tmpdir.as_cwd():
-            c = dtr.Group('testgroup')
-        return c
+            g = dtr.Group('testgroup')
+        return g
