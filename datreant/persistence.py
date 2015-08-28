@@ -225,10 +225,10 @@ class File(object):
         os.close(self.fd)
         self.fd = None
 
-    def _file_open_r(self):
+    def _open_file_r(self):
         return tables.open_file(self.filename, 'r')
 
-    def _file_open_w(self):
+    def _open_file_w(self):
         return tables.open_file(self.filename, 'a')
 
     @staticmethod
@@ -252,7 +252,7 @@ class File(object):
                 self.fdlock = 'shared'
 
                 # open the file using the actual reader
-                self.handle = self._file_open_r()
+                self.handle = self._open_file_r()
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
@@ -284,7 +284,7 @@ class File(object):
                 self.fdlock = 'exclusive'
 
                 # open the file using the actual writer
-                self.handle = self._file_open_w()
+                self.handle = self._open_file_w()
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
@@ -1186,12 +1186,11 @@ class pdDataFile(File):
     backend.
 
     """
-    
-    def _file_open_r(self):
+    def _open_file_r(self):
         return pd.HDFStore(self.filename, 'r')
 
-    def _file_open_w(self):
-        return pd.HDFStore(self.filename, 'w')
+    def _open_file_w(self):
+        return pd.HDFStore(self.filename, 'a')
 
     @File._write
     def add_data(self, key, data):
@@ -1318,10 +1317,10 @@ class npDataFile(File):
     its backend.
 
     """
-    def _file_open_r(self):
+    def _open_file_r(self):
         return h5py.File(self.filename, 'r')
 
-    def _file_open_w(self):
+    def _open_file_w(self):
         return h5py.File(self.filename, 'a')
 
     @File._write
@@ -1392,10 +1391,10 @@ class pyDataFile(File):
     serialization.
 
     """
-    def _file_open_r(self):
+    def _open_file_r(self):
         return open(self.filename, 'rb')
 
-    def _file_open_w(self):
+    def _open_file_w(self):
         return open(self.filename, 'wb+')
 
     @File._write
