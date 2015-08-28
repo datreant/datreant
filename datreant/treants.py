@@ -9,6 +9,7 @@ from uuid import uuid4
 import logging
 import functools
 
+import datreant
 from datreant import aggregators
 from datreant import filesystem
 from datreant import persistence
@@ -23,12 +24,30 @@ class NoTreantsError(Exception):
     pass
 
 
+def register(*treantclass):
+    """Register a treant-derived class so datreant can handle it.
+
+    In order for things like Bundle to know how to handle custom treants,
+    they must be registered with the package. Give the class (not an instance)
+    to this function to register it.
+
+    :Arguments:
+        *treantclass*
+            treant-derived class to register; may enter more than one
+
+    """
+    for tc in treantclass:
+        datreant._treants.update({tc._treanttype: tc})
+
+
 @functools.total_ordering
 class Treant(object):
     """Core class for all Treants.
 
     """
+    # required components
     _treanttype = 'Treant'
+    _backends = {'pytables': ['.h5', persistence.TreantFile]}
 
     def __init__(self, treant, location=None, coordinator=None,
                  categories=None, tags=None):
@@ -468,7 +487,9 @@ class Group(Treant):
     """The Group object is a collection of Treants and Groups.
 
     """
+    # required components
     _treanttype = 'Group'
+    _backends = {'pytables': ['.h5', persistence.GroupFile]}
 
     def __init__(self, group, members=None, location=None, coordinator=None,
                  categories=None, tags=None):

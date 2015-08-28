@@ -37,9 +37,12 @@ def glob_treant(treant):
     """
     fileglob = list()
     for treanttype in datreant._treants:
-        fileglob.extend(
-            glob.glob(os.path.join(treant,
-                                   '{}.*.h5'.format(treanttype))))
+        for backend in datreant._treants[treanttype]._backends:
+            extension = datreant._treants[treanttype]._backends[backend][0]
+            fileglob.extend(
+                glob.glob(os.path.join(
+                    treant,
+                    '{}.*{}'.format(treanttype, extension))))
 
     paths = [os.path.abspath(x) for x in fileglob]
     return paths
@@ -66,7 +69,6 @@ def path2treant(*paths):
             element indicates that ``None`` was present in the list of paths
 
     """
-    from .treants import (Treant, Group)
     treants = list()
     for path in paths:
         if path is None:

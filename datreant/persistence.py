@@ -56,10 +56,24 @@ def treantfile(filename, logger=None, **kwargs):
     **kwargs passed to treant file ``__init__()`` method
 
     """
+    treant = None
     basename = os.path.basename(filename)
-    for item in datreant._treantfiles:
-        if item in basename:
-            statefileclass = datreant._treantfiles[item]
+    for treanttype in datreant._treants:
+        if treanttype in basename:
+            treant = treanttype
+            break
+
+    if not treant:
+        raise IOError("No known treant type for file '{}'".format(filename))
+
+    statefileclass = None
+    backends = datreant._treants[treant]._backends
+    for backend in backends:
+        if backends[backend][0] == os.path.splitext(basename)[-1]:
+            statefileclass = backends[backend][1]
+
+    if not statefileclass:
+        raise IOError("No known backend type for file '{}'".format(filename))
 
     return statefileclass(filename, logger=logger, **kwargs)
 
@@ -282,15 +296,15 @@ class TreantFile(File):
     """Treant file object; syncronized access to Treant data.
 
     """
-    class _Meta(tables.IsDescription):
-        """Table definition for metadata.
+    class _Version(tables.IsDescription):
+        """Table definition for storing version number of file schema.
 
         All strings limited to hardcoded size for now.
 
         """
-        # version of MDSynthesis object file data corresponds to
-        # allows future-proofing of old objects so that formats of new releases
-        # can be automatically built from old ones
+        # version of datreant file schema corresponds to allows future-proofing
+        # of old objects so that formats of new releases can be automatically
+        # built from old ones
         version = tables.StringCol(15)
 
     class _Coordinator(tables.IsDescription):
@@ -378,8 +392,9 @@ class TreantFile(File):
 
         treanttype = kwargs.pop('treanttype', None)
 
-        # metadata table
-        self.update_version(kwargs.pop('version', datreant.__version__))
+        # update schema and version of file
+        version = self.update_schema()
+        self.update_version(version)
 
         # coordinator table
         self.update_coordinator(kwargs.pop('coordinator', None))
@@ -414,6 +429,27 @@ class TreantFile(File):
         table = self.handle.get_node('/', 'meta')
         return table.cols.version[0]
 
+    # TODO: need a proper schema update mechanism
+    @File._write_state
+    def update_schema(self):
+        """Update schema of file.
+
+        :Arugments:
+            *version*
+                new version of Treant
+
+        :Returns:
+            *version*
+                version number of file's new schema
+        """
+        try:
+            table = self.handle.get_node('/', 'version')
+            version = table.cols.version[0]
+        except tables.NoSuchNodeError:
+            version = datreant.__version__
+
+        return version
+
     @File._write_state
     def update_version(self, version):
         """Update version of Treant.
@@ -421,14 +457,13 @@ class TreantFile(File):
         :Arugments:
             *version*
                 new version of Treant
-
         """
         try:
-            table = self.handle.get_node('/', 'meta')
+            table = self.handle.get_node('/', 'version')
             table.cols.version[0] = version
         except tables.NoSuchNodeError:
             table = self.handle.create_table(
-                '/', 'meta', self._Meta, 'metadata')
+                '/', 'version', self._Version, 'version')
             table.row['version'] = version
             table.row.append()
 
