@@ -37,8 +37,6 @@ pathlength = 511
 namelength = 55
 
 
-# TODO: add careful checks that file is actually a state file
-# TODO: must be extendable in derived packages to give Treant subclasses
 def treantfile(filename, logger=None, **kwargs):
     """Generate or regenerate the appropriate treant file instance from
     filename.
@@ -103,6 +101,7 @@ class File(object):
         self.filename = os.path.abspath(filename)
         self.handle = None
         self.fd = None
+        self.fdlock = None
 
         self._start_logger(logger)
 
@@ -200,12 +199,6 @@ class File(object):
 
         return True
 
-    def _check_existence(self):
-        """Check for existence of file.
-
-        """
-        return os.path.exists(self.filename)
-
     def _open_fd_r(self):
         """Open read-only file descriptor for application of advisory locks.
 
@@ -232,8 +225,14 @@ class File(object):
         os.close(self.fd)
         self.fd = None
 
+    def _file_open_r(self):
+        return tables.open_file(self.filename, 'r')
+
+    def _file_open_w(self):
+        return tables.open_file(self.filename, 'a')
+
     @staticmethod
-    def _read_state(func):
+    def _read(func):
         """Decorator for opening state file for reading and applying shared
         lock.
 
@@ -245,26 +244,28 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            if self.handle and self.handle.isopen:
+            if self.fdlock:
                 out = func(self, *args, **kwargs)
             else:
                 self._open_fd_r()
                 self._shlock(self.fd)
+                self.fdlock = 'shared'
 
                 # open the file using the actual reader
-                self.handle = tables.open_file(self.filename, 'r')
+                self.handle = self._file_open_r()
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
                     self.handle.close()
                     self._unlock(self.fd)
                     self._close_fd()
+                    self.fdlock = None
             return out
 
         return inner
 
     @staticmethod
-    def _write_state(func):
+    def _write(func):
         """Decorator for opening state file for writing and applying exclusive lock.
 
         Applying this decorator to a method will ensure that the file is opened
@@ -275,15 +276,22 @@ class File(object):
         """
         @wraps(func)
         def inner(self, *args, **kwargs):
-            self._open_fd_rw()
-            self._exlock(self.fd)
-            self.handle = tables.open_file(self.filename, 'a')
-            try:
+            if self.fdlock == 'exclusive':
                 out = func(self, *args, **kwargs)
-            finally:
-                self.handle.close()
-                self._unlock(self.fd)
-                self._close_fd()
+            else:
+                self._open_fd_rw()
+                self._exlock(self.fd)
+                self.fdlock = 'exclusive'
+
+                # open the file using the actual writer
+                self.handle = self._file_open_w()
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self.handle.close()
+                    self._unlock(self.fd)
+                    self.fdlock = None
+                    self._close_fd()
             return out
 
         return inner
@@ -366,6 +374,7 @@ class TreantFile(File):
         # if file does not exist, it is created
         self.create(**kwargs)
 
+    @File._write
     def create(self, **kwargs):
         """Build state file and common data structure elements.
 
@@ -385,8 +394,6 @@ class TreantFile(File):
             *version*
                 version of MDSynthesis file was generated with
         """
-        import datreant
-
         treanttype = kwargs.pop('treanttype', None)
 
         # update schema and version of file
@@ -414,7 +421,7 @@ class TreantFile(File):
         """
         return os.path.dirname(self.filename)
 
-    @File._read_state
+    @File._read
     def get_version(self):
         """Get Treant version.
 
@@ -427,7 +434,7 @@ class TreantFile(File):
         return table.cols.version[0]
 
     # TODO: need a proper schema update mechanism
-    @File._write_state
+    @File._write
     def update_schema(self):
         """Update schema of file.
 
@@ -443,7 +450,7 @@ class TreantFile(File):
 
         return version
 
-    @File._write_state
+    @File._write
     def update_version(self, version):
         """Update version of Treant.
 
@@ -460,7 +467,7 @@ class TreantFile(File):
             table.row['version'] = version
             table.row.append()
 
-    @File._read_state
+    @File._read
     def get_coordinator(self):
         """Get absolute path to Coordinator.
 
@@ -476,7 +483,7 @@ class TreantFile(File):
             out = None
         return out
 
-    @File._write_state
+    @File._write
     def update_coordinator(self, coordinator):
         """Update Treant location.
 
@@ -500,7 +507,7 @@ class TreantFile(File):
                 table.row['abspath'] = None
             table.row.append()
 
-    @File._read_state
+    @File._read
     def get_tags(self):
         """Get all tags as a list.
 
@@ -511,7 +518,7 @@ class TreantFile(File):
         table = self.handle.get_node('/', 'tags')
         return [x['tag'] for x in table.read()]
 
-    @File._write_state
+    @File._write
     def add_tags(self, *tags):
         """Add any number of tags to the Treant.
 
@@ -540,7 +547,7 @@ class TreantFile(File):
             table.row['tag'] = tag
             table.row.append()
 
-    @File._write_state
+    @File._write
     def del_tags(self, *tags, **kwargs):
         """Delete tags from Treant.
 
@@ -590,7 +597,7 @@ class TreantFile(File):
                     table.remove_row(i - j)
                     j = j + 1
 
-    @File._read_state
+    @File._read
     def get_categories(self):
         """Get all categories as a dictionary.
 
@@ -601,7 +608,7 @@ class TreantFile(File):
         table = self.handle.get_node('/', 'categories')
         return {x['category']: x['value'] for x in table.read()}
 
-    @File._write_state
+    @File._write
     def add_categories(self, **categories):
         """Add any number of categories to the Treant.
 
@@ -642,7 +649,7 @@ class TreantFile(File):
             table.row['value'] = str(categories[key])
             table.row.append()
 
-    @File._write_state
+    @File._write
     def del_categories(self, *categories, **kwargs):
         """Delete categories from Treant.
 
@@ -794,7 +801,7 @@ class GroupFile(TreantFile):
 
         self._make_membertable()
 
-    @File._write_state
+    @File._write
     def _make_membertable(self):
         """Make member table.
 
@@ -807,7 +814,7 @@ class GroupFile(TreantFile):
             table = self.handle.create_table(
                 '/', 'members', self._Members, 'members')
 
-    @File._write_state
+    @File._write
     def add_member(self, uuid, treanttype, basedir):
         """Add a member to the Group.
 
@@ -844,7 +851,7 @@ class GroupFile(TreantFile):
                     basedir, self.get_location())
             table.row.append()
 
-    @File._write_state
+    @File._write
     def del_member(self, *uuid, **kwargs):
         """Remove a member from the Group.
 
@@ -892,7 +899,7 @@ class GroupFile(TreantFile):
                     table.remove_row(i - j)
                     j = j + 1
 
-    @File._read_state
+    @File._read
     def get_member(self, uuid):
         """Get all stored information on the specified member.
 
@@ -920,7 +927,7 @@ class GroupFile(TreantFile):
 
         return memberinfo
 
-    @File._read_state
+    @File._read
     def get_members(self):
         """Get full member table.
 
@@ -935,7 +942,7 @@ class GroupFile(TreantFile):
         table = self.handle.get_node('/', 'members')
         return table.read()
 
-    @File._read_state
+    @File._read
     def get_members_uuid(self):
         """List uuid for each member.
 
@@ -946,7 +953,7 @@ class GroupFile(TreantFile):
         table = self.handle.get_node('/', 'members')
         return table.read()['uuid']
 
-    @File._read_state
+    @File._read
     def get_members_treanttype(self):
         """List treanttype for each member.
 
@@ -957,7 +964,7 @@ class GroupFile(TreantFile):
         table = self.handle.get_node('/', 'members')
         return table.read()['treanttype']
 
-    @File._read_state
+    @File._read
     def get_members_basedir(self):
         """List basedir for each member.
 
@@ -1179,77 +1186,14 @@ class pdDataFile(File):
     backend.
 
     """
+    
+    def _file_open_r(self):
+        return pd.HDFStore(self.filename, 'r')
 
-    def _read_pddata(func):
-        """Decorator for opening data file for reading and applying shared lock.
+    def _file_open_w(self):
+        return pd.HDFStore(self.filename, 'w')
 
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.handle and self.handle.is_open:
-                out = func(self, *args, **kwargs)
-            else:
-                self._open_fd_r()
-                self._shlock(self.fd)
-                self.handle = pd.HDFStore(self.filename, 'r')
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
-                    self._unlock(self.fd)
-                    self._close_fd()
-            return out
-
-        return inner
-
-    def _write_pddata(func):
-        """Decorator for opening data file for writing and applying exclusive lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method
-        is executed. It also ensures that the lock is removed and the file
-        closed after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self._open_fd_rw()
-            self._exlock(self.fd)
-            self.handle = pd.HDFStore(self.filename, 'a')
-            try:
-                out = func(self, *args, **kwargs)
-            finally:
-                self.handle.close()
-                self._unlock(self.fd)
-                self._close_fd()
-            return out
-
-        return inner
-
-    def _open_fd_r(self):
-        """Open read-only file descriptor for application of advisory locks.
-
-        Because we need an active file descriptor to apply advisory locks to a
-        file, and because we need to do this before opening a file with
-        PyTables due to the risk of caching stale state on open, we open
-        a separate file descriptor to the same file and apply the locks
-        to it.
-
-        """
-        self.fd = os.open(self.proxy, os.O_RDONLY)
-
-    def _open_fd_rw(self):
-        """Open read-write file descriptor for application of advisory locks.
-
-        """
-        self.fd = os.open(self.proxy, os.O_RDWR)
-
-    @_write_pddata
+    @File._write
     def add_data(self, key, data):
         """Add a pandas data object (Series, DataFrame, Panel) to the data file.
 
@@ -1278,7 +1222,7 @@ class pdDataFile(File):
             self.handle.put(
                 key, data, format='table', complevel=5, complib='blosc')
 
-    @_write_pddata
+    @File._write
     def append_data(self, key, data):
         """Append rows to an existing pandas data object stored in the data file.
 
@@ -1301,7 +1245,7 @@ class pdDataFile(File):
         except AttributeError:
             self.handle.append(key, data, complevel=5, complib='blosc')
 
-    @_read_pddata
+    @File._read
     def get_data(self, key, **kwargs):
         """Retrieve pandas object stored in file, optionally based on where criteria.
 
@@ -1330,7 +1274,7 @@ class pdDataFile(File):
         """
         return self.handle.select(key, **kwargs)
 
-    @_write_pddata
+    @File._write
     def del_data(self, key, **kwargs):
         """Delete a stored data object.
 
@@ -1351,7 +1295,7 @@ class pdDataFile(File):
 
     # TODO: remove this; since we only place one datastructure in an HDF5 file,
     # we don't need it
-    @_read_pddata
+    @File._read
     def list_data(self):
         """List names of all stored datasets.
 
@@ -1374,59 +1318,13 @@ class npDataFile(File):
     its backend.
 
     """
-    def _read_npdata(func):
-        """Decorator for opening data file for reading and applying shared lock.
+    def _file_open_r(self):
+        return h5py.File(self.filename, 'r')
 
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
+    def _file_open_w(self):
+        return h5py.File(self.filename, 'a')
 
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            try:
-                self.handle.mode
-                out = func(self, *args, **kwargs)
-            except AttributeError:
-                self._open_fd_r()
-                self._shlock(self.fd)
-                self.handle = h5py.File(self.filename, 'r')
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
-                    self._unlock(self.fd)
-                    self._close_fd()
-            return out
-
-        return inner
-
-    def _write_npdata(func):
-        """Decorator for opening data file for writing and applying exclusive lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method
-        is executed. It also ensures that the lock is removed and the file
-        closed after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self._open_fd_rw()
-            self._exlock(self.fd)
-            self.handle = h5py.File(self.filename, 'a')
-            try:
-                out = func(self, *args, **kwargs)
-            finally:
-                self.handle.close()
-                self._unlock(self.fd)
-                self._close_fd()
-            return out
-
-        return inner
-
-    @_write_npdata
+    @File._write
     def add_data(self, key, data):
         """Add a numpy array to the data file.
 
@@ -1445,7 +1343,7 @@ class npDataFile(File):
             del self.handle[key]
             self.handle.create_dataset(key, data=data)
 
-    @_read_npdata
+    @File._read
     def get_data(self, key, **kwargs):
         """Retrieve numpy array stored in file.
 
@@ -1459,7 +1357,7 @@ class npDataFile(File):
         """
         return self.handle[key].value
 
-    @_write_npdata
+    @File._write
     def del_data(self, key, **kwargs):
         """Delete a stored data object.
 
@@ -1470,7 +1368,7 @@ class npDataFile(File):
         """
         del self.handle[key]
 
-    @_read_npdata
+    @File._read
     def list_data(self):
         """List names of all stored datasets.
 
@@ -1494,59 +1392,13 @@ class pyDataFile(File):
     serialization.
 
     """
-    def _read_pydata(func):
-        """Decorator for opening data file for reading and applying shared lock.
+    def _file_open_r(self):
+        return open(self.filename, 'rb')
 
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
+    def _file_open_w(self):
+        return open(self.filename, 'wb+')
 
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            try:
-                self.handle.fileno()
-                out = func(self, *args, **kwargs)
-            except AttributeError:
-                self._open_fd_r()
-                self._shlock(self.fd)
-                self.handle = open(self.filename, 'rb')
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
-                    self._unlock(self.fd)
-                    self._close_fd()
-            return out
-
-        return inner
-
-    def _write_pydata(func):
-        """Decorator for opening data file for writing and applying exclusive lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method
-        is executed. It also ensures that the lock is removed and the file
-        closed after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self._open_fd_rw()
-            self._exlock(self.fd)
-            self.handle = open(self.filename, 'wb+')
-            try:
-                out = func(self, *args, **kwargs)
-            finally:
-                self.handle.close()
-                self._unlock(self.fd)
-                self._close_fd()
-            return out
-
-        return inner
-
-    @_write_pydata
+    @File._write
     def add_data(self, key, data):
         """Add a numpy array to the data file.
 
@@ -1560,7 +1412,7 @@ class pyDataFile(File):
         """
         pickle.dump(data, self.handle)
 
-    @_read_pydata
+    @File._read
     def get_data(self, key, **kwargs):
         """Retrieve numpy array stored in file.
 
