@@ -291,7 +291,7 @@ class Foxhound(object):
 
                 for uuid in uuids:
                     candidate = [os.path.join(root, x)
-                                 for x in files if uuid in x]
+                                 for x in files if (uuid in x and x[0] != '.')]
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
@@ -355,7 +355,7 @@ class Foxhound(object):
 
                 for uuid in uuids:
                     candidate = [os.path.join(root, x)
-                                 for x in files if uuid in x]
+                                 for x in files if (uuid in x and x[0] != '.')]
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
