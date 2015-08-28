@@ -18,9 +18,6 @@ import numpy as np
 
 import datreant
 
-# extension used for state files
-statefile_ext = 'h5'
-
 # pandas Datafile
 pddatafile = "pdData.h5"
 
@@ -426,17 +423,13 @@ class TreantFile(File):
                 version of Treant
 
         """
-        table = self.handle.get_node('/', 'meta')
+        table = self.handle.get_node('/', 'version')
         return table.cols.version[0]
 
     # TODO: need a proper schema update mechanism
     @File._write_state
     def update_schema(self):
         """Update schema of file.
-
-        :Arugments:
-            *version*
-                new version of Treant
 
         :Returns:
             *version*

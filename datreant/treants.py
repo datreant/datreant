@@ -50,7 +50,7 @@ class Treant(object):
     _backends = {'pytables': ['.h5', persistence.TreantFile]}
 
     def __init__(self, treant, location=None, coordinator=None,
-                 categories=None, tags=None):
+                 categories=None, tags=None, backend='pytables'):
         """Generate a new or regenerate an existing (on disk) generic Treant
         object.
 
@@ -75,18 +75,21 @@ class Treant(object):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
+            *backend*
+                backend to use for state file; only 'pytables' available by
+                default; not used for object regeneration
 
         """
         if location:
             self._generate(self._treanttype, treant, location=location,
                            coordinator=coordinator, categories=categories,
-                           tags=tags)
+                           tags=tags, backend=backend)
 
         else:
             if not os.path.exists(treant):
                 self._generate(self._treanttype, treant, location='.',
                                coordinator=coordinator, categories=categories,
-                               tags=tags)
+                               tags=tags, backend=backend)
             else:
                 self._regenerate(self._treanttype, treant,
                                  coordinator=coordinator,
@@ -169,7 +172,8 @@ class Treant(object):
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
     def _generate(self, treanttype, treant, location='.',
-                  coordinator=None, categories=None, tags=None):
+                  coordinator=None, categories=None, tags=None,
+                  backend='pytables'):
         """Generate new generic Treant object.
 
         """
@@ -187,7 +191,8 @@ class Treant(object):
         # TODO: need to raise exception where invalid characters used for
         # directory
         self._makedirs(os.path.join(location, treant))
-        filename = filesystem.statefilename(treanttype, str(uuid4()))
+        filename = filesystem.statefilename(treanttype, str(uuid4()),
+                                            self._backends[backend][0])
 
         statefile = os.path.join(location, treant, filename)
         self._start_logger(treanttype, treant)
@@ -317,10 +322,52 @@ class Treant(object):
         newdir = os.path.join(os.path.dirname(olddir), name)
         statefile = os.path.join(newdir,
                                  filesystem.statefilename(
-                                     self.treanttype, self.uuid))
+                                     self.treanttype, self.uuid,
+                                     self._backends[self.backend[0]][0]))
 
         os.rename(olddir, newdir)
         self._regenerate(self.treanttype, statefile)
+
+    @property
+    def uuid(self):
+        """Get Treant uuid.
+
+        A Treant's uuid is used by other Treants to identify it. The uuid
+        is given in the Treant's state file name for fast filesystem
+        searching. For example, a Treant with state file::
+
+            'Treant.7dd9305a-d7d9-4a7b-b513-adf5f4205e09.h5'
+
+        has uuid::
+
+            '7dd9305a-d7d9-4a7b-b513-adf5f4205e09'
+
+        Changing this string will alter the Treant's uuid. This is not
+        generally recommended.
+
+        :Returns:
+            *uuid*
+                unique identifier string for this Treant
+        """
+        return self._backend.filename.split('.')[1]
+
+    @property
+    def backend(self):
+        """Get Treant backend type and class.
+
+        A Treant stores its state in a persistent backend. The type of backend
+        is chosen on creation of the Treant.
+
+        :Returns:
+            *backend*
+                tuple giving the backend type and class
+        """
+        ext = os.path.splitext(self._backend.filename)[-1]
+        for backend in self._backends:
+            if ext == self._backends[backend][0]:
+                out = (backend, self._backends[backend][1])
+
+        return out
 
     @property
     def treanttype(self):
@@ -354,7 +401,8 @@ class Treant(object):
         newpath = os.path.join(value, self.name)
         statefile = os.path.join(newpath,
                                  filesystem.statefilename(
-                                     self.treanttype, self.uuid))
+                                     self.treanttype, self.uuid,
+                                     self._backends[self.backend[0]][0]))
         os.rename(oldpath, newpath)
         self._regenerate(self.treanttype, statefile)
 
@@ -442,29 +490,6 @@ class Treant(object):
             self._data = aggregators.Data(self, self._backend, self._logger)
         return self._data
 
-    @property
-    def uuid(self):
-        """Get Treant uuid.
-
-        A Treant's uuid is used by other Treants to identify it. The uuid
-        is given in the Treant's state file name for fast filesystem
-        searching. For example, a Treant with state file::
-
-            'Treant.7dd9305a-d7d9-4a7b-b513-adf5f4205e09.h5'
-
-        has uuid::
-
-            '7dd9305a-d7d9-4a7b-b513-adf5f4205e09'
-
-        Changing this string will alter the Treant's uuid. This is not
-        generally recommended.
-
-        :Returns:
-            *uuid*
-                unique identifier string for this Treant
-        """
-        return self._backend.filename.split('.')[1]
-
     def _new_uuid(self):
         """Generate new uuid for Treant.
 
@@ -478,7 +503,8 @@ class Treant(object):
         olddir = os.path.dirname(self._backend.filename)
         newfile = os.path.join(olddir,
                                filesystem.statefilename(
-                                   self.treanttype, uuid))
+                                   self.treanttype, uuid,
+                                   self._backends[self.backend[0]][0]))
         os.rename(oldfile, newfile)
         self._regenerate(self.treanttype, olddir)
 
@@ -492,7 +518,7 @@ class Group(Treant):
     _backends = {'pytables': ['.h5', persistence.GroupFile]}
 
     def __init__(self, group, members=None, location=None, coordinator=None,
-                 categories=None, tags=None):
+                 categories=None, tags=None, backend='pytables'):
         """Generate a new or regenerate an existing (on disk) Group object.
 
         :Required Arguments:
@@ -518,6 +544,9 @@ class Group(Treant):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
+            *backend*
+                backend to use for state file; only 'pytables' available by
+                default; not used for object regeneration
 
         """
         if location:
@@ -581,7 +610,8 @@ class Group(Treant):
         return self._members
 
     def _generate(self, treanttype, treant, members=None, location='.',
-                  coordinator=None, categories=None, tags=None):
+                  coordinator=None, categories=None, tags=None,
+                  backend='pytables'):
         """Generate new Group.
 
         """

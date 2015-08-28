@@ -13,11 +13,11 @@ from datreant import persistence
 import datreant
 
 
-def statefilename(treanttype, uuid):
+def statefilename(treanttype, uuid, ext):
     """Return state file name given the type of treant and its uuid.
 
     """
-    return "{}.{}.{}".format(treanttype, uuid, persistence.statefile_ext)
+    return "{}.{}{}".format(treanttype, uuid, ext)
 
 
 def glob_treant(treant):
