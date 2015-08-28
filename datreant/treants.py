@@ -43,9 +43,9 @@ class Treant(object):
 
         :Optional arguments:
             *location*
-                directory to place Treant object; if not ``None``, will generate
-                a new Treant even if one already occupies the same destination
-                directory
+                directory to place Treant object; if not ``None``, will
+                generate a new Treant even if one already occupies the same
+                destination directory
             *coordinator*
                 directory of the Coordinator to associate with the Treant;
                 if the Coordinator does not exist, it is created; if ``None``,
@@ -70,8 +70,9 @@ class Treant(object):
                                tags=tags)
             else:
                 self._regenerate(self._treanttype, treant,
-                                 coordinator=coordinator, categories=categories,
-                                 tags=tags)
+                                 coordinator=coordinator,
+                                 categories=categories, tags=tags)
+
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
 
@@ -498,7 +499,7 @@ class Group(Treant):
                 adding many distinguishing descriptors
 
         """
-        if location: 
+        if location:
             self._generate('Group', group, members=members, location=location,
                            coordinator=coordinator, categories=categories,
                            tags=tags)
@@ -509,8 +510,8 @@ class Group(Treant):
                                categories=categories, tags=tags)
             else:
                 self._regenerate('Group', group, members=members,
-                               coordinator=coordinator, categories=categories,
-                               tags=tags)
+                                 coordinator=coordinator,
+                                 categories=categories, tags=tags)
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())
@@ -575,14 +576,14 @@ class Group(Treant):
         # add members
         self.members.add(*members)
 
-    def _regenerate(self, treanttype, treant, members=None,
-                  coordinator=None, categories=None, tags=None):
+    def _regenerate(self, treanttype, treant, members=None, coordinator=None,
+                    categories=None, tags=None):
         """Re-generate existing Group.
 
         """
         super(Group, self)._regenerate(treanttype, treant,
-                                     coordinator=coordinator,
-                                     categories=categories, tags=tags)
+                                       coordinator=coordinator,
+                                       categories=categories, tags=tags)
 
         # process keywords
         if not members:
