@@ -379,8 +379,6 @@ class TreantFile(File):
         """Build state file and common data structure elements.
 
         :Keywords:
-            *treanttype*
-                Treant type
             *name*
                 user-given name of Treant object
             *coordinator*
@@ -394,8 +392,6 @@ class TreantFile(File):
             *version*
                 version of MDSynthesis file was generated with
         """
-        treanttype = kwargs.pop('treanttype', None)
-
         # update schema and version of file
         version = self.update_schema()
         self.update_version(version)
