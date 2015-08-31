@@ -24,7 +24,7 @@ install:
   - pip install tables
   - pip install pandas h5py
   - pip install scandir
-  - pip install yaml
+  - pip install PyYAML
   - pip install -e .
 
 # run tests
