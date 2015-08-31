@@ -377,12 +377,72 @@ class ymlTreantFile(File):
         return open(self.filename, 'r')
 
     def _open_file_w(self):
-        return open(self.filename, 'a')
+        return open(self.filename, 'w')
+
+    def _read(func):
+        """Decorator for opening state file for reading and applying shared
+        lock.
+
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            if self.fdlock:
+                out = func(self, *args, **kwargs)
+            else:
+                self._open_fd_r()
+                self._shlock(self.fd)
+                self.fdlock = 'shared'
+
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self._unlock(self.fd)
+                    self._close_fd()
+                    self.fdlock = None
+            return out
+
+        return inner
+
+    def _write(func):
+        """Decorator for opening state file for writing and applying exclusive lock.
+
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method
+        is executed. It also ensures that the lock is removed and the file
+        closed after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            if self.fdlock == 'exclusive':
+                out = func(self, *args, **kwargs)
+            else:
+                self._open_fd_rw()
+                self._exlock(self.fd)
+                self.fdlock = 'exclusive'
+
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self._unlock(self.fd)
+                    self.fdlock = None
+                    self._close_fd()
+            return out
+
+        return inner
 
     def _pull_push(func):
         @wraps(func)
         def inner(self, *args, **kwargs):
-            self._pull_record()
+            try:
+                self._pull_record()
+            except IOError:
+                self._init_record()
             out = func(self, *args, **kwargs)
             self._push_record()
             return out
@@ -397,12 +457,20 @@ class ymlTreantFile(File):
         return inner
 
     def _pull_record(self):
+        self.handle = self._open_file_r()
         self._record = yaml.load(self.handle)
+        self.handle.close()
 
     def _push_record(self):
+        self.handle = self._open_file_w()
         yaml.dump(self._record, self.handle)
+        self.handle.close()
 
-    @File._write
+    def _init_record(self):
+        self._record = dict()
+        self._record['tags'] = list()
+        self._record['categories'] = dict()
+
     def create(self, **kwargs):
         """Build state file and common data structure elements.
 
@@ -435,7 +503,7 @@ class ymlTreantFile(File):
         categories = kwargs.pop('categories', dict())
         self.add_categories(**categories)
 
-    @File._read
+    @_read
     @_pull
     def get_version(self):
         """Get Treant version.
@@ -448,7 +516,7 @@ class ymlTreantFile(File):
         return self._record['version']
 
     # TODO: need a proper schema update mechanism
-    @File._write
+    @_write
     @_pull_push
     def update_schema(self):
         """Update schema of file.
@@ -464,7 +532,7 @@ class ymlTreantFile(File):
 
         return version
 
-    @File._write
+    @_write
     @_pull_push
     def update_version(self, version):
         """Update version of Treant.
@@ -475,7 +543,7 @@ class ymlTreantFile(File):
         """
         self._record['version'] = version
 
-    @File._read
+    @_read
     @_pull
     def get_coordinator(self):
         """Get absolute path to Coordinator.
@@ -487,7 +555,7 @@ class ymlTreantFile(File):
         """
         return self._record['coordinator'] 
 
-    @File._write
+    @_write
     @_pull_push
     def update_coordinator(self, coordinator):
         """Update Treant location.
@@ -498,7 +566,7 @@ class ymlTreantFile(File):
         """
         self._record['coordinator'] = coordinator
 
-    @File._read
+    @_read
     @_pull
     def get_tags(self):
         """Get all tags as a list.
@@ -509,7 +577,7 @@ class ymlTreantFile(File):
         """
         return self._record['tags']
 
-    @File._write
+    @_write
     @_pull_push
     def add_tags(self, *tags):
         """Add any number of tags to the Treant.
@@ -532,7 +600,7 @@ class ymlTreantFile(File):
         # add new tags
         self._record['tags'].extend(tags)
 
-    @File._write
+    @_write
     @_pull_push
     def del_tags(self, *tags, **kwargs):
         """Delete tags from Treant.
@@ -560,7 +628,7 @@ class ymlTreantFile(File):
             for tag in tags:
                 self._record['tags'].remove(tag)
 
-    @File._read
+    @_read
     @_pull
     def get_categories(self):
         """Get all categories as a dictionary.
@@ -571,7 +639,7 @@ class ymlTreantFile(File):
         """
         return self._record['categories']
 
-    @File._write
+    @_write
     @_pull_push
     def add_categories(self, **categories):
         """Add any number of categories to the Treant.
@@ -591,7 +659,7 @@ class ymlTreantFile(File):
         for key in categories.keys():
             self._record['categories'][key] = str(categories[key])
 
-    @File._write
+    @_write
     @_pull_push
     def del_categories(self, *categories, **kwargs):
         """Delete categories from Treant.
