@@ -553,7 +553,7 @@ class ymlTreantFile(File):
                 absolute path to Coordinator directory
 
         """
-        return self._record['coordinator'] 
+        return self._record['coordinator']
 
     @_write
     @_pull_push
@@ -624,7 +624,6 @@ class ymlTreantFile(File):
         else:
             # remove redundant tags from given list if present
             tags = set([str(tag) for tag in tags])
-            
             for tag in tags:
                 self._record['tags'].remove(tag)
 
