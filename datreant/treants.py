@@ -47,7 +47,8 @@ class Treant(object):
     """
     # required components
     _treanttype = 'Treant'
-    _backends = {'pytables': ['.h5', persistence.TreantFile]}
+    _backends = {'pytables': ['.h5', persistence.TreantFile],
+                 'yaml': ['.yml', persistence.ymlTreantFile]}
 
     def __init__(self, treant, location=None, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
