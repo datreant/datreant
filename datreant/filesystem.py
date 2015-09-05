@@ -179,7 +179,7 @@ class Foxhound(object):
                 found = []
                 for uuid in uuids:
                     candidate = glob.glob(
-                            os.path.join(path, '*.{}.h5'.format(uuid)))
+                            os.path.join(path, '*.{}.*'.format(uuid)))
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
@@ -196,7 +196,7 @@ class Foxhound(object):
                     candidate = glob.glob(
                             os.path.join(
                                 self.caller._backend.get_location(),
-                                path, '*.{}.h5'.format(uuid)))
+                                path, '*.{}.*'.format(uuid)))
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
