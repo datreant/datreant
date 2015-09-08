@@ -50,22 +50,29 @@ class Treant(object):
     _backends = {'pytables': ['.h5', persistence.TreantFile],
                  'yaml': ['.yml', persistence.ymlTreantFile]}
 
-    def __init__(self, treant, location=None, coordinator=None,
+    def __init__(self, treant, new=False, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
         """Generate a new or regenerate an existing (on disk) generic Treant
         object.
 
         :Required arguments:
             *treant*
-                if generating a new Treant, the desired name to give it;
-                if regenerating an existing Treant, string giving the path
-                to the directory containing the Treant object's state file
+                base directory of a new or existing Treant; will regenerate
+                a Treant if a state file is found, but will genereate a new
+                one otherwise
+
+                if multiple Treant state files are in the given directory,
+                will raise :exception:`MultipleTreantsError`; specify
+                the full path to the desired state file to regenerate the
+                desired Treant in this case
+
+                use the *new* keyword to force generation of a new Treant
+                at the given path
 
         :Optional arguments:
-            *location*
-                directory to place Treant object; if not ``None``, will
-                generate a new Treant even if one already occupies the same
-                destination directory
+            *new*
+                generate a new Treant even if one already exists at the given
+                location *treant*
             *coordinator*
                 directory of the Coordinator to associate with the Treant;
                 if the Coordinator does not exist, it is created; if ``None``,
@@ -77,24 +84,22 @@ class Treant(object):
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
             *backend*
-                backend to use for state file; only 'pytables' available by
-                default; not used for object regeneration
+                backend to use for a new state file; only 'pytables' available;
+                not used for object regeneration
 
         """
-        if location:
-            self._generate(self._treanttype, treant, location=location,
-                           coordinator=coordinator, categories=categories,
-                           tags=tags, backend=backend)
-
+        if new:
+            self._generate(treant, coordinator=coordinator,
+                           categories=categories, tags=tags, backend=backend)
         else:
-            if not os.path.exists(treant):
-                self._generate(self._treanttype, treant, location='.',
-                               coordinator=coordinator, categories=categories,
-                               tags=tags, backend=backend)
-            else:
-                self._regenerate(self._treanttype, treant,
+            try:
+                self._regenerate(treant,
                                  coordinator=coordinator,
                                  categories=categories, tags=tags)
+            except NoTreantsError:
+                self._generate(treant,
+                               coordinator=coordinator, categories=categories,
+                               tags=tags, backend=backend)
 
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
@@ -103,7 +108,7 @@ class Treant(object):
         return self.filepath
 
     def __setstate__(self, state):
-        self._regenerate(self._treanttype, state)
+        self._regenerate(state)
 
     def __eq__(self, other):
         try:
@@ -172,10 +177,9 @@ class Treant(object):
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
-    def _generate(self, treanttype, treant, location='.',
-                  coordinator=None, categories=None, tags=None,
+    def _generate(self, treant, coordinator=None, categories=None, tags=None,
                   backend='pytables'):
-        """Generate new generic Treant object.
+        """Generate new Treant object.
 
         """
         self._placeholders()
@@ -187,23 +191,22 @@ class Treant(object):
             tags = list()
 
         # generate state file
-        # TODO: need try, except for case where Treant already exists
 
         # TODO: need to raise exception where invalid characters used for
         # directory
-        self._makedirs(os.path.join(location, treant))
-        filename = filesystem.statefilename(treanttype, str(uuid4()),
+        self._makedirs(treant)
+        filename = filesystem.statefilename(self._treanttype, str(uuid4()),
                                             self._backends[backend][0])
 
-        statefile = os.path.join(location, treant, filename)
-        self._start_logger(treanttype, treant)
+        statefile = os.path.join(treant, filename)
+        self._start_logger(self._treanttype, treant)
 
         self._backend = persistence.treantfile(
-                statefile, self._logger, name=treant,
-                coordinator=coordinator, categories=categories, tags=tags)
+                statefile, self._logger, coordinator=coordinator,
+                categories=categories, tags=tags)
 
-    def _regenerate(self, treanttype, treant,
-                    coordinator=None, categories=None, tags=None):
+    def _regenerate(self, treant, coordinator=None, categories=None,
+                    tags=None):
         """Re-generate existing Treant object.
 
         """
@@ -237,7 +240,10 @@ class Treant(object):
                     treant, coordinator=coordinator, categories=categories,
                     tags=tags)
 
-        self._start_logger(treanttype, self.name)
+        else:
+            raise NoTreantsError('No Treants found in path.')
+
+        self._start_logger(self._treanttype, self.name)
         self._backend._start_logger(self._logger)
 
     def _placeholders(self):
@@ -323,11 +329,11 @@ class Treant(object):
         newdir = os.path.join(os.path.dirname(olddir), name)
         statefile = os.path.join(newdir,
                                  filesystem.statefilename(
-                                     self.treanttype, self.uuid,
+                                     self._treanttype, self.uuid,
                                      self._backends[self.backend[0]][0]))
 
         os.rename(olddir, newdir)
-        self._regenerate(self.treanttype, statefile)
+        self._regenerate(statefile)
 
     @property
     def uuid(self):
@@ -402,10 +408,10 @@ class Treant(object):
         newpath = os.path.join(value, self.name)
         statefile = os.path.join(newpath,
                                  filesystem.statefilename(
-                                     self.treanttype, self.uuid,
+                                     self._treanttype, self.uuid,
                                      self._backends[self.backend[0]][0]))
         os.rename(oldpath, newpath)
-        self._regenerate(self.treanttype, statefile)
+        self._regenerate(statefile)
 
     @property
     def basedir(self):
@@ -504,10 +510,10 @@ class Treant(object):
         olddir = os.path.dirname(self._backend.filename)
         newfile = os.path.join(olddir,
                                filesystem.statefilename(
-                                   self.treanttype, uuid,
+                                   self._treanttype, uuid,
                                    self._backends[self.backend[0]][0]))
         os.rename(oldfile, newfile)
-        self._regenerate(self.treanttype, olddir)
+        self._regenerate(newfile)
 
 
 class Group(Treant):
@@ -517,52 +523,6 @@ class Group(Treant):
     # required components
     _treanttype = 'Group'
     _backends = {'pytables': ['.h5', persistence.GroupFile]}
-
-    def __init__(self, group, members=None, location=None, coordinator=None,
-                 categories=None, tags=None, backend='pytables'):
-        """Generate a new or regenerate an existing (on disk) Group object.
-
-        :Required Arguments:
-            *group*
-                if generating a new Group, the desired name to give it;
-                if regenerating an existing Group, string giving the path
-                to the directory containing the Group object's state file
-
-        :Optional arguments:
-            *members*
-                a list of Treants and/or Groups to immediately add as members
-            *location*
-                directory to place Group object; if not ``None``, will generate
-                a new Group even if one already occupies the same destination
-                directory
-            *coordinator*
-                directory of the Coordinator to associate with this object; if
-                the Coordinator does not exist, it is created; if ``None``, the
-                Treant will not associate with any Coordinator
-            *categories*
-                dictionary with user-defined keys and values; used to give
-                Groups distinguishing characteristics
-            *tags*
-                list with user-defined values; like categories, but useful for
-                adding many distinguishing descriptors
-            *backend*
-                backend to use for state file; only 'pytables' available by
-                default; not used for object regeneration
-
-        """
-        if location:
-            self._generate('Group', group, members=members, location=location,
-                           coordinator=coordinator, categories=categories,
-                           tags=tags)
-        else:
-            if not os.path.exists(group):
-                self._generate('Group', group, members=members,
-                               location='.', coordinator=coordinator,
-                               categories=categories, tags=tags)
-            else:
-                self._regenerate('Group', group, members=members,
-                                 coordinator=coordinator,
-                                 categories=categories, tags=tags)
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())
@@ -609,40 +569,6 @@ class Group(Treant):
             self._members = aggregators.Members(self, self._backend,
                                                 self._logger)
         return self._members
-
-    def _generate(self, treanttype, treant, members=None, location='.',
-                  coordinator=None, categories=None, tags=None,
-                  backend='pytables'):
-        """Generate new Group.
-
-        """
-        super(Group, self)._generate(treanttype, treant,
-                                     location=location,
-                                     coordinator=coordinator,
-                                     categories=categories, tags=tags)
-
-        # process keywords
-        if not members:
-            members = list()
-
-        # add members
-        self.members.add(*members)
-
-    def _regenerate(self, treanttype, treant, members=None, coordinator=None,
-                    categories=None, tags=None):
-        """Re-generate existing Group.
-
-        """
-        super(Group, self)._regenerate(treanttype, treant,
-                                       coordinator=coordinator,
-                                       categories=categories, tags=tags)
-
-        # process keywords
-        if not members:
-            members = list()
-
-        # add members
-        self.members.add(*members)
 
     def _placeholders(self):
         """Necessary placeholders for aggregator instances.

@@ -740,8 +740,6 @@ class TreantFile(File):
         :Keywords:
             *treanttype*
                 Treant type
-            *name*
-                user-given name of Treant object
             *coordinator*
                 directory in which coordinator state file can be found [None]
             *categories*
@@ -772,8 +770,6 @@ class TreantFile(File):
         """Build state file and common data structure elements.
 
         :Keywords:
-            *name*
-                user-given name of Treant object
             *coordinator*
                 directory in which coordinator state file can be found [None]
             *categories*
@@ -1119,8 +1115,6 @@ class GroupFile(TreantFile):
               logger to send warnings and errors to
 
         :Keywords:
-           *name*
-              user-given name of Treant object
            *coordinator*
               directory in which coordinator state file can be found [None]
            *categories*
@@ -1136,8 +1130,6 @@ class GroupFile(TreantFile):
         """Build Group data structure.
 
         :Keywords:
-           *name*
-              user-given name of Group object
            *coordinator*
               directory in which Coordinator state file can be found [``None``]
            *categories*

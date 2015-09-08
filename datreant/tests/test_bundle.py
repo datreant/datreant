@@ -137,7 +137,7 @@ class CollectionTests():
         """Try removing members with names and globbing"""
         with tmpdir.as_cwd():
             t1 = dtr.Treant('lark')
-            t2 = dtr.Treant('lark', location='elsewhere')
+            t2 = dtr.Treant('elsewhere/lark')
             t3 = dtr.Treant('hark')
             g = dtr.Group('linus')
 
