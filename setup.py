@@ -17,5 +17,5 @@ setup(name='datreant',
       scripts=[],
       license='BSD',
       long_description=open('README.rst').read(),
-      requires=['pandas', 'tables', 'h5py', 'scandir']
+      install_requires=['pandas', 'tables', 'h5py', 'scandir']
      )
