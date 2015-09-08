@@ -35,23 +35,24 @@ class TestTreant:
     def test_gen_methods(self, tmpdir):
         """Test the variety of ways we can generate a new Treant
 
-        1. `Treant('treant')`, where 'treant' is not an existing file or
+        1. ``Treant('treant')``, where 'treant' is not an existing file or
            directory path
 
-        2. `Treant('treant')`, where 'treant' is an existing
-           directory without Treant state files inside
+        2. ``Treant('treant')``, where 'treant' is an existing directory
+           without Treant state files inside
 
-        3. `Treant('/somedir/treant')`, where 'treant' is not an existing
+        3. ``Treant('/somedir/treant')``, where 'treant' is not an existing
            file or directory in 'somedir'
 
-        4. `Treant('/somedir/treant')`, where 'treant' is an existing directory
-           in 'somedir' without any Treant state files inside
+        4. ``Treant('/somedir/treant')``, where 'treant' is an existing
+           directory in 'somedir' without any Treant state files inside
 
-        5. `Treant('somedir/treant', new=True)`, where 'treant' is an existing
-           directory in 'somedir' with an existing Treant statefile
+        5. ``Treant('somedir/treant', new=True)``, where 'treant' is an
+           existing directory in 'somedir' with an existing Treant statefile
 
-        6. `Treant('/somedir/treant')`, where 'treant' is an existing directory
-           in 'somedir' with other types of Treant files inside (such as Group)
+        6. ``Treant('/somedir/treant')``, where 'treant' is an existing
+           directory in 'somedir' with other types of Treant files inside (such
+           as Group)
 
         """
         with tmpdir.as_cwd():
@@ -105,6 +106,12 @@ class TestTreant:
 
     def test_regen_methods(self, tmpdir):
         """Test the variety of ways Treants can be regenerated.
+
+        1. ``Treant('treant')``, where there exists *only one* ``Treant`` state
+           file inside 'treant'
+
+        2. ``Treant('treant/Treant.<uuid>.<ext>')``, where there need not be
+           only a single ``Treant`` state file in 'treant'
 
         """
         with tmpdir.as_cwd():
