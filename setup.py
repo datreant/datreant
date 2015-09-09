@@ -10,7 +10,7 @@ For a basic installation just type the command::
 from setuptools import setup
 
 setup(name='datreant',
-      version='0.6.0-dev',
+      version='0.6.0dev',
       author='David Dotson',
       author_email='dotsdl@gmail.com',
       packages=['datreant', 'datreant.tests'],
