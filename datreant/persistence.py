@@ -82,7 +82,7 @@ class File(object):
     def __init__(self, filename, logger=None, **kwargs):
         """Create File instance for interacting with file on disk.
 
-        All files in MDSynthesis should be accessible by high-level methods
+        All files in datreant should be accessible by high-level methods
         without having to worry about simultaneous reading and writing by other
         processes. The File object includes methods and infrastructure for
         ensuring shared and exclusive locks are consistently applied before
@@ -363,7 +363,7 @@ class ymlTreantFile(File):
                 user-given list with custom elements; used to give
                 distinguishing characteristics to object for search
             *version*
-                version of MDSynthesis file was generated with
+                version of datreant file was generated with
 
         .. Note:: kwargs passed to :meth:`create`
 
@@ -486,7 +486,7 @@ class ymlTreantFile(File):
                 user-given list with custom elements; used to give
                 distinguishing characteristics to object for search
             *version*
-                version of MDSynthesis file was generated with
+                version of datreant file was generated with
         """
         # update schema and version of file
         version = self.update_schema()
@@ -749,7 +749,7 @@ class TreantFile(File):
                 user-given list with custom elements; used to give
                 distinguishing characteristics to object for search
             *version*
-                version of MDSynthesis file was generated with
+                version of datreant file was generated with
 
         .. Note:: kwargs passed to :meth:`create`
 
@@ -779,7 +779,7 @@ class TreantFile(File):
                 user-given list with custom elements; used to give
                 distinguishing characteristics to object for search
             *version*
-                version of MDSynthesis file was generated with
+                version of datreant file was generated with
         """
         # update schema and version of file
         version = self.update_schema()
