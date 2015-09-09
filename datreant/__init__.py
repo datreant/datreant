@@ -19,7 +19,7 @@ from datreant.manipulators import *
 import datreant.persistence
 
 __all__ = ['Treant', 'Group', 'Coordinator', 'Bundle']
-__version__ = "0.5.1"  # NOTE: keep in sync with RELEASE in setup.py
+__version__ = "0.6.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 
 _treants = dict()
 register(Treant, Group)
