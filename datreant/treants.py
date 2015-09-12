@@ -52,8 +52,7 @@ class Treant(object):
 
     def __init__(self, treant, new=False, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
-        """Generate a new or regenerate an existing (on disk) generic Treant
-        object.
+        """Generate a new or regenerate an existing (on disk) Treant object.
 
         :Required arguments:
             *treant*
