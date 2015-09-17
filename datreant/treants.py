@@ -529,23 +529,9 @@ class Group(Treant):
         treants = members.count('Treant')
         groups = members.count('Group')
 
-        # TODO: needs to work for any type of Treant subclasses
         out = "<Group: '{}'".format(self.name, len(members))
         if members:
-            out = out + " | {} Members: ".format(len(members))
-            if treants:
-                if treants == 1:
-                    out = out + "{} Treant".format(treants)
-                elif treants > 1:
-                    out = out + "{} Treants".format(treants)
-                if groups:
-                    out = out + ", "
-            if groups:
-                if groups == 1:
-                    out = out + "{} Group".format(groups)
-                elif groups > 1:
-                    out = out + "{} Groups".format(groups)
-
+            out = out + " | {} Members".format(len(members))
         out = out + ">"
 
         return out
