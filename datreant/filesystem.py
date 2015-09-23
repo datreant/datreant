@@ -48,8 +48,6 @@ def glob_treant(treant):
     return paths
 
 
-# TODO: need mechanism for derived packages to add their classes
-# INTEROPERABILITY
 def path2treant(*paths):
     """Return Treants from directories or full paths containing Treant
         state files.

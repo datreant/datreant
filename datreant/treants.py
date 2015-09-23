@@ -10,9 +10,10 @@ import logging
 import functools
 
 import datreant
+import datreant.persistence.pytables
+import datreant.persistence.yaml
 from datreant import aggregators
 from datreant import filesystem
-from datreant import persistence
 from datreant import collections
 
 
@@ -47,8 +48,8 @@ class Treant(object):
     """
     # required components
     _treanttype = 'Treant'
-    _backends = {'pytables': ['.h5', persistence.TreantFile],
-                 'yaml': ['.yml', persistence.ymlTreantFile]}
+    _backends = {'pytables': ['.h5', persistence.pytables.TreantFile],
+                 'yaml': ['.yml', persistence.yaml.TreantFile]}
 
     def __init__(self, treant, new=False, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
