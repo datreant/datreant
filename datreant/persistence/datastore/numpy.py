@@ -1,12 +1,11 @@
 """
-Interface classes for state files and data files.
+File backends for storing numpy arrays.
 
 """
 
 import h5py
 
-# numpy Datafile
-npdatafile = "npData.h5"
+from datreant.persistence.core import File
 
 
 class npDataFile(File):

@@ -23,6 +23,10 @@ def treantfile(filename, logger=None, **kwargs):
 
     **kwargs passed to treant file ``__init__()`` method
 
+    :Returns:
+        *treantfile*
+            treantfile instance attached to the given file
+
     """
     treant = None
     basename = os.path.basename(filename)

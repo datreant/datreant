@@ -5,12 +5,26 @@ File backends for storing datasets.
 
 import os
 
-def _get_datafile(self, handle):
-    """Return path to datafile corresponding to given handle.
+def register(*datafileclass):
+    """Register a treant-derived class so datreant can handle it.
 
     :Arguments:
-        *handle*
-            name of dataset whose datafile path to return
+        *treantclass*
+            treant-derived class to register; may enter more than one
+
+    """
+    for tc in treantclass:
+        datreant._treants.update({tc._treanttype: tc})
+
+
+
+def datafile(filename):
+    """Generate or regenerate the appropriate data file instance from filename.
+
+    :Arguments:
+        *filename*
+            path to data file (existing or to be created), including the
+            filename
 
     :Returns:
         *datafile*
@@ -21,6 +35,33 @@ def _get_datafile(self, handle):
 
     """
     datafile = None
+    basename = os.path.basename(filename)
+    for datatype in datreant._treants:
+        if treanttype in basename:
+            treant = treanttype
+            break
+
+    if not treant:
+        raise IOError("No known treant type for file '{}'".format(filename))
+
+    statefileclass = None
+    backends = datreant._treants[treant]._backends
+    for backend in backends:
+        if backends[backend][0] == os.path.splitext(basename)[-1]:
+            statefileclass = backends[backend][1]
+
+    if not statefileclass:
+        raise IOError("No known backend type for file '{}'".format(filename))
+
+    return statefileclass(filename, logger=logger, **kwargs)
+
+
+
+
+
+
+
+
     datafiletype = None
     for dfiletype in (persistence.pddatafile, persistence.npdatafile,
                       persistence.pydatafile):
