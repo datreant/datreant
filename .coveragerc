@@ -1,8 +1,6 @@
 [run]
 branch = True
 source = datreant
-exclude_lines =
-    pragma: no cover
 
 [report]
 exclude_lines =
