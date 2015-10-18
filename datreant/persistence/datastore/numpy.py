@@ -16,6 +16,10 @@ class npDataFile(File):
     its backend.
 
     """
+    # required components
+    _datatype = 'npData'
+    _extension = '.h5'
+
     def _open_file_r(self):
         return h5py.File(self.filename, 'r')
 

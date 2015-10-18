@@ -1,77 +1,9 @@
 """
-File backends for storing datasets.
+Abstract interface components for reading and writing datasets.
 
 """
 
 import os
-
-def register(*datafileclass):
-    """Register a treant-derived class so datreant can handle it.
-
-    :Arguments:
-        *treantclass*
-            treant-derived class to register; may enter more than one
-
-    """
-    for tc in treantclass:
-        datreant._treants.update({tc._treanttype: tc})
-
-
-
-def datafile(filename):
-    """Generate or regenerate the appropriate data file instance from filename.
-
-    :Arguments:
-        *filename*
-            path to data file (existing or to be created), including the
-            filename
-
-    :Returns:
-        *datafile*
-            datafile path; None if does not exist
-        *datafiletype*
-            datafile type; either ``persistence.pddatafile`` or
-            ``persistence.npdatafile``
-
-    """
-    datafile = None
-    basename = os.path.basename(filename)
-    for datatype in datreant._treants:
-        if treanttype in basename:
-            treant = treanttype
-            break
-
-    if not treant:
-        raise IOError("No known treant type for file '{}'".format(filename))
-
-    statefileclass = None
-    backends = datreant._treants[treant]._backends
-    for backend in backends:
-        if backends[backend][0] == os.path.splitext(basename)[-1]:
-            statefileclass = backends[backend][1]
-
-    if not statefileclass:
-        raise IOError("No known backend type for file '{}'".format(filename))
-
-    return statefileclass(filename, logger=logger, **kwargs)
-
-
-
-
-
-
-
-
-    datafiletype = None
-    for dfiletype in (persistence.pddatafile, persistence.npdatafile,
-                      persistence.pydatafile):
-        dfile = os.path.join(self._backend.get_location(),
-                             handle, dfiletype)
-        if os.path.exists(dfile):
-            datafile = dfile
-            datafiletype = dfiletype
-
-    return (datafile, datafiletype)
 
 
 class DataFile(object):

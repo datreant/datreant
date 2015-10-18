@@ -364,4 +364,3 @@ class TreantFile(File):
         else:
             for key in categories.keys():
                 self._record['categories'].pop(key)
-

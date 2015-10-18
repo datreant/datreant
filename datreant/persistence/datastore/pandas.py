@@ -8,8 +8,7 @@ import numpy as np
 
 from datreant.persistence.core import File
 
-
-class HDFStore(File):
+class pdDataStore(File):
     """Interface to pandas object data files.
 
     Data is stored as pandas data structures (Series, DataFrame, Panel) in
@@ -20,7 +19,7 @@ class HDFStore(File):
     """
     # required components
     _datatype = 'pdData'
-    _extensions = ['.h5']
+    _extension = '.h5'
 
     def _open_file_r(self):
         return pd.HDFStore(self.filename, 'r')

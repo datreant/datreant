@@ -48,8 +48,8 @@ class Treant(object):
     """
     # required components
     _treanttype = 'Treant'
-    _backends = {'pytables': ['.h5', persistence.pytables.TreantFile],
-                 'yaml': ['.yml', persistence.yaml.TreantFile]}
+    _backends = {'pytables': ['.h5', datreant.persistence.pytables.TreantFile],
+                 'yaml': ['.yml', datreant.persistence.yaml.TreantFile]}
 
     def __init__(self, treant, new=False, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
@@ -201,7 +201,7 @@ class Treant(object):
         statefile = os.path.join(treant, filename)
         self._start_logger(self._treanttype, treant)
 
-        self._backend = persistence.treantfile(
+        self._backend = datreant.persistence.treantfile(
                 statefile, self._logger, coordinator=coordinator,
                 categories=categories, tags=tags)
 
@@ -224,7 +224,7 @@ class Treant(object):
 
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
-                self._backend = persistence.treantfile(
+                self._backend = datreant.persistence.treantfile(
                         statefile[0], coordinator=coordinator,
                         categories=categories, tags=tags)
             elif len(statefile) == 0:
@@ -236,7 +236,7 @@ class Treant(object):
 
         # if a state file is given, try loading it
         elif os.path.exists(treant):
-            self._backend = persistence.treantfile(
+            self._backend = datreant.persistence.treantfile(
                     treant, coordinator=coordinator, categories=categories,
                     tags=tags)
 
@@ -280,7 +280,7 @@ class Treant(object):
                 location = os.path.abspath(location)
                 # file handler if desired; beware of problems with too many
                 # open files when a large number of Treants are at play
-                logfile = os.path.join(location, persistence.treantlog)
+                logfile = os.path.join(location, datreant.persistence.treantlog)
                 fh = logging.FileHandler(logfile)
                 ff = logging.Formatter('%(asctime)s %(name)-12s '
                                        '%(levelname)-8s %(message)s')
@@ -522,7 +522,7 @@ class Group(Treant):
     """
     # required components
     _treanttype = 'Group'
-    _backends = {'pytables': ['.h5', persistence.GroupFile]}
+    _backends = {'pytables': ['.h5', datreant.persistence.pytables.GroupFile]}
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())

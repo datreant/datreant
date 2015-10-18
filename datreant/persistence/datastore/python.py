@@ -7,10 +7,6 @@ import pickle
 
 from datreant.persistence.core import File
 
-# catchall DataFile
-pydatafile = "pyData.pkl"
-
-
 class pyDataFile(File):
     """Interface to python object data files.
 
@@ -20,6 +16,10 @@ class pyDataFile(File):
     serialization.
 
     """
+    # required components
+    _datatype = 'pyData'
+    _extension = '.pkl'
+
     def _open_file_r(self):
         return open(self.filename, 'rb')
 
