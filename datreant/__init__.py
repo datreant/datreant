@@ -17,6 +17,7 @@ from datreant.coordinator import Coordinator
 from datreant.collections import Bundle
 from datreant.manipulators import *
 import datreant.persistence
+import datreant.aggregators
 
 __all__ = ['Treant', 'Group', 'Coordinator', 'Bundle']
 __version__ = "0.6.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
