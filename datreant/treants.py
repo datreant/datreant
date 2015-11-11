@@ -355,7 +355,7 @@ class Treant(object):
             *uuid*
                 unique identifier string for this Treant
         """
-        return self._backend.filename.split('.')[1]
+        return os.path.basename(self._backend.filename).split('.')[1]
 
     @property
     def backend(self):
