@@ -103,7 +103,8 @@ class TreantFile(File):
 
         super(TreantFile, self).__init__(filename, logger=logger)
 
-        # if file does not exist, it is created; if it does exist, it is updated
+        # if file does not exist, it is created; if it does exist, it is
+        # updated
         try:
             self.create(**kwargs)
         except OSError:

@@ -553,7 +553,6 @@ class Data(Limb):
 
         return (datafile, datafiletype)
 
-
     def _read_datafile(func):
         """Decorator for generating DataFile instance for reading data.
 

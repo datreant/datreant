@@ -9,6 +9,6 @@ datreant.data --- basic data storage backends for datreant.limbs.Data
 
 """
 from datreant.data.core import DataFile
-from datreant.data import pydata, npdata, pddata 
+from datreant.data import pydata, npdata, pddata
 
 __all__ = ['pydata', 'npdata', 'pddata']

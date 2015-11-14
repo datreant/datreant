@@ -20,7 +20,8 @@ import datreant.treants
 class _CollectionBase(object):
     """Common interface elements for ordered sets of Treants.
 
-    :class:`datreant.limbs.Members` and :class:`Bundle` both use this interface.
+    :class:`datreant.limbs.Members` and :class:`Bundle` both use this
+    interface.
 
     """
     def __len__(self):

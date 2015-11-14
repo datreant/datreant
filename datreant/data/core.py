@@ -16,9 +16,10 @@ from datreant.data import pddata
 class DataFile(object):
     """Interface to data files.
 
-    This is an abstraction layer to the pddata.pdDataFile, npdata.npDataFile, and pydata.pyDataFile
-    objects. This can be used by higher level objects without worrying about
-    whether to use pandas storers, numpy storers, or pickle.
+    This is an abstraction layer to the pddata.pdDataFile, npdata.npDataFile,
+    and pydata.pyDataFile objects. This can be used by higher level objects
+    without worrying about whether to use pandas storers, numpy storers, or
+    pickle.
 
     """
 
@@ -58,13 +59,16 @@ class DataFile(object):
         """
         if isinstance(data, np.ndarray):
             self.datafile = npdata.npDataFile(
-                os.path.join(self.datadir, npdata.npdatafile), logger=self.logger)
+                os.path.join(self.datadir, npdata.npdatafile),
+                logger=self.logger)
         elif isinstance(data, (pd.Series, pd.DataFrame, pd.Panel, pd.Panel4D)):
             self.datafile = pddata.pdDataFile(
-                os.path.join(self.datadir, pddata.pddatafile), logger=self.logger)
+                os.path.join(self.datadir, pddata.pddatafile),
+                logger=self.logger)
         else:
             self.datafile = pydata.pyDataFile(
-                os.path.join(self.datadir, pydata.pydatafile), logger=self.logger)
+                os.path.join(self.datadir, pydata.pydatafile),
+                logger=self.logger)
 
         self.datafile.add_data(key, data)
 
@@ -92,7 +96,8 @@ class DataFile(object):
             self.logger.info('Cannot append numpy arrays.')
         elif isinstance(data, (pd.Series, pd.DataFrame, pd.Panel, pd.Panel4D)):
             self.datafile = pddata.pdDataFile(
-                os.path.join(self.datadir, pddata.pddatafile), logger=self.logger)
+                os.path.join(self.datadir, pddata.pddatafile),
+                logger=self.logger)
             self.datafile.append_data(key, data)
         else:
             self.logger.info('Cannot append python object.')
@@ -129,17 +134,20 @@ class DataFile(object):
         """
         if self.datafiletype == npdata.npdatafile:
             self.datafile = npdata.npDataFile(
-                os.path.join(self.datadir, npdata.npdatafile), logger=self.logger)
+                os.path.join(self.datadir, npdata.npdatafile),
+                logger=self.logger)
             out = self.datafile.get_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pddata.pddatafile:
             self.datafile = pddata.pdDataFile(
-                os.path.join(self.datadir, pddata.pddatafile), logger=self.logger)
+                os.path.join(self.datadir, pddata.pddatafile),
+                logger=self.logger)
             out = self.datafile.get_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pydata.pydatafile:
             self.datafile = pydata.pyDataFile(
-                os.path.join(self.datadir, pydata.pydatafile), logger=self.logger)
+                os.path.join(self.datadir, pydata.pydatafile),
+                logger=self.logger)
             out = self.datafile.get_data(key)
             self.datafile = None
         else:
@@ -167,12 +175,14 @@ class DataFile(object):
         """
         if self.datafiletype == npdata.npdatafile:
             self.datafile = npdata.npDataFile(
-                os.path.join(self.datadir, npdata.npdatafile), logger=self.logger)
+                os.path.join(self.datadir, npdata.npdatafile),
+                logger=self.logger)
             out = self.datafile.del_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pddata.pddatafile:
             self.datafile = pddata.pdDataFile(
-                os.path.join(self.datadir, pddata.pddatafile), logger=self.logger)
+                os.path.join(self.datadir, pddata.pddatafile),
+                logger=self.logger)
             out = self.datafile.del_data(key, **kwargs)
             self.datafile = None
         elif self.datafiletype == pydata.pydatafile:
@@ -196,12 +206,14 @@ class DataFile(object):
         """
         if self.datafiletype == npdata.npdatafile:
             self.datafile = npdata.npDataFile(
-                os.path.join(self.datadir, npdata.npdatafile), logger=self.logger)
+                os.path.join(self.datadir, npdata.npdatafile),
+                logger=self.logger)
             out = self.datafile.list_data(key, data, **kwargs)
             self.datafile = None
         elif self.datafiletype == pddata.pddatafile:
             self.datafile = pddata.pdDataFile(
-                os.path.join(self.datadir, pddata.pddatafile), logger=self.logger)
+                os.path.join(self.datadir, pddata.pddatafile),
+                logger=self.logger)
             out = self.datafile.list_data(key, data, **kwargs)
             self.datafile = None
         elif self.datafiletype == pydata.pydatafile:

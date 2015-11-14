@@ -4,7 +4,7 @@
 # datreant
 
 """
-datreant --- a backends engine for heterogeneous data sets
+datreant --- a persistence engine for heterogeneous data sets
 =============================================================
 
 .. SeeAlso:: :class:`datreant.treants.Treant`

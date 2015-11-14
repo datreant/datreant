@@ -49,7 +49,7 @@ class Treant(object):
     # required components
     _treanttype = 'Treant'
     _backends = {'pytables': ['.h5', datreant.backends.pytables.TreantFile],
-                 'yaml': ['.yml', datreant.backends.yaml.TreantFileYAML]}
+                 'yaml': ['.yml', datreant.backends.yaml.yamlTreantFile]}
 
     def __init__(self, treant, new=False, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
@@ -553,7 +553,7 @@ class Group(Treant):
         """
         if not self._members:
             self._members = limbs.Members(self, self._backend,
-                                                self._logger)
+                                          self._logger)
         return self._members
 
     def _placeholders(self):

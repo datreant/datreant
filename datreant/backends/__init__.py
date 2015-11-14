@@ -4,8 +4,8 @@
 # datreant
 
 """
-datreant.backends --- low-level file backends for state and data storage
-===========================================================================
+datreant.backends --- low-level state file backends
+===================================================
 
 """
 from datreant.backends.core import treantfile, File

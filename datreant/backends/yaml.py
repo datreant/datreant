@@ -17,7 +17,7 @@ import datreant
 from datreant.backends.core import File
 
 
-class TreantFileYAML(File):
+class yamlTreantFile(File):
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Treant state file.
 
@@ -52,7 +52,8 @@ class TreantFileYAML(File):
         """
         super(ymlTreantFile, self).__init__(filename, logger=logger)
 
-        # if file does not exist, it is created; if it does exist, it is updated
+        # if file does not exist, it is created; if it does exist, it is
+        # updated
         try:
             self.create(**kwargs)
         except OSError:
