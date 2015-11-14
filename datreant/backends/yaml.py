@@ -52,8 +52,13 @@ class TreantFileYAML(File):
         """
         super(ymlTreantFile, self).__init__(filename, logger=logger)
 
-        # if file does not exist, it is created
-        self.create(**kwargs)
+        # if file does not exist, it is created; if it does exist, it is updated
+        try:
+            self.create(**kwargs)
+        except OSError:
+            # in case the file is read-only; we can't update but may still want
+            # to use it
+            pass
 
     def _open_file_r(self):
         return open(self.filename, 'r')

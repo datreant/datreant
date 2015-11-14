@@ -24,7 +24,7 @@ class npDataFile(File):
         return h5py.File(self.filename, 'r')
 
     def _open_file_w(self):
-        return h5py.File(self.filename, 'a')
+        return h5py.File(self.filename, 'w')
 
     @File._write
     def add_data(self, key, data):
