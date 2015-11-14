@@ -12,6 +12,7 @@ import glob
 import fnmatch
 
 from datreant import backends
+from datreant.backends import pytables
 from datreant import filesystem
 import datreant.treants
 
@@ -285,9 +286,9 @@ class _BundleBackend():
         self.table = np.array(
                 [],
                 dtype={'names': ['uuid', 'treanttype', 'abspath'],
-                       'formats': ['a{}'.format(backends.uuidlength),
-                                   'a{}'.format(backends.namelength),
-                                   'a{}'.format(backends.pathlength)]
+                       'formats': ['a{}'.format(backends.pytables.uuidlength),
+                                   'a{}'.format(backends.pytables.namelength),
+                                   'a{}'.format(backends.pytables.pathlength)]
                        }).reshape(1, -1)
 
     def _member2record(self, uuid, treanttype, basedir):
@@ -299,9 +300,9 @@ class _BundleBackend():
         return np.array(
                 (uuid, treanttype, os.path.abspath(basedir)),
                 dtype={'names': ['uuid', 'treanttype', 'abspath'],
-                       'formats': ['a{}'.format(backends.uuidlength),
-                                   'a{}'.format(backends.namelength),
-                                   'a{}'.format(backends.pathlength)]
+                       'formats': ['a{}'.format(backends.pytables.uuidlength),
+                                   'a{}'.format(backends.pytables.namelength),
+                                   'a{}'.format(backends.pytables.pathlength)]
                        }).reshape(1, -1)
 
     def add_member(self, uuid, treanttype, basedir):

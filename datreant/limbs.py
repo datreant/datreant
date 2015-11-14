@@ -526,6 +526,34 @@ class Data(Limb):
         except OSError:
             pass
 
+    def _get_datafile(self, handle):
+        """Return path to datafile corresponding to given handle.
+
+        :Arguments:
+            *handle*
+                name of dataset whose datafile path to return
+
+        :Returns:
+            *datafile*
+                datafile path; None if does not exist
+            *datafiletype*
+                datafile type; either ``persistence.pddatafile`` or
+                ``persistence.npdatafile``
+
+        """
+        datafile = None
+        datafiletype = None
+        for dfiletype in (data.pddata.pddatafile, data.npdata.npdatafile,
+                          data.pydata.pydatafile):
+            dfile = os.path.join(self._backend.get_location(),
+                                 handle, dfiletype)
+            if os.path.exists(dfile):
+                datafile = dfile
+                datafiletype = dfiletype
+
+        return (datafile, datafiletype)
+
+
     def _read_datafile(func):
         """Decorator for generating DataFile instance for reading data.
 
