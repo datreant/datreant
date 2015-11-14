@@ -17,7 +17,7 @@ import datreant
 from datreant.persistence.core import File
 
 
-class TreantFile(File):
+class TreantFileYAML(File):
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Treant state file.
 

@@ -19,7 +19,7 @@ import datreant.treants
 class _CollectionBase(object):
     """Common interface elements for ordered sets of Treants.
 
-    :class:`aggregators.Members` and :class:`Bundle` both use this interface.
+    :class:`datreant.limbs.Members` and :class:`Bundle` both use this interface.
 
     """
     def __len__(self):
@@ -56,7 +56,7 @@ class _CollectionBase(object):
                 that contain treant statefiles; glob patterns are also allowed,
                 and all found treants will be added to the collection
         """
-        from datreant.aggregators import Members
+        from datreant.limbs import Members
         from datreant.treants import Treant
 
         outconts = list()
@@ -215,7 +215,7 @@ class _CollectionBase(object):
         """Access the data of each member, collectively.
 
         """
-        from .aggregators import MemberData
+        from .limbs import MemberData
         if not self._data:
             self._data = MemberData(self)
         return self._data

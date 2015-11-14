@@ -1,10 +1,10 @@
 """
-Aggregators are user interfaces for accessing stored data, as well as querying
+Limbs are user interfaces for accessing stored data, as well as querying
 the state of an object (data loaded, universe attached, etc.). They are also
 used to aggregate the functionality of higher level objects (such as Treant) in
 ways that are user-friendly.
 
-In short, an Aggregator is designed to be user friendly on its own, but it can
+In short, an Limb is designed to be user friendly on its own, but it can
 be used as a backend by a Treant, too.
 
 """
@@ -19,8 +19,8 @@ from datreant import filesystem
 from datreant import collections
 
 
-class Aggregator(object):
-    """Core functionality for information aggregators.
+class Limb(object):
+    """Core functionality for information limbs.
 
     """
 
@@ -38,7 +38,7 @@ class Aggregator(object):
         pass
 
 
-class Tags(Aggregator):
+class Tags(Limb):
     """Interface to tags.
 
     """
@@ -115,7 +115,7 @@ class Tags(Aggregator):
         self._backend.del_tags(*tags, **kwargs)
 
 
-class Categories(Aggregator):
+class Categories(Limb):
     """Interface to categories.
 
     """
@@ -250,7 +250,7 @@ class Categories(Aggregator):
         return self._backend.get_categories().values()
 
 
-class Members(Aggregator, collections._CollectionBase):
+class Members(Limb, collections._CollectionBase):
     """Member manager for Groups.
 
     """
@@ -284,7 +284,7 @@ class Members(Aggregator, collections._CollectionBase):
 
 
 class MemberAgg(object):
-    """Core functionality for aggregators attached to the Members aggregator.
+    """Core functionality for limbs attached to the Members limb.
 
     """
 
@@ -475,7 +475,7 @@ class MemberData(MemberAgg):
         return agg
 
 
-class Data(Aggregator):
+class Data(Limb):
     """Interface to stored data.
 
     """
