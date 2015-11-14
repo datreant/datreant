@@ -11,7 +11,7 @@ import multiprocessing as mp
 import glob
 import fnmatch
 
-from datreant import persistence
+from datreant import backends
 from datreant import filesystem
 import datreant.treants
 
@@ -272,7 +272,7 @@ class _BundleBackend():
     """Backend class for Bundle.
 
     Has same interface as Group-specific components of
-    :class:`persistence.GroupFile`. Behaves practically like an in-memory
+    :class:`backends.GroupFile`. Behaves practically like an in-memory
     version of a state-file, but with only the components needed for the
     Bundle.
 
@@ -285,9 +285,9 @@ class _BundleBackend():
         self.table = np.array(
                 [],
                 dtype={'names': ['uuid', 'treanttype', 'abspath'],
-                       'formats': ['a{}'.format(persistence.uuidlength),
-                                   'a{}'.format(persistence.namelength),
-                                   'a{}'.format(persistence.pathlength)]
+                       'formats': ['a{}'.format(backends.uuidlength),
+                                   'a{}'.format(backends.namelength),
+                                   'a{}'.format(backends.pathlength)]
                        }).reshape(1, -1)
 
     def _member2record(self, uuid, treanttype, basedir):
@@ -299,9 +299,9 @@ class _BundleBackend():
         return np.array(
                 (uuid, treanttype, os.path.abspath(basedir)),
                 dtype={'names': ['uuid', 'treanttype', 'abspath'],
-                       'formats': ['a{}'.format(persistence.uuidlength),
-                                   'a{}'.format(persistence.namelength),
-                                   'a{}'.format(persistence.pathlength)]
+                       'formats': ['a{}'.format(backends.uuidlength),
+                                   'a{}'.format(backends.namelength),
+                                   'a{}'.format(backends.pathlength)]
                        }).reshape(1, -1)
 
     def add_member(self, uuid, treanttype, basedir):

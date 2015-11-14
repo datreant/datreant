@@ -14,7 +14,7 @@ from functools import wraps
 import yaml
 
 import datreant
-from datreant.persistence.core import File
+from datreant.backends.core import File
 
 
 class TreantFileYAML(File):

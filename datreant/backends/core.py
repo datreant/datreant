@@ -9,6 +9,8 @@ import logging
 import warnings
 from functools import wraps
 
+import datreant
+
 
 def treantfile(filename, logger=None, **kwargs):
     """Generate or regenerate the appropriate treant file instance from
@@ -72,9 +74,6 @@ class File(object):
                 logger to send warnings and errors to
 
         """
-        # filter NaturalNameWarnings from pytables, when they arrive
-        warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
-
         self.filename = os.path.abspath(filename)
         self.handle = None
         self.fd = None

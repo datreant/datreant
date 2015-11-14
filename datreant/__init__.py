@@ -4,7 +4,7 @@
 # datreant
 
 """
-datreant --- a persistence engine for heterogeneous data sets
+datreant --- a backends engine for heterogeneous data sets
 =============================================================
 
 .. SeeAlso:: :class:`datreant.treants.Treant`
@@ -16,8 +16,9 @@ from datreant.treants import Treant, Group, register
 from datreant.coordinator import Coordinator
 from datreant.collections import Bundle
 from datreant.manipulators import *
-import datreant.persistence
-import datreant.aggregators
+import datreant.backends
+import datreant.limbs
+import datreant.data
 
 __all__ = ['Treant', 'Group', 'Coordinator', 'Bundle']
 __version__ = "0.6.0-dev"  # NOTE: keep in sync with RELEASE in setup.py

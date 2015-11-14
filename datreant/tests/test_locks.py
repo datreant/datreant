@@ -12,7 +12,7 @@ import pandas as pd
 
 import datreant as dtr
 
-from datreant.persistence.pytables import TreantFile
+from datreant.backends.pytables import TreantFile
 
 
 @pytest.fixture

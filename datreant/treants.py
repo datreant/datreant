@@ -10,9 +10,9 @@ import logging
 import functools
 
 import datreant
-import datreant.persistence.pytables
-import datreant.persistence.yaml
-from datreant import aggregators
+import datreant.backends.pytables
+import datreant.backends.yaml
+from datreant import limbs
 from datreant import filesystem
 from datreant import collections
 
@@ -48,8 +48,8 @@ class Treant(object):
     """
     # required components
     _treanttype = 'Treant'
-    _backends = {'pytables': ['.h5', datreant.persistence.pytables.TreantFile],
-                 'yaml': ['.yml', datreant.persistence.yaml.TreantFile]}
+    _backends = {'pytables': ['.h5', datreant.backends.pytables.TreantFile],
+                 'yaml': ['.yml', datreant.backends.yaml.TreantFileYAML]}
 
     def __init__(self, treant, new=False, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
@@ -201,7 +201,7 @@ class Treant(object):
         statefile = os.path.join(treant, filename)
         self._start_logger(self._treanttype, treant)
 
-        self._backend = datreant.persistence.treantfile(
+        self._backend = datreant.backends.treantfile(
                 statefile, self._logger, coordinator=coordinator,
                 categories=categories, tags=tags)
 
@@ -224,7 +224,7 @@ class Treant(object):
 
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
-                self._backend = datreant.persistence.treantfile(
+                self._backend = datreant.backends.treantfile(
                         statefile[0], coordinator=coordinator,
                         categories=categories, tags=tags)
             elif len(statefile) == 0:
@@ -236,7 +236,7 @@ class Treant(object):
 
         # if a state file is given, try loading it
         elif os.path.exists(treant):
-            self._backend = datreant.persistence.treantfile(
+            self._backend = datreant.backends.treantfile(
                     treant, coordinator=coordinator, categories=categories,
                     tags=tags)
 
@@ -280,7 +280,7 @@ class Treant(object):
                 location = os.path.abspath(location)
                 # file handler if desired; beware of problems with too many
                 # open files when a large number of Treants are at play
-                logfile = os.path.join(location, datreant.persistence.treantlog)
+                logfile = os.path.join(location, datreant.backends.treantlog)
                 fh = logging.FileHandler(logfile)
                 ff = logging.Formatter('%(asctime)s %(name)-12s '
                                        '%(levelname)-8s %(message)s')
@@ -463,7 +463,7 @@ class Treant(object):
 
         """
         if not self._tags:
-            self._tags = aggregators.Tags(
+            self._tags = limbs.Tags(
                     self, self._backend, self._logger)
         return self._tags
 
@@ -479,7 +479,7 @@ class Treant(object):
         """
 
         if not self._categories:
-            self._categories = aggregators.Categories(
+            self._categories = limbs.Categories(
                     self, self._backend, self._logger)
         return self._categories
 
@@ -494,7 +494,7 @@ class Treant(object):
 
         """
         if not self._data:
-            self._data = aggregators.Data(self, self._backend, self._logger)
+            self._data = limbs.Data(self, self._backend, self._logger)
         return self._data
 
     def _new_uuid(self):
@@ -522,7 +522,7 @@ class Group(Treant):
     """
     # required components
     _treanttype = 'Group'
-    _backends = {'pytables': ['.h5', datreant.persistence.pytables.GroupFile]}
+    _backends = {'pytables': ['.h5', datreant.backends.pytables.GroupFile]}
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())
@@ -552,7 +552,7 @@ class Group(Treant):
 
         """
         if not self._members:
-            self._members = aggregators.Members(self, self._backend,
+            self._members = limbs.Members(self, self._backend,
                                                 self._logger)
         return self._members
 

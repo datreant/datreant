@@ -4,10 +4,10 @@
 # datreant
 
 """
-datreant.persistence --- low-level file backends for state and data storage
+datreant.backends --- low-level file backends for state and data storage
 ===========================================================================
 
 """
-from datreant.persistence.core import treantfile, File
+from datreant.backends.core import treantfile, File
 
 __all__ = ['treantfile', 'File']

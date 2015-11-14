@@ -4,10 +4,11 @@
 # datreant
 
 """
-datreant.persistence --- low-level state file backends for Treants
-==================================================================
+datreant.data --- basic data storage backends for datreant.limbs.Data
+=====================================================================
 
 """
-from datreant.persistence.core import treantfile, File
+from datreant.data.core import DataFile
+from datreant.data import pydata, npdata, pddata 
 
-__all__ = ['treantfile', 'File']
+__all__ = ['pydata', 'npdata', 'pddata']

@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 
 import datreant
-from datreant.persistence.core import File
+from datreant.backends.core import File
 
 # number of characters required for uuids
 uuidlength = 36
@@ -98,6 +98,9 @@ class TreantFile(File):
         .. Note:: kwargs passed to :meth:`create`
 
         """
+        # filter NaturalNameWarnings from pytables, when they arrive
+        warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
+
         super(TreantFile, self).__init__(filename, logger=logger)
 
         # if file does not exist, it is created; if it does exist, it is updated

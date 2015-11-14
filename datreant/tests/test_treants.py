@@ -271,8 +271,7 @@ class TestTreant:
 
         class PandasMixin(DataMixin):
             """Mixin class for pandas tests"""
-            datafile = (dtr.persistence.datastore.pandas.pdDataFile._datatype +
-                       dtr.persistence.datastore.pandas.pdDataFile._extension)
+            datafile = dtr.data.pddata.pddatafile
 
             def test_retrieve_data(self, treant, datastruct):
                 treant.data.add(self.handle, datastruct)
@@ -308,8 +307,7 @@ class TestTreant:
 
         class NumpyMixin(DataMixin):
             """Test numpy datastructure storage and retrieval"""
-            datafile = (dtr.persistence.datastore.numpy.npDataFile._datatype +
-                       dtr.persistence.datastore.numpy.npDataFile._extension)
+            datafile = dtr.data.npdata.npdatafile
 
         class Test_NumpyScalar(test_data.NumpyScalar, NumpyMixin):
             pass
@@ -334,8 +332,7 @@ class TestTreant:
 
         class PythonMixin(DataMixin):
             """Test pandas datastructure storage and retrieval"""
-            datafile = (dtr.persistence.datastore.python.pyDataFile._datatype +
-                       dtr.persistence.datastore.python.pyDataFile._extension)
+            datafile = dtr.data.pydata.pydatafile
 
             def test_overwrite_data(self, treant, datastruct):
                 treant.data[self.handle] = datastruct

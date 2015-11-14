@@ -14,7 +14,7 @@ from functools import wraps
 import numpy as np
 import pandas as pd
 
-from datreant import persistence
+from datreant import data
 from datreant import filesystem
 from datreant import collections
 
@@ -543,7 +543,7 @@ class Data(Limb):
             filename, filetype = self._get_datafile(handle)
 
             if filename:
-                self._datafile = persistence.DataFile(
+                self._datafile = data.DataFile(
                         os.path.join(self._backend.get_location(),
                                      handle),
                         logger=self._logger,
@@ -578,7 +578,7 @@ class Data(Limb):
             dirname = os.path.join(self._backend.get_location(), handle)
 
             self._makedirs(dirname)
-            self._datafile = persistence.DataFile(dirname, logger=self._logger)
+            self._datafile = data.DataFile(dirname, logger=self._logger)
 
             try:
                 out = func(self, handle, *args, **kwargs)
@@ -690,7 +690,7 @@ class Data(Limb):
         """
         datafile, datafiletype = self._get_datafile(handle)
 
-        if kwargs and datafiletype == persistence.pddatafile:
+        if kwargs and datafiletype == data.pddata.pddatafile:
             self._delete_data(handle, **kwargs)
         elif datafile:
             os.remove(datafile)
@@ -834,9 +834,9 @@ class Data(Limb):
         datasets = list()
         top = self._backend.get_location()
         for root, dirs, files in os.walk(top):
-            if ((persistence.pddatafile in files) or
-                    (persistence.npdatafile in files) or
-                    (persistence.pydatafile in files)):
+            if ((data.pddata.pddatafile in files) or
+                    (data.npdata.npdatafile in files) or
+                    (data.pydata.pydatafile in files)):
                 datasets.append(os.path.relpath(root, start=top))
 
         datasets.sort()

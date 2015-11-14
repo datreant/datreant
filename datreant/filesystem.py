@@ -9,7 +9,7 @@ import time
 
 import scandir
 
-from datreant import persistence
+from datreant import backends
 import datreant
 
 
@@ -145,7 +145,7 @@ class Foxhound(object):
                 instead of paths for *as_treants* == True.
 
         """
-        from datreant.aggregators import Members
+        from datreant.limbs import Members
         from datreant.collections import Bundle
 
         if isinstance(self.caller, Members):
