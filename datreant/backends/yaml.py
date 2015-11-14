@@ -57,9 +57,13 @@ class yamlTreantFile(File):
         try:
             self.create(**kwargs)
         except OSError:
-            # in case the file is read-only; we can't update but may still want
-            # to use it
-            pass
+            # in case the file exists but is read-only; we can't update but may
+            # still want to use it
+            if os.path.exists(self.filename):
+                pass
+            # if the file doesn't exist, we still want an exception
+            else:
+                raise
 
     def _open_file_r(self):
         return open(self.filename, 'r')

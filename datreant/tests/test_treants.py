@@ -389,6 +389,7 @@ class TestReadOnly:
     def treant(self, tmpdir, request):
         with tmpdir.as_cwd():
             c = dtr.treants.Treant('testtreant')
+            c.tags.add('72')
             py.path.local(c.basedir).chmod(0550, rec=True)
 
         def fin():
@@ -411,6 +412,16 @@ class TestReadOnly:
         request.addfinalizer(fin)
 
         return c
+
+    def test_treant_read_only(self, treant):
+        """Test that a read-only Treant can be accessed, but not written to.
+        """
+        c = dtr.treants.Treant(treant.filepath)
+
+        assert '72' in c.tags
+
+        with pytest.raises(OSError):
+            c.tags.add('yet another')
 
     def test_group_member_access(self, group):
         """Test that Group can access members when the Group is read-only.

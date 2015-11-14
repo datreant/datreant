@@ -85,11 +85,19 @@ class File(object):
         # without an exclusive lock on something; important for multiprocessing
         proxy = "." + os.path.basename(self.filename) + ".proxy"
         self.proxy = os.path.join(os.path.dirname(self.filename), proxy)
+
+        # we create the file if it doesn't exist; if it does, an exception is
+        # raised and we catch it; this is necessary to ensure the file exists
+        # so we can use it for locks
         try:
             fd = os.open(self.proxy, os.O_CREAT | os.O_EXCL)
             os.close(fd)
-        except OSError:
-            pass
+        except OSError as e:
+            # if we get the error precisely because the file exists, continue
+            if e.errno == 17:
+                pass
+            else:
+                raise
 
     def get_location(self):
         """Get File basedir.

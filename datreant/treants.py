@@ -190,17 +190,23 @@ class Treant(object):
         if not tags:
             tags = list()
 
-        # generate state file
+        # build basedir; stop if we hit a permissions error
+        try:
+            self._makedirs(treant)
+        except OSError as e:
+            if e.errno == 13:
+                raise OSError(13, "Permission denied; " +
+                              "cannot create '{}'".format(treant))
+            else:
+                raise
 
-        # TODO: need to raise exception where invalid characters used for
-        # directory
-        self._makedirs(treant)
         filename = filesystem.statefilename(self._treanttype, str(uuid4()),
                                             self._backends[backend][0])
 
         statefile = os.path.join(treant, filename)
         self._start_logger(self._treanttype, treant)
 
+        # generate state file
         self._backend = datreant.backends.treantfile(
                 statefile, self._logger, coordinator=coordinator,
                 categories=categories, tags=tags)
@@ -302,8 +308,13 @@ class Treant(object):
         """
         try:
             os.makedirs(p)
-        except OSError:
-            pass
+        except OSError as e:
+            # let slide errors that include directories already existing, but
+            # catch others
+            if e.errno == 17:
+                pass
+            else:
+                raise
 
     @property
     def name(self):
