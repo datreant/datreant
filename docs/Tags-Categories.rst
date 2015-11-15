@@ -1,3 +1,5 @@
+.. _tags_categories:
+
 ==========================
 Differentiating Treants
 ==========================
@@ -47,20 +49,21 @@ Tags and categories are two elements of Treants that will be :doc:`queryable
 
 Reference: Tags
 ===============
-The class :class:`datreant.aggregators.Tags` is the interface used
+The class :class:`datreant.limbs.Tags` is the interface used
 by Treants to access their tags. It is not intended to be used on its own,
 but is shown here to give a detailed view of its methods.
 
-.. autoclass:: datreant.aggregators.Tags
+.. autoclass:: datreant.limbs.Tags
     :members:
     :inherited-members:
 
 Reference: Categories
 =====================
-The class :class:`datreant.aggregators.Categories` is the interface
+The class :class:`datreant.limbs.Categories` is the interface
 used by Treants to access their categories. It is not intended to be used on
 its own, but is shown here to give a detailed view of its methods.
 
-.. autoclass:: datreant.aggregators.Categories
+.. autoclass:: datreant.limbs.Categories
     :members:
     :inherited-members:
+

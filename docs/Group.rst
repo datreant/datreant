@@ -69,10 +69,10 @@ Reference: Group
 
 Reference: Members
 ==================
-The class :class:`datreant.aggregators.Members` is the interface used
+The class :class:`datreant.limbs.Members` is the interface used
 by a Group to manage its members. It is not intended to be used on its own,
 but is shown here to give a detailed view of its methods.
 
-.. autoclass:: datreant.aggregators.Members
+.. autoclass:: datreant.limbs.Members
     :members:
     :inherited-members:

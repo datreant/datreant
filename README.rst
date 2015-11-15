@@ -1,6 +1,6 @@
-==========================================================
-datreant: a persistence engine for heterogeneous data sets
-==========================================================
+===========================================================
+datreant: persistent, pythonic trees for heterogeneous data
+===========================================================
 
 |docs| |build| |cov|
 
@@ -14,87 +14,50 @@ portability, etc. This is particularly the case for fields centered around
 simulation: simulation systems can vary widely in size, composition, rules,
 paramaters, and starting conditions. And with increases in computational power,
 it is often necessary to store intermediate results obtained from large amounts
-of simulation data so it can be used interactively.
+of simulation data so it can be accessed and explored interactively.
 
 These problems make data management difficult, and serve as a barrier to
 answering scientific questions. To make things easier, **datreant** is a Python
-package that handles the tedious and time-consuming logistics of intermediate
+package that addresses the tedious and time-consuming logistics of intermediate
 data storage and retrieval. It solves a boring problem, so we can focus on
 interesting ones.
 
-Stay organized
-==============
-datreant is designed to perform the logistics of medium-to-large-scale analysis
-of data from many studies, whether they be individual simulations or data from
-field work. It is a library that is designed to be subclassed: the classes in
-datreant are useful on their own but vanilla by design, and are built to be
-easily extended into domain-specific objects.
+For more information on what **datreant** is and what it does, check out the
+`official documentation`_.
 
-As an example: `MDSynthesis`_, a package for storing, recalling, and aggregating
-data from molecular dynamics simulations, is built on top of datreant.
+.. _`official documentation`: http://datreant.readthedocs.org/
 
-.. _`MDSynthesis`: https://github.com/Becksteinlab/MDSynthesis 
+Getting datreant
+================
+See the :doc:`installation instructions <install>` for installation details.
+The package itself is pure Python, but it is dependent on `HDF5`_ libraries
+and the Python interfaces to these.
 
-Efficiently store intermediate data from individual studies for easy recall
----------------------------------------------------------------------------
-For handling data from a single study, datreant gives the **Treant** object.  A
-**Treant** can store data structures generated from raw data (pandas objects,
-numpy arrays, or any pure python structure) for easy recall later. Under the
-hood, datasets are stored in the efficient `HDF5`_ format when possible.
+If you want to work on the code, either for yourself or to contribute back to
+the project, clone the repository to your local machine with::
 
-.. _`HDF5`: https://www.hdfgroup.org/HDF5/whatishdf5.html
-
-Collect aggregated data and keep track of it, too
--------------------------------------------------
-**Treants** can be gathered into arbitrary collections with **Group** objects.
-**Groups** can store datasets obtained from these collections, and can even
-contain other **Groups** as members. **Groups** can keep track of any
-**Treant**-derived subclasses, even domain-specific ones that you've defined
-for getting your work done.
-
-Query for study results instead of manually hunting for them
-------------------------------------------------------------
-**Note**: This feature is planned, but not yet present in the codebase.
-
-**Treant** and **Group** objects persistently store their data to disk
-automatically, but it can be tedious to navigate around the filesystem to
-recall them later.  The **Coordinator** object gives a single interface for
-querying all **Treants** and **Groups** it is made aware of, allowing retrieval
-of specific datasets with a single line of code.
-
-Documentation
-=============
-A brief user guide is available on `Read the Docs
-<http://datreant.readthedocs.org/>`__.
-
-Dependencies
-============
-* `pandas`_: 0.16.1 or higher
-* `PyTables`_: 3.2.0 or higher
-* `h5py`_: 2.5.0 or higher
-* `scandir`_: 1.0 or higher
-
-.. _`pandas`: http://pandas.pydata.org/
-.. _`PyTables`: http://www.pytables.org/
-.. _`h5py`: http://www.h5py.org/
-.. _`scandir`: https://pypi.python.org/pypi/scandir
+    git clone https://github.com/datreant/datreant.git
 
 Contributing
 ============
 This project is still under heavy development, and there are certainly rough
-edges and bugs. Issues and pull requests welcome!
+edges and bugs. Issues and pull requests welcome! Check out our `contributor's guide`_
+if you learn how to get started with contributing back.
+
+.. _`contributor's guide`: https://github.com/datreant/datreant/wiki/Contributing
+
 
 .. |docs| image:: https://readthedocs.org/projects/datreant/badge/?version=develop
     :alt: Documentation Status
     :scale: 100%
     :target: https://readthedocs.org/projects/datreant
 
-.. |build| image:: https://travis-ci.org/dotsdl/datreant.svg?branch=develop
+.. |build| image:: https://travis-ci.org/datreant/datreant.svg?branch=develop
     :alt: Build Status
-    :target: https://travis-ci.org/dotsdl/datreant
+    :target: https://travis-ci.org/datreant/datreant
 
-.. |cov| image:: http://codecov.io/github/dotsdl/datreant/coverage.svg?branch=develop
+.. |cov| image:: http://codecov.io/github/datreant/datreant/coverage.svg?branch=develop
     :alt: Code Coverage
     :scale: 100%
-    :target: http://codecov.io/github/dotsdl/datreant?branch=develop
+    :target: http://codecov.io/github/datreant/datreant?branch=develop
 

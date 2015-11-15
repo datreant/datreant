@@ -28,9 +28,9 @@ class Coordinator(object):
         # self.add =
         # self.remove =
         # self.move =
-        pass
+        raise NotImplementedError("Coordinators are not yet implemented.")
 
     def select(self):
         """
         """
-        pass
+        raise NotImplementedError("Coordinators are not yet implemented.")

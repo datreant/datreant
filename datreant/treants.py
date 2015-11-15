@@ -73,10 +73,6 @@ class Treant(object):
             *new*
                 generate a new Treant even if one already exists at the given
                 location *treant*
-            *coordinator*
-                directory of the Coordinator to associate with the Treant;
-                if the Coordinator does not exist, it is created; if ``None``,
-                the Treant will not associate with any Coordinator
             *categories*
                 dictionary with user-defined keys and values; used to give
                 Treants distinguishing characteristics
@@ -429,7 +425,7 @@ class Treant(object):
         """Absolute path to the Treant's base directory.
 
         This is a convenience property; the same result can be obtained by
-        joining `:attr:location` and `:attr:name`.
+        joining :attr:`location` and :attr:`name`.
 
         """
         return self._backend.get_location()
@@ -442,35 +438,12 @@ class Treant(object):
         return self._backend.filename
 
     @property
-    def coordinators(self):
-        """The locations of the associated Coordinators.
-
-        Change this to associate the Treant with an existing
-        or new Coordinator(s).
-
-        """
-        return self._backend.get_coordinator()
-
-    # TODO: implement with Coordinator checking
-    @coordinators.setter
-    def coordinators(self, value):
-        """Set locations of Coordinators.
-
-        Setting this to ``None`` will dissociate the Treant from any
-        Coordinators.
-
-        """
-        raise NotImplementedError("Coordinators are not yet implemented. This"
-                                  " is a placeholder")
-
-    @property
     def tags(self):
         """The tags of the Treant.
 
         Tags are user-added strings that can be used to and distinguish
-        Treants from one another through Coordinator or Group queries.
-        They can also be useful as flags for external code to determine
-        how to handle the Treant.
+        Treants from one another through queries. They can also be useful as
+        flags for external code to determine how to handle the Treant.
 
         """
         if not self._tags:
@@ -483,9 +456,9 @@ class Treant(object):
         """The categories of the Treant.
 
         Categories are user-added key-value pairs that can be used to and
-        distinguish Treants from one another through Coordinator or Group
-        queries. They can also be useful as flags for external code to
-        determine how to handle the Treant.
+        distinguish Treants from one another through queries. They can also be
+        useful as flags for external code to determine how to handle the
+        Treant.
 
         """
 
