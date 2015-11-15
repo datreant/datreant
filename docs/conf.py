@@ -281,7 +281,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 autoclass_content = 'both'
 
 # for readthedocs, since it cannot compile dependencies that require C libraries
-from mock import Mock as MagicMock
+from unittest.mock import MagicMock
 
 class Mock(MagicMock):
     @classmethod
