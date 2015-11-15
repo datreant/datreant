@@ -29,7 +29,7 @@ For more information on what **datreant** is and what it does, check out the
 
 Getting datreant
 ================
-See the :doc:`installation instructions <install>` for installation details.
+See the `installation instructions`_ for installation details.
 The package itself is pure Python, but it is dependent on `HDF5`_ libraries
 and the Python interfaces to these.
 
@@ -37,6 +37,9 @@ If you want to work on the code, either for yourself or to contribute back to
 the project, clone the repository to your local machine with::
 
     git clone https://github.com/datreant/datreant.git
+
+.. _`installation instructions`: http://datreant.readthedocs.org/en/develop/install.html
+.. _`HDF5`: https://www.hdfgroup.org/HDF5/whatishdf5.html
 
 Contributing
 ============
