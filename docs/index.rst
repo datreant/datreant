@@ -8,7 +8,7 @@ simulation data, there is often an existing ecosystem of specialized tools and
 file formats which new tools must work around, for better or worse.
 Furthermore, centralized database solutions may be suboptimal for data
 storage for a number of reasons, including insufficient hardware
-infrastructure, variety and heterogeneaity of raw data, the need for data
+infrastructure, variety and heterogeneity of raw data, the need for data
 portability, etc. This is particularly the case for fields centered around
 simulation: simulation systems can vary widely in size, composition, rules,
 paramaters, and starting conditions. And with increases in computational power,
