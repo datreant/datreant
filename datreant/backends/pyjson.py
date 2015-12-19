@@ -1,5 +1,5 @@
 """
-Interface classes for YAML state files.
+Interface classes for JSON state files.
 
 """
 
@@ -11,16 +11,16 @@ import logging
 import warnings
 from functools import wraps
 
-import yaml
+import json
 
 import datreant
 from .serial import TreantFileSerial
 
 
-class TreantFileYAML(TreantFileSerial):
+class TreantFileJSON(TreantFileSerial):
 
     def _deserialize(self, handle):
-        return yaml.load(handle)
+        return json.load(handle)
 
     def _serialize(self, record, handle):
-        yaml.dump(record, handle)
+        json.dump(record, handle)

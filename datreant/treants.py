@@ -11,6 +11,7 @@ import functools
 
 import datreant
 from .backends import pytables
+from .backends import pyjson
 from .backends import pyyaml
 from . import limbs
 from . import filesystem
@@ -48,8 +49,9 @@ class Treant(object):
     """
     # required components
     _treanttype = 'Treant'
-    _backends = {'pytables': ['.h5', pytables.TreantFile],
-                 'pyyaml': ['.yml', pyyaml.yamlTreantFile]}
+    _backends = {'pytables': ['.h5', pytables.TreantFileHDF5],
+                 'json': ['.json', pyjson.TreantFileJSON],
+                 'pyyaml': ['.yml', pyyaml.TreantFileYAML]}
 
     def __init__(self, treant, new=False, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
@@ -461,7 +463,7 @@ class Group(Treant):
     """
     # required components
     _treanttype = 'Group'
-    _backends = {'pytables': ['.h5', datreant.backends.pytables.GroupFile]}
+    _backends = {'pytables': ['.h5', pytables.GroupFileHDF5]}
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())

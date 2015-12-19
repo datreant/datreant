@@ -11,12 +11,9 @@ import warnings
 from functools import wraps
 
 import tables
-import h5py
-import pandas as pd
-import numpy as np
 
 import datreant
-from datreant.backends.core import File
+from .core import File
 
 # number of characters required for uuids
 uuidlength = 36
@@ -28,7 +25,7 @@ pathlength = 511
 namelength = 55
 
 
-class TreantFile(File):
+class TreantFileHDF5(File):
     """Treant file object; syncronized access to Treant data.
 
     """
@@ -101,7 +98,7 @@ class TreantFile(File):
         # filter NaturalNameWarnings from pytables, when they arrive
         warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
 
-        super(TreantFile, self).__init__(filename, logger=logger)
+        super(TreantFileHDF5, self).__init__(filename, logger=logger)
 
         # if file does not exist, it is created; if it does exist, it is
         # updated
@@ -431,7 +428,7 @@ class TreantFile(File):
                     j = j + 1
 
 
-class GroupFile(TreantFile):
+class GroupFileHDF5(TreantFileHDF5):
     """Main Group state file.
 
     This file contains all the information needed to store the state of a
@@ -481,7 +478,7 @@ class GroupFile(TreantFile):
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
         """
-        super(GroupFile, self).__init__(filename, logger=logger, **kwargs)
+        super(GroupFileHDF5, self).__init__(filename, logger=logger, **kwargs)
 
     def create(self, **kwargs):
         """Build Group data structure.
@@ -499,7 +496,7 @@ class GroupFile(TreantFile):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(GroupFile, self).create(treanttype='Group', **kwargs)
+        super(GroupFileHDF5, self).create(treanttype='Group', **kwargs)
 
         self._make_membertable()
 
