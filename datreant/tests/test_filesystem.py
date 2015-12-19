@@ -14,7 +14,7 @@ class TestFoxhound:
     @pytest.fixture
     def treant(self, tmpdir):
         with tmpdir.as_cwd():
-            t = dtr.treants.Container('testtreant')
+            t = dtr.Treant('testtreant')
         return t
 
     @pytest.fixture
