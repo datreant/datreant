@@ -50,7 +50,7 @@ class yamlTreantFile(File):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(ymlTreantFile, self).__init__(filename, logger=logger)
+        super(yamlTreantFile, self).__init__(filename, logger=logger)
 
         # if file does not exist, it is created; if it does exist, it is
         # updated
@@ -317,7 +317,12 @@ class yamlTreantFile(File):
             # remove redundant tags from given list if present
             tags = set([str(tag) for tag in tags])
             for tag in tags:
-                self._record['tags'].remove(tag)
+                # remove tag; if not present, continue anyway
+                try:
+                    self._record['tags'].remove(tag)
+                except ValueError:
+                    pass
+
 
     @_read
     @_pull
@@ -372,5 +377,6 @@ class yamlTreantFile(File):
         if purge:
             self._record['categories'] = dict()
         else:
-            for key in categories.keys():
-                self._record['categories'].pop(key)
+            for key in categories:
+                # continue even if key not already present
+                self._record['categories'].pop(key, None)

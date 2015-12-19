@@ -217,6 +217,9 @@ class TestTreant:
             del treant.categories['bark']
             assert 'bark' not in treant.categories
 
+            # should just work, even if key isn't present
+            treant.categories.remove('smark')
+
             treant.categories['lark'] = 42
             treant.categories['fark'] = 32.3
 
@@ -355,6 +358,20 @@ class TestTreant:
 
         class Test_Dict_Mix(test_data.Dict_Mix, PythonMixin):
             pass
+
+
+class TestymlTreant(TestTreant):
+    """Test generic Treant features"""
+    treantname = 'testtreant'
+    treanttype = 'Treant'
+    treantclass = dtr.treants.Treant
+
+    @pytest.fixture
+    def treant(self, tmpdir):
+        with tmpdir.as_cwd():
+            c = dtr.treants.Treant(TestTreant.treantname,
+                                   backend='pyyaml')
+        return c
 
 
 class TestGroup(TestTreant):

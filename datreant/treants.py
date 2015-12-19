@@ -10,11 +10,11 @@ import logging
 import functools
 
 import datreant
-import datreant.backends.pytables
-import datreant.backends.yaml
-from datreant import limbs
-from datreant import filesystem
-from datreant import collections
+from .backends import pytables
+from .backends import pyyaml
+from . import limbs
+from . import filesystem
+from . import collections
 
 
 class MultipleTreantsError(Exception):
@@ -48,8 +48,8 @@ class Treant(object):
     """
     # required components
     _treanttype = 'Treant'
-    _backends = {'pytables': ['.h5', datreant.backends.pytables.TreantFile],
-                 'yaml': ['.yml', datreant.backends.yaml.yamlTreantFile]}
+    _backends = {'pytables': ['.h5', pytables.TreantFile],
+                 'pyyaml': ['.yml', pyyaml.yamlTreantFile]}
 
     def __init__(self, treant, new=False, coordinator=None,
                  categories=None, tags=None, backend='pytables'):
