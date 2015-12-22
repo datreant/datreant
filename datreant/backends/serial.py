@@ -11,11 +11,121 @@ import logging
 import warnings
 from functools import wraps
 
+import numpy as np
+
 import datreant
 from .core import File
 
+class FileSerial(File):
+    def _open_file_r(self):
+        return open(self.filename, 'r')
 
-class TreantFileSerial(File):
+    def _open_file_w(self):
+        return open(self.filename, 'w')
+
+    @staticmethod
+    def _read(func):
+        """Decorator for opening state file for reading and applying shared
+        lock.
+
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            if self.fdlock:
+                out = func(self, *args, **kwargs)
+            else:
+                self._open_fd_r()
+                self._shlock(self.fd)
+                self.fdlock = 'shared'
+
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self._unlock(self.fd)
+                    self._close_fd()
+                    self.fdlock = None
+            return out
+
+        return inner
+
+    @staticmethod
+    def _write(func):
+        """Decorator for opening state file for writing and applying exclusive lock.
+
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method
+        is executed. It also ensures that the lock is removed and the file
+        closed after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            if self.fdlock == 'exclusive':
+                out = func(self, *args, **kwargs)
+            else:
+                self._open_fd_rw()
+                self._exlock(self.fd)
+                self.fdlock = 'exclusive'
+
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self._unlock(self.fd)
+                    self.fdlock = None
+                    self._close_fd()
+            return out
+
+        return inner
+
+    @staticmethod
+    def _pull_push(func):
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            try:
+                self._pull_record()
+            except IOError:
+                self._init_record()
+            out = func(self, *args, **kwargs)
+            self._push_record()
+            return out
+        return inner
+
+    @staticmethod
+    def _pull(func):
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self._pull_record()
+            out = func(self, *args, **kwargs)
+            return out
+        return inner
+
+    def _pull_record(self):
+        self.handle = self._open_file_r()
+        self._record = self._deserialize(self.handle)
+        self.handle.close()
+
+    def _deserialize(self, handle):
+        """Deserialize full record from open file handle.
+        """
+        raise NotImplementedError
+
+    def _push_record(self):
+        self.handle = self._open_file_w()
+        self._serialize(self._record, self.handle)
+        self.handle.close()
+
+    def _serialize(self, record, handle):
+        """Serialize full record to open file handle.
+        """
+        raise NotImplementedError
+
+
+class TreantFileSerial(FileSerial):
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Treant state file.
 
@@ -63,109 +173,6 @@ class TreantFileSerial(File):
             else:
                 raise
 
-    def _open_file_r(self):
-        return open(self.filename, 'r')
-
-    def _open_file_w(self):
-        return open(self.filename, 'w')
-
-    def _read(func):
-        """Decorator for opening state file for reading and applying shared
-        lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.fdlock:
-                out = func(self, *args, **kwargs)
-            else:
-                self._open_fd_r()
-                self._shlock(self.fd)
-                self.fdlock = 'shared'
-
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self._unlock(self.fd)
-                    self._close_fd()
-                    self.fdlock = None
-            return out
-
-        return inner
-
-    def _write(func):
-        """Decorator for opening state file for writing and applying exclusive lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method
-        is executed. It also ensures that the lock is removed and the file
-        closed after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.fdlock == 'exclusive':
-                out = func(self, *args, **kwargs)
-            else:
-                self._open_fd_rw()
-                self._exlock(self.fd)
-                self.fdlock = 'exclusive'
-
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self._unlock(self.fd)
-                    self.fdlock = None
-                    self._close_fd()
-            return out
-
-        return inner
-
-    def _pull_push(func):
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            try:
-                self._pull_record()
-            except IOError:
-                self._init_record()
-            out = func(self, *args, **kwargs)
-            self._push_record()
-            return out
-        return inner
-
-    def _pull(func):
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self._pull_record()
-            out = func(self, *args, **kwargs)
-            return out
-        return inner
-
-    def _pull_record(self):
-        self.handle = self._open_file_r()
-        self._record = self._deserialize(self.handle)
-        self.handle.close()
-
-    def _deserialize(self, handle):
-        """Deserialize full record from open file handle.
-        """
-        raise NotImplementedError
-
-    def _push_record(self):
-        self.handle = self._open_file_w()
-        self._serialize(self._record, self.handle)
-        self.handle.close()
-
-    def _serialize(self, record, handle):
-        """Serialize full record to open file handle.
-        """
-        raise NotImplementedError
-
     def _init_record(self):
         self._record = dict()
         self._record['tags'] = list()
@@ -203,8 +210,8 @@ class TreantFileSerial(File):
         categories = kwargs.pop('categories', dict())
         self.add_categories(**categories)
 
-    @_read
-    @_pull
+    @FileSerial._read
+    @FileSerial._pull
     def get_version(self):
         """Get Treant version.
 
@@ -216,8 +223,8 @@ class TreantFileSerial(File):
         return self._record['version']
 
     # TODO: need a proper schema update mechanism
-    @_write
-    @_pull_push
+    @FileSerial._write
+    @FileSerial._pull_push
     def update_schema(self):
         """Update schema of file.
 
@@ -232,8 +239,8 @@ class TreantFileSerial(File):
 
         return version
 
-    @_write
-    @_pull_push
+    @FileSerial._write
+    @FileSerial._pull_push
     def update_version(self, version):
         """Update version of Treant.
 
@@ -243,8 +250,8 @@ class TreantFileSerial(File):
         """
         self._record['version'] = version
 
-    @_read
-    @_pull
+    @FileSerial._read
+    @FileSerial._pull
     def get_coordinator(self):
         """Get absolute path to Coordinator.
 
@@ -255,8 +262,8 @@ class TreantFileSerial(File):
         """
         return self._record['coordinator']
 
-    @_write
-    @_pull_push
+    @FileSerial._write
+    @FileSerial._pull_push
     def update_coordinator(self, coordinator):
         """Update Treant location.
 
@@ -266,8 +273,8 @@ class TreantFileSerial(File):
         """
         self._record['coordinator'] = coordinator
 
-    @_read
-    @_pull
+    @FileSerial._read
+    @FileSerial._pull
     def get_tags(self):
         """Get all tags as a list.
 
@@ -277,8 +284,8 @@ class TreantFileSerial(File):
         """
         return self._record['tags']
 
-    @_write
-    @_pull_push
+    @FileSerial._write
+    @FileSerial._pull_push
     def add_tags(self, *tags):
         """Add any number of tags to the Treant.
 
@@ -300,8 +307,8 @@ class TreantFileSerial(File):
         # add new tags
         self._record['tags'].extend(tags)
 
-    @_write
-    @_pull_push
+    @FileSerial._write
+    @FileSerial._pull_push
     def del_tags(self, *tags, **kwargs):
         """Delete tags from Treant.
 
@@ -331,8 +338,8 @@ class TreantFileSerial(File):
                 except ValueError:
                     pass
 
-    @_read
-    @_pull
+    @FileSerial._read
+    @FileSerial._pull
     def get_categories(self):
         """Get all categories as a dictionary.
 
@@ -342,8 +349,8 @@ class TreantFileSerial(File):
         """
         return self._record['categories']
 
-    @_write
-    @_pull_push
+    @FileSerial._write
+    @FileSerial._pull_push
     def add_categories(self, **categories):
         """Add any number of categories to the Treant.
 
@@ -362,8 +369,8 @@ class TreantFileSerial(File):
         for key in categories.keys():
             self._record['categories'][key] = str(categories[key])
 
-    @_write
-    @_pull_push
+    @FileSerial._write
+    @FileSerial._pull_push
     def del_categories(self, *categories, **kwargs):
         """Delete categories from Treant.
 
@@ -387,3 +394,179 @@ class TreantFileSerial(File):
             for key in categories:
                 # continue even if key not already present
                 self._record['categories'].pop(key, None)
+
+
+class GroupFileSerial(TreantFileSerial):
+    """Main Group state file.
+
+    This file contains all the information needed to store the state of a
+    Group object. It includes accessors, setters, and modifiers for all
+    elements of the data structure, as well as the data structure definition.
+
+    """
+    # add new paths to include them in member searches
+    memberpaths = ['abspath', 'relCont']
+    _fields = ['uuid', 'treanttype', 'abspath', 'relCont']
+
+    def __init__(self, filename, logger=None, **kwargs):
+        """Initialize Group state file.
+
+        :Arguments:
+           *filename*
+              path to file
+           *logger*
+              logger to send warnings and errors to
+
+        :Keywords:
+           *coordinator*
+              directory in which coordinator state file can be found [None]
+           *categories*
+              user-given dictionary with custom keys and values; used to
+              give distinguishing characteristics to object for search
+           *tags*
+              user-given list with custom elements; used to give distinguishing
+              characteristics to object for search
+        """
+        super(GroupFileSerial, self).__init__(filename, logger=logger, **kwargs)
+
+    def _init_record(self):
+        super(GroupFileSerial, self)._init_record()
+        self._record['members'] = list()
+
+    @FileSerial._write
+    @FileSerial._pull_push
+    def add_member(self, uuid, treanttype, basedir):
+        """Add a member to the Group.
+
+        If the member is already present, its basedir paths will be updated
+        with the given basedir.
+
+        :Arguments:
+            *uuid*
+                the uuid of the new member
+            *treanttype*
+                the treant type of the new member
+            *basedir*
+                basedir of the new member in the filesystem
+
+        """
+        # check if uuid already present
+        uuids = [member[0] for member in self._record['members']]
+
+        if uuid not in uuids:
+            self._record['members'].append([uuid,
+                                            treanttype, 
+                                            os.path.abspath(basedir),
+                                            os.path.relpath(
+                                                basedir, self.get_location())])
+
+    @FileSerial._write
+    @FileSerial._pull_push
+    def del_member(self, *uuid, **kwargs):
+        """Remove a member from the Group.
+
+        :Arguments:
+            *uuid*
+                the uuid(s) of the member(s) to remove
+
+        :Keywords:
+            *all*
+                When True, remove all members [``False``]
+
+        """
+        if purge:
+            self._record['members'] = list()
+        else:
+            # remove redundant uuids from given list if present
+            uuids = set([str(uid) for uid in uuid])
+
+            # get matching rows
+            # TODO: possibly faster to use table.where
+            memberlist = list()
+            for member, i in enumerate(self._record['members']):
+                for uuid in uuids:
+                    if (member[0] == uuid):
+                        memberlist.append(i)
+
+            memberlist.sort()
+            j = 0
+            # delete matching entries; have to use j to shift the register as
+            # we remove entries 
+            for i in memberlist:
+                self._record['members'].pop(i - j)
+                j = j + 1
+
+    @FileSerial._read
+    @FileSerial._pull
+    def get_member(self, uuid):
+        """Get all stored information on the specified member.
+
+        Returns a dictionary whose keys are column names and values the
+        corresponding values for the member.
+
+        :Arguments:
+            *uuid*
+                uuid of the member to retrieve information for
+
+        :Returns:
+            *memberinfo*
+                a dictionary containing all information stored for the
+                specified member
+        """
+        memberinfo = None
+        for member in self._record['members']:
+            if member[0] == uuid:
+                memberinfo = member
+
+        if memberinfo:
+            memberinfo = {x: y for x, y in zip(self._fields, memberinfo)}
+
+        return memberinfo
+
+    @FileSerial._read
+    @FileSerial._pull
+    def get_members(self):
+        """Get full member table.
+
+        Sometimes it is useful to read the whole member table in one go instead
+        of doing multiple reads.
+
+        :Returns:
+            *memberdata*
+                structured array giving full member data, with
+                each row corresponding to a member
+        """
+        return np.array(self._record['members'])
+
+    @FileSerial._read
+    @FileSerial._pull
+    def get_members_uuid(self):
+        """List uuid for each member.
+
+        :Returns:
+            *uuids*
+                array giving treanttype of each member, in order
+        """
+        return np.array([member[0] for member in self._record['members']])
+
+    @FileSerial._read
+    @FileSerial._pull
+    def get_members_treanttype(self):
+        """List treanttype for each member.
+
+        :Returns:
+            *treanttypes*
+                array giving treanttype of each member, in order
+        """
+        return np.array([member[1] for member in self._record['members']])
+
+    @FileSerial._read
+    @FileSerial._pull
+    def get_members_basedir(self):
+        """List basedir for each member.
+
+        :Returns:
+            *basedirs*
+                structured array containing all paths to member basedirs
+        """
+        return np.array([member[2:] for member in self._record['members']])

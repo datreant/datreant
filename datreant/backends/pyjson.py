@@ -14,13 +14,20 @@ from functools import wraps
 import json
 
 import datreant
-from .serial import TreantFileSerial
+from .serial import TreantFileSerial, GroupFileSerial
 
 
-class TreantFileJSON(TreantFileSerial):
-
+class MixinJSON(object):
     def _deserialize(self, handle):
         return json.load(handle)
 
     def _serialize(self, record, handle):
         json.dump(record, handle)
+
+
+class TreantFileJSON(MixinJSON, TreantFileSerial):
+    pass
+
+
+class GroupFileJSON(MixinJSON, GroupFileSerial):
+    pass

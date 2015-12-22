@@ -414,6 +414,28 @@ class TestGroupHDF5(GroupMixin):
         return g
 
 
+class TestGroupJSON(GroupMixin):
+    backend = 'json'
+
+    @pytest.fixture
+    def treant(self, tmpdir):
+        with tmpdir.as_cwd():
+            g = dtr.Group(GroupMixin.treantname,
+                          backend='json')
+        return g
+
+
+class TestGroupYAML(GroupMixin):
+    backend = 'pyyaml'
+
+    @pytest.fixture
+    def treant(self, tmpdir):
+        with tmpdir.as_cwd():
+            g = dtr.Group(GroupMixin.treantname,
+                          backend='pyyaml')
+        return g
+
+
 class TestReadOnly:
     """Test Treant functionality when read-only"""
 

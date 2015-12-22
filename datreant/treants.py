@@ -54,7 +54,7 @@ class Treant(object):
                  'pyyaml': ['.yml', pyyaml.TreantFileYAML]}
 
     def __init__(self, treant, new=False, coordinator=None,
-                 categories=None, tags=None, backend='pytables'):
+                 categories=None, tags=None, backend='json'):
         """Generate a new or regenerate an existing (on disk) Treant object.
 
         :Required arguments:
@@ -463,7 +463,9 @@ class Group(Treant):
     """
     # required components
     _treanttype = 'Group'
-    _backends = {'pytables': ['.h5', pytables.GroupFileHDF5]}
+    _backends = {'pytables': ['.h5', pytables.GroupFileHDF5],
+                 'json': ['.json', pyjson.GroupFileJSON],
+                 'pyyaml': ['.yml', pyyaml.GroupFileYAML]}
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())

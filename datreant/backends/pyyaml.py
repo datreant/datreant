@@ -14,13 +14,21 @@ from functools import wraps
 import yaml
 
 import datreant
-from .serial import TreantFileSerial
+from .serial import TreantFileSerial, GroupFileSerial
 
 
-class TreantFileYAML(TreantFileSerial):
+class MixinYAML(object):
 
     def _deserialize(self, handle):
         return yaml.load(handle)
 
     def _serialize(self, record, handle):
         yaml.dump(record, handle)
+
+
+class TreantFileYAML(MixinYAML, TreantFileSerial) :
+    pass
+
+
+class GroupFileYAML(MixinYAML, GroupFileSerial):
+    pass
