@@ -474,6 +474,8 @@ class GroupFileSerial(TreantFileSerial):
                 When True, remove all members [``False``]
 
         """
+        purge = kwargs.pop('all', False)
+
         if purge:
             self._record['members'] = list()
         else:
@@ -483,7 +485,7 @@ class GroupFileSerial(TreantFileSerial):
             # get matching rows
             # TODO: possibly faster to use table.where
             memberlist = list()
-            for member, i in enumerate(self._record['members']):
+            for i, member in enumerate(self._record['members']):
                 for uuid in uuids:
                     if (member[0] == uuid):
                         memberlist.append(i)
@@ -533,10 +535,16 @@ class GroupFileSerial(TreantFileSerial):
 
         :Returns:
             *memberdata*
-                structured array giving full member data, with
-                each row corresponding to a member
+                dict giving full member data, with fields as keys and in member
+                order
         """
-        return np.array(self._record['members'])
+        out = {key: [] for key in self._fields}
+
+        for member in self._record['members']:
+            for i, key in enumerate(self._fields):
+                out[key].append(member[i])
+
+        return out
 
     @FileSerial._read
     @FileSerial._pull

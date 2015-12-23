@@ -635,11 +635,17 @@ class GroupFileHDF5(TreantFileHDF5):
 
         :Returns:
             *memberdata*
-                structured array giving full member data, with
-                each row corresponding to a member
+                dict giving full member data, with fields as keys and in member
+                order
         """
         table = self.handle.get_node('/', 'members')
-        return table.read()
+        table = table.read()
+        out = dict()
+
+        for key in table.dtype.names:
+            out[key] = table[key].flatten().tolist()
+
+        return out
 
     @File._read
     def get_members_uuid(self):

@@ -172,7 +172,7 @@ class _CollectionBase(object):
 
         """
         members = self._backend.get_members()
-        uuids = members['uuid'].flatten().tolist()
+        uuids = members['uuid']
 
         findlist = list()
         memberlist = list()
@@ -185,7 +185,7 @@ class _CollectionBase(object):
                 findlist.append(uuid)
 
         # track down our non-cached treants
-        paths = {path: members[path].flatten().tolist()
+        paths = {path: members[path]
                  for path in self._backend.memberpaths}
         foxhound = filesystem.Foxhound(self, findlist, paths)
         foundconts = foxhound.fetch(as_treants=True)
@@ -394,10 +394,15 @@ class _BundleBackend():
 
         :Returns:
             *memberdata*
-                structured array giving full member data, with
-                each row corresponding to a member
+                dict giving full member data, with fields as keys and in member
+                order
         """
-        return self.table
+        out = dict()
+
+        for key in self.table.dtype.names:
+            out[key] = self.table[key].flatten().tolist()
+
+        return out
 
     def get_members_uuid(self):
         """List uuid for each member.
