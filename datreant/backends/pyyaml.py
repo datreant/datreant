@@ -26,7 +26,7 @@ class MixinYAML(object):
         yaml.dump(record, handle)
 
 
-class TreantFileYAML(MixinYAML, TreantFileSerial) :
+class TreantFileYAML(MixinYAML, TreantFileSerial):
     pass
 
 

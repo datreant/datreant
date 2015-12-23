@@ -16,6 +16,7 @@ import numpy as np
 import datreant
 from .core import File
 
+
 class FileSerial(File):
     def _open_file_r(self):
         return open(self.filename, 'r')
@@ -427,7 +428,9 @@ class GroupFileSerial(TreantFileSerial):
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
         """
-        super(GroupFileSerial, self).__init__(filename, logger=logger, **kwargs)
+        super(GroupFileSerial, self).__init__(filename,
+                                              logger=logger,
+                                              **kwargs)
 
     def _init_record(self):
         super(GroupFileSerial, self)._init_record()
@@ -455,7 +458,7 @@ class GroupFileSerial(TreantFileSerial):
 
         if uuid not in uuids:
             self._record['members'].append([uuid,
-                                            treanttype, 
+                                            treanttype,
                                             os.path.abspath(basedir),
                                             os.path.relpath(
                                                 basedir, self.get_location())])
@@ -493,7 +496,7 @@ class GroupFileSerial(TreantFileSerial):
             memberlist.sort()
             j = 0
             # delete matching entries; have to use j to shift the register as
-            # we remove entries 
+            # we remove entries
             for i in memberlist:
                 self._record['members'].pop(i - j)
                 j = j + 1
