@@ -3,11 +3,8 @@
 """
 
 import datreant as dtr
-import pandas as pd
-import numpy as np
 import pytest
 import os
-import shutil
 import py
 from . import test_bundle
 
