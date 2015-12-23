@@ -13,11 +13,11 @@ from datreant import backends
 import datreant
 
 
-def statefilename(treanttype, uuid, ext):
+def statefilename(treanttype, uuid):
     """Return state file name given the type of treant and its uuid.
 
     """
-    return "{}.{}{}".format(treanttype, uuid, ext)
+    return "{}.{}{}".format(treanttype, uuid, '.json')
 
 
 def glob_treant(treant):
@@ -37,12 +37,10 @@ def glob_treant(treant):
     """
     fileglob = list()
     for treanttype in datreant._treants:
-        for backend in datreant._treants[treanttype]._backends:
-            extension = datreant._treants[treanttype]._backends[backend][0]
-            fileglob.extend(
-                glob.glob(os.path.join(
-                    treant,
-                    '{}.*{}'.format(treanttype, extension))))
+        fileglob.extend(
+            glob.glob(os.path.join(
+                treant,
+                '{}.*{}'.format(treanttype, '.json'))))
 
     paths = [os.path.abspath(x) for x in fileglob]
     return paths

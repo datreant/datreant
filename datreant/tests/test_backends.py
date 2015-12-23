@@ -14,9 +14,7 @@ import py
 from pytest import mark
 
 import datreant as dtr
-from datreant.backends.pytables import TreantFileHDF5
-from datreant.backends.pyjson import TreantFileJSON
-from datreant.backends.pyyaml import TreantFileYAML
+from datreant.backends.statefiles import TreantFile
 
 
 def add_tags(treantfile, tags):
@@ -28,8 +26,14 @@ def add_tags_individually(treantfile, tags):
         treantfile.add_tags(tag)
 
 
-class TreantFileMixin:
+class TestTreantFile:
     """Test generic TreantFile features"""
+
+    @pytest.fixture
+    def treantfile(self, tmpdir):
+        with tmpdir.as_cwd():
+            c = TreantFile('testfile.json')
+        return c
 
     def test_add_tags(self, treantfile):
         treantfile.add_tags('marklar')
@@ -56,30 +60,3 @@ class TreantFileMixin:
     def test_add_many_tags_individually(self, treantfile):
         tags = ['yes this {}'.format(i) for i in range(10)]
         add_tags_individually(treantfile, tags)
-
-
-class TestTreantFileHDF5(TreantFileMixin):
-
-    @pytest.fixture
-    def treantfile(self, tmpdir):
-        with tmpdir.as_cwd():
-            c = TreantFileHDF5('testfile.h5')
-        return c
-
-
-class TestTreantFileJSON(TreantFileMixin):
-
-    @pytest.fixture
-    def treantfile(self, tmpdir):
-        with tmpdir.as_cwd():
-            c = TreantFileJSON('testfile.json')
-        return c
-
-
-class TestTreantFileYAML(TreantFileMixin):
-
-    @pytest.fixture
-    def treantfile(self, tmpdir):
-        with tmpdir.as_cwd():
-            c = TreantFileYAML('testfile.yaml')
-        return c

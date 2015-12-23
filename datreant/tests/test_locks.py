@@ -12,9 +12,7 @@ import pandas as pd
 
 import datreant as dtr
 
-from datreant.backends.pytables import TreantFileHDF5
-from datreant.backends.pyyaml import TreantFileYAML
-from datreant.backends.pyjson import TreantFileJSON
+from datreant.backends.statefiles import TreantFile
 
 
 def pokefile(treantfileclass, treantfilepath, string):
@@ -23,30 +21,29 @@ def pokefile(treantfileclass, treantfilepath, string):
     treantfile.add_tags(*["{}_{}".format(string, i) for i in range(100)])
 
 
-def append(backend, treantfilepath, df):
-    treant = dtr.Treant(treantfilepath, backend=backend)
+def append(treantfilepath, df):
+    treant = dtr.Treant(treantfilepath)
     treant.data.append('testdata', df)
 
 
-def init_treant(backend, tmpdir, tags):
+def init_treant(tmpdir, tags):
     with tmpdir.as_cwd():
-        tf = dtr.Treant('sprout', tags=tags, backend=backend)
+        tf = dtr.Treant('sprout', tags=tags)
     return tf
 
 
-class LocksMixin:
+class TestTreantFile:
 
     @pytest.fixture
     def treant(self, tmpdir):
         with tmpdir.as_cwd():
-            t = dtr.treants.Treant('sprout', backend=self.backend)
+            t = dtr.treants.Treant('sprout')
         return t
 
     @pytest.fixture
     def treantfile(self, tmpdir):
         with tmpdir.as_cwd():
-            tf = self.treantfileclass(
-                    'testtreantfile.{}'.format(self.extension))
+            tf = TreantFile('testtreantfile.json')
         return tf
 
     @pytest.fixture
@@ -57,7 +54,7 @@ class LocksMixin:
     def test_death_by_1000_pokes(self, treantfile):
         pool = mp.Pool(processes=4)
         for i in range(10):
-            pool.apply_async(pokefile, args=(self.treantfileclass,
+            pool.apply_async(pokefile, args=(TreantFile,
                                              treantfile.filename,
                                              "run_{}".format(i)))
         pool.close()
@@ -69,8 +66,7 @@ class LocksMixin:
         pool = mp.Pool(processes=4)
         num = 53
         for i in range(num):
-            pool.apply_async(append, args=(self.backend,
-                                           treant.filepath,
+            pool.apply_async(append, args=(treant.filepath,
                                            dataframe))
         pool.close()
         pool.join()
@@ -83,10 +79,9 @@ class LocksMixin:
 
         # TODO: eventually want this to work without initing the treant
         # here
-        init_treant(self.backend, tmpdir, ['bark'])
+        init_treant(tmpdir, ['bark'])
         for i in range(num):
-            pool.apply_async(init_treant, args=(self.backend,
-                                                tmpdir,
+            pool.apply_async(init_treant, args=(tmpdir,
                                                 ['run_{}'.format(i)]))
         pool.close()
         pool.join()
@@ -95,21 +90,3 @@ class LocksMixin:
             tf = dtr.Treant('sprout')
 
         assert len(tf.tags) == num + 1
-
-
-class TestHDF5(LocksMixin):
-    backend = 'pytables'
-    treantfileclass = TreantFileHDF5
-    extension = 'h5'
-
-
-class TestJSON(LocksMixin):
-    backend = 'json'
-    treantfileclass = TreantFileJSON
-    extension = 'json'
-
-
-class TestYAML(LocksMixin):
-    backend = 'pyyaml'
-    treantfileclass = TreantFileYAML
-    extension = 'yml'

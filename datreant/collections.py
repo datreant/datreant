@@ -6,13 +6,11 @@ offer convenience methods for dealing with many Treants at once.
 """
 import os
 
-import numpy as np
 import multiprocessing as mp
 import glob
 import fnmatch
 
 from datreant import backends
-from datreant.backends import pytables
 from datreant import filesystem
 import datreant.treants
 
@@ -128,7 +126,7 @@ class _CollectionBase(object):
         """Return a list of member treanttypes.
 
         """
-        return self._backend.get_members_treanttype().tolist()
+        return self._backend.get_members_treanttype()
 
     @property
     def names(self):
@@ -152,6 +150,48 @@ class _CollectionBase(object):
         return names
 
     @property
+    def basedirs(self):
+        """Return a list of member basedirs.
+
+        Members that can't be found will have basedir ``None``.
+
+        :Returns:
+            *names*
+                list giving the basedir of each member, in order;
+                members that are missing will have basedir ``None``
+
+        """
+        basedirs = list()
+        for member in self._list():
+            if member:
+                basedirs.append(member.basedir)
+            else:
+                basedirs.append(None)
+
+        return basedirs
+
+    @property
+    def filepath(self):
+        """Return a list of member filepaths.
+
+        Members that can't be found will have filepath ``None``.
+
+        :Returns:
+            *names*
+                list giving the filepath of each member, in order;
+                members that are missing will have filepath ``None``
+
+        """
+        filepaths = list()
+        for member in self._list():
+            if member:
+                filepaths.append(member.filepath)
+            else:
+                filepaths.append(None)
+
+        return filepaths
+
+    @property
     def uuids(self):
         """Return a list of member uuids.
 
@@ -160,7 +200,7 @@ class _CollectionBase(object):
                 list giving the uuid of each member, in order
 
         """
-        return self._backend.get_members_uuid().tolist()
+        return self._backend.get_members_uuid()
 
     def _list(self):
         """Return a list of members.
@@ -280,31 +320,10 @@ class _BundleBackend():
 
     """
     memberpaths = ['abspath']
+    fields = ['uuid', 'treanttype', 'abspath']
 
     def __init__(self):
-        # our table will be a structured array matching the schema of the
-        # GroupFile _Members Table
-        self.table = np.array(
-                [],
-                dtype={'names': ['uuid', 'treanttype', 'abspath'],
-                       'formats': ['a{}'.format(backends.pytables.uuidlength),
-                                   'a{}'.format(backends.pytables.namelength),
-                                   'a{}'.format(backends.pytables.pathlength)]
-                       }).reshape(1, -1)
-
-    def _member2record(self, uuid, treanttype, basedir):
-        """Return a record array from a member's information.
-
-        This method defines the scheme for the Bundle's record array.
-
-        """
-        return np.array(
-                (uuid, treanttype, os.path.abspath(basedir)),
-                dtype={'names': ['uuid', 'treanttype', 'abspath'],
-                       'formats': ['a{}'.format(backends.pytables.uuidlength),
-                                   'a{}'.format(backends.pytables.namelength),
-                                   'a{}'.format(backends.pytables.pathlength)]
-                       }).reshape(1, -1)
+        self.record = list()
 
     def add_member(self, uuid, treanttype, basedir):
         """Add a member to the Bundle.
@@ -321,17 +340,13 @@ class _BundleBackend():
                 basedir of the new member in the filesystem
 
         """
-        if self.table.shape == (1, 0):
-            self.table = self._member2record(uuid, treanttype, basedir)
-        else:
-            # check if uuid already present
-            index = np.where(self.table['uuid'] == uuid)[0]
-            if index.size > 0:
-                # if present, update location
-                self.table[index[0]]['abspath'] = os.path.abspath(basedir)
-            else:
-                newmem = self._member2record(uuid, treanttype, basedir)
-                self.table = np.vstack((self.table, newmem))
+        # check if uuid already present
+        uuids = [member[0] for member in self.record]
+
+        if uuid not in uuids:
+            self.record.append([uuid,
+                                treanttype,
+                                os.path.abspath(basedir)])
 
     def del_member(self, *uuid, **kwargs):
         """Remove a member from the Group.
@@ -348,19 +363,26 @@ class _BundleBackend():
         purge = kwargs.pop('all', False)
 
         if purge:
-            self.__init__()
+            self.record = list()
         else:
             # remove redundant uuids from given list if present
             uuids = set([str(uid) for uid in uuid])
 
-            # remove matching elements
-            matches = list()
-            for uuid in uuids:
-                index = np.where(self.table['uuid'] == uuid)[0]
-                if len(index) != 0:
-                    matches.append(index)
+            # get matching rows
+            # TODO: possibly faster to use table.where
+            memberlist = list()
+            for i, member in enumerate(self.record):
+                for uuid in uuids:
+                    if (member[0] == uuid):
+                        memberlist.append(i)
 
-            self.table = np.delete(self.table, matches, axis=0)
+            memberlist.sort()
+            j = 0
+            # delete matching entries; have to use j to shift the register as
+            # we remove entries
+            for i in memberlist:
+                self.record.pop(i - j)
+                j = j + 1
 
     def get_member(self, uuid):
         """Get all stored information on the specified member.
@@ -377,12 +399,13 @@ class _BundleBackend():
                 a dictionary containing all information stored for the
                 specified member
         """
-        memberinfo = self.table[self.table[uuid] == uuid]
+        memberinfo = None
+        for member in self.record:
+            if member[0] == uuid:
+                memberinfo = member
 
         if memberinfo:
-            memberinfo = {x: memberinfo[x] for x in memberinfo.dtype.names}
-        else:
-            memberinfo = None
+            memberinfo = {x: y for x, y in zip(self.fields, memberinfo)}
 
         return memberinfo
 
@@ -397,10 +420,11 @@ class _BundleBackend():
                 dict giving full member data, with fields as keys and in member
                 order
         """
-        out = dict()
+        out = {key: [] for key in self.fields}
 
-        for key in self.table.dtype.names:
-            out[key] = self.table[key].flatten().tolist()
+        for member in self.record:
+            for i, key in enumerate(self.fields):
+                out[key].append(member[i])
 
         return out
 
@@ -409,27 +433,27 @@ class _BundleBackend():
 
         :Returns:
             *uuids*
-                array giving treanttype of each member, in order
+                list giving treanttype of each member, in order
         """
-        return self.table['uuid'].flatten()
+        return [member[0] for member in self.record]
 
     def get_members_treanttype(self):
         """List treanttype for each member.
 
         :Returns:
             *treanttypes*
-                array giving treanttype of each member, in order
+                list giving treanttype of each member, in order
         """
-        return self.table['treanttype'].flatten()
+        return [member[1] for member in self.record]
 
     def get_members_basedir(self):
         """List basedir for each member.
 
         :Returns:
             *basedirs*
-                structured array containing all paths to member basedirs
+                list containing all paths to member basedirs, in member order
         """
-        return self.table['abspath'].flatten()
+        return [member[2:] for member in self.record]
 
 
 class Bundle(_CollectionBase):

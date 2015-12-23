@@ -1,5 +1,5 @@
 """
-Base classes for serial state files, such as YAML, JSON.
+Interface classes for state files.
 
 """
 
@@ -11,122 +11,21 @@ import logging
 import warnings
 from functools import wraps
 
-import numpy as np
+import json
 
 import datreant
-from .core import File
+from .core import FileSerial
 
 
-class FileSerial(File):
-    def _open_file_r(self):
-        return open(self.filename, 'r')
-
-    def _open_file_w(self):
-        return open(self.filename, 'w')
-
-    @staticmethod
-    def _read(func):
-        """Decorator for opening state file for reading and applying shared
-        lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.fdlock:
-                out = func(self, *args, **kwargs)
-            else:
-                self._open_fd_r()
-                self._shlock(self.fd)
-                self.fdlock = 'shared'
-
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self._unlock(self.fd)
-                    self._close_fd()
-                    self.fdlock = None
-            return out
-
-        return inner
-
-    @staticmethod
-    def _write(func):
-        """Decorator for opening state file for writing and applying exclusive lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method
-        is executed. It also ensures that the lock is removed and the file
-        closed after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.fdlock == 'exclusive':
-                out = func(self, *args, **kwargs)
-            else:
-                self._open_fd_rw()
-                self._exlock(self.fd)
-                self.fdlock = 'exclusive'
-
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self._unlock(self.fd)
-                    self.fdlock = None
-                    self._close_fd()
-            return out
-
-        return inner
-
-    @staticmethod
-    def _pull_push(func):
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            try:
-                self._pull_record()
-            except IOError:
-                self._init_record()
-            out = func(self, *args, **kwargs)
-            self._push_record()
-            return out
-        return inner
-
-    @staticmethod
-    def _pull(func):
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self._pull_record()
-            out = func(self, *args, **kwargs)
-            return out
-        return inner
-
-    def _pull_record(self):
-        self.handle = self._open_file_r()
-        self._record = self._deserialize(self.handle)
-        self.handle.close()
-
+class MixinJSON(object):
     def _deserialize(self, handle):
-        """Deserialize full record from open file handle.
-        """
-        raise NotImplementedError
-
-    def _push_record(self):
-        self.handle = self._open_file_w()
-        self._serialize(self._record, self.handle)
-        self.handle.close()
+        return json.load(handle)
 
     def _serialize(self, record, handle):
-        """Serialize full record to open file handle.
-        """
-        raise NotImplementedError
+        json.dump(record, handle)
 
 
-class TreantFileSerial(FileSerial):
+class TreantFile(MixinJSON, FileSerial):
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Treant state file.
 
@@ -159,7 +58,7 @@ class TreantFileSerial(FileSerial):
         .. Note:: kwargs passed to :meth:`create`
 
         """
-        super(TreantFileSerial, self).__init__(filename, logger=logger)
+        super(FileSerial, self).__init__(filename, logger=logger)
 
         # if file does not exist, it is created; if it does exist, it is
         # updated
@@ -295,12 +194,14 @@ class TreantFileSerial(FileSerial):
 
         :Arguments:
             *tags*
-                Tags to add. Must be convertable to strings using the str()
-                builtin.
+                tags to add; must be single numbers, strings, or boolean
+                values; tags that are not these types are not added
 
         """
         # ensure tags are unique (we don't care about order)
-        tags = set([str(tag) for tag in tags])
+        # also they must be of a certain set of types
+        tags = set([tag for tag in tags
+                    if isinstance(tag, (int, float, str, bool))])
 
         # remove tags already present in metadata from list
         tags = tags.difference(set(self._record['tags']))
@@ -363,12 +264,14 @@ class TreantFileSerial(FileSerial):
 
         :Keywords:
             *categories*
-                Categories to add. Keyword used as key, value used as value.
-                Both must be convertible to strings using the str() builtin.
+                categories to add; keyword used as key, value used as value;
+                values must be single numbers, strings, or boolean values;
+                values that are not these types are not added
 
         """
-        for key in categories.keys():
-            self._record['categories'][key] = str(categories[key])
+        for key, value in categories.items():
+            if isinstance(value, (int, float, str, bool)):
+                self._record['categories'][key] = value
 
     @FileSerial._write
     @FileSerial._pull_push
@@ -397,7 +300,7 @@ class TreantFileSerial(FileSerial):
                 self._record['categories'].pop(key, None)
 
 
-class GroupFileSerial(TreantFileSerial):
+class GroupFile(TreantFile):
     """Main Group state file.
 
     This file contains all the information needed to store the state of a
@@ -428,12 +331,10 @@ class GroupFileSerial(TreantFileSerial):
               user-given list with custom elements; used to give distinguishing
               characteristics to object for search
         """
-        super(GroupFileSerial, self).__init__(filename,
-                                              logger=logger,
-                                              **kwargs)
+        super(GroupFile, self).__init__(filename, logger=logger, **kwargs)
 
     def _init_record(self):
-        super(GroupFileSerial, self)._init_record()
+        super(GroupFile, self)._init_record()
         self._record['members'] = list()
 
     @FileSerial._write
@@ -556,9 +457,9 @@ class GroupFileSerial(TreantFileSerial):
 
         :Returns:
             *uuids*
-                array giving treanttype of each member, in order
+                list giving treanttype of each member, in order
         """
-        return np.array([member[0] for member in self._record['members']])
+        return [member[0] for member in self._record['members']]
 
     @FileSerial._read
     @FileSerial._pull
@@ -567,9 +468,9 @@ class GroupFileSerial(TreantFileSerial):
 
         :Returns:
             *treanttypes*
-                array giving treanttype of each member, in order
+                list giving treanttype of each member, in order
         """
-        return np.array([member[1] for member in self._record['members']])
+        return [member[1] for member in self._record['members']]
 
     @FileSerial._read
     @FileSerial._pull
@@ -578,6 +479,6 @@ class GroupFileSerial(TreantFileSerial):
 
         :Returns:
             *basedirs*
-                structured array containing all paths to member basedirs
+                list containing all paths to member basedirs, in member order
         """
-        return np.array([member[2:] for member in self._record['members']])
+        return [member[2:] for member in self._record['members']]

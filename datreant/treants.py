@@ -10,9 +10,7 @@ import logging
 import functools
 
 import datreant
-from .backends import pytables
-from .backends import pyjson
-from .backends import pyyaml
+from .backends import statefiles
 from . import limbs
 from . import filesystem
 from . import collections
@@ -49,12 +47,10 @@ class Treant(object):
     """
     # required components
     _treanttype = 'Treant'
-    _backends = {'pytables': ['.h5', pytables.TreantFileHDF5],
-                 'json': ['.json', pyjson.TreantFileJSON],
-                 'pyyaml': ['.yml', pyyaml.TreantFileYAML]}
+    _backendclass = statefiles.TreantFile
 
     def __init__(self, treant, new=False, coordinator=None,
-                 categories=None, tags=None, backend='json'):
+                 categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Treant object.
 
         :Required arguments:
@@ -81,14 +77,10 @@ class Treant(object):
             *tags*
                 list with user-defined values; like categories, but useful for
                 adding many distinguishing descriptors
-            *backend*
-                backend to use for a new state file; only 'pytables' available;
-                not used for object regeneration
-
         """
         if new:
             self._generate(treant, coordinator=coordinator,
-                           categories=categories, tags=tags, backend=backend)
+                           categories=categories, tags=tags)
         else:
             try:
                 self._regenerate(treant,
@@ -97,7 +89,7 @@ class Treant(object):
             except NoTreantsError:
                 self._generate(treant,
                                coordinator=coordinator, categories=categories,
-                               tags=tags, backend=backend)
+                               tags=tags)
 
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
@@ -130,8 +122,7 @@ class Treant(object):
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
-    def _generate(self, treant, coordinator=None, categories=None, tags=None,
-                  backend='pytables'):
+    def _generate(self, treant, coordinator=None, categories=None, tags=None):
         """Generate new Treant object.
 
         """
@@ -153,8 +144,7 @@ class Treant(object):
             else:
                 raise
 
-        filename = filesystem.statefilename(self._treanttype, str(uuid4()),
-                                            self._backends[backend][0])
+        filename = filesystem.statefilename(self._treanttype, str(uuid4()))
 
         statefile = os.path.join(treant, filename)
         self._start_logger(self._treanttype, treant)
@@ -293,8 +283,7 @@ class Treant(object):
         newdir = os.path.join(os.path.dirname(olddir), name)
         statefile = os.path.join(newdir,
                                  filesystem.statefilename(
-                                     self._treanttype, self.uuid,
-                                     self._backends[self.backend[0]][0]))
+                                     self._treanttype, self.uuid))
 
         os.rename(olddir, newdir)
         self._regenerate(statefile)
@@ -321,24 +310,6 @@ class Treant(object):
                 unique identifier string for this Treant
         """
         return os.path.basename(self._backend.filename).split('.')[1]
-
-    @property
-    def backend(self):
-        """Get Treant backend type and class.
-
-        A Treant stores its state in a persistent backend. The type of backend
-        is chosen on creation of the Treant.
-
-        :Returns:
-            *backend*
-                tuple giving the backend type and class
-        """
-        ext = os.path.splitext(self._backend.filename)[-1]
-        for backend in self._backends:
-            if ext == self._backends[backend][0]:
-                out = (backend, self._backends[backend][1])
-
-        return out
 
     @property
     def treanttype(self):
@@ -372,8 +343,7 @@ class Treant(object):
         newpath = os.path.join(value, self.name)
         statefile = os.path.join(newpath,
                                  filesystem.statefilename(
-                                     self._treanttype, self.uuid,
-                                     self._backends[self.backend[0]][0]))
+                                     self._treanttype, self.uuid))
         os.rename(oldpath, newpath)
         self._regenerate(statefile)
 
@@ -451,8 +421,7 @@ class Treant(object):
         olddir = os.path.dirname(self._backend.filename)
         newfile = os.path.join(olddir,
                                filesystem.statefilename(
-                                   self._treanttype, uuid,
-                                   self._backends[self.backend[0]][0]))
+                                   self._treanttype, uuid))
         os.rename(oldfile, newfile)
         self._regenerate(newfile)
 
@@ -463,9 +432,7 @@ class Group(Treant):
     """
     # required components
     _treanttype = 'Group'
-    _backends = {'pytables': ['.h5', pytables.GroupFileHDF5],
-                 'json': ['.json', pyjson.GroupFileJSON],
-                 'pyyaml': ['.yml', pyyaml.GroupFileYAML]}
+    _backendclass = statefiles.GroupFile
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())
