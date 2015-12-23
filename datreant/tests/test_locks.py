@@ -2,7 +2,6 @@
 
 """
 
-import random
 import string
 import multiprocessing as mp
 import time
@@ -17,11 +16,6 @@ def pokefile(treantfileclass, treantfilepath, string):
     """Add a number of tags directly to a TreantFile."""
     treantfile = treantfileclass(treantfilepath)
     treantfile.add_tags(*["{}_{}".format(string, i) for i in range(100)])
-
-
-def append(treantfilepath, df):
-    treant = dtr.Treant(treantfilepath)
-    treant.data.append('testdata', df)
 
 
 def init_treant(tmpdir, tags):

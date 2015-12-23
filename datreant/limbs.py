@@ -255,7 +255,6 @@ class Members(Limb, collections.CollectionBase):
     def _placeholders(self):
         # member cache
         self._cache = dict()
-        self._data = None
 
     def __repr__(self):
         return "<Members({})>".format(self._list())

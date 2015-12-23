@@ -482,7 +482,6 @@ class Bundle(CollectionBase):
         """
         self._backend = _BundleBackend()
         self._cache = dict()
-        self._data = None
 
         self.add(*treants)
 
