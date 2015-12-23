@@ -15,7 +15,7 @@ from datreant import filesystem
 import datreant.treants
 
 
-class _CollectionBase(object):
+class CollectionBase(object):
     """Common interface elements for ordered sets of Treants.
 
     :class:`datreant.limbs.Members` and :class:`Bundle` both use this
@@ -24,6 +24,21 @@ class _CollectionBase(object):
     """
     def __len__(self):
         return len(self._list())
+
+    @classmethod
+    def _attach_limb(cls, limb):
+        """Attach a limb to the class, or to self if an instance.
+
+        """
+        # property definition
+        def getter(self):
+            if not hasattr(self, "_"+limb._name):
+                setattr(self, "_"+limb._name, limb(self))
+            return getattr(self, "_"+limb._name)
+
+        # set the property
+        setattr(cls, limb._name,
+                property(getter, None, None, limb.__doc__))
 
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
@@ -40,8 +55,8 @@ class _CollectionBase(object):
         """Addition of collections with collections or treants yields Bundle.
 
         """
-        if (isinstance(a, (datreant.treants.Treant, _CollectionBase)) and
-                isinstance(b, (datreant.treants.Treant, _CollectionBase))):
+        if (isinstance(a, (datreant.treants.Treant, CollectionBase)) and
+                isinstance(b, (datreant.treants.Treant, CollectionBase))):
             return Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
@@ -64,7 +79,7 @@ class _CollectionBase(object):
             if treant is None:
                 pass
             elif isinstance(treant,
-                            (list, tuple, _CollectionBase)):
+                            (list, tuple, CollectionBase)):
                 self.add(*treant)
             elif isinstance(treant, Treant):
                 outconts.append(treant)
@@ -251,16 +266,6 @@ class _CollectionBase(object):
             memberlist[list(uuids).index(uuid)] = result
 
         return memberlist
-
-    @property
-    def data(self):
-        """Access the data of each member, collectively.
-
-        """
-        from .limbs import MemberData
-        if not self._data:
-            self._data = MemberData(self)
-        return self._data
 
     def map(self, function, processes=1, **kwargs):
         """Apply a function to each member, perhaps in parallel.
@@ -456,7 +461,7 @@ class _BundleBackend():
         return [member[2:] for member in self.record]
 
 
-class Bundle(_CollectionBase):
+class Bundle(CollectionBase):
     """Non-persistent collection of treants.
 
     A Bundle is basically an indexable set. It is often used to return the

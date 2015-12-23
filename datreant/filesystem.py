@@ -9,7 +9,7 @@ import time
 
 import scandir
 
-from datreant import backends
+from . import backends
 import datreant
 
 

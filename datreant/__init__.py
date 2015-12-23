@@ -12,13 +12,10 @@ datreant --- a persistence engine for heterogeneous data sets
 
 """
 # Bring some often used objects into the current namespace
-from datreant.treants import Treant, Group, register
-from datreant.coordinator import Coordinator
-from datreant.collections import Bundle
-from datreant.manipulators import *
-import datreant.backends
-import datreant.limbs
-import datreant.data
+from .treants import Treant, Group, register
+from .collections import Bundle
+from .manipulators import *
+from . import attach
 
 __all__ = ['Treant', 'Group', 'Coordinator', 'Bundle']
 __version__ = "0.6.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
