@@ -16,17 +16,9 @@ setup(name='datreant',
       packages=[
           'datreant',
           'datreant.backends',
-          'datreant.data',
           'datreant.tests'],
       scripts=[],
       license='BSD',
       long_description=open('README.rst').read(),
-      install_requires=[
-          'numpy',
-          'pandas',
-          'tables',
-          'h5py',
-          'scandir',
-          'PyYAML'
-          ]
+      install_requires=['scandir', 'six']
       )

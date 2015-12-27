@@ -10,6 +10,8 @@ import multiprocessing as mp
 import glob
 import fnmatch
 
+from six import string_types
+
 from datreant import backends
 from datreant import filesystem
 import datreant.treants
@@ -121,7 +123,7 @@ class CollectionBase(object):
                     remove.append(uuids[member])
                 elif isinstance(member, Treant):
                     remove.append(member.uuid)
-                elif isinstance(member, basestring):
+                elif isinstance(member, string_types):
                     names = fnmatch.filter(self.names, member)
                     uuids = [member.uuid for member in self
                              if (member.name in names)]
