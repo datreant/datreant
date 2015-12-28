@@ -17,12 +17,11 @@ class Limb(object):
     """Core functionality for information limbs.
 
     """
+    # name used when attached to a Treant's namespace
+    _name = 'limb'
 
     def __init__(self, treant):
         self._treant = treant
-        self._backend = treant._backend
-        self._logger = treant._logger
-
         self._placeholders()
 
     def _placeholders(self):
@@ -30,6 +29,14 @@ class Limb(object):
 
         """
         pass
+
+    @property
+    def _backend(self):
+        return self._treant._backend
+
+    @property
+    def _logger(self):
+        return self._treant._logger
 
 
 class Tags(Limb):

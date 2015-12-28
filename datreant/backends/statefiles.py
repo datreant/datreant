@@ -167,7 +167,8 @@ class TreantFile(MixinJSON, FileSerial):
         # ensure tags are unique (we don't care about order)
         # also they must be of a certain set of types
         tags = set([tag for tag in tags
-                    if isinstance(tag, (int, float, str, bool))])
+                    if (isinstance(tag, (int, float, string_types, bool)) or
+                        tag is None)])
 
         # remove tags already present in metadata from list
         tags = tags.difference(set(self._record['tags']))
@@ -236,7 +237,8 @@ class TreantFile(MixinJSON, FileSerial):
 
         """
         for key, value in categories.items():
-            if isinstance(value, (int, float, string_types, bool)):
+            if (isinstance(value, (int, float, string_types, bool)) or
+                    value is None):
                 self._record['categories'][key] = value
 
     @FileSerial._write
