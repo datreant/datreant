@@ -17,7 +17,7 @@ from .collections import Bundle
 from .manipulators import *
 from . import attach
 
-__all__ = ['Treant', 'Group', 'Coordinator', 'Bundle']
+__all__ = ['Treant', 'Group', 'Bundle']
 __version__ = "0.6.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
 
 _treants = dict()

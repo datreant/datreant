@@ -1,7 +1,7 @@
 """
-The Bundle object is the primary manipulator for Treants in aggregate.
-They are returned as queries to Groups, Coordinators, and other Bundles. They
-offer convenience methods for dealing with many Treants at once.
+The Bundle object is the primary manipulator for Treants in aggregate. They are
+returned as queries to Groups and other Bundles. They offer convenience methods
+for dealing with many Treants at once.
 
 """
 import os
@@ -467,8 +467,7 @@ class Bundle(CollectionBase):
     """Non-persistent collection of treants.
 
     A Bundle is basically an indexable set. It is often used to return the
-    results of a query on a Coordinator or a Group, but can be used on its
-    own as well.
+    results of a query on a  Group, but can be used on its own as well.
 
     """
 

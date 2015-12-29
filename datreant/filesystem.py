@@ -95,7 +95,7 @@ class Foxhound(object):
     TreantFiles use this class to find their file on disk when it moves.
 
     """
-    def __init__(self, caller, uuids, basedirs, coordinators=None, timeout=10):
+    def __init__(self, caller, uuids, basedirs, timeout=10):
         """Generate a Foxhound to track down Treants.
 
         :Arguments:
@@ -107,12 +107,9 @@ class Foxhound(object):
                 list of unique identifiers of Treants to find
             *basedirs*
                 dict of basedirs to start searching around; keys may be
-                'abspath' or 'relCont', and values should be lists of paths
+                'abs' or 'rel', and values should be lists of paths
 
         :Keywords:
-            *coordinators*
-                list of Coordinators to consult; if ``None``, involve no
-                Coordinators
             *timeout*
                 maximum time, in seconds, the Foxhound will spend fetching.
 
@@ -120,7 +117,6 @@ class Foxhound(object):
         self.caller = caller
         self.uuids = uuids
         self.basedirs = basedirs
-        self.coordinators = coordinators
 
         self.timeout = timeout
 
@@ -170,12 +166,12 @@ class Foxhound(object):
         outpaths = {x: y for x, y in zip(self.uuids, [None]*len(self.uuids))}
 
         uuids = [x for x in outpaths if not outpaths[x]]
-        if 'abspath' in self.basedirs:
-            for path in self.basedirs['abspath']:
+        if 'abs' in self.basedirs:
+            for path in self.basedirs['abs']:
                 found = []
                 for uuid in uuids:
                     candidate = glob.glob(
-                            os.path.join(path, '*.{}.*'.format(uuid)))
+                            os.path.join(path, '*.{}.json'.format(uuid)))
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
@@ -184,15 +180,15 @@ class Foxhound(object):
                 for item in found:
                     uuids.remove(item)
 
-        if 'relCont' in self.basedirs:
+        if 'rel' in self.basedirs:
             # get uuids for which paths haven't been found
-            for path in self.basedirs['relCont']:
+            for path in self.basedirs['rel']:
                 found = []
                 for uuid in uuids:
                     candidate = glob.glob(
                             os.path.join(
                                 self.caller._backend.get_location(),
-                                path, '*.{}.*'.format(uuid)))
+                                path, '*.{}.json'.format(uuid)))
 
                     if candidate:
                         outpaths[uuid] = os.path.abspath(candidate[0])
@@ -214,9 +210,6 @@ class Foxhound(object):
         pass
 
     def _outward_search(self, path):
-        pass
-
-    def _consult_Coordinators(self):
         pass
 
     def _find_TreantFile(self):
@@ -368,57 +361,5 @@ class Foxhound(object):
 
         return outpaths
 
-    def _find_Coordinator_members(self):
-        pass
-
     def discover(self, path):
         pass
-
-    # OLD
-    def _locate_database(self, **kwargs):
-        """Find database; to be used if it can't be found.
-
-        The Treant looks upward from its location on the filesystem through
-        the file heirarchy, looking for a Database file. The directory
-        containing the first such file found will be returned. None is returned
-        if no such files found.
-
-        :Keywords:
-            *startdir*
-                directory from which to begin upward search; default is
-                Treant basedir
-
-        :Returns:
-            *database*
-                directory of located Database; if no Database found, is None
-
-        """
-        startdir = kwargs.pop('startdir', None)
-
-        if not startdir:
-            startdir = self.metadata['basedir']
-
-        # search upward for a database
-        startdir = os.path.abspath(startdir)
-        directory = startdir
-        found = False
-
-        self._logger.info(
-            "Beginning search for database from {}".format(directory))
-
-        while (directory != '/') and (not found):
-            directory, tail = os.path.split(directory)
-            candidates = glob.glob(os.path.join(directory, self._databasefile))
-
-            if candidates:
-                self._logger.info(
-                    "Database candidate located: {}".format(candidates[0]))
-                basedir = os.path.dirname(candidates[0])
-                db = Database.Database(basedir)
-                found = db._handshake()
-
-        if not found:
-            self._logger.warning("No database found!")
-            basedir = None
-
-        return basedir
