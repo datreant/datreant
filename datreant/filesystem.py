@@ -17,7 +17,7 @@ def statefilename(treanttype, uuid):
     """Return state file name given the type of treant and its uuid.
 
     """
-    return "{}.{}{}".format(treanttype, uuid, '.json')
+    return "{}.{}.{}".format(treanttype, uuid, 'json')
 
 
 def glob_treant(treant):
@@ -40,7 +40,7 @@ def glob_treant(treant):
         fileglob.extend(
             glob.glob(os.path.join(
                 treant,
-                '{}.*{}'.format(treanttype, '.json'))))
+                '{}.*.{}'.format(treanttype, 'json'))))
 
     paths = [os.path.abspath(x) for x in fileglob]
     return paths

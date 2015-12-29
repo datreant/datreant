@@ -326,8 +326,8 @@ class _BundleBackend():
     Bundle.
 
     """
-    memberpaths = ['abspath']
-    fields = ['uuid', 'treanttype', 'abspath']
+    memberpaths = ['abs']
+    fields = ['uuid', 'treanttype', 'abs']
 
     def __init__(self):
         self.record = list()
