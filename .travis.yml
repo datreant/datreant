@@ -1,13 +1,12 @@
 language: python
 sudo: false
 
-addons:
-  apt:
-    packages:
-    - libhdf5-serial-dev
-
 python:
+  - "2.6"
   - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
 
 # whitelist
 branches:
