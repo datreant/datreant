@@ -267,10 +267,10 @@ class TestReadOnly:
         with tmpdir.as_cwd():
             c = dtr.treants.Treant('testtreant')
             c.tags.add('72')
-            py.path.local(c.basedir).chmod(0550, rec=True)
+            py.path.local(c.basedir).chmod(0o0550, rec=True)
 
         def fin():
-            py.path.local(c.basedir).chmod(0770, rec=True)
+            py.path.local(c.basedir).chmod(0o0770, rec=True)
 
         request.addfinalizer(fin)
 
@@ -281,10 +281,10 @@ class TestReadOnly:
         with tmpdir.as_cwd():
             c = dtr.Group('testgroup')
             c.members.add(dtr.Treant('lark'), dtr.Group('bark'))
-            py.path.local(c.basedir).chmod(0550, rec=True)
+            py.path.local(c.basedir).chmod(0o0550, rec=True)
 
         def fin():
-            py.path.local(c.basedir).chmod(0770, rec=True)
+            py.path.local(c.basedir).chmod(0o0770, rec=True)
 
         request.addfinalizer(fin)
 
