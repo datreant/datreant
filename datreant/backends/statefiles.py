@@ -4,14 +4,11 @@ Interface classes for state files.
 """
 
 import os
-import sys
-import fcntl
-import pickle
-import logging
 import warnings
-from functools import wraps
-
 import json
+
+from six import string_types
+from six.moves import zip
 
 import datreant
 from .core import FileSerial
@@ -44,8 +41,6 @@ class TreantFile(MixinJSON, FileSerial):
                 Treant type
             *name*
                 user-given name of Treant object
-            *coordinator*
-                directory in which coordinator state file can be found [None]
             *categories*
                 user-given dictionary with custom keys and values; used to
                 give distinguishing characteristics to object for search
@@ -84,8 +79,6 @@ class TreantFile(MixinJSON, FileSerial):
         :Keywords:
             *name*
                 user-given name of Treant object
-            *coordinator*
-                directory in which coordinator state file can be found [None]
             *categories*
                 user-given dictionary with custom keys and values; used to
                 give distinguishing characteristics to object for search
@@ -98,9 +91,6 @@ class TreantFile(MixinJSON, FileSerial):
         # update schema and version of file
         version = self.update_schema()
         self.update_version(version)
-
-        # coordinator table
-        self.update_coordinator(kwargs.pop('coordinator', None))
 
         # tags table
         tags = kwargs.pop('tags', list())
@@ -152,29 +142,6 @@ class TreantFile(MixinJSON, FileSerial):
 
     @FileSerial._read
     @FileSerial._pull
-    def get_coordinator(self):
-        """Get absolute path to Coordinator.
-
-        :Returns:
-            *coordinator*
-                absolute path to Coordinator directory
-
-        """
-        return self._record['coordinator']
-
-    @FileSerial._write
-    @FileSerial._pull_push
-    def update_coordinator(self, coordinator):
-        """Update Treant location.
-
-        :Arguments:
-            *coordinator*
-                absolute path to Coordinator directory
-        """
-        self._record['coordinator'] = coordinator
-
-    @FileSerial._read
-    @FileSerial._pull
     def get_tags(self):
         """Get all tags as a list.
 
@@ -201,7 +168,8 @@ class TreantFile(MixinJSON, FileSerial):
         # ensure tags are unique (we don't care about order)
         # also they must be of a certain set of types
         tags = set([tag for tag in tags
-                    if isinstance(tag, (int, float, str, bool))])
+                    if (isinstance(tag, (int, float, string_types, bool)) or
+                        tag is None)])
 
         # remove tags already present in metadata from list
         tags = tags.difference(set(self._record['tags']))
@@ -270,7 +238,8 @@ class TreantFile(MixinJSON, FileSerial):
 
         """
         for key, value in categories.items():
-            if isinstance(value, (int, float, str, bool)):
+            if (isinstance(value, (int, float, string_types, bool)) or
+                    value is None):
                 self._record['categories'][key] = value
 
     @FileSerial._write
@@ -309,8 +278,8 @@ class GroupFile(TreantFile):
 
     """
     # add new paths to include them in member searches
-    memberpaths = ['abspath', 'relCont']
-    _fields = ['uuid', 'treanttype', 'abspath', 'relCont']
+    memberpaths = ['abs', 'rel']
+    _fields = ['uuid', 'treanttype', 'abs', 'rel']
 
     def __init__(self, filename, logger=None, **kwargs):
         """Initialize Group state file.
@@ -320,10 +289,6 @@ class GroupFile(TreantFile):
               path to file
            *logger*
               logger to send warnings and errors to
-
-        :Keywords:
-           *coordinator*
-              directory in which coordinator state file can be found [None]
            *categories*
               user-given dictionary with custom keys and values; used to
               give distinguishing characteristics to object for search
