@@ -6,6 +6,7 @@ Interface classes for state files.
 import os
 import warnings
 import json
+from collections import defaultdict
 
 from six import string_types
 from six.moves import zip
@@ -407,7 +408,7 @@ class GroupFile(TreantFile):
                 dict giving full member data, with fields as keys and in member
                 order
         """
-        out = {key: [] for key in self._fields}
+        out = defaultdict(list)
 
         for member in self._record['members']:
             for i, key in enumerate(self._fields):

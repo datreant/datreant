@@ -4,7 +4,11 @@ They are returned as queries to Groups, Coordinators, and other Bundles. They
 offer convenience methods for dealing with many Treants at once.
 
 """
+
+from __future__ import absolute_import
+
 import os
+from collections import namedtuple, defaultdict
 
 import multiprocessing as mp
 import glob
@@ -205,7 +209,8 @@ class _CollectionBase(object):
     def _list(self):
         """Return a list of members.
 
-        Note: modifications of this list won't modify the members of the Group!
+        Note: modifications of this list won't modify the members of the
+        collection!
 
         Missing members will be present in the list as ``None``. This method is
         not intended for user-level use.
@@ -322,6 +327,8 @@ class _BundleBackend():
     memberpaths = ['abspath']
     fields = ['uuid', 'treanttype', 'abspath']
 
+    Member = namedtuple('Member', fields)
+
     def __init__(self):
         self.record = list()
 
@@ -341,12 +348,13 @@ class _BundleBackend():
 
         """
         # check if uuid already present
-        uuids = [member[0] for member in self.record]
+        uuids = [member.uuid for member in self.record]
 
         if uuid not in uuids:
-            self.record.append([uuid,
-                                treanttype,
-                                os.path.abspath(basedir)])
+            self.record.append(
+                    self.Member(uuid=uuid,
+                                treanttype=treanttype,
+                                abspath=os.path.abspath(basedir)))
 
     def del_member(self, *uuid, **kwargs):
         """Remove a member from the Group.
@@ -373,7 +381,7 @@ class _BundleBackend():
             memberlist = list()
             for i, member in enumerate(self.record):
                 for uuid in uuids:
-                    if (member[0] == uuid):
+                    if (member.uuid == uuid):
                         memberlist.append(i)
 
             memberlist.sort()
@@ -401,7 +409,7 @@ class _BundleBackend():
         """
         memberinfo = None
         for member in self.record:
-            if member[0] == uuid:
+            if member.uuid == uuid:
                 memberinfo = member
 
         if memberinfo:
@@ -420,11 +428,11 @@ class _BundleBackend():
                 dict giving full member data, with fields as keys and in member
                 order
         """
-        out = {key: [] for key in self.fields}
+        out = defaultdict(list)
 
         for member in self.record:
-            for i, key in enumerate(self.fields):
-                out[key].append(member[i])
+            for key in self.fields:
+                out[key].append(getattr(member, key))
 
         return out
 
@@ -435,7 +443,7 @@ class _BundleBackend():
             *uuids*
                 list giving treanttype of each member, in order
         """
-        return [member[0] for member in self.record]
+        return [member.uuid for member in self.record]
 
     def get_members_treanttype(self):
         """List treanttype for each member.
@@ -444,7 +452,7 @@ class _BundleBackend():
             *treanttypes*
                 list giving treanttype of each member, in order
         """
-        return [member[1] for member in self.record]
+        return [member.treanttype for member in self.record]
 
     def get_members_basedir(self):
         """List basedir for each member.
@@ -453,7 +461,7 @@ class _BundleBackend():
             *basedirs*
                 list containing all paths to member basedirs, in member order
         """
-        return [member[2:] for member in self.record]
+        return [member.abspath for member in self.record]
 
 
 class Bundle(_CollectionBase):
