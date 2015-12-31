@@ -91,9 +91,6 @@ class Treant(object):
                                coordinator=coordinator, categories=categories,
                                tags=tags)
 
-        # any other init for this class of Treant
-        self._init_hook()
-
     @classmethod
     def _attach_limb(cls, limb):
         """Attach a limb to the class, or to self if an instance.
@@ -266,13 +263,6 @@ class Treant(object):
                 pass
             else:
                 raise
-
-    def _init_hook(self):
-        """Perform any Treant-specific init tasks. For subclasses in other
-        packages.
-
-        """
-        pass
 
     @property
     def name(self):
