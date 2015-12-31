@@ -216,6 +216,30 @@ class File(object):
         os.close(self.fd)
         self.fd = None
 
+    def _apply_shared_lock(self):
+        """Apply shared lock.
+
+        """
+        self._open_fd_r()
+        self._shlock(self.fd)
+        self.fdlock = 'shared'
+
+    def _apply_exclusive_lock(self):
+        """Apply exclusive lock.
+
+        """
+        self._open_fd_rw()
+        self._exlock(self.fd)
+        self.fdlock = 'exclusive'
+
+    def _release_lock(self):
+        """Apply exclusive lock.
+
+        """
+        self._unlock(self.fd)
+        self._close_fd()
+        self.fdlock = None
+
     @staticmethod
     def _read(func):
         """Decorator for opening state file for reading and applying shared
@@ -232,9 +256,7 @@ class File(object):
             if self.fdlock:
                 out = func(self, *args, **kwargs)
             else:
-                self._open_fd_r()
-                self._shlock(self.fd)
-                self.fdlock = 'shared'
+                self._apply_shared_lock()
 
                 # open the file using the actual reader
                 self.handle = self._open_file_r()
@@ -242,9 +264,7 @@ class File(object):
                     out = func(self, *args, **kwargs)
                 finally:
                     self.handle.close()
-                    self._unlock(self.fd)
-                    self._close_fd()
-                    self.fdlock = None
+                    self._release_lock()
             return out
 
         return inner
@@ -264,9 +284,7 @@ class File(object):
             if self.fdlock == 'exclusive':
                 out = func(self, *args, **kwargs)
             else:
-                self._open_fd_rw()
-                self._exlock(self.fd)
-                self.fdlock = 'exclusive'
+                self._apply_exclusive_lock()
 
                 # open the file using the actual writer
                 self.handle = self._open_file_w()
@@ -274,9 +292,7 @@ class File(object):
                     out = func(self, *args, **kwargs)
                 finally:
                     self.handle.close()
-                    self._unlock(self.fd)
-                    self.fdlock = None
-                    self._close_fd()
+                    self._release_lock()
             return out
 
         return inner
@@ -325,15 +341,25 @@ class FileSerial(File):
     def _open_file_w(self):
         return open(self.filename, 'w')
 
+    def read_file(self):
+        """Return deserialized representation of file.
+
+        """
+        self._apply_shared_lock()
+
+        self.handle = self._open_file_r()
+        out = self._deserialize(self.handle)
+        self.handle.close()
+
+        self._release_lock()
+
     @staticmethod
     def _read(func):
-        """Decorator for opening state file for reading and applying shared
-        lock.
+        """Decorator for applying shared lock on file.
 
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
+        Applying this decorator to a method will ensure a shared lock is
+        obtained before that method is executed. It also ensures that the lock
+        is removed after the method returns.
 
         """
         @wraps(func)
@@ -341,28 +367,22 @@ class FileSerial(File):
             if self.fdlock:
                 out = func(self, *args, **kwargs)
             else:
-                self._open_fd_r()
-                self._shlock(self.fd)
-                self.fdlock = 'shared'
-
+                self._apply_shared_lock()
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
-                    self._unlock(self.fd)
-                    self._close_fd()
-                    self.fdlock = None
+                    self._release_lock()
             return out
 
         return inner
 
     @staticmethod
     def _write(func):
-        """Decorator for opening state file for writing and applying exclusive lock.
+        """Decorator for applying an exclusive lock on file.
 
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method
-        is executed. It also ensures that the lock is removed and the file
-        closed after the method returns.
+        Applying this decorator to a method will ensure an exclusive lock is
+        obtained before that method is executed. It also ensures that the lock
+        is removed after the method returns.
 
         """
         @wraps(func)
@@ -370,22 +390,28 @@ class FileSerial(File):
             if self.fdlock == 'exclusive':
                 out = func(self, *args, **kwargs)
             else:
-                self._open_fd_rw()
-                self._exlock(self.fd)
-                self.fdlock = 'exclusive'
-
+                self._apply_exclusive_lock()
                 try:
                     out = func(self, *args, **kwargs)
                 finally:
-                    self._unlock(self.fd)
-                    self.fdlock = None
-                    self._close_fd()
+                    self._release_lock()
             return out
 
         return inner
 
     @staticmethod
     def _pull_push(func):
+        """Decorator for deserializing the contents of file, then reserializing.
+
+        Applying this decorator to a method will ensure the latest version of
+        the data is obtained before that method is executed. It also ensures
+        that changes to the data are written to the file after the method
+        returns.
+
+        This decorator doesn't do any file locking, but should be used after
+        getting an exclusive lock.
+
+        """
         @wraps(func)
         def inner(self, *args, **kwargs):
             try:
@@ -399,6 +425,16 @@ class FileSerial(File):
 
     @staticmethod
     def _pull(func):
+        """Decorator for deserializing the contents of file.
+
+        Applying this decorator to a method will ensure the latest version of
+        the data is obtained before that method is executed. It does *not*
+        write changes to the data to the file after the method returns.
+
+        This decorator doesn't do any file locking, but should be used after
+        getting a shared lock.
+
+        """
         @wraps(func)
         def inner(self, *args, **kwargs):
             self._pull_record()
@@ -413,6 +449,8 @@ class FileSerial(File):
 
     def _deserialize(self, handle):
         """Deserialize full record from open file handle.
+
+        Override with specific code for deserializing stream from *handle*.
         """
         raise NotImplementedError
 
@@ -423,5 +461,7 @@ class FileSerial(File):
 
     def _serialize(self, record, handle):
         """Serialize full record to open file handle.
+
+        Override with specific code for serializing *record* to *handle*.
         """
         raise NotImplementedError

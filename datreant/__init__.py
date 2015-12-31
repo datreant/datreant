@@ -14,7 +14,6 @@ datreant --- a persistence engine for heterogeneous data sets
 # Bring some often used objects into the current namespace
 from .treants import Treant, Group, register
 from .collections import Bundle
-from .manipulators import *
 from . import attach
 
 __all__ = ['Treant', 'Group', 'Bundle']
