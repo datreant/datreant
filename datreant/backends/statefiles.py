@@ -24,36 +24,36 @@ class MixinJSON(object):
 
 
 class TreantFile(MixinJSON, FileSerial):
+    """Treant state file.
+
+    This is the base class for all Treant state files. It generates data
+    structure elements common to all Treants. It also implements low-level
+    I/O functionality.
+
+    :Arguments:
+        *filename*
+            path to file
+        *logger*
+            Treant's logger instance
+
+    :Keywords:
+        *treanttype*
+            Treant type
+        *name*
+            user-given name of Treant object
+        *categories*
+            user-given dictionary with custom keys and values; used to
+            give distinguishing characteristics to object for search
+        *tags*
+            user-given list with custom elements; used to give
+            distinguishing characteristics to object for search
+        *version*
+            version of datreant file was generated with
+
+    .. Note:: kwargs passed to :meth:`create`
+
+    """
     def __init__(self, filename, logger=None, **kwargs):
-        """Initialize Treant state file.
-
-        This is the base class for all Treant state files. It generates data
-        structure elements common to all Treants. It also implements
-        low-level I/O functionality.
-
-        :Arguments:
-            *filename*
-                path to file
-            *logger*
-                Treant's logger instance
-
-        :Keywords:
-            *treanttype*
-                Treant type
-            *name*
-                user-given name of Treant object
-            *categories*
-                user-given dictionary with custom keys and values; used to
-                give distinguishing characteristics to object for search
-            *tags*
-                user-given list with custom elements; used to give
-                distinguishing characteristics to object for search
-            *version*
-                version of datreant file was generated with
-
-        .. Note:: kwargs passed to :meth:`create`
-
-        """
         super(FileSerial, self).__init__(filename, logger=logger)
 
         # if file does not exist, it is created; if it does exist, it is
@@ -78,16 +78,12 @@ class TreantFile(MixinJSON, FileSerial):
         """Build state file and common data structure elements.
 
         :Keywords:
-            *name*
-                user-given name of Treant object
             *categories*
                 user-given dictionary with custom keys and values; used to
                 give distinguishing characteristics to object for search
             *tags*
                 user-given list with custom elements; used to give
                 distinguishing characteristics to object for search
-            *version*
-                version of datreant file was generated with
         """
         # update schema and version of file
         version = self.update_schema()
@@ -180,26 +176,19 @@ class TreantFile(MixinJSON, FileSerial):
 
     @FileSerial._write
     @FileSerial._pull_push
-    def del_tags(self, *tags, **kwargs):
+    def del_tags(self, tags=None, all=False):
         """Delete tags from Treant.
-
-        Any number of tags can be given as arguments, and these will be
-        deleted.
 
         :Arguments:
             *tags*
-                Tags to delete.
-
-        :Keywords:
+                An iterable of tags to delete.
             *all*
                 When True, delete all tags [``False``]
 
         """
-        purge = kwargs.pop('all', False)
-
-        if purge:
+        if all:
             self._record['tags'] = list()
-        else:
+        elif tags:
             # remove redundant tags from given list if present
             tags = set([str(tag) for tag in tags])
             for tag in tags:
@@ -245,59 +234,48 @@ class TreantFile(MixinJSON, FileSerial):
 
     @FileSerial._write
     @FileSerial._pull_push
-    def del_categories(self, *categories, **kwargs):
+    def del_categories(self, categories=None, all=False):
         """Delete categories from Treant.
-
-        Any number of categories (keys) can be given as arguments, and these
-        keys (with their values) will be deleted.
 
         :Arguments:
             *categories*
-                Categories to delete.
-
-        :Keywords:
+                Iterable of category keys to delete.
             *all*
                 When True, delete all categories [``False``]
 
         """
-        purge = kwargs.pop('all', False)
-
-        if purge:
+        if all:
             self._record['categories'] = dict()
-        else:
+        elif categories:
             for key in categories:
                 # continue even if key not already present
                 self._record['categories'].pop(key, None)
 
 
 class GroupFile(TreantFile):
-    """Main Group state file.
+    """Group state file.
 
-    This file contains all the information needed to store the state of a
-    Group object. It includes accessors, setters, and modifiers for all
-    elements of the data structure, as well as the data structure definition.
+    This is the interface class for Group state files. It generates data
+    structure elements for storing information on other Treants as Group
+    members.
+
+    :Arguments:
+       *filename*
+          path to file
+       *logger*
+          logger to send warnings and errors to
+       *categories*
+          user-given dictionary with custom keys and values; used to
+          give distinguishing characteristics to object for search
+       *tags*
+          user-given list with custom elements; used to give distinguishing
+          characteristics to object for search
 
     """
     # add new paths to include them in member searches
-    memberpaths = ['abs', 'rel']
-    _fields = ['uuid', 'treanttype', 'abs', 'rel']
-
-    def __init__(self, filename, logger=None, **kwargs):
-        """Initialize Group state file.
-
-        :Arguments:
-           *filename*
-              path to file
-           *logger*
-              logger to send warnings and errors to
-           *categories*
-              user-given dictionary with custom keys and values; used to
-              give distinguishing characteristics to object for search
-           *tags*
-              user-given list with custom elements; used to give distinguishing
-              characteristics to object for search
-        """
-        super(GroupFile, self).__init__(filename, logger=logger, **kwargs)
+    memberpaths = ['abspath', 'relpath']
+    _fields = ['uuid', 'treanttype']
+    _fields.extend(memberpaths)
 
     def _init_record(self):
         super(GroupFile, self)._init_record()
@@ -321,43 +299,40 @@ class GroupFile(TreantFile):
 
         """
         # check if uuid already present
-        uuids = [member[0] for member in self._record['members']]
+        uuids = [member['uuid'] for member in self._record['members']]
 
         if uuid not in uuids:
-            self._record['members'].append([uuid,
-                                            treanttype,
-                                            os.path.abspath(basedir),
-                                            os.path.relpath(
-                                                basedir, self.get_location())])
+            self._record['members'].append(
+                    {'uuid': uuid,
+                     'treanttype': treanttype,
+                     'abspath': os.path.abspath(basedir),
+                     'relpath': os.path.relpath(
+                         basedir, self.get_location())})
 
     @FileSerial._write
     @FileSerial._pull_push
-    def del_member(self, *uuid, **kwargs):
-        """Remove a member from the Group.
+    def del_members(self, uuids=None, all=False):
+        """Remove members from the Group.
 
         :Arguments:
-            *uuid*
-                the uuid(s) of the member(s) to remove
-
-        :Keywords:
+            *uuids*
+                An iterable of uuids of the members to remove
             *all*
                 When True, remove all members [``False``]
 
         """
-        purge = kwargs.pop('all', False)
-
-        if purge:
+        if all:
             self._record['members'] = list()
-        else:
+        elif uuids:
             # remove redundant uuids from given list if present
-            uuids = set([str(uid) for uid in uuid])
+            uuids = set([str(uuid) for uuid in uuids])
 
             # get matching rows
             # TODO: possibly faster to use table.where
             memberlist = list()
             for i, member in enumerate(self._record['members']):
                 for uuid in uuids:
-                    if (member[0] == uuid):
+                    if (member['uuid'] == uuid):
                         memberlist.append(i)
 
             memberlist.sort()
@@ -387,11 +362,8 @@ class GroupFile(TreantFile):
         """
         memberinfo = None
         for member in self._record['members']:
-            if member[0] == uuid:
+            if member['uuid'] == uuid:
                 memberinfo = member
-
-        if memberinfo:
-            memberinfo = {x: y for x, y in zip(self._fields, memberinfo)}
 
         return memberinfo
 
@@ -411,8 +383,8 @@ class GroupFile(TreantFile):
         out = defaultdict(list)
 
         for member in self._record['members']:
-            for i, key in enumerate(self._fields):
-                out[key].append(member[i])
+            for key in self._fields:
+                out[key].append(member[key])
 
         return out
 
@@ -425,7 +397,7 @@ class GroupFile(TreantFile):
             *uuids*
                 list giving treanttype of each member, in order
         """
-        return [member[0] for member in self._record['members']]
+        return [member['uuid'] for member in self._record['members']]
 
     @FileSerial._read
     @FileSerial._pull
@@ -436,7 +408,7 @@ class GroupFile(TreantFile):
             *treanttypes*
                 list giving treanttype of each member, in order
         """
-        return [member[1] for member in self._record['members']]
+        return [member['treanttype'] for member in self._record['members']]
 
     @FileSerial._read
     @FileSerial._pull
@@ -445,6 +417,8 @@ class GroupFile(TreantFile):
 
         :Returns:
             *basedirs*
-                list containing all paths to member basedirs, in member order
+                list of dicts giving all paths to member basedirs, in member
+                order
         """
-        return [member[2:] for member in self._record['members']]
+        return [member.fromkeys(memberpaths)
+                for member in self._record['members']]
