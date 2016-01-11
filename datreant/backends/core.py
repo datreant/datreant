@@ -355,11 +355,11 @@ class FileSerial(File):
 
     @staticmethod
     def _read(func):
-        """Decorator for applying shared lock on file.
+        """Decorator for applying a shared lock on file and reading contents.
 
-        Applying this decorator to a method will ensure a shared lock is
-        obtained before that method is executed. It also ensures that the lock
-        is removed after the method returns.
+        Applying this decorator to a method will ensure a shared lock and the
+        latest version of the data is obtained before that method is executed.
+        It also ensures that the lock is removed after the method returns.
 
         """
         @wraps(func)
@@ -369,6 +369,7 @@ class FileSerial(File):
             else:
                 self._apply_shared_lock()
                 try:
+                    self._pull_record()
                     out = func(self, *args, **kwargs)
                 finally:
                     self._release_lock()
@@ -378,11 +379,13 @@ class FileSerial(File):
 
     @staticmethod
     def _write(func):
-        """Decorator for applying an exclusive lock on file.
+        """Decorator for applying an exclusive lock on file and modifying
+        contents.
 
-        Applying this decorator to a method will ensure an exclusive lock is
-        obtained before that method is executed. It also ensures that the lock
-        is removed after the method returns.
+        Applying this decorator to a method will ensure an exclusive lock and
+        the latest version of the data is obtained before that method is
+        executed. It also ensures that changes to the data are written to the
+        file and the lock removed after the method returns.
 
         """
         @wraps(func)
@@ -392,54 +395,16 @@ class FileSerial(File):
             else:
                 self._apply_exclusive_lock()
                 try:
+                    try:
+                        self._pull_record()
+                    except IOError:
+                        self._init_record()
                     out = func(self, *args, **kwargs)
+                    self._push_record()
                 finally:
                     self._release_lock()
             return out
 
-        return inner
-
-    @staticmethod
-    def _pull_push(func):
-        """Decorator for deserializing the contents of file, then reserializing.
-
-        Applying this decorator to a method will ensure the latest version of
-        the data is obtained before that method is executed. It also ensures
-        that changes to the data are written to the file after the method
-        returns.
-
-        This decorator doesn't do any file locking, but should be used after
-        getting an exclusive lock.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            try:
-                self._pull_record()
-            except IOError:
-                self._init_record()
-            out = func(self, *args, **kwargs)
-            self._push_record()
-            return out
-        return inner
-
-    @staticmethod
-    def _pull(func):
-        """Decorator for deserializing the contents of file.
-
-        Applying this decorator to a method will ensure the latest version of
-        the data is obtained before that method is executed. It does *not*
-        write changes to the data to the file after the method returns.
-
-        This decorator doesn't do any file locking, but should be used after
-        getting a shared lock.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            self._pull_record()
-            out = func(self, *args, **kwargs)
-            return out
         return inner
 
     def _pull_record(self):
