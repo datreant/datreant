@@ -91,6 +91,21 @@ class Treant(object):
                                coordinator=coordinator, categories=categories,
                                tags=tags)
 
+    @classmethod
+    def _attach_limb(cls, limb):
+        """Attach a limb to the class, or to self if an instance.
+
+        """
+        # property definition
+        def getter(self):
+            if not hasattr(self, "_"+limb._name):
+                setattr(self, "_"+limb._name, limb(self))
+            return getattr(self, "_"+limb._name)
+
+        # set the property
+        setattr(cls, limb._name,
+                property(getter, None, None, limb.__doc__))
+
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
 
@@ -116,8 +131,8 @@ class Treant(object):
         """Addition of treants with collections or treants yields Bundle.
 
         """
-        if (isinstance(a, (Treant, collections._CollectionBase)) and
-           isinstance(b, (Treant, collections._CollectionBase))):
+        if (isinstance(a, (Treant, collections.CollectionBase)) and
+           isinstance(b, (Treant, collections.CollectionBase))):
             return collections.Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
@@ -126,7 +141,6 @@ class Treant(object):
         """Generate new Treant object.
 
         """
-        self._placeholders()
 
         # process keywords
         if not categories:
@@ -159,7 +173,6 @@ class Treant(object):
         """Re-generate existing Treant object.
 
         """
-        self._placeholders()
 
         # process keywords
         if not categories:
@@ -194,14 +207,6 @@ class Treant(object):
 
         self._start_logger(self._treanttype, self.name)
         self._backend._start_logger(self._logger)
-
-    def _placeholders(self):
-        """Necessary placeholders for aggregator instances.
-
-        """
-        self._tags = None
-        self._categories = None
-        self._data = None
 
     def _start_logger(self, treanttype, name, location=None,
                       filehandler=False):
@@ -364,50 +369,6 @@ class Treant(object):
         """
         return self._backend.filename
 
-    @property
-    def tags(self):
-        """The tags of the Treant.
-
-        Tags are user-added strings that can be used to and distinguish
-        Treants from one another through queries. They can also be useful as
-        flags for external code to determine how to handle the Treant.
-
-        """
-        if not self._tags:
-            self._tags = limbs.Tags(
-                    self, self._backend, self._logger)
-        return self._tags
-
-    @property
-    def categories(self):
-        """The categories of the Treant.
-
-        Categories are user-added key-value pairs that can be used to and
-        distinguish Treants from one another through queries. They can also be
-        useful as flags for external code to determine how to handle the
-        Treant.
-
-        """
-
-        if not self._categories:
-            self._categories = limbs.Categories(
-                    self, self._backend, self._logger)
-        return self._categories
-
-    @property
-    def data(self):
-        """The data of the Treant.
-
-        Data are user-generated pandas objects (e.g. Series, DataFrames), numpy
-        arrays, or any pickleable python object that are stored in the
-        Treant for easy recall later.  Each data instance is given its own
-        directory in the Treant's tree.
-
-        """
-        if not self._data:
-            self._data = limbs.Data(self, self._backend, self._logger)
-        return self._data
-
     def _new_uuid(self):
         """Generate new uuid for Treant.
 
@@ -446,30 +407,3 @@ class Group(Treant):
         out = out + ">"
 
         return out
-
-    @property
-    def members(self):
-        """The members of the Group.
-
-        A Group is useful as an interface to collections of Treants, and
-        they allow direct access to each member of that collection. Often
-        a Group is used to store datasets derived from this collection as
-        an aggregate.
-
-        Queries can also be made on the Group's members to return a
-        subselection of the members based on some search criteria. This can be
-        useful to define new Groups from members of existing ones.
-
-        """
-        if not self._members:
-            self._members = limbs.Members(self, self._backend,
-                                          self._logger)
-        return self._members
-
-    def _placeholders(self):
-        """Necessary placeholders for aggregator instances.
-
-        """
-        super(Group, self)._placeholders()
-
-        self._members = None

@@ -4,8 +4,6 @@ Some are tests to compare performance across backends.
 
 """
 
-import pandas as pd
-import numpy as np
 import pytest
 import os
 import shutil

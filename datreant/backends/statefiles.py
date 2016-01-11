@@ -39,16 +39,12 @@ class TreantFile(MixinJSON, FileSerial):
     :Keywords:
         *treanttype*
             Treant type
-        *name*
-            user-given name of Treant object
         *categories*
             user-given dictionary with custom keys and values; used to
             give distinguishing characteristics to object for search
         *tags*
             user-given list with custom elements; used to give
             distinguishing characteristics to object for search
-        *version*
-            version of datreant file was generated with
 
     .. Note:: kwargs passed to :meth:`create`
 
@@ -70,9 +66,7 @@ class TreantFile(MixinJSON, FileSerial):
                 raise
 
     def _init_record(self):
-        self._record = dict()
-        self._record['tags'] = list()
-        self._record['categories'] = dict()
+        self._record = {'tags': list(), 'categories': dict()}
 
     def create(self, **kwargs):
         """Build state file and common data structure elements.
@@ -98,7 +92,6 @@ class TreantFile(MixinJSON, FileSerial):
         self.add_categories(**categories)
 
     @FileSerial._read
-    @FileSerial._pull
     def get_version(self):
         """Get Treant version.
 
@@ -111,7 +104,6 @@ class TreantFile(MixinJSON, FileSerial):
 
     # TODO: need a proper schema update mechanism
     @FileSerial._write
-    @FileSerial._pull_push
     def update_schema(self):
         """Update schema of file.
 
@@ -127,7 +119,6 @@ class TreantFile(MixinJSON, FileSerial):
         return version
 
     @FileSerial._write
-    @FileSerial._pull_push
     def update_version(self, version):
         """Update version of Treant.
 
@@ -138,7 +129,6 @@ class TreantFile(MixinJSON, FileSerial):
         self._record['version'] = version
 
     @FileSerial._read
-    @FileSerial._pull
     def get_tags(self):
         """Get all tags as a list.
 
@@ -149,7 +139,6 @@ class TreantFile(MixinJSON, FileSerial):
         return self._record['tags']
 
     @FileSerial._write
-    @FileSerial._pull_push
     def add_tags(self, *tags):
         """Add any number of tags to the Treant.
 
@@ -175,7 +164,6 @@ class TreantFile(MixinJSON, FileSerial):
         self._record['tags'].extend(tags)
 
     @FileSerial._write
-    @FileSerial._pull_push
     def del_tags(self, tags=None, all=False):
         """Delete tags from Treant.
 
@@ -199,7 +187,6 @@ class TreantFile(MixinJSON, FileSerial):
                     pass
 
     @FileSerial._read
-    @FileSerial._pull
     def get_categories(self):
         """Get all categories as a dictionary.
 
@@ -210,7 +197,6 @@ class TreantFile(MixinJSON, FileSerial):
         return self._record['categories']
 
     @FileSerial._write
-    @FileSerial._pull_push
     def add_categories(self, **categories):
         """Add any number of categories to the Treant.
 
@@ -233,7 +219,6 @@ class TreantFile(MixinJSON, FileSerial):
                 self._record['categories'][key] = value
 
     @FileSerial._write
-    @FileSerial._pull_push
     def del_categories(self, categories=None, all=False):
         """Delete categories from Treant.
 
@@ -270,8 +255,8 @@ class GroupFile(TreantFile):
        *tags*
           user-given list with custom elements; used to give distinguishing
           characteristics to object for search
-
     """
+
     # add new paths to include them in member searches
     memberpaths = ['abspath', 'relpath']
     _fields = ['uuid', 'treanttype']
@@ -282,7 +267,6 @@ class GroupFile(TreantFile):
         self._record['members'] = list()
 
     @FileSerial._write
-    @FileSerial._pull_push
     def add_member(self, uuid, treanttype, basedir):
         """Add a member to the Group.
 
@@ -310,7 +294,6 @@ class GroupFile(TreantFile):
                          basedir, self.get_location())})
 
     @FileSerial._write
-    @FileSerial._pull_push
     def del_members(self, uuids=None, all=False):
         """Remove members from the Group.
 
@@ -344,7 +327,6 @@ class GroupFile(TreantFile):
                 j = j + 1
 
     @FileSerial._read
-    @FileSerial._pull
     def get_member(self, uuid):
         """Get all stored information on the specified member.
 
@@ -368,7 +350,6 @@ class GroupFile(TreantFile):
         return memberinfo
 
     @FileSerial._read
-    @FileSerial._pull
     def get_members(self):
         """Get full member table.
 
@@ -389,7 +370,6 @@ class GroupFile(TreantFile):
         return out
 
     @FileSerial._read
-    @FileSerial._pull
     def get_members_uuid(self):
         """List uuid for each member.
 
@@ -400,7 +380,6 @@ class GroupFile(TreantFile):
         return [member['uuid'] for member in self._record['members']]
 
     @FileSerial._read
-    @FileSerial._pull
     def get_members_treanttype(self):
         """List treanttype for each member.
 
@@ -411,7 +390,6 @@ class GroupFile(TreantFile):
         return [member['treanttype'] for member in self._record['members']]
 
     @FileSerial._read
-    @FileSerial._pull
     def get_members_basedir(self):
         """List basedir for each member.
 
