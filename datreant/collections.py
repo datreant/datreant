@@ -11,6 +11,7 @@ import glob
 import fnmatch
 
 from six import string_types
+from six.moves import zip
 
 from datreant import backends
 from datreant import filesystem
@@ -178,14 +179,7 @@ class CollectionBase(object):
                 members that are missing will have basedir ``None``
 
         """
-        basedirs = list()
-        for member in self._list():
-            if member:
-                basedirs.append(member.basedir)
-            else:
-                basedirs.append(None)
-
-        return basedirs
+        return [member.basedir if member else None for member in self._list()]
 
     @property
     def filepath(self):

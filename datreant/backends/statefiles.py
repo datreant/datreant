@@ -6,6 +6,7 @@ Interface classes for state files.
 import os
 import warnings
 import json
+from collections import defaultdict
 
 from six import string_types
 
@@ -60,9 +61,7 @@ class TreantFile(MixinJSON, FileSerial):
                 raise
 
     def _init_record(self):
-        self._record = dict()
-        self._record['tags'] = list()
-        self._record['categories'] = dict()
+        self._record = {'tags': list(), 'categories': dict()}
 
     def create(self, **kwargs):
         """Build state file and common data structure elements.
@@ -379,7 +378,7 @@ class GroupFile(TreantFile):
                 dict giving full member data, with fields as keys and in member
                 order
         """
-        out = {key: [] for key in self._fields}
+        out = defaultdict(list)
 
         for member in self._record['members']:
             for i, key in enumerate(self._fields):
