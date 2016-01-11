@@ -100,7 +100,7 @@ class Tags(Limb):
                 outtags.append(tag)
         self._backend.add_tags(*outtags)
 
-    def remove(self, *tags, **kwargs):
+    def remove(self, *tags):
         """Remove tags from Treant.
 
         Any number of tags can be given as arguments, and these will be
@@ -109,12 +109,14 @@ class Tags(Limb):
         :Arguments:
             *tags*
                 Tags to delete.
-
-        :Keywords:
-            *all*
-                When True, delete all tags [``False``]
         """
-        self._backend.del_tags(*tags, **kwargs)
+        self._backend.del_tags(tags)
+
+    def purge(self):
+        """Remove all tags from Treant.
+
+        """
+        self._backend.del_tags(all=True)
 
 
 class Categories(Limb):
@@ -169,7 +171,7 @@ class Categories(Limb):
         """Remove category from Treant.
 
         """
-        self._backend.del_categories(category)
+        self._backend.del_categories((category,))
 
     def __iter__(self):
         return self._backend.get_categories().__iter__()
@@ -217,7 +219,7 @@ class Categories(Limb):
         outcats.update(categories)
         self._backend.add_categories(**outcats)
 
-    def remove(self, *categories, **kwargs):
+    def remove(self, *categories):
         """Remove categories from Treant.
 
         Any number of categories (keys) can be given as arguments, and these
@@ -227,12 +229,14 @@ class Categories(Limb):
             *categories*
                 Categories to delete.
 
-        :Keywords:
-            *all*
-                When True, delete all categories [``False``]
+        """
+        self._backend.del_categories(categories)
+
+    def purge(self):
+        """Remove all categories from Treant.
 
         """
-        self._backend.del_categories(*categories, **kwargs)
+        self._backend.del_categories(all=True)
 
     def keys(self):
         """Get category keys.

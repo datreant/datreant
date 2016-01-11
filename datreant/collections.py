@@ -4,7 +4,11 @@ returned as queries to Groups and other Bundles. They offer convenience methods
 for dealing with many Treants at once.
 
 """
+
+from __future__ import absolute_import
+
 import os
+from collections import namedtuple, defaultdict
 
 import multiprocessing as mp
 import glob
@@ -100,44 +104,43 @@ class CollectionBase(object):
                                      treant.treanttype,
                                      treant.basedir)
 
-    def remove(self, *members, **kwargs):
-        """Remove any number of members from the Group.
+    def remove(self, *members):
+        """Remove any number of members from the collection.
 
         :Arguments:
             *members*
                 instances or indices of the members to remove
 
-        :Keywords:
-            *all*
-                When True, remove all members [``False``]
-
         """
         from .treants import Treant
 
         uuids = self._backend.get_members_uuid()
-        if kwargs.pop('all', False):
-            remove = uuids
-        else:
-            remove = list()
-            for member in members:
-                if isinstance(member, int):
-                    remove.append(uuids[member])
-                elif isinstance(member, Treant):
-                    remove.append(member.uuid)
-                elif isinstance(member, string_types):
-                    names = fnmatch.filter(self.names, member)
-                    uuids = [member.uuid for member in self
-                             if (member.name in names)]
-                    remove.extend(uuids)
+        remove = list()
+        for member in members:
+            if isinstance(member, int):
+                remove.append(uuids[member])
+            elif isinstance(member, Treant):
+                remove.append(member.uuid)
+            elif isinstance(member, basestring):
+                names = fnmatch.filter(self.names, member)
+                uuids = [member.uuid for member in self
+                         if (member.name in names)]
+                remove.extend(uuids)
 
-                else:
-                    raise TypeError('Only an integer or treant acceptable')
+            else:
+                raise TypeError('Only an integer or treant acceptable')
 
-        self._backend.del_member(*remove)
+        self._backend.del_members(remove)
 
         # remove from cache
         for uuid in remove:
             self._cache.pop(uuid, None)
+
+    def purge(self):
+        """Remove all members.
+
+        """
+        self._backend.del_members(all=True)
 
     @property
     def treanttypes(self):
@@ -216,7 +219,8 @@ class CollectionBase(object):
     def _list(self):
         """Return a list of members.
 
-        Note: modifications of this list won't modify the members of the Group!
+        Note: modifications of this list won't modify the members of the
+        collection!
 
         Missing members will be present in the list as ``None``. This method is
         not intended for user-level use.
@@ -320,8 +324,9 @@ class _BundleBackend():
     Bundle.
 
     """
-    memberpaths = ['abs']
-    fields = ['uuid', 'treanttype', 'abs']
+    memberpaths = ['abspath']
+    fields = ['uuid', 'treanttype']
+    fields.extend(memberpaths)
 
     def __init__(self):
         self.record = list()
@@ -342,39 +347,35 @@ class _BundleBackend():
 
         """
         # check if uuid already present
-        uuids = [member[0] for member in self.record]
+        uuids = [member['uuid'] for member in self.record]
 
         if uuid not in uuids:
-            self.record.append([uuid,
-                                treanttype,
-                                os.path.abspath(basedir)])
+            self.record.append({'uuid': uuid,
+                                'treanttype': treanttype,
+                                'abspath': os.path.abspath(basedir)})
 
-    def del_member(self, *uuid, **kwargs):
-        """Remove a member from the Group.
+    def del_members(self, uuids, all=False):
+        """Remove members from the Bundle.
 
         :Arguments:
-            *uuid*
-                the uuid(s) of the member(s) to remove
-
-        :Keywords:
+            *uuids*
+                An iterable of uuids of the members to remove
             *all*
                 When True, remove all members [``False``]
 
         """
-        purge = kwargs.pop('all', False)
-
-        if purge:
+        if all:
             self.record = list()
         else:
             # remove redundant uuids from given list if present
-            uuids = set([str(uid) for uid in uuid])
+            uuids = set([str(uuid) for uuid in uuids])
 
             # get matching rows
             # TODO: possibly faster to use table.where
             memberlist = list()
             for i, member in enumerate(self.record):
                 for uuid in uuids:
-                    if (member[0] == uuid):
+                    if (member['uuid'] == uuid):
                         memberlist.append(i)
 
             memberlist.sort()
@@ -402,11 +403,8 @@ class _BundleBackend():
         """
         memberinfo = None
         for member in self.record:
-            if member[0] == uuid:
+            if member['uuid'] == uuid:
                 memberinfo = member
-
-        if memberinfo:
-            memberinfo = {x: y for x, y in zip(self.fields, memberinfo)}
 
         return memberinfo
 
@@ -421,11 +419,11 @@ class _BundleBackend():
                 dict giving full member data, with fields as keys and in member
                 order
         """
-        out = {key: [] for key in self.fields}
+        out = defaultdict(list)
 
         for member in self.record:
-            for i, key in enumerate(self.fields):
-                out[key].append(member[i])
+            for key in self.fields:
+                out[key].append(member[key])
 
         return out
 
@@ -436,7 +434,7 @@ class _BundleBackend():
             *uuids*
                 list giving treanttype of each member, in order
         """
-        return [member[0] for member in self.record]
+        return [member['uuid'] for member in self.record]
 
     def get_members_treanttype(self):
         """List treanttype for each member.
@@ -445,7 +443,7 @@ class _BundleBackend():
             *treanttypes*
                 list giving treanttype of each member, in order
         """
-        return [member[1] for member in self.record]
+        return [member['treanttype'] for member in self.record]
 
     def get_members_basedir(self):
         """List basedir for each member.
@@ -454,7 +452,7 @@ class _BundleBackend():
             *basedirs*
                 list containing all paths to member basedirs, in member order
         """
-        return [member[2:] for member in self.record]
+        return [member['abspath'] for member in self.record]
 
 
 class Bundle(CollectionBase):

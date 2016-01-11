@@ -181,7 +181,7 @@ class TestTreant:
             treant.tags.remove('fark')
             assert len(treant.tags) == 3
 
-            treant.tags.remove(all=True)
+            treant.tags.purge()
             assert len(treant.tags) == 0
 
     class TestCategories:
@@ -219,7 +219,7 @@ class TestTreant:
             treant.categories['lark'] = 42
             treant.categories['fark'] = 32.3
 
-            treant.categories.remove(all=True)
+            treant.categories.purge()
             assert len(treant.categories) == 0
 
         def test_add_wrong(self, treant):
