@@ -107,7 +107,7 @@ class Foxhound(object):
                 list of unique identifiers of Treants to find
             *basedirs*
                 dict of basedirs to start searching around; keys may be
-                'abs' or 'rel', and values should be lists of paths
+                'abspath' or 'relpath', and values should be lists of paths
 
         :Keywords:
             *timeout*
@@ -166,8 +166,8 @@ class Foxhound(object):
         outpaths = {x: y for x, y in zip(self.uuids, [None]*len(self.uuids))}
 
         uuids = [x for x in outpaths if not outpaths[x]]
-        if 'abs' in self.basedirs:
-            for path in self.basedirs['abs']:
+        if 'abspath' in self.basedirs:
+            for path in self.basedirs['abspath']:
                 found = []
                 for uuid in uuids:
                     candidate = glob.glob(
@@ -180,9 +180,9 @@ class Foxhound(object):
                 for item in found:
                     uuids.remove(item)
 
-        if 'rel' in self.basedirs:
+        if 'relpath' in self.basedirs:
             # get uuids for which paths haven't been found
-            for path in self.basedirs['rel']:
+            for path in self.basedirs['relpath']:
                 found = []
                 for uuid in uuids:
                     candidate = glob.glob(
