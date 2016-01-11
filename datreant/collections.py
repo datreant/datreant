@@ -4,15 +4,17 @@ They are returned as queries to Groups, Coordinators, and other Bundles. They
 offer convenience methods for dealing with many Treants at once.
 
 """
-import os
 
-import numpy as np
+from __future__ import absolute_import
+
+import os
+from collections import namedtuple, defaultdict
+
 import multiprocessing as mp
 import glob
 import fnmatch
 
 from datreant import backends
-from datreant.backends import pytables
 from datreant import filesystem
 import datreant.treants
 
@@ -84,51 +86,50 @@ class _CollectionBase(object):
                                      treant.treanttype,
                                      treant.basedir)
 
-    def remove(self, *members, **kwargs):
-        """Remove any number of members from the Group.
+    def remove(self, *members):
+        """Remove any number of members from the collection.
 
         :Arguments:
             *members*
                 instances or indices of the members to remove
 
-        :Keywords:
-            *all*
-                When True, remove all members [``False``]
-
         """
         from .treants import Treant
 
         uuids = self._backend.get_members_uuid()
-        if kwargs.pop('all', False):
-            remove = uuids
-        else:
-            remove = list()
-            for member in members:
-                if isinstance(member, int):
-                    remove.append(uuids[member])
-                elif isinstance(member, Treant):
-                    remove.append(member.uuid)
-                elif isinstance(member, basestring):
-                    names = fnmatch.filter(self.names, member)
-                    uuids = [member.uuid for member in self
-                             if (member.name in names)]
-                    remove.extend(uuids)
+        remove = list()
+        for member in members:
+            if isinstance(member, int):
+                remove.append(uuids[member])
+            elif isinstance(member, Treant):
+                remove.append(member.uuid)
+            elif isinstance(member, basestring):
+                names = fnmatch.filter(self.names, member)
+                uuids = [member.uuid for member in self
+                         if (member.name in names)]
+                remove.extend(uuids)
 
-                else:
-                    raise TypeError('Only an integer or treant acceptable')
+            else:
+                raise TypeError('Only an integer or treant acceptable')
 
-        self._backend.del_member(*remove)
+        self._backend.del_members(remove)
 
         # remove from cache
         for uuid in remove:
             self._cache.pop(uuid, None)
+
+    def purge(self):
+        """Remove all members.
+
+        """
+        self._backend.del_members(all=True)
 
     @property
     def treanttypes(self):
         """Return a list of member treanttypes.
 
         """
-        return self._backend.get_members_treanttype().tolist()
+        return self._backend.get_members_treanttype()
 
     @property
     def names(self):
@@ -152,6 +153,48 @@ class _CollectionBase(object):
         return names
 
     @property
+    def basedirs(self):
+        """Return a list of member basedirs.
+
+        Members that can't be found will have basedir ``None``.
+
+        :Returns:
+            *names*
+                list giving the basedir of each member, in order;
+                members that are missing will have basedir ``None``
+
+        """
+        basedirs = list()
+        for member in self._list():
+            if member:
+                basedirs.append(member.basedir)
+            else:
+                basedirs.append(None)
+
+        return basedirs
+
+    @property
+    def filepath(self):
+        """Return a list of member filepaths.
+
+        Members that can't be found will have filepath ``None``.
+
+        :Returns:
+            *names*
+                list giving the filepath of each member, in order;
+                members that are missing will have filepath ``None``
+
+        """
+        filepaths = list()
+        for member in self._list():
+            if member:
+                filepaths.append(member.filepath)
+            else:
+                filepaths.append(None)
+
+        return filepaths
+
+    @property
     def uuids(self):
         """Return a list of member uuids.
 
@@ -160,19 +203,20 @@ class _CollectionBase(object):
                 list giving the uuid of each member, in order
 
         """
-        return self._backend.get_members_uuid().tolist()
+        return self._backend.get_members_uuid()
 
     def _list(self):
         """Return a list of members.
 
-        Note: modifications of this list won't modify the members of the Group!
+        Note: modifications of this list won't modify the members of the
+        collection!
 
         Missing members will be present in the list as ``None``. This method is
         not intended for user-level use.
 
         """
         members = self._backend.get_members()
-        uuids = members['uuid'].flatten().tolist()
+        uuids = members['uuid']
 
         findlist = list()
         memberlist = list()
@@ -185,7 +229,7 @@ class _CollectionBase(object):
                 findlist.append(uuid)
 
         # track down our non-cached treants
-        paths = {path: members[path].flatten().tolist()
+        paths = {path: members[path]
                  for path in self._backend.memberpaths}
         foxhound = filesystem.Foxhound(self, findlist, paths)
         foundconts = foxhound.fetch(as_treants=True)
@@ -280,31 +324,11 @@ class _BundleBackend():
 
     """
     memberpaths = ['abspath']
+    fields = ['uuid', 'treanttype']
+    fields.extend(memberpaths)
 
     def __init__(self):
-        # our table will be a structured array matching the schema of the
-        # GroupFile _Members Table
-        self.table = np.array(
-                [],
-                dtype={'names': ['uuid', 'treanttype', 'abspath'],
-                       'formats': ['a{}'.format(backends.pytables.uuidlength),
-                                   'a{}'.format(backends.pytables.namelength),
-                                   'a{}'.format(backends.pytables.pathlength)]
-                       }).reshape(1, -1)
-
-    def _member2record(self, uuid, treanttype, basedir):
-        """Return a record array from a member's information.
-
-        This method defines the scheme for the Bundle's record array.
-
-        """
-        return np.array(
-                (uuid, treanttype, os.path.abspath(basedir)),
-                dtype={'names': ['uuid', 'treanttype', 'abspath'],
-                       'formats': ['a{}'.format(backends.pytables.uuidlength),
-                                   'a{}'.format(backends.pytables.namelength),
-                                   'a{}'.format(backends.pytables.pathlength)]
-                       }).reshape(1, -1)
+        self.record = list()
 
     def add_member(self, uuid, treanttype, basedir):
         """Add a member to the Bundle.
@@ -321,46 +345,45 @@ class _BundleBackend():
                 basedir of the new member in the filesystem
 
         """
-        if self.table.shape == (1, 0):
-            self.table = self._member2record(uuid, treanttype, basedir)
-        else:
-            # check if uuid already present
-            index = np.where(self.table['uuid'] == uuid)[0]
-            if index.size > 0:
-                # if present, update location
-                self.table[index[0]]['abspath'] = os.path.abspath(basedir)
-            else:
-                newmem = self._member2record(uuid, treanttype, basedir)
-                self.table = np.vstack((self.table, newmem))
+        # check if uuid already present
+        uuids = [member['uuid'] for member in self.record]
 
-    def del_member(self, *uuid, **kwargs):
-        """Remove a member from the Group.
+        if uuid not in uuids:
+            self.record.append({'uuid': uuid,
+                                'treanttype': treanttype,
+                                'abspath': os.path.abspath(basedir)})
+
+    def del_members(self, uuids, all=False):
+        """Remove members from the Bundle.
 
         :Arguments:
-            *uuid*
-                the uuid(s) of the member(s) to remove
-
-        :Keywords:
+            *uuids*
+                An iterable of uuids of the members to remove
             *all*
                 When True, remove all members [``False``]
 
         """
-        purge = kwargs.pop('all', False)
-
-        if purge:
-            self.__init__()
+        if all:
+            self.record = list()
         else:
             # remove redundant uuids from given list if present
-            uuids = set([str(uid) for uid in uuid])
+            uuids = set([str(uuid) for uuid in uuids])
 
-            # remove matching elements
-            matches = list()
-            for uuid in uuids:
-                index = np.where(self.table['uuid'] == uuid)[0]
-                if len(index) != 0:
-                    matches.append(index)
+            # get matching rows
+            # TODO: possibly faster to use table.where
+            memberlist = list()
+            for i, member in enumerate(self.record):
+                for uuid in uuids:
+                    if (member['uuid'] == uuid):
+                        memberlist.append(i)
 
-            self.table = np.delete(self.table, matches, axis=0)
+            memberlist.sort()
+            j = 0
+            # delete matching entries; have to use j to shift the register as
+            # we remove entries
+            for i in memberlist:
+                self.record.pop(i - j)
+                j = j + 1
 
     def get_member(self, uuid):
         """Get all stored information on the specified member.
@@ -377,12 +400,10 @@ class _BundleBackend():
                 a dictionary containing all information stored for the
                 specified member
         """
-        memberinfo = self.table[self.table[uuid] == uuid]
-
-        if memberinfo:
-            memberinfo = {x: memberinfo[x] for x in memberinfo.dtype.names}
-        else:
-            memberinfo = None
+        memberinfo = None
+        for member in self.record:
+            if member['uuid'] == uuid:
+                memberinfo = member
 
         return memberinfo
 
@@ -394,37 +415,43 @@ class _BundleBackend():
 
         :Returns:
             *memberdata*
-                structured array giving full member data, with
-                each row corresponding to a member
+                dict giving full member data, with fields as keys and in member
+                order
         """
-        return self.table
+        out = defaultdict(list)
+
+        for member in self.record:
+            for key in self.fields:
+                out[key].append(member[key])
+
+        return out
 
     def get_members_uuid(self):
         """List uuid for each member.
 
         :Returns:
             *uuids*
-                array giving treanttype of each member, in order
+                list giving treanttype of each member, in order
         """
-        return self.table['uuid'].flatten()
+        return [member['uuid'] for member in self.record]
 
     def get_members_treanttype(self):
         """List treanttype for each member.
 
         :Returns:
             *treanttypes*
-                array giving treanttype of each member, in order
+                list giving treanttype of each member, in order
         """
-        return self.table['treanttype'].flatten()
+        return [member['treanttype'] for member in self.record]
 
     def get_members_basedir(self):
         """List basedir for each member.
 
         :Returns:
             *basedirs*
-                structured array containing all paths to member basedirs
+                list containing all paths to member basedirs, in member order
         """
-        return self.table['abspath'].flatten()
+        return [member['abspath'] for member in self.record]
 
 
 class Bundle(_CollectionBase):

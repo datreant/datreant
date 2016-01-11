@@ -13,11 +13,17 @@ import test_data
 import test_bundle
 
 
-class TreantMixin:
+class TestTreant:
     """Test generic Treant features"""
     treantname = 'testtreant'
     treanttype = 'Treant'
     treantclass = dtr.treants.Treant
+
+    @pytest.fixture
+    def treant(self, tmpdir):
+        with tmpdir.as_cwd():
+            c = dtr.treants.Treant(TestTreant.treantname)
+        return c
 
     def test_init(self, treant, tmpdir):
         """Test basic Treant init"""
@@ -179,7 +185,7 @@ class TreantMixin:
             treant.tags.remove('fark')
             assert len(treant.tags) == 3
 
-            treant.tags.remove(all=True)
+            treant.tags.purge()
             assert len(treant.tags) == 0
 
     class TestCategories:
@@ -195,10 +201,10 @@ class TreantMixin:
             assert 'bark' in treant.categories
 
             assert treant.categories['bark'] == 'snark'
-            assert treant.categories['lark'] == '27'
+            assert treant.categories['lark'] == 27
 
             treant.categories['lark'] = 42
-            assert treant.categories['lark'] == '42'
+            assert treant.categories['lark'] == 42
 
         def test_remove_categories(self, treant):
             treant.categories.add(marklar=42)
@@ -217,7 +223,7 @@ class TreantMixin:
             treant.categories['lark'] = 42
             treant.categories['fark'] = 32.3
 
-            treant.categories.remove(all=True)
+            treant.categories.purge()
             assert len(treant.categories) == 0
 
         def test_add_wrong(self, treant):
@@ -354,43 +360,19 @@ class TreantMixin:
             pass
 
 
-class TestTreantHDF5(TreantMixin):
-
-    @pytest.fixture
-    def treant(self, tmpdir):
-        with tmpdir.as_cwd():
-            c = dtr.treants.Treant(TreantMixin.treantname,
-                                   backend='pytables')
-        return c
-
-
-class TestTreantJSON(TreantMixin):
-
-    @pytest.fixture
-    def treant(self, tmpdir):
-        with tmpdir.as_cwd():
-            c = dtr.treants.Treant(TreantMixin.treantname,
-                                   backend='json')
-        return c
-
-
-class TestTreantYAML(TreantMixin):
-
-    @pytest.fixture
-    def treant(self, tmpdir):
-        with tmpdir.as_cwd():
-            c = dtr.treants.Treant(TreantMixin.treantname,
-                                   backend='pyyaml')
-        return c
-
-
-class GroupMixin(TreantMixin):
+class TestGroup(TestTreant):
     """Test Group-specific features.
 
     """
     treantname = 'testgroup'
     treanttype = 'Group'
     treantclass = dtr.Group
+
+    @pytest.fixture
+    def treant(self, tmpdir):
+        with tmpdir.as_cwd():
+            g = dtr.Group(TestGroup.treantname)
+        return g
 
     def test_repr(self, treant):
         pass
@@ -401,17 +383,6 @@ class GroupMixin(TreantMixin):
         @pytest.fixture
         def collection(self, treant):
             return treant.members
-
-
-class TestGroupHDF5(GroupMixin):
-    backend = 'pytables'
-
-    @pytest.fixture
-    def treant(self, tmpdir):
-        with tmpdir.as_cwd():
-            g = dtr.Group(GroupMixin.treantname,
-                          backend='pytables')
-        return g
 
 
 class TestReadOnly:

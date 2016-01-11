@@ -40,11 +40,7 @@ def treantfile(filename, logger=None, **kwargs):
     if not treant:
         raise IOError("No known treant type for file '{}'".format(filename))
 
-    statefileclass = None
-    backends = datreant._treants[treant]._backends
-    for backend in backends:
-        if backends[backend][0] == os.path.splitext(basename)[-1]:
-            statefileclass = backends[backend][1]
+    statefileclass = datreant._treants[treant]._backendclass
 
     if not statefileclass:
         raise IOError("No known backend type for file '{}'".format(filename))
@@ -53,7 +49,8 @@ def treantfile(filename, logger=None, **kwargs):
 
 
 class File(object):
-    """File object base class. Implements file locking and reloading methods.
+    """Generic File object base class. Implements file locking and reloading
+    methods.
 
     """
 
@@ -316,3 +313,115 @@ class File(object):
         self._unlock(self.fd)
         self.fdlock = None
         self._close_fd()
+
+
+class FileSerial(File):
+    """File object base class for serialization formats, such as JSON.
+
+    """
+    def _open_file_r(self):
+        return open(self.filename, 'r')
+
+    def _open_file_w(self):
+        return open(self.filename, 'w')
+
+    @staticmethod
+    def _read(func):
+        """Decorator for opening state file for reading and applying shared
+        lock.
+
+        Applying this decorator to a method will ensure that the file is opened
+        for reading and that a shared lock is obtained before that method is
+        executed. It also ensures that the lock is removed and the file closed
+        after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            if self.fdlock:
+                out = func(self, *args, **kwargs)
+            else:
+                self._open_fd_r()
+                self._shlock(self.fd)
+                self.fdlock = 'shared'
+
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self._unlock(self.fd)
+                    self._close_fd()
+                    self.fdlock = None
+            return out
+
+        return inner
+
+    @staticmethod
+    def _write(func):
+        """Decorator for opening state file for writing and applying exclusive lock.
+
+        Applying this decorator to a method will ensure that the file is opened
+        for appending and that an exclusive lock is obtained before that method
+        is executed. It also ensures that the lock is removed and the file
+        closed after the method returns.
+
+        """
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            if self.fdlock == 'exclusive':
+                out = func(self, *args, **kwargs)
+            else:
+                self._open_fd_rw()
+                self._exlock(self.fd)
+                self.fdlock = 'exclusive'
+
+                try:
+                    out = func(self, *args, **kwargs)
+                finally:
+                    self._unlock(self.fd)
+                    self.fdlock = None
+                    self._close_fd()
+            return out
+
+        return inner
+
+    @staticmethod
+    def _pull_push(func):
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            try:
+                self._pull_record()
+            except IOError:
+                self._init_record()
+            out = func(self, *args, **kwargs)
+            self._push_record()
+            return out
+        return inner
+
+    @staticmethod
+    def _pull(func):
+        @wraps(func)
+        def inner(self, *args, **kwargs):
+            self._pull_record()
+            out = func(self, *args, **kwargs)
+            return out
+        return inner
+
+    def _pull_record(self):
+        self.handle = self._open_file_r()
+        self._record = self._deserialize(self.handle)
+        self.handle.close()
+
+    def _deserialize(self, handle):
+        """Deserialize full record from open file handle.
+        """
+        raise NotImplementedError
+
+    def _push_record(self):
+        self.handle = self._open_file_w()
+        self._serialize(self._record, self.handle)
+        self.handle.close()
+
+    def _serialize(self, record, handle):
+        """Serialize full record to open file handle.
+        """
+        raise NotImplementedError
