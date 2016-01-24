@@ -4,8 +4,6 @@ Some are tests to compare performance across backends.
 
 """
 
-import pandas as pd
-import numpy as np
 import pytest
 import os
 import shutil
@@ -13,8 +11,8 @@ import py
 
 from pytest import mark
 
-import datreant as dtr
-from datreant.backends.statefiles import TreantFile
+import datreant.core as dtr
+from datreant.core.backends.statefiles import TreantFile
 
 
 def add_tags(treantfile, tags):

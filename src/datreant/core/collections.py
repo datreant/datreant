@@ -1,7 +1,7 @@
 """
-The Bundle object is the primary manipulator for Treants in aggregate.
-They are returned as queries to Groups, Coordinators, and other Bundles. They
-offer convenience methods for dealing with many Treants at once.
+The Bundle object is the primary manipulator for Treants in aggregate. They are
+returned as queries to Groups and other Bundles. They offer convenience methods
+for dealing with many Treants at once.
 
 """
 
@@ -14,12 +14,15 @@ import multiprocessing as mp
 import glob
 import fnmatch
 
-from datreant import backends
-from datreant import filesystem
-import datreant.treants
+from six import string_types
+from six.moves import zip
+
+from . import backends
+from . import filesystem
+from . import _LIMBS, _AGGLIMBS
 
 
-class _CollectionBase(object):
+class CollectionBase(object):
     """Common interface elements for ordered sets of Treants.
 
     :class:`datreant.limbs.Members` and :class:`Bundle` both use this
@@ -44,11 +47,56 @@ class _CollectionBase(object):
         """Addition of collections with collections or treants yields Bundle.
 
         """
-        if (isinstance(a, (datreant.treants.Treant, _CollectionBase)) and
-                isinstance(b, (datreant.treants.Treant, _CollectionBase))):
+        from .treants import Treant
+
+        if (isinstance(a, (Treant, CollectionBase)) and
+                isinstance(b, (Treant, CollectionBase))):
             return Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
+
+    @classmethod
+    def _attach_agglimb_class(cls, limb):
+        """Attach a agglimb to the class.
+
+        """
+        # property definition
+        def getter(self):
+            if not hasattr(self, "_"+limb._name):
+                setattr(self, "_"+limb._name, limb(self))
+            return getattr(self, "_"+limb._name)
+
+        # set the property
+        setattr(cls, limb._name,
+                property(getter, None, None, limb.__doc__))
+
+    def _attach_agglimb(self, limb):
+        """Attach an agglimb.
+
+        """
+        setattr(self, limb._name, limb(self))
+
+    def attach(self, *agglimbname):
+        """Attach agglimbs by name to this collection. Attaches corresponding limb
+        to member Treants.
+
+        """
+        for ln in agglimbname:
+            # try and get the agglimb class specified
+            try:
+                agglimb = _AGGLIMBS[ln]
+            except KeyError:
+                raise KeyError("No such agglimb '{}'".format(ln))
+
+            # attach agglimb; if it's already there, that's okay
+            try:
+                self._attach_agglimb(agglimb)
+            except AttributeError:
+                pass
+
+            # attach limb to each member
+            for member in self._list():
+                member.attach(ln)
 
     def add(self, *treants):
         """Add any number of members to this collection.
@@ -60,15 +108,15 @@ class _CollectionBase(object):
                 that contain treant statefiles; glob patterns are also allowed,
                 and all found treants will be added to the collection
         """
-        from datreant.limbs import Members
-        from datreant.treants import Treant
+        from .limbs import Members
+        from .treants import Treant
 
         outconts = list()
         for treant in treants:
             if treant is None:
                 pass
             elif isinstance(treant,
-                            (list, tuple, _CollectionBase)):
+                            (list, tuple, CollectionBase)):
                 self.add(*treant)
             elif isinstance(treant, Treant):
                 outconts.append(treant)
@@ -103,7 +151,7 @@ class _CollectionBase(object):
                 remove.append(uuids[member])
             elif isinstance(member, Treant):
                 remove.append(member.uuid)
-            elif isinstance(member, basestring):
+            elif isinstance(member, string_types):
                 names = fnmatch.filter(self.names, member)
                 uuids = [member.uuid for member in self
                          if (member.name in names)]
@@ -164,14 +212,7 @@ class _CollectionBase(object):
                 members that are missing will have basedir ``None``
 
         """
-        basedirs = list()
-        for member in self._list():
-            if member:
-                basedirs.append(member.basedir)
-            else:
-                basedirs.append(None)
-
-        return basedirs
+        return [member.basedir if member else None for member in self._list()]
 
     @property
     def filepath(self):
@@ -255,16 +296,6 @@ class _CollectionBase(object):
             memberlist[list(uuids).index(uuid)] = result
 
         return memberlist
-
-    @property
-    def data(self):
-        """Access the data of each member, collectively.
-
-        """
-        from .limbs import MemberData
-        if not self._data:
-            self._data = MemberData(self)
-        return self._data
 
     def map(self, function, processes=1, **kwargs):
         """Apply a function to each member, perhaps in parallel.
@@ -454,12 +485,11 @@ class _BundleBackend():
         return [member['abspath'] for member in self.record]
 
 
-class Bundle(_CollectionBase):
+class Bundle(CollectionBase):
     """Non-persistent collection of treants.
 
     A Bundle is basically an indexable set. It is often used to return the
-    results of a query on a Coordinator or a Group, but can be used on its
-    own as well.
+    results of a query on a  Group, but can be used on its own as well.
 
     """
 
@@ -475,7 +505,6 @@ class Bundle(_CollectionBase):
         """
         self._backend = _BundleBackend()
         self._cache = dict()
-        self._data = None
 
         self.add(*treants)
 

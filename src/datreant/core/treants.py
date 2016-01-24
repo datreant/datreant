@@ -8,12 +8,16 @@ import shutil
 from uuid import uuid4
 import logging
 import functools
+import six
 
-import datreant
+from .backends.core import treantfile
 from .backends import statefiles
 from . import limbs
 from . import filesystem
 from . import collections
+
+from . import _TREANTS
+from . import _LIMBS
 
 
 class MultipleTreantsError(Exception):
@@ -24,24 +28,16 @@ class NoTreantsError(Exception):
     pass
 
 
-def register(*treantclass):
-    """Register a treant-derived class so datreant can handle it.
+class _Treantmeta(type):
+    def __init__(cls, name, bases, classdict):
+        type.__init__(type, name, bases, classdict)
 
-    In order for things like Bundle to know how to handle custom treants,
-    they must be registered with the package. Give the class (not an instance)
-    to this function to register it.
-
-    :Arguments:
-        *treantclass*
-            treant-derived class to register; may enter more than one
-
-    """
-    for tc in treantclass:
-        datreant._treants.update({tc._treanttype: tc})
+        treanttype = classdict['_treanttype']
+        _TREANTS[treanttype] = cls
 
 
 @functools.total_ordering
-class Treant(object):
+class Treant(six.with_metaclass(_Treantmeta, object)):
     """Core class for all Treants.
 
     """
@@ -91,6 +87,42 @@ class Treant(object):
                                coordinator=coordinator, categories=categories,
                                tags=tags)
 
+    @classmethod
+    def _attach_limb_class(cls, limb):
+        """Attach a limb to the class.
+
+        """
+        # property definition
+        def getter(self):
+            if not hasattr(self, "_"+limb._name):
+                setattr(self, "_"+limb._name, limb(self))
+            return getattr(self, "_"+limb._name)
+
+        # set the property
+        setattr(cls, limb._name,
+                property(getter, None, None, limb.__doc__))
+
+    def _attach_limb(self, limb):
+        """Attach a limb.
+
+        """
+        try:
+            setattr(self, limb._name, limb(self))
+        except AttributeError:
+            pass
+
+    def attach(self, *limbname):
+        """Attach limbs by name to this Treant.
+
+        """
+        for ln in limbname:
+            try:
+                limb = _LIMBS[ln]
+            except KeyError:
+                raise KeyError("No such limb '{}'".format(ln))
+            else:
+                self._attach_limb(limb)
+
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
 
@@ -116,8 +148,8 @@ class Treant(object):
         """Addition of treants with collections or treants yields Bundle.
 
         """
-        if (isinstance(a, (Treant, collections._CollectionBase)) and
-           isinstance(b, (Treant, collections._CollectionBase))):
+        if (isinstance(a, (Treant, collections.CollectionBase)) and
+           isinstance(b, (Treant, collections.CollectionBase))):
             return collections.Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
@@ -126,7 +158,6 @@ class Treant(object):
         """Generate new Treant object.
 
         """
-        self._placeholders()
 
         # process keywords
         if not categories:
@@ -150,7 +181,7 @@ class Treant(object):
         self._start_logger(self._treanttype, treant)
 
         # generate state file
-        self._backend = datreant.backends.treantfile(
+        self._backend = treantfile(
                 statefile, self._logger, coordinator=coordinator,
                 categories=categories, tags=tags)
 
@@ -159,7 +190,6 @@ class Treant(object):
         """Re-generate existing Treant object.
 
         """
-        self._placeholders()
 
         # process keywords
         if not categories:
@@ -173,7 +203,7 @@ class Treant(object):
 
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
-                self._backend = datreant.backends.treantfile(
+                self._backend = treantfile(
                         statefile[0], coordinator=coordinator,
                         categories=categories, tags=tags)
             elif len(statefile) == 0:
@@ -185,7 +215,7 @@ class Treant(object):
 
         # if a state file is given, try loading it
         elif os.path.exists(treant):
-            self._backend = datreant.backends.treantfile(
+            self._backend = treantfile(
                     treant, coordinator=coordinator, categories=categories,
                     tags=tags)
 
@@ -194,14 +224,6 @@ class Treant(object):
 
         self._start_logger(self._treanttype, self.name)
         self._backend._start_logger(self._logger)
-
-    def _placeholders(self):
-        """Necessary placeholders for aggregator instances.
-
-        """
-        self._tags = None
-        self._categories = None
-        self._data = None
 
     def _start_logger(self, treanttype, name, location=None,
                       filehandler=False):
@@ -229,7 +251,7 @@ class Treant(object):
                 location = os.path.abspath(location)
                 # file handler if desired; beware of problems with too many
                 # open files when a large number of Treants are at play
-                logfile = os.path.join(location, datreant.backends.treantlog)
+                logfile = os.path.join(location, statefiles.treantlog)
                 fh = logging.FileHandler(logfile)
                 ff = logging.Formatter('%(asctime)s %(name)-12s '
                                        '%(levelname)-8s %(message)s')
@@ -364,50 +386,6 @@ class Treant(object):
         """
         return self._backend.filename
 
-    @property
-    def tags(self):
-        """The tags of the Treant.
-
-        Tags are user-added strings that can be used to and distinguish
-        Treants from one another through queries. They can also be useful as
-        flags for external code to determine how to handle the Treant.
-
-        """
-        if not self._tags:
-            self._tags = limbs.Tags(
-                    self, self._backend, self._logger)
-        return self._tags
-
-    @property
-    def categories(self):
-        """The categories of the Treant.
-
-        Categories are user-added key-value pairs that can be used to and
-        distinguish Treants from one another through queries. They can also be
-        useful as flags for external code to determine how to handle the
-        Treant.
-
-        """
-
-        if not self._categories:
-            self._categories = limbs.Categories(
-                    self, self._backend, self._logger)
-        return self._categories
-
-    @property
-    def data(self):
-        """The data of the Treant.
-
-        Data are user-generated pandas objects (e.g. Series, DataFrames), numpy
-        arrays, or any pickleable python object that are stored in the
-        Treant for easy recall later.  Each data instance is given its own
-        directory in the Treant's tree.
-
-        """
-        if not self._data:
-            self._data = limbs.Data(self, self._backend, self._logger)
-        return self._data
-
     def _new_uuid(self):
         """Generate new uuid for Treant.
 
@@ -446,30 +424,3 @@ class Group(Treant):
         out = out + ">"
 
         return out
-
-    @property
-    def members(self):
-        """The members of the Group.
-
-        A Group is useful as an interface to collections of Treants, and
-        they allow direct access to each member of that collection. Often
-        a Group is used to store datasets derived from this collection as
-        an aggregate.
-
-        Queries can also be made on the Group's members to return a
-        subselection of the members based on some search criteria. This can be
-        useful to define new Groups from members of existing ones.
-
-        """
-        if not self._members:
-            self._members = limbs.Members(self, self._backend,
-                                          self._logger)
-        return self._members
-
-    def _placeholders(self):
-        """Necessary placeholders for aggregator instances.
-
-        """
-        super(Group, self)._placeholders()
-
-        self._members = None
