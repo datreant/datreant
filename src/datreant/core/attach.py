@@ -8,7 +8,7 @@ from .limbs import Tags, Categories, Members
 
 # Treants get tags and categories
 for limb in (Tags, Categories):
-    Treant._attach_limb(limb)
+    Treant._attach_limb_class(limb)
 
 # Groups get members
-Group._attach_limb(Members)
+Group._attach_limb_class(Members)

@@ -19,6 +19,7 @@ from six.moves import zip
 
 from . import backends
 from . import filesystem
+from . import _LIMBS, _AGGLIMBS
 
 
 class CollectionBase(object):
@@ -30,21 +31,6 @@ class CollectionBase(object):
     """
     def __len__(self):
         return len(self._list())
-
-    @classmethod
-    def _attach_limb(cls, limb):
-        """Attach a limb to the class, or to self if an instance.
-
-        """
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, None, None, limb.__doc__))
 
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
@@ -68,6 +54,49 @@ class CollectionBase(object):
             return Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
+
+    @classmethod
+    def _attach_agglimb_class(cls, limb):
+        """Attach a agglimb to the class.
+
+        """
+        # property definition
+        def getter(self):
+            if not hasattr(self, "_"+limb._name):
+                setattr(self, "_"+limb._name, limb(self))
+            return getattr(self, "_"+limb._name)
+
+        # set the property
+        setattr(cls, limb._name,
+                property(getter, None, None, limb.__doc__))
+
+    def _attach_agglimb(self, limb):
+        """Attach an agglimb.
+
+        """
+        setattr(self, limb._name, limb(self))
+
+    def attach(self, *agglimbname):
+        """Attach agglimbs by name to this collection. Attaches corresponding limb
+        to member Treants.
+
+        """
+        for ln in agglimbname:
+            # try and get the agglimb class specified
+            try:
+                agglimb = _AGGLIMBS[ln]
+            except KeyError:
+                raise KeyError("No such agglimb '{}'".format(ln))
+
+            # attach agglimb; if it's already there, that's okay
+            try:
+                self._attach_agglimb(agglimb)
+            except AttributeError:
+                pass
+
+            # attach limb to each member
+            for member in self._list():
+                member.attach(ln)
 
     def add(self, *treants):
         """Add any number of members to this collection.

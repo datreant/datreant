@@ -1,20 +1,25 @@
 """
-Limbs are user interfaces for accessing stored data, as well as querying
-the state of an object (data loaded, universe attached, etc.). They are also
-used to aggregate the functionality of higher level objects (such as Treant) in
-ways that are user-friendly.
-
-In short, an Limb is designed to be user friendly on its own, but it can
-be used as a backend by a Treant, too.
+Limbs are interfaces for accessing stored data, as well as querying
+the state of an object.
 
 """
+import six
 
 from . import filesystem
 from . import collections
+from . import _LIMBS
 
 
-class Limb(object):
-    """Core functionality for information limbs.
+class _Limbmeta(type):
+    def __init__(cls, name, bases, classdict):
+        type.__init__(type, name, bases, classdict)
+
+        limbname = classdict['_name']
+        _LIMBS[limbname] = cls
+
+
+class Limb(six.with_metaclass(_Limbmeta, object)):
+    """Core functionality for Treant limbs.
 
     """
     # name used when attached to a Treant's namespace
@@ -288,12 +293,3 @@ class Members(Limb, collections.CollectionBase):
                 out = out + "{}\t{}:\t{}\n".format(i, treanttype, name)
 
         return out
-
-
-class MemberAgg(object):
-    """Core functionality for limbs attached to the Members limb.
-
-    """
-
-    def __init__(self, members):
-        self._members = members

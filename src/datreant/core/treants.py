@@ -8,12 +8,16 @@ import shutil
 from uuid import uuid4
 import logging
 import functools
+import six
 
 from .backends.core import treantfile
 from .backends import statefiles
 from . import limbs
 from . import filesystem
 from . import collections
+
+from . import _TREANTS
+from . import _LIMBS
 
 
 class MultipleTreantsError(Exception):
@@ -24,25 +28,16 @@ class NoTreantsError(Exception):
     pass
 
 
-def register(*treantclass):
-    """Register a treant-derived class so datreant can handle it.
+class _Treantmeta(type):
+    def __init__(cls, name, bases, classdict):
+        type.__init__(type, name, bases, classdict)
 
-    In order for things like Bundle to know how to handle custom treants,
-    they must be registered with the package. Give the class (not an instance)
-    to this function to register it.
-
-    :Arguments:
-        *treantclass*
-            treant-derived class to register; may enter more than one
-
-    """
-    from . import _TREANTS
-    for tc in treantclass:
-        _TREANTS.update({tc._treanttype: tc})
+        treanttype = classdict['_treanttype']
+        _TREANTS[treanttype] = cls
 
 
 @functools.total_ordering
-class Treant(object):
+class Treant(six.with_metaclass(_Treantmeta, object)):
     """Core class for all Treants.
 
     """
@@ -93,8 +88,8 @@ class Treant(object):
                                tags=tags)
 
     @classmethod
-    def _attach_limb(cls, limb):
-        """Attach a limb to the class, or to self if an instance.
+    def _attach_limb_class(cls, limb):
+        """Attach a limb to the class.
 
         """
         # property definition
@@ -106,6 +101,27 @@ class Treant(object):
         # set the property
         setattr(cls, limb._name,
                 property(getter, None, None, limb.__doc__))
+
+    def _attach_limb(self, limb):
+        """Attach a limb.
+
+        """
+        try:
+            setattr(self, limb._name, limb(self))
+        except AttributeError:
+            pass
+
+    def attach(self, *limbname):
+        """Attach limbs by name to this Treant.
+
+        """
+        for ln in limbname:
+            try:
+                limb = _LIMBS[ln]
+            except KeyError:
+                raise KeyError("No such limb '{}'".format(ln))
+            else:
+                self._attach_limb(limb)
 
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
