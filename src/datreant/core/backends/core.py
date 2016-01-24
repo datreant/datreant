@@ -9,8 +9,6 @@ import logging
 import warnings
 from functools import wraps
 
-import datreant
-
 
 def treantfile(filename, logger=None, **kwargs):
     """Generate or regenerate the appropriate treant file instance from
@@ -30,9 +28,11 @@ def treantfile(filename, logger=None, **kwargs):
             treantfile instance attached to the given file
 
     """
+    from .. import _TREANTS
+
     treant = None
     basename = os.path.basename(filename)
-    for treanttype in datreant._treants:
+    for treanttype in _TREANTS:
         if treanttype in basename:
             treant = treanttype
             break
@@ -40,7 +40,7 @@ def treantfile(filename, logger=None, **kwargs):
     if not treant:
         raise IOError("No known treant type for file '{}'".format(filename))
 
-    statefileclass = datreant._treants[treant]._backendclass
+    statefileclass = _TREANTS[treant]._backendclass
 
     if not statefileclass:
         raise IOError("No known backend type for file '{}'".format(filename))

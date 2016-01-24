@@ -4,7 +4,7 @@
 
 import pytest
 
-import datreant as dtr
+import datreant.core as dtr
 
 
 def do_stuff(cont):

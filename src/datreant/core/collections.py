@@ -17,9 +17,8 @@ import fnmatch
 from six import string_types
 from six.moves import zip
 
-from datreant import backends
-from datreant import filesystem
-import datreant.treants
+from . import backends
+from . import filesystem
 
 
 class CollectionBase(object):
@@ -62,8 +61,10 @@ class CollectionBase(object):
         """Addition of collections with collections or treants yields Bundle.
 
         """
-        if (isinstance(a, (datreant.treants.Treant, CollectionBase)) and
-                isinstance(b, (datreant.treants.Treant, CollectionBase))):
+        from .treants import Treant
+
+        if (isinstance(a, (Treant, CollectionBase)) and
+                isinstance(b, (Treant, CollectionBase))):
             return Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
@@ -78,8 +79,8 @@ class CollectionBase(object):
                 that contain treant statefiles; glob patterns are also allowed,
                 and all found treants will be added to the collection
         """
-        from datreant.limbs import Members
-        from datreant.treants import Treant
+        from .limbs import Members
+        from .treants import Treant
 
         outconts = list()
         for treant in treants:

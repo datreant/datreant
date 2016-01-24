@@ -9,7 +9,7 @@ from uuid import uuid4
 import logging
 import functools
 
-import datreant
+from .backends.core import treantfile
 from .backends import statefiles
 from . import limbs
 from . import filesystem
@@ -36,8 +36,9 @@ def register(*treantclass):
             treant-derived class to register; may enter more than one
 
     """
+    from . import _TREANTS
     for tc in treantclass:
-        datreant._treants.update({tc._treanttype: tc})
+        _TREANTS.update({tc._treanttype: tc})
 
 
 @functools.total_ordering
@@ -164,7 +165,7 @@ class Treant(object):
         self._start_logger(self._treanttype, treant)
 
         # generate state file
-        self._backend = datreant.backends.treantfile(
+        self._backend = treantfile(
                 statefile, self._logger, coordinator=coordinator,
                 categories=categories, tags=tags)
 
@@ -186,7 +187,7 @@ class Treant(object):
 
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
-                self._backend = datreant.backends.treantfile(
+                self._backend = treantfile(
                         statefile[0], coordinator=coordinator,
                         categories=categories, tags=tags)
             elif len(statefile) == 0:
@@ -198,7 +199,7 @@ class Treant(object):
 
         # if a state file is given, try loading it
         elif os.path.exists(treant):
-            self._backend = datreant.backends.treantfile(
+            self._backend = treantfile(
                     treant, coordinator=coordinator, categories=categories,
                     tags=tags)
 
@@ -234,7 +235,7 @@ class Treant(object):
                 location = os.path.abspath(location)
                 # file handler if desired; beware of problems with too many
                 # open files when a large number of Treants are at play
-                logfile = os.path.join(location, datreant.backends.treantlog)
+                logfile = os.path.join(location, statefiles.treantlog)
                 fh = logging.FileHandler(logfile)
                 ff = logging.Formatter('%(asctime)s %(name)-12s '
                                        '%(levelname)-8s %(message)s')

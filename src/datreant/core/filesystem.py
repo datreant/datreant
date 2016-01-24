@@ -10,7 +10,6 @@ import time
 import scandir
 
 from . import backends
-import datreant
 
 
 def statefilename(treanttype, uuid):
@@ -35,8 +34,10 @@ def glob_treant(treant):
             list giving absolute paths of state files found
             in directory
     """
+    from . import _TREANTS
+
     fileglob = list()
-    for treanttype in datreant._treants:
+    for treanttype in _TREANTS:
         fileglob.extend(
             glob.glob(os.path.join(
                 treant,
@@ -65,6 +66,7 @@ def path2treant(*paths):
             element indicates that ``None`` was present in the list of paths
 
     """
+    from . import _TREANTS
     treants = list()
     for path in paths:
         if path is None:
@@ -73,14 +75,14 @@ def path2treant(*paths):
             files = glob_treant(path)
             for item in files:
                 basename = os.path.basename(item)
-                for treanttype in datreant._treants:
+                for treanttype in _TREANTS:
                     if treanttype in basename:
-                        treants.append(datreant._treants[treanttype](item))
+                        treants.append(_TREANTS[treanttype](item))
         elif os.path.exists(path):
             basename = os.path.basename(path)
-            for treanttype in datreant._treants:
+            for treanttype in _TREANTS:
                 if treanttype in basename:
-                    treants.append(datreant._treants[treanttype](path))
+                    treants.append(_TREANTS[treanttype](path))
 
     return treants
 
@@ -139,8 +141,8 @@ class Foxhound(object):
                 instead of paths for *as_treants* == True.
 
         """
-        from datreant.limbs import Members
-        from datreant.collections import Bundle
+        from .limbs import Members
+        from .collections import Bundle
 
         if isinstance(self.caller, Members):
             results = self._find_Group_members()

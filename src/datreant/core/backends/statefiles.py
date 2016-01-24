@@ -114,7 +114,7 @@ class TreantFile(MixinJSON, FileSerial):
         try:
             version = self._record['version']
         except KeyError:
-            version = datreant.__version__
+            version = datreant.core.__version__
 
         return version
 

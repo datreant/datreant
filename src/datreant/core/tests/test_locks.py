@@ -7,9 +7,9 @@ import multiprocessing as mp
 import time
 import pytest
 
-import datreant as dtr
+import datreant.core as dtr
 
-from datreant.backends.statefiles import TreantFile
+from datreant.core.backends.statefiles import TreantFile
 
 
 def pokefile(treantfileclass, treantfilepath, string):
