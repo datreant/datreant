@@ -279,14 +279,3 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 
 # get docstrings for init methods, too
 autoclass_content = 'both'
-
-# for readthedocs, since it cannot compile dependencies that require C libraries
-from unittest.mock import MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
-
-MOCK_MODULES = ['pandas', 'tables', 'h5py', 'scandir', 'Cython', 'PyYAML']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)

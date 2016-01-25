@@ -30,16 +30,14 @@ For more information on what **datreant** is and what it does, check out the
 Getting datreant
 ================
 See the `installation instructions`_ for installation details.
-The package itself is pure Python, but it is dependent on `HDF5`_ libraries
-and the Python interfaces to these.
+The package itself is pure Python.
 
 If you want to work on the code, either for yourself or to contribute back to
 the project, clone the repository to your local machine with::
 
-    git clone https://github.com/datreant/datreant.git
+    git clone https://github.com/datreant/datreant.core.git
 
 .. _`installation instructions`: http://datreant.readthedocs.org/en/develop/install.html
-.. _`HDF5`: https://www.hdfgroup.org/HDF5/whatishdf5.html
 
 Contributing
 ============
@@ -55,12 +53,12 @@ if you learn how to get started with contributing back.
     :scale: 100%
     :target: https://readthedocs.org/projects/datreant
 
-.. |build| image:: https://travis-ci.org/datreant/datreant.svg?branch=develop
+.. |build| image:: https://travis-ci.org/datreant/datreant.core.svg?branch=develop
     :alt: Build Status
-    :target: https://travis-ci.org/datreant/datreant
+    :target: https://travis-ci.org/datreant/datreant.core
 
-.. |cov| image:: http://codecov.io/github/datreant/datreant/coverage.svg?branch=develop
+.. |cov| image:: http://codecov.io/github/datreant/datreant.core/coverage.svg?branch=develop
     :alt: Code Coverage
     :scale: 100%
-    :target: http://codecov.io/github/datreant/datreant?branch=develop
+    :target: http://codecov.io/github/datreant/datreant.core?branch=develop
 
