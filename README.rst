@@ -51,7 +51,7 @@ if you learn how to get started with contributing back.
 .. |docs| image:: https://readthedocs.org/projects/datreant/badge/?version=develop
     :alt: Documentation Status
     :scale: 100%
-    :target: https://readthedocs.org/projects/datreant
+    :target: http://datreant.readthedocs.org/en/develop/?badge=develop
 
 .. |build| image:: https://travis-ci.org/datreant/datreant.core.svg?branch=develop
     :alt: Build Status
