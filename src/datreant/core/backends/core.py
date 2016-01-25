@@ -353,6 +353,8 @@ class FileSerial(File):
 
         self._release_lock()
 
+        return out 
+
     @staticmethod
     def _read(func):
         """Decorator for applying a shared lock on file and reading contents.
@@ -369,7 +371,7 @@ class FileSerial(File):
             else:
                 self._apply_shared_lock()
                 try:
-                    self._pull_record()
+                    self._pull_state()
                     out = func(self, *args, **kwargs)
                 finally:
                     self._release_lock()
@@ -396,37 +398,37 @@ class FileSerial(File):
                 self._apply_exclusive_lock()
                 try:
                     try:
-                        self._pull_record()
+                        self._pull_state()
                     except IOError:
-                        self._init_record()
+                        self._init_state()
                     out = func(self, *args, **kwargs)
-                    self._push_record()
+                    self._push_state()
                 finally:
                     self._release_lock()
             return out
 
         return inner
 
-    def _pull_record(self):
+    def _pull_state(self):
         self.handle = self._open_file_r()
-        self._record = self._deserialize(self.handle)
+        self._state = self._deserialize(self.handle)
         self.handle.close()
 
     def _deserialize(self, handle):
-        """Deserialize full record from open file handle.
+        """Deserialize full state from open file handle.
 
         Override with specific code for deserializing stream from *handle*.
         """
         raise NotImplementedError
 
-    def _push_record(self):
+    def _push_state(self):
         self.handle = self._open_file_w()
-        self._serialize(self._record, self.handle)
+        self._serialize(self._state, self.handle)
         self.handle.close()
 
-    def _serialize(self, record, handle):
-        """Serialize full record to open file handle.
+    def _serialize(self, state, handle):
+        """Serialize full state to open file handle.
 
-        Override with specific code for serializing *record* to *handle*.
+        Override with specific code for serializing *state* to *handle*.
         """
         raise NotImplementedError

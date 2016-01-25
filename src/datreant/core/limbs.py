@@ -27,17 +27,6 @@ class Limb(six.with_metaclass(_Limbmeta, object)):
 
     def __init__(self, treant):
         self._treant = treant
-        self._placeholders()
-
-    def _placeholders(self):
-        """Initialize any hidden elements.
-
-        """
-        pass
-
-    @property
-    def _backend(self):
-        return self._treant._backend
 
     @property
     def _logger(self):
@@ -50,6 +39,27 @@ class Tags(Limb):
     """
     _name = 'tags'
 
+    def __init__(self, treant):
+        super(Tags, self).__init__(treant)
+
+        # init state if tags not already there;
+        # if read-only, check that they are there,
+        # and raise exception if they are not
+        try:
+            with self._treant._write():
+                try:
+                    self._treant._state['tags']
+                except KeyError:
+                    self._treant._state['tags'] = list()
+        except (IOError, OSError):
+            with self._treant.read():
+                try:
+                    self._treant._state['tags']
+                except KeyError:
+                    raise KeyError(
+                            ("Missing 'tags' data, and cannot write to "
+                             "Treant '{}'".format(self._treant.filepath)))
+                                    
     def __repr__(self):
         return "<Tags({})>".format(self._list())
 
@@ -69,10 +79,10 @@ class Tags(Limb):
         return out
 
     def __iter__(self):
-        return self._backend.get_tags().__iter__()
+        return self._list().__iter__()
 
     def __len__(self):
-        return len(self._backend.get_tags())
+        return len(self._list())
 
     def _list(self):
         """Get all tags for the Treant as a list.
@@ -81,7 +91,9 @@ class Tags(Limb):
             *tags*
                 list of all tags
         """
-        tags = self._backend.get_tags()
+        with self._read():
+            tags = self._state['tags']
+
         tags.sort()
         return tags
 
@@ -103,7 +115,20 @@ class Tags(Limb):
                 outtags.extend(tag)
             else:
                 outtags.append(tag)
-        self._backend.add_tags(*outtags)
+
+        with self._write():
+            # ensure tags are unique (we don't care about order)
+            # also they must be of a certain set of types
+            tags = set([tag for tag in outtags
+                        if (isinstance(tag, (int, float, string_types, bool)) or
+                            tag is None)])
+
+            # remove tags already present in metadata from list
+            tags = tags.difference(set(self._record['tags']))
+
+            # add new tags
+
+            self._state['tags'].extend(tags)
 
     def remove(self, *tags):
         """Remove tags from Treant.
@@ -115,13 +140,22 @@ class Tags(Limb):
             *tags*
                 Tags to delete.
         """
-        self._backend.del_tags(tags)
+        with self._write():
+            # remove redundant tags from given list if present
+            tags = set([str(tag) for tag in tags])
+            for tag in tags:
+                # remove tag; if not present, continue anyway
+                try:
+                    self._record['tags'].remove(tag)
+                except ValueError:
+                    pass
 
     def purge(self):
         """Remove all tags from Treant.
 
         """
-        self._backend.del_tags(all=True)
+        with self._write():
+            self._state['tags'] = list()
 
 
 class Categories(Limb):
@@ -129,6 +163,27 @@ class Categories(Limb):
 
     """
     _name = 'categories'
+
+    def __init__(self, treant):
+        super(Categories, self).__init__(treant)
+
+        # init state if categories not already there;
+        # if read-only, check that they are there,
+        # and raise exception if they are not
+        try:
+            with self._treant._write():
+                try:
+                    self._treant._state['categories']
+                except KeyError:
+                    self._treant._state['categories'] = dict()
+        except (IOError, OSError):
+            with self._treant.read():
+                try:
+                    self._treant._state['categories']
+                except KeyError:
+                    raise KeyError(
+                            ("Missing 'categories' data, and cannot write to "
+                             "Treant '{}'".format(self._treant.filepath)))
 
     def __repr__(self):
         return "<Categories({})>".format(self._dict())
@@ -159,7 +214,7 @@ class Categories(Limb):
             *value*
                 value corresponding to given key
         """
-        categories = self._backend.get_categories()
+        categories = self._dict()
         return categories[key]
 
     def __setitem__(self, key, value):
@@ -170,7 +225,7 @@ class Categories(Limb):
                 key of value to set
         """
         outdict = {key: value}
-        self._backend.add_categories(**outdict)
+        self.add(outdict)
 
     def __delitem__(self, category):
         """Remove category from Treant.
@@ -179,10 +234,10 @@ class Categories(Limb):
         self._backend.del_categories((category,))
 
     def __iter__(self):
-        return self._backend.get_categories().__iter__()
+        return self._dict().__iter__()
 
     def __len__(self):
-        return len(self._backend.get_categories())
+        return len(self._dict())
 
     def _dict(self):
         """Get all categories for the Treant as a dictionary.
@@ -192,7 +247,8 @@ class Categories(Limb):
                 dictionary of all categories
 
         """
-        return self._backend.get_categories()
+        with self._read():
+            return self._state['categories']
 
     def add(self, *categorydicts, **categories):
         """Add any number of categories to the Treant.
@@ -222,7 +278,12 @@ class Categories(Limb):
                                 " arguments must be dicts")
 
         outcats.update(categories)
-        self._backend.add_categories(**outcats)
+
+        with self._write():
+            for key, value in outcats.items():
+                if (isinstance(value, (int, float, string_types, bool)) or
+                        value is None):
+                    self._state['categories'][key] = value
 
     def remove(self, *categories):
         """Remove categories from Treant.
@@ -237,11 +298,17 @@ class Categories(Limb):
         """
         self._backend.del_categories(categories)
 
+        with self._write():
+            for key in categories:
+                # continue even if key not already present
+                self._state['categories'].pop(key, None)
+
     def purge(self):
         """Remove all categories from Treant.
 
         """
-        self._backend.del_categories(all=True)
+        with self._write():
+            self._state['categories'] = dict()
 
     def keys(self):
         """Get category keys.
@@ -250,7 +317,8 @@ class Categories(Limb):
             *keys*
                 keys present among categories
         """
-        return self._backend.get_categories().keys()
+        with self._read():
+            return self._state['categories'].keys()
 
     def values(self):
         """Get category values.
@@ -259,7 +327,8 @@ class Categories(Limb):
             *values*
                 values present among categories
         """
-        return self._backend.get_categories().values()
+        with self._read():
+            return self._state['categories'].values()
 
 
 class Members(Limb, collections.CollectionBase):
@@ -268,8 +337,8 @@ class Members(Limb, collections.CollectionBase):
     """
     _name = 'members'
 
-    def _placeholders(self):
-        # member cache
+    def __init__(self, treant):
+        super(Members, self).__init__(treant)
         self._cache = dict()
 
     def __repr__(self):

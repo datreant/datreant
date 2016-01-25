@@ -45,8 +45,7 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
     _treanttype = 'Treant'
     _backendclass = statefiles.TreantFile
 
-    def __init__(self, treant, new=False, coordinator=None,
-                 categories=None, tags=None):
+    def __init__(self, treant, new=False, categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Treant object.
 
         :Required arguments:
@@ -75,17 +74,12 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
                 adding many distinguishing descriptors
         """
         if new:
-            self._generate(treant, coordinator=coordinator,
-                           categories=categories, tags=tags)
+            self._generate(treant, categories=categories, tags=tags)
         else:
             try:
-                self._regenerate(treant,
-                                 coordinator=coordinator,
-                                 categories=categories, tags=tags)
+                self._regenerate(treant, categories=categories, tags=tags)
             except NoTreantsError:
-                self._generate(treant,
-                               coordinator=coordinator, categories=categories,
-                               tags=tags)
+                self._generate(treant, categories=categories, tags=tags)
 
     @classmethod
     def _attach_limb_class(cls, limb):
@@ -123,6 +117,33 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
             else:
                 self._attach_limb(limb)
 
+    @property
+    def _state(self):
+        return self._backend._state
+
+    @property
+    def _read(self):
+        @contextmanager
+        def read(self):
+            self._backend._apply_shared_lock()
+            self._backend._pull_state()
+            yield
+            self._backend._release_lock()
+
+        return read
+
+    @property
+    def _write(self):
+        @contextmanager
+        def write(self):
+            self._backend._apply_exclusive_lock()
+            self._backend._pull_state()
+            yield
+            self._backend._push_state()
+            self._backend._release_lock()
+
+        return write 
+
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
 
@@ -154,7 +175,7 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
-    def _generate(self, treant, coordinator=None, categories=None, tags=None):
+    def _generate(self, treant, categories=None, tags=None):
         """Generate new Treant object.
 
         """
@@ -182,11 +203,9 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
         # generate state file
         self._backend = treantfile(
-                statefile, self._logger, coordinator=coordinator,
-                categories=categories, tags=tags)
+                statefile, self._logger, categories=categories, tags=tags)
 
-    def _regenerate(self, treant, coordinator=None, categories=None,
-                    tags=None):
+    def _regenerate(self, treant, categories=None, tags=None):
         """Re-generate existing Treant object.
 
         """
@@ -204,8 +223,7 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
                 self._backend = treantfile(
-                        statefile[0], coordinator=coordinator,
-                        categories=categories, tags=tags)
+                        statefile[0], categories=categories, tags=tags)
             elif len(statefile) == 0:
                 raise NoTreantsError('No Treants found in directory.')
             else:
@@ -215,9 +233,8 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
         # if a state file is given, try loading it
         elif os.path.exists(treant):
-            self._backend = treantfile(
-                    treant, coordinator=coordinator, categories=categories,
-                    tags=tags)
+            self._backend = treantfile(treant, categories=categories,
+                                       tags=tags)
 
         else:
             raise NoTreantsError('No Treants found in path.')
@@ -385,23 +402,6 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
         """
         return self._backend.filename
-
-    def _new_uuid(self):
-        """Generate new uuid for Treant.
-
-        *Warning*: A Treant's uuid is used by Groups to identify whether or
-        not it is a member. Any Groups a Treant is a part of will cease
-        to recognize it when changed.
-
-        """
-        new_id = str(uuid4())
-        oldfile = self._backend.filename
-        olddir = os.path.dirname(self._backend.filename)
-        newfile = os.path.join(olddir,
-                               filesystem.statefilename(
-                                   self._treanttype, uuid))
-        os.rename(oldfile, newfile)
-        self._regenerate(newfile)
 
 
 class Group(Treant):
