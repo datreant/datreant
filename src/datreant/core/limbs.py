@@ -271,6 +271,7 @@ class Members(Limb, collections.CollectionBase):
     def _placeholders(self):
         # member cache
         self._cache = dict()
+        self._searchtime = 10
 
     def __repr__(self):
         return "<Members({})>".format(self._list())

@@ -272,7 +272,8 @@ class CollectionBase(object):
         # track down our non-cached treants
         paths = {path: members[path]
                  for path in self._backend.memberpaths}
-        foxhound = filesystem.Foxhound(self, findlist, paths)
+        foxhound = filesystem.Foxhound(self, findlist, paths,
+                                       timeout=self.searchtime)
         foundconts = foxhound.fetch(as_treants=True)
 
         # add to cache, and ensure we get updated paths with a re-add
@@ -343,6 +344,25 @@ class CollectionBase(object):
             results = None
 
         return results
+
+    @property
+    def searchtime(self):
+        """Max time to spend searching for missing members, in seconds.
+
+        Setting a larger value allows more time for the collection to look for
+        members elsewhere in the filesystem.
+
+        If `None`, there will be no time limit. Use with care.
+
+        """
+        return self._searchtime
+
+    @searchtime.setter
+    def searchtime(self, value):
+        if isinstance(value, (float, int)) or value is None:
+            self._searchtime = value
+        else:
+            raise TypeError("Must give a number or `None` for searchtime")
 
 
 class _BundleBackend():
@@ -505,6 +525,7 @@ class Bundle(CollectionBase):
         """
         self._backend = _BundleBackend()
         self._cache = dict()
+        self._searchtime = 10
 
         self.add(*treants)
 

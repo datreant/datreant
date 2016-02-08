@@ -253,7 +253,7 @@ class Foxhound(object):
 
         # walk downwards on an upward path through filesystem from the Group's
         # basedir
-        uuids = [x for x in outpaths if not outpaths[x]]
+        uuids = [str(x) for x in outpaths if not outpaths[x]]
         path = self.caller._backend.get_location()
         prev = None
         timedout = False
@@ -262,7 +262,9 @@ class Foxhound(object):
             top = True
             for root, dirs, files in scandir.walk(path):
                 # if search runs over timeout, call it off
-                if ((time.time() - currtime) > self.timeout):
+                if ((time.time() - currtime) > self.timeout and
+                        self.timeout is not None):
+
                     self.caller._logger.info(
                             "Search for missing members timed" +
                             " out at {}".format(self.timeout) +
@@ -281,7 +283,7 @@ class Foxhound(object):
                     top = False
 
                 for uuid in uuids:
-                    candidate = [os.path.join(root, x) for x in files 
+                    candidate = [os.path.join(root, x) for x in files
                                  if ((uuid in x) and
                                      ('.json' in x) and
                                      (x[0] != '.'))]

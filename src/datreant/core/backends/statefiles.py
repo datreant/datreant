@@ -20,7 +20,7 @@ class MixinJSON(object):
         return json.load(handle)
 
     def _serialize(self, record, handle):
-        json.dump(record, handle)
+        json.dump(record, handle, indent=4)
 
 
 class TreantFile(MixinJSON, FileSerial):
@@ -282,16 +282,21 @@ class GroupFile(TreantFile):
                 basedir of the new member in the filesystem
 
         """
+        member_rec = {'uuid': uuid,
+                      'treanttype': treanttype,
+                      'abspath': os.path.abspath(basedir),
+                      'relpath': os.path.relpath(
+                          basedir, self.get_location())}
+
         # check if uuid already present
         uuids = [member['uuid'] for member in self._record['members']]
 
-        if uuid not in uuids:
-            self._record['members'].append(
-                    {'uuid': uuid,
-                     'treanttype': treanttype,
-                     'abspath': os.path.abspath(basedir),
-                     'relpath': os.path.relpath(
-                         basedir, self.get_location())})
+        if uuid in uuids:
+            self._record['members'][uuids.index(uuid)] = member_rec
+
+        else:
+            # add to record
+            self._record['members'].append(member_rec)
 
     @FileSerial._write
     def del_members(self, uuids=None, all=False):
