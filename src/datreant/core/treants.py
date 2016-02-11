@@ -124,7 +124,7 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         return self.filepath
 
     def __setstate__(self, state):
-        self._regenerate(state)
+        self.__init__(state)
 
     def __eq__(self, other):
         try:
