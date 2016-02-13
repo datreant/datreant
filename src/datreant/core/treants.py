@@ -10,11 +10,13 @@ import logging
 import functools
 import six
 
-from .backends.core import treantfile
-from .backends import statefiles
 from . import limbs
 from . import filesystem
 from . import collections
+from .backends.core import treantfile
+from .backends import statefiles
+from .trees import TreeMixin, Tree
+from .util import makedirs
 
 from . import _TREANTS
 from . import _LIMBS
@@ -37,13 +39,12 @@ class _Treantmeta(type):
 
 
 @functools.total_ordering
-class Treant(six.with_metaclass(_Treantmeta, object)):
+class Treant(six.with_metaclass(_Treantmeta, TreeMixin)):
     """Core class for all Treants.
 
     """
     # required components
     _treanttype = 'Treant'
-    _backendclass = statefiles.TreantFile
 
     def __init__(self, treant, new=False, categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Treant object.
@@ -123,26 +124,11 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
     @property
     def _read(self):
-        @contextmanager
-        def read(self):
-            self._backend._apply_shared_lock()
-            self._backend._pull_state()
-            yield
-            self._backend._release_lock()
-
-        return read
+        return self._backend.read()
 
     @property
     def _write(self):
-        @contextmanager
-        def write(self):
-            self._backend._apply_exclusive_lock()
-            self._backend._pull_state()
-            yield
-            self._backend._push_state()
-            self._backend._release_lock()
-
-        return write 
+        return self._backend.write()
 
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
@@ -188,7 +174,7 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
         # build basedir; stop if we hit a permissions error
         try:
-            self._makedirs(treant)
+            makedirs(treant)
         except OSError as e:
             if e.errno == 13:
                 raise OSError(13, "Permission denied; " +
@@ -202,14 +188,16 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         self._start_logger(self._treanttype, treant)
 
         # generate state file
-        self._backend = treantfile(
-                statefile, self._logger, categories=categories, tags=tags)
+        self._backend = treantfile(statefile)
+
+        # add categories, tags
+        self.categories.add(categories)
+        self.tags.add(tags)
 
     def _regenerate(self, treant, categories=None, tags=None):
         """Re-generate existing Treant object.
 
         """
-
         # process keywords
         if not categories:
             categories = dict()
@@ -222,8 +210,14 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
-                self._backend = treantfile(
-                        statefile[0], categories=categories, tags=tags)
+                self._backend = treantfile(statefile[0])
+                # try to add categories, tags
+                try:
+                    self.categories.add(categories)
+                    self.tags.add(tags)
+                except (OSError, IOError):
+                    pass
+
             elif len(statefile) == 0:
                 raise NoTreantsError('No Treants found in directory.')
             else:
@@ -233,17 +227,19 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
         # if a state file is given, try loading it
         elif os.path.exists(treant):
-            self._backend = treantfile(treant, categories=categories,
-                                       tags=tags)
-
+            self._backend = treantfile(treant)
+            # try to add categories, tags
+            try:
+                self.categories.add(categories)
+                self.tags.add(tags)
+            except (OSError, IOError):
+                pass
         else:
             raise NoTreantsError('No Treants found in path.')
 
         self._start_logger(self._treanttype, self.name)
-        self._backend._start_logger(self._logger)
 
-    def _start_logger(self, treanttype, name, location=None,
-                      filehandler=False):
+    def _start_logger(self, treanttype, name):
         """Start up the logger.
 
         :Arguments:
@@ -251,11 +247,6 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
                 type of Treant the logger is a part of
             *name*
                 name of Treant
-            *location*
-                location of Treant
-            *filehandler*
-                if True, write output to a logfile in the Treant's main
-                directory [``False``]
 
         """
         # set up logging
@@ -264,39 +255,11 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         if not self._logger.handlers:
             self._logger.setLevel(logging.INFO)
 
-            if filehandler:
-                location = os.path.abspath(location)
-                # file handler if desired; beware of problems with too many
-                # open files when a large number of Treants are at play
-                logfile = os.path.join(location, statefiles.treantlog)
-                fh = logging.FileHandler(logfile)
-                ff = logging.Formatter('%(asctime)s %(name)-12s '
-                                       '%(levelname)-8s %(message)s')
-                fh.setFormatter(ff)
-                self._logger.addHandler(fh)
-
             # output handler
             ch = logging.StreamHandler(sys.stdout)
             cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
-
-    def _makedirs(self, p):
-        """Make directories and all parents necessary.
-
-        :Arguments:
-            *p*
-                directory path to make
-        """
-        try:
-            os.makedirs(p)
-        except OSError as e:
-            # let slide errors that include directories already existing, but
-            # catch others
-            if e.errno == 17:
-                pass
-            else:
-                raise
 
     @property
     def name(self):
@@ -377,7 +340,7 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         directory.
 
         """
-        self._makedirs(value)
+        makedirs(value)
         oldpath = self._backend.get_location()
         newpath = os.path.join(value, self.name)
         statefile = os.path.join(newpath,
@@ -387,14 +350,18 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         self._regenerate(statefile)
 
     @property
-    def basedir(self):
-        """Absolute path to the Treant's base directory.
-
-        This is a convenience property; the same result can be obtained by
-        joining :attr:`location` and :attr:`name`.
+    def abspath(self):
+        """Absolute path to the Treant's directory.
 
         """
         return self._backend.get_location()
+
+    @property
+    def relpath(self):
+        """Relative path to the Treant's directory.
+
+        """
+        return self.tree.relpath
 
     @property
     def filepath(self):
@@ -402,6 +369,10 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
         """
         return self._backend.filename
+
+    @property
+    def tree(self):
+        return Tree(self.abspath)
 
 
 class Group(Treant):
