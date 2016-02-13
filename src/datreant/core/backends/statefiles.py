@@ -8,22 +8,44 @@ import warnings
 import json
 from collections import defaultdict
 
-from six import string_types
-from six.moves import zip
-
 import datreant
-from .core import FileSerial
+from .core import JSONFile, FileSerial
 
 
-class MixinJSON(object):
-    def _deserialize(self, handle):
-        return json.load(handle)
+def treantfile(filename, logger=None, **kwargs):
+    """Generate or regenerate the appropriate treant file instance from
+    filename.
 
-    def _serialize(self, state, handle):
-        json.dump(state, handle)
+    :Arguments:
+        *filename*
+            path to state file (existing or to be created), including the
+            filename
+        *logger*
+            logger instance to pass to treant file instance
+
+    **kwargs passed to treant file ``__init__()`` method
+
+    :Returns:
+        *treantfile*
+            treantfile instance attached to the given file
+
+    """
+    from .. import _TREANTS
+
+    treant = None
+    basename = os.path.basename(filename)
+    for treanttype in _TREANTS:
+        if treanttype in basename:
+            treant = treanttype
+            break
+
+    if not treant:
+        raise IOError("No known treant type for file '{}'".format(filename))
+
+    return TreantFile(filename, **kwargs)
 
 
-class TreantFile(MixinJSON, FileSerial):
+class TreantFile(JSONFile):
     """Treant state file.
 
     This is the base class for all Treant state files. It generates data
@@ -37,8 +59,6 @@ class TreantFile(MixinJSON, FileSerial):
             Treant's logger instance
 
     :Keywords:
-        *treanttype*
-            Treant type
         *categories*
             user-given dictionary with custom keys and values; used to
             give distinguishing characteristics to object for search
@@ -50,11 +70,33 @@ class TreantFile(MixinJSON, FileSerial):
 
     """
 
+    def __init__(self, filename, logger=None, **kwargs):
+        super(TreantFile, self).__init__(filename, logger=logger)
+
+        # if file does not exist, it is created; if it does exist, it is
+        # updated
+        try:
+            self.create(**kwargs)
+        except OSError:
+            # in case the file exists but is read-only; we can't update but may
+            # still want to use it
+            if os.path.exists(self.filename):
+                pass
+            # if the file doesn't exist, we still want an exception
+            else:
+                raise
+
+    def create(self, **kwargs):
+        """Build state file and common data structure elements.
+
+        """
+        # update schema and version of file
+        version = self.update_schema()
+        self.update_version(version)
+
     def _init_state(self):
-        self._state = {'tags': list(), 'categories': dict()}
+        self._state = dict()
 
-
-    @FileSerial._read
     def get_version(self):
         """Get Treant version.
 
@@ -63,10 +105,10 @@ class TreantFile(MixinJSON, FileSerial):
                 version of Treant
 
         """
-        return self._state['version']
+        with self.read():
+            return self._state['version']
 
     # TODO: need a proper schema update mechanism
-    @FileSerial._write
     def update_schema(self):
         """Update schema of file.
 
@@ -74,14 +116,14 @@ class TreantFile(MixinJSON, FileSerial):
             *version*
                 version number of file's new schema
         """
-        try:
-            version = self._state['version']
-        except KeyError:
-            version = datreant.core.__version__
+        with self.write():
+            try:
+                version = self._state['version']
+            except KeyError:
+                version = datreant.core.__version__
 
-        return version
+            return version
 
-    @FileSerial._write
     def update_version(self, version):
         """Update version of Treant.
 
@@ -89,7 +131,8 @@ class TreantFile(MixinJSON, FileSerial):
             *version*
                 new version of Treant
         """
-        self._state['version'] = version
+        with self.write():
+            self._state['version'] = version
 
 
 class GroupFile(TreantFile):

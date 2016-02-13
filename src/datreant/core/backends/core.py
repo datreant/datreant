@@ -7,70 +7,31 @@ import sys
 import fcntl
 import logging
 import warnings
+import json
 from functools import wraps
-
-
-def treantfile(filename, logger=None, **kwargs):
-    """Generate or regenerate the appropriate treant file instance from
-    filename.
-
-    :Arguments:
-        *filename*
-            path to state file (existing or to be created), including the
-            filename
-        *logger*
-            logger instance to pass to treant file instance
-
-    **kwargs passed to treant file ``__init__()`` method
-
-    :Returns:
-        *treantfile*
-            treantfile instance attached to the given file
-
-    """
-    from .. import _TREANTS
-
-    treant = None
-    basename = os.path.basename(filename)
-    for treanttype in _TREANTS:
-        if treanttype in basename:
-            treant = treanttype
-            break
-
-    if not treant:
-        raise IOError("No known treant type for file '{}'".format(filename))
-
-    statefileclass = _TREANTS[treant]._backendclass
-
-    if not statefileclass:
-        raise IOError("No known backend type for file '{}'".format(filename))
-
-    return statefileclass(filename, logger=logger, **kwargs)
+from contextlib import contextmanager
 
 
 class File(object):
     """Generic File object base class. Implements file locking and reloading
     methods.
 
+    All files in datreant should be accessible by high-level methods
+    without having to worry about simultaneous reading and writing by other
+    processes. The File object includes methods for ensuring shared and
+    exclusive locks are consistently applied before reads and writes,
+    respectively. It handles any other low-level tasks for maintaining file
+    integrity.
+
+    :Arguments:
+        *filename*
+            name of file on disk object corresponds to
+        *logger*
+            logger to send warnings to
+
     """
 
     def __init__(self, filename, logger=None, **kwargs):
-        """Create File instance for interacting with file on disk.
-
-        All files in datreant should be accessible by high-level methods
-        without having to worry about simultaneous reading and writing by other
-        processes. The File object includes methods and infrastructure for
-        ensuring shared and exclusive locks are consistently applied before
-        reads and writes, respectively. It handles any other low-level tasks
-        for maintaining file integrity.
-
-        :Arguments:
-            *filename*
-                name of file on disk object corresponds to
-            *logger*
-                logger to send warnings and errors to
-
-        """
         self.filename = os.path.abspath(filename)
         self.handle = None
         self.fd = None
@@ -195,7 +156,7 @@ class File(object):
 
         Because we need an active file descriptor to apply advisory locks to a
         file, and because we need to do this before opening a file with
-        PyTables due to the risk of caching stale state on open, we open
+        the apprpriate interface (e.g. PyTables), we open
         a separate file descriptor to the same file and apply the locks
         to it.
 
@@ -355,7 +316,6 @@ class FileSerial(File):
 
         return out 
 
-    @staticmethod
     def _read(func):
         """Decorator for applying a shared lock on file and reading contents.
 
@@ -379,7 +339,6 @@ class FileSerial(File):
 
         return inner
 
-    @staticmethod
     def _write(func):
         """Decorator for applying an exclusive lock on file and modifying
         contents.
@@ -409,6 +368,36 @@ class FileSerial(File):
 
         return inner
 
+    @contextmanager
+    def read(self):
+        # if we already have any lock, proceed
+        if self.fdlock:
+            yield self._state
+        else:
+            self._apply_shared_lock()
+            try:
+                self._pull_state()
+                yield self._state
+            finally:
+                self._release_lock()
+
+    @contextmanager
+    def write(self):
+        # if we already have an exclusive lock, proceed
+        if self.fdlock == 'exclusive':
+            yield self._state
+        else:
+            self._apply_exclusive_lock()
+            try:
+                self._pull_state()
+            except IOError:
+                self._init_state()
+            try: 
+                yield self._state
+                self._push_state()
+            finally:
+                self._release_lock()
+
     def _pull_state(self):
         self.handle = self._open_file_r()
         self._state = self._deserialize(self.handle)
@@ -432,3 +421,11 @@ class FileSerial(File):
         Override with specific code for serializing *state* to *handle*.
         """
         raise NotImplementedError
+
+
+class JSONFile(FileSerial):
+    def _deserialize(self, handle):
+        return json.load(handle)
+
+    def _serialize(self, state, handle):
+        json.dump(state, handle)

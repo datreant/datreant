@@ -13,10 +13,10 @@ import six
 from . import limbs
 from . import filesystem
 from . import collections
-from .backends.core import treantfile
-from .backends import statefiles
 from .trees import TreeMixin, Tree
 from .util import makedirs
+
+from .backends.statefiles import treantfile
 
 from . import _TREANTS
 from . import _LIMBS
@@ -381,7 +381,6 @@ class Group(Treant):
     """
     # required components
     _treanttype = 'Group'
-    _backendclass = statefiles.GroupFile
 
     def __repr__(self):
         members = list(self._backend.get_members_treanttype())
