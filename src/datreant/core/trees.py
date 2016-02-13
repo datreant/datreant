@@ -7,6 +7,7 @@ from asciitree import LeftAligned
 
 from .util import makedirs
 
+
 class TreeMixin(object):
     def __getitem__(self, path):
         """Get trees or leaves in this tree.
@@ -46,7 +47,7 @@ class TreeMixin(object):
 
         """
         for root, dirs, files in scandir.walk(self.path):
-            out = dirs 
+            out = dirs
             break
 
         out.sort()
@@ -65,7 +66,7 @@ class TreeMixin(object):
             subdir = dict.fromkeys(files, {})
             parent = reduce(dict.get, folders[:-1], tree)
             parent[folders[-1]] = subdir
-        
+
         tr = LeftAligned()
         print tr(tree)
 

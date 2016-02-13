@@ -314,7 +314,7 @@ class FileSerial(File):
 
         self._release_lock()
 
-        return out 
+        return out
 
     def _read(func):
         """Decorator for applying a shared lock on file and reading contents.
@@ -392,7 +392,7 @@ class FileSerial(File):
                 self._pull_state()
             except IOError:
                 self._init_state()
-            try: 
+            try:
                 yield self._state
                 self._push_state()
             finally:

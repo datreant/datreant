@@ -12,7 +12,7 @@ import six
 
 from . import limbs
 from . import filesystem
-from . import collections
+from .collections import Bundle
 from .trees import TreeMixin, Tree
 from .util import makedirs
 
@@ -155,9 +155,9 @@ class Treant(six.with_metaclass(_Treantmeta, TreeMixin)):
         """Addition of treants with collections or treants yields Bundle.
 
         """
-        if (isinstance(a, (Treant, collections.CollectionBase)) and
-           isinstance(b, (Treant, collections.CollectionBase))):
-            return collections.Bundle(a, b)
+        if (isinstance(a, (Treant, Bundle)) and
+           isinstance(b, (Treant, Bundle))):
+            return Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 

@@ -1,5 +1,6 @@
 import os
 
+
 def makedirs(path):
     """Make directories and all parents necessary.
 
@@ -16,4 +17,3 @@ def makedirs(path):
             pass
         else:
             raise
-
