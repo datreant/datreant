@@ -383,14 +383,9 @@ class Group(Treant):
     _treanttype = 'Group'
 
     def __repr__(self):
-        members = list(self._backend.get_members_treanttype())
-
-        treants = members.count('Treant')
-        groups = members.count('Group')
-
-        out = "<Group: '{}'".format(self.name, len(members))
-        if members:
-            out = out + " | {} Members".format(len(members))
+        out = "<Group: '{}'".format(self.name)
+        if len(self.members):
+            out = out + " | {} Members".format(len(self.members))
         out = out + ">"
 
         return out

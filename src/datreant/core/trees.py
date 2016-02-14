@@ -22,7 +22,7 @@ class TreeMixin(object):
         Tree or Leaf
 
         """
-        fullpath = os.path.join(self.path, path)
+        fullpath = os.path.join(self.abspath, path)
 
         if os.path.isdir(fullpath) or fullpath.endswith('/'):
             return Tree(fullpath)
@@ -33,9 +33,12 @@ class TreeMixin(object):
     def leaves(self):
         """A list of the file names in the directory.
 
+        Hidden files are not included.
+
         """
-        for root, dirs, files in scandir.walk(self.path):
-            out = files
+        for root, dirs, files in scandir.walk(self.abspath):
+            # remove hidden files 
+            out = [f for f in files if f[0] != os.extsep]
             break
 
         out.sort()
@@ -45,12 +48,33 @@ class TreeMixin(object):
     def trees(self):
         """A list of the directories in the directory.
 
+        Hidden directories are not included.
+
         """
-        for root, dirs, files in scandir.walk(self.path):
-            out = dirs
+        for root, dirs, files in scandir.walk(self.abspath):
+            # remove hidden directories
+            out = [d for d in dirs if d[0] != os.extsep]
             break
 
         out.sort()
+        return out
+
+    @property
+    def hidden(self):
+        """A list of the hidden files and directories in the directory.
+
+        """
+        for root, dirs, files in scandir.walk(self.abspath):
+            outdirs = [d for d in dirs if d[0] == os.extsep]
+            outdirs.sort()
+
+            outfiles = [f for f in files if f[0] == os.extsep]
+            outfiles.sort()
+
+            # want directories then files
+            out = outdirs + outfiles
+            break
+
         return out
 
     def draw(self, depth=None, hidden=False):
