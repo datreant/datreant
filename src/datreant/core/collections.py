@@ -17,7 +17,6 @@ import fnmatch
 from six import string_types
 from six.moves import zip
 
-from . import backends
 from . import filesystem
 from . import _LIMBS, _AGGLIMBS
 
@@ -45,6 +44,7 @@ class Bundle(object):
         """
         self._cache = dict()
         self._state = list()
+        self._searchtime = 10
 
         self.add(*treants)
 
@@ -307,7 +307,8 @@ class Bundle(object):
         # track down our non-cached treants
         paths = {path: members[path]
                  for path in self._memberpaths}
-        foxhound = filesystem.Foxhound(self, findlist, paths)
+        foxhound = filesystem.Foxhound(self, findlist, paths,
+                                       timeout=self.searchtime)
         foundconts = foxhound.fetch(as_treants=True)
 
         # add to cache, and ensure we get updated paths with a re-add
@@ -378,6 +379,25 @@ class Bundle(object):
             results = None
 
         return results
+
+    @property
+    def searchtime(self):
+        """Max time to spend searching for missing members, in seconds.
+
+        Setting a larger value allows more time for the collection to look for
+        members elsewhere in the filesystem.
+
+        If `None`, there will be no time limit. Use with care.
+
+        """
+        return self._searchtime
+
+    @searchtime.setter
+    def searchtime(self, value):
+        if isinstance(value, (float, int)) or value is None:
+            self._searchtime = value
+        else:
+            raise TypeError("Must give a number or `None` for searchtime")
 
     def _add_member(self, uuid, treanttype, abspath):
         """Add a member to the Bundle.

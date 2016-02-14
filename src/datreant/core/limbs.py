@@ -390,6 +390,7 @@ class MemberBundle(Limb, Bundle):
 
         # member Treant cache
         self._cache = dict()
+        self._searchtime = 10
 
     def __repr__(self):
         return "<MemberBundle({})>".format(self._list())
