@@ -9,7 +9,15 @@ from collections import defaultdict
 
 from . import filesystem
 from .collections import Bundle
-from . import _LIMBS
+from . import _TREELIMBS, _LIMBS
+
+
+class _TreeLimbmeta(type):
+    def __init__(cls, name, bases, classdict):
+        type.__init__(type, name, bases, classdict)
+
+        limbname = classdict['_name']
+        _TREELIMBS[limbname] = cls
 
 
 class _Limbmeta(type):
@@ -18,6 +26,22 @@ class _Limbmeta(type):
 
         limbname = classdict['_name']
         _LIMBS[limbname] = cls
+
+
+class TreeLimb(with_metaclass(_TreeLimbmeta, object)):
+    """Core functionality for Tree limbs.
+
+    TreeLimbs are meant to attach to Trees, which lack a state file. Since
+    Treants are subclasses of Tree, they will inherit attachments of TreeLimbs
+    to that class. A TreeLimb, unlike a Limb, does not need access to state
+    file data.
+
+    """
+    # name used when attached to a Tree's namespace
+    _name = 'limb'
+
+    def __init__(self, tree):
+        self._tree = tree
 
 
 class Limb(with_metaclass(_Limbmeta, object)):

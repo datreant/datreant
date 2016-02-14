@@ -13,6 +13,7 @@ datreant.core --- persistent, pythonic trees for heterogeneous data
 """
 # global registries of classes
 _TREANTS = dict()
+_TREELIMBS = dict()
 _LIMBS = dict()
 _AGGLIMBS = dict()
 

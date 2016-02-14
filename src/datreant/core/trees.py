@@ -6,6 +6,7 @@ from pathlib import Path
 from asciitree import LeftAligned
 
 from .util import makedirs
+from . import _TREELIMBS
 
 
 class BrushMixin(object):
@@ -95,6 +96,18 @@ class Tree(BrushMixin):
             setattr(self, limb._name, limb(self))
         except AttributeError:
             pass
+
+    def attach(self, *limbname):
+        """Attach limbs by name to this Tree.
+
+        """
+        for ln in limbname:
+            try:
+                limb = _TREELIMBS[ln]
+            except KeyError:
+                raise KeyError("No such limb '{}'".format(ln))
+            else:
+                self._attach_limb(limb)
 
     @property
     def leaves(self):

@@ -18,9 +18,7 @@ from .trees import Tree
 from .util import makedirs
 
 from .backends.statefiles import treantfile
-
-from . import _TREANTS
-from . import _LIMBS
+from . import _TREANTS, _TREELIMBS, _LIMBS
 
 
 class MultipleTreantsError(Exception):
@@ -89,9 +87,12 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         """
         for ln in limbname:
             try:
-                limb = _LIMBS[ln]
+                limb = _TREELIMBS[ln]
             except KeyError:
-                raise KeyError("No such limb '{}'".format(ln))
+                try:
+                    limb = _LIMBS[ln]
+                except KeyError:
+                    raise KeyError("No such limb '{}'".format(ln))
             else:
                 self._attach_limb(limb)
 
