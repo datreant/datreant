@@ -19,5 +19,5 @@ setup(name='datreant.core',
       scripts=[],
       license='BSD',
       long_description=open('README.rst').read(),
-      install_requires=['scandir', 'six', 'pathlib']
+      install_requires=['asciitree', 'pathlib', 'scandir', 'six']
       )
