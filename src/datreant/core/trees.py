@@ -53,18 +53,31 @@ class TreeMixin(object):
         out.sort()
         return out
 
-    @property
-    def draw(self):
+    def draw(self, depth=None, hidden=False):
         """Print an asciified visual of the tree.
 
         """
         tree = {}
-        rootdir = self.path.rstrip(os.sep)
+        rootdir = self.abspath.rstrip(os.sep)
         start = rootdir.rfind(os.sep) + 1
-        for path, dirs, files in os.walk(rootdir):
+        for path, dirs, files in scandir.walk(rootdir):
             folders = ["{}/".format(x) for x in path[start:].split(os.sep)]
-            subdir = dict.fromkeys(files, {})
+
             parent = reduce(dict.get, folders[:-1], tree)
+
+            if depth and len(folders) == depth+1:
+                parent[folders[-1]] = {}
+                continue
+            elif depth and len(folders) > depth+1:
+                continue
+
+            # filter out hidden files, if desired
+            if not hidden:
+                outfiles = [file for file in files if file[0] != os.extsep]
+            else:
+                outfiles = files
+
+            subdir = dict.fromkeys(outfiles, {})
             parent[folders[-1]] = subdir
 
         tr = LeftAligned()
@@ -102,7 +115,7 @@ class Tree(TreeMixin, BrushMixin):
         self._path = Path(os.path.abspath(dirpath))
 
     def __repr__(self):
-        return "<Tree: '{}'>".format(self.relative)
+        return "<Tree: '{}'>".format(self.relpath)
 
 
 class Leaf(BrushMixin):
