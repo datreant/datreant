@@ -185,7 +185,7 @@ class Tree(BrushMixin):
             parent[folders[-1]] = subdir
 
         tr = LeftAligned()
-        print tr(tree)
+        print(tr(tree))
 
 
 class Leaf(BrushMixin):
