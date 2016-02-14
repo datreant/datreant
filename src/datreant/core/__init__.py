@@ -13,11 +13,13 @@ datreant.core --- persistent, pythonic trees for heterogeneous data
 """
 # global registries of classes
 _TREANTS = dict()
+_TREELIMBS = dict()
 _LIMBS = dict()
 _AGGLIMBS = dict()
 
 # Bring some often used objects into the current namespace
 from .treants import Treant, Group
+from .trees import Tree, Leaf
 from .collections import Bundle
 from . import attach
 

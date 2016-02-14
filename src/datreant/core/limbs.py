@@ -3,11 +3,21 @@ Limbs are interfaces for accessing stored data, as well as querying
 the state of an object.
 
 """
-import six
+import os
+from six import string_types, with_metaclass
+from collections import defaultdict
 
 from . import filesystem
-from . import collections
-from . import _LIMBS
+from .collections import Bundle
+from . import _TREELIMBS, _LIMBS
+
+
+class _TreeLimbmeta(type):
+    def __init__(cls, name, bases, classdict):
+        type.__init__(type, name, bases, classdict)
+
+        limbname = classdict['_name']
+        _TREELIMBS[limbname] = cls
 
 
 class _Limbmeta(type):
@@ -18,7 +28,23 @@ class _Limbmeta(type):
         _LIMBS[limbname] = cls
 
 
-class Limb(six.with_metaclass(_Limbmeta, object)):
+class TreeLimb(with_metaclass(_TreeLimbmeta, object)):
+    """Core functionality for Tree limbs.
+
+    TreeLimbs are meant to attach to Trees, which lack a state file. Since
+    Treants are subclasses of Tree, they will inherit attachments of TreeLimbs
+    to that class. A TreeLimb, unlike a Limb, does not need access to state
+    file data.
+
+    """
+    # name used when attached to a Tree's namespace
+    _name = 'limb'
+
+    def __init__(self, tree):
+        self._tree = tree
+
+
+class Limb(with_metaclass(_Limbmeta, object)):
     """Core functionality for Treant limbs.
 
     """
@@ -27,17 +53,6 @@ class Limb(six.with_metaclass(_Limbmeta, object)):
 
     def __init__(self, treant):
         self._treant = treant
-        self._placeholders()
-
-    def _placeholders(self):
-        """Initialize any hidden elements.
-
-        """
-        pass
-
-    @property
-    def _backend(self):
-        return self._treant._backend
 
     @property
     def _logger(self):
@@ -49,6 +64,27 @@ class Tags(Limb):
 
     """
     _name = 'tags'
+
+    def __init__(self, treant):
+        super(Tags, self).__init__(treant)
+
+        # init state if tags not already there;
+        # if read-only, check that they are there,
+        # and raise exception if they are not
+        try:
+            with self._treant._write:
+                try:
+                    self._treant._state['tags']
+                except KeyError:
+                    self._treant._state['tags'] = list()
+        except (IOError, OSError):
+            with self._treant._read:
+                try:
+                    self._treant._state['tags']
+                except KeyError:
+                    raise KeyError(
+                            ("Missing 'tags' data, and cannot write to "
+                             "Treant '{}'".format(self._treant.filepath)))
 
     def __repr__(self):
         return "<Tags({})>".format(self._list())
@@ -69,10 +105,10 @@ class Tags(Limb):
         return out
 
     def __iter__(self):
-        return self._backend.get_tags().__iter__()
+        return self._list().__iter__()
 
     def __len__(self):
-        return len(self._backend.get_tags())
+        return len(self._list())
 
     def _list(self):
         """Get all tags for the Treant as a list.
@@ -81,7 +117,9 @@ class Tags(Limb):
             *tags*
                 list of all tags
         """
-        tags = self._backend.get_tags()
+        with self._treant._read:
+            tags = self._treant._state['tags']
+
         tags.sort()
         return tags
 
@@ -103,7 +141,21 @@ class Tags(Limb):
                 outtags.extend(tag)
             else:
                 outtags.append(tag)
-        self._backend.add_tags(*outtags)
+
+        with self._treant._write:
+            # ensure tags are unique (we don't care about order)
+            # also they must be of a certain set of types
+            tags = set([tag for tag in outtags
+                        if (isinstance(tag,
+                                       (int, float, string_types, bool)) or
+                            tag is None)])
+
+            # remove tags already present in metadata from list
+            tags = tags.difference(set(self._treant._state['tags']))
+
+            # add new tags
+
+            self._treant._state['tags'].extend(tags)
 
     def remove(self, *tags):
         """Remove tags from Treant.
@@ -115,13 +167,22 @@ class Tags(Limb):
             *tags*
                 Tags to delete.
         """
-        self._backend.del_tags(tags)
+        with self._treant._write:
+            # remove redundant tags from given list if present
+            tags = set([str(tag) for tag in tags])
+            for tag in tags:
+                # remove tag; if not present, continue anyway
+                try:
+                    self._treant._state['tags'].remove(tag)
+                except ValueError:
+                    pass
 
     def purge(self):
         """Remove all tags from Treant.
 
         """
-        self._backend.del_tags(all=True)
+        with self._treant._write:
+            self._treant._state['tags'] = list()
 
 
 class Categories(Limb):
@@ -129,6 +190,27 @@ class Categories(Limb):
 
     """
     _name = 'categories'
+
+    def __init__(self, treant):
+        super(Categories, self).__init__(treant)
+
+        # init state if categories not already there;
+        # if read-only, check that they are there,
+        # and raise exception if they are not
+        try:
+            with self._treant._write:
+                try:
+                    self._treant._state['categories']
+                except KeyError:
+                    self._treant._state['categories'] = dict()
+        except (IOError, OSError):
+            with self._treant._read:
+                try:
+                    self._treant._state['categories']
+                except KeyError:
+                    raise KeyError(
+                            ("Missing 'categories' data, and cannot write to "
+                             "Treant '{}'".format(self._treant.filepath)))
 
     def __repr__(self):
         return "<Categories({})>".format(self._dict())
@@ -159,7 +241,7 @@ class Categories(Limb):
             *value*
                 value corresponding to given key
         """
-        categories = self._backend.get_categories()
+        categories = self._dict()
         return categories[key]
 
     def __setitem__(self, key, value):
@@ -170,19 +252,19 @@ class Categories(Limb):
                 key of value to set
         """
         outdict = {key: value}
-        self._backend.add_categories(**outdict)
+        self.add(outdict)
 
     def __delitem__(self, category):
         """Remove category from Treant.
 
         """
-        self._backend.del_categories((category,))
+        self.remove(category)
 
     def __iter__(self):
-        return self._backend.get_categories().__iter__()
+        return self._dict().__iter__()
 
     def __len__(self):
-        return len(self._backend.get_categories())
+        return len(self._dict())
 
     def _dict(self):
         """Get all categories for the Treant as a dictionary.
@@ -192,7 +274,8 @@ class Categories(Limb):
                 dictionary of all categories
 
         """
-        return self._backend.get_categories()
+        with self._treant._read:
+            return self._treant._state['categories']
 
     def add(self, *categorydicts, **categories):
         """Add any number of categories to the Treant.
@@ -222,7 +305,12 @@ class Categories(Limb):
                                 " arguments must be dicts")
 
         outcats.update(categories)
-        self._backend.add_categories(**outcats)
+
+        with self._treant._write:
+            for key, value in outcats.items():
+                if (isinstance(value, (int, float, string_types, bool)) or
+                        value is None):
+                    self._treant._state['categories'][key] = value
 
     def remove(self, *categories):
         """Remove categories from Treant.
@@ -235,13 +323,17 @@ class Categories(Limb):
                 Categories to delete.
 
         """
-        self._backend.del_categories(categories)
+        with self._treant._write:
+            for key in categories:
+                # continue even if key not already present
+                self._treant._state['categories'].pop(key, None)
 
     def purge(self):
         """Remove all categories from Treant.
 
         """
-        self._backend.del_categories(all=True)
+        with self._treant._write:
+            self._treant._state['categories'] = dict()
 
     def keys(self):
         """Get category keys.
@@ -250,7 +342,8 @@ class Categories(Limb):
             *keys*
                 keys present among categories
         """
-        return self._backend.get_categories().keys()
+        with self._treant._read:
+            return self._treant._state['categories'].keys()
 
     def values(self):
         """Get category values.
@@ -259,21 +352,47 @@ class Categories(Limb):
             *values*
                 values present among categories
         """
-        return self._backend.get_categories().values()
+        with self._treant._read:
+            return self._treant._state['categories'].values()
 
 
-class Members(Limb, collections.CollectionBase):
+class MemberBundle(Limb, Bundle):
     """Member manager for Groups.
 
     """
     _name = 'members'
 
-    def _placeholders(self):
-        # member cache
+    # add new paths to include them in member searches
+    _memberpaths = ['abspath', 'relpath']
+    _fields = ['uuid', 'treanttype']
+    _fields.extend(_memberpaths)
+
+    def __init__(self, treant):
+        super(MemberBundle, self).__init__(treant)
+
+        # init state if members not already there;
+        # if read-only, check that they are there,
+        # and raise exception if they are not
+        try:
+            with self._treant._write:
+                try:
+                    self._treant._state['members']
+                except KeyError:
+                    self._treant._state['members'] = list()
+        except (IOError, OSError):
+            with self._treant._read:
+                try:
+                    self._treant._state['members']
+                except KeyError:
+                    raise KeyError(
+                            ("Missing 'members' data, and cannot write to "
+                             "Treant '{}'".format(self._treant.filepath)))
+
+        # member Treant cache
         self._cache = dict()
 
     def __repr__(self):
-        return "<Members({})>".format(self._list())
+        return "<MemberBundle({})>".format(self._list())
 
     def __str__(self):
         names = self.names
@@ -293,3 +412,141 @@ class Members(Limb, collections.CollectionBase):
                 out = out + "{}\t{}:\t{}\n".format(i, treanttype, name)
 
         return out
+
+    def _add_member(self, uuid, treanttype, basedir):
+        """Add a member to the Group.
+
+        If the member is already present, its basedir paths will be updated
+        with the given basedir.
+
+        :Arguments:
+            *uuid*
+                the uuid of the new member
+            *treanttype*
+                the treant type of the new member
+            *basedir*
+                basedir of the new member in the filesystem
+
+        """
+        with self._treant._write:
+            # check if uuid already present
+            uuids = [member['uuid'] for member in
+                     self._treant._state['members']]
+
+            if uuid not in uuids:
+                self._treant._state['members'].append(
+                        {'uuid': uuid,
+                         'treanttype': treanttype,
+                         'abspath': os.path.abspath(basedir),
+                         'relpath': os.path.relpath(
+                             basedir, self._treant.location)})
+
+    def _del_members(self, uuids=None, all=False):
+        """Remove members from the Group.
+
+        :Arguments:
+            *uuids*
+                An iterable of uuids of the members to remove
+            *all*
+                When True, remove all members [``False``]
+
+        """
+        with self._treant._write:
+            if all:
+                self._treant._state['members'] = list()
+            elif uuids:
+                # remove redundant uuids from given list if present
+                uuids = set([str(uuid) for uuid in uuids])
+
+                # get matching rows
+                # TODO: possibly faster to use table.where
+                memberlist = list()
+                for i, member in enumerate(self._treant._state['members']):
+                    for uuid in uuids:
+                        if (member['uuid'] == uuid):
+                            memberlist.append(i)
+
+                memberlist.sort()
+                j = 0
+                # delete matching entries; have to use j to shift the register
+                # as we remove entries
+                for i in memberlist:
+                    self._treant._state['members'].pop(i - j)
+                    j = j + 1
+
+    def _get_member(self, uuid):
+        """Get all stored information on the specified member.
+
+        Returns a dictionary whose keys are column names and values the
+        corresponding values for the member.
+
+        :Arguments:
+            *uuid*
+                uuid of the member to retrieve information for
+
+        :Returns:
+            *memberinfo*
+                a dictionary containing all information stored for the
+                specified member
+        """
+        memberinfo = None
+        with self._treant._read:
+            for member in self._treant._state['members']:
+                if member['uuid'] == uuid:
+                    memberinfo = member
+
+        return memberinfo
+
+    def _get_members(self):
+        """Get full member table.
+
+        Sometimes it is useful to read the whole member table in one go instead
+        of doing multiple reads.
+
+        :Returns:
+            *memberdata*
+                dict giving full member data, with fields as keys and in member
+                order
+        """
+        out = defaultdict(list)
+
+        with self._treant._read:
+            for member in self._treant._state['members']:
+                for key in self._fields:
+                    out[key].append(member[key])
+
+        return out
+
+    def _get_members_uuid(self):
+        """List uuid for each member.
+
+        :Returns:
+            *uuids*
+                list giving treanttype of each member, in order
+        """
+        with self._treant._read:
+            return [member['uuid'] for member in
+                    self._treant._state['members']]
+
+    def _get_members_treanttype(self):
+        """List treanttype for each member.
+
+        :Returns:
+            *treanttypes*
+                list giving treanttype of each member, in order
+        """
+        with self._treant._read:
+            return [member['treanttype'] for member in
+                    self._treant._state['members']]
+
+    def _get_members_basedir(self):
+        """List basedir for each member.
+
+        :Returns:
+            *basedirs*
+                list of dicts giving all paths to member basedirs, in member
+                order
+        """
+        with self._treant._read:
+            return [member.fromkeys(_memberpaths)
+                    for member in self._treant._state['members']]

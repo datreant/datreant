@@ -8,6 +8,6 @@ datreant.backends --- low-level file backends
 =============================================
 
 """
-from .core import treantfile, File
+from .core import File, FileSerial
 
-__all__ = ['treantfile', 'File']
+__all__ = ['File', 'FileSerial']

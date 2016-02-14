@@ -5,19 +5,20 @@ Basic Treant objects: the organizational units for :mod:`datreant`.
 import os
 import sys
 import shutil
-from uuid import uuid4
 import logging
 import functools
 import six
+from uuid import uuid4
+from pathlib import Path
 
-from .backends.core import treantfile
-from .backends import statefiles
 from . import limbs
 from . import filesystem
-from . import collections
+from .collections import Bundle
+from .trees import Tree
+from .util import makedirs
 
-from . import _TREANTS
-from . import _LIMBS
+from .backends.statefiles import treantfile
+from . import _TREANTS, _TREELIMBS, _LIMBS
 
 
 class MultipleTreantsError(Exception):
@@ -37,13 +38,12 @@ class _Treantmeta(type):
 
 
 @functools.total_ordering
-class Treant(six.with_metaclass(_Treantmeta, object)):
+class Treant(six.with_metaclass(_Treantmeta, Tree)):
     """Core class for all Treants.
 
     """
     # required components
     _treanttype = 'Treant'
-    _backendclass = statefiles.TreantFile
 
     def __init__(self, treant, new=False, categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Treant object.
@@ -81,41 +81,32 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
             except NoTreantsError:
                 self._generate(treant, categories=categories, tags=tags)
 
-    @classmethod
-    def _attach_limb_class(cls, limb):
-        """Attach a limb to the class.
-
-        """
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, None, None, limb.__doc__))
-
-    def _attach_limb(self, limb):
-        """Attach a limb.
-
-        """
-        try:
-            setattr(self, limb._name, limb(self))
-        except AttributeError:
-            pass
-
     def attach(self, *limbname):
         """Attach limbs by name to this Treant.
 
         """
         for ln in limbname:
             try:
-                limb = _LIMBS[ln]
+                limb = _TREELIMBS[ln]
             except KeyError:
-                raise KeyError("No such limb '{}'".format(ln))
+                try:
+                    limb = _LIMBS[ln]
+                except KeyError:
+                    raise KeyError("No such limb '{}'".format(ln))
             else:
                 self._attach_limb(limb)
+
+    @property
+    def _state(self):
+        return self._backend._state
+
+    @property
+    def _read(self):
+        return self._backend.read()
+
+    @property
+    def _write(self):
+        return self._backend.write()
 
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
@@ -142,9 +133,9 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         """Addition of treants with collections or treants yields Bundle.
 
         """
-        if (isinstance(a, (Treant, collections.CollectionBase)) and
-           isinstance(b, (Treant, collections.CollectionBase))):
-            return collections.Bundle(a, b)
+        if (isinstance(a, (Treant, Bundle)) and
+           isinstance(b, (Treant, Bundle))):
+            return Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
@@ -161,7 +152,7 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
         # build basedir; stop if we hit a permissions error
         try:
-            self._makedirs(treant)
+            makedirs(treant)
         except OSError as e:
             if e.errno == 13:
                 raise OSError(13, "Permission denied; " +
@@ -175,14 +166,16 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         self._start_logger(self._treanttype, treant)
 
         # generate state file
-        self._backend = treantfile(
-                statefile, self._logger, categories=categories, tags=tags)
+        self._backend = treantfile(statefile)
+
+        # add categories, tags
+        self.categories.add(categories)
+        self.tags.add(tags)
 
     def _regenerate(self, treant, categories=None, tags=None):
         """Re-generate existing Treant object.
 
         """
-
         # process keywords
         if not categories:
             categories = dict()
@@ -195,8 +188,14 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
-                self._backend = treantfile(
-                        statefile[0], categories=categories, tags=tags)
+                self._backend = treantfile(statefile[0])
+                # try to add categories, tags
+                try:
+                    self.categories.add(categories)
+                    self.tags.add(tags)
+                except (OSError, IOError):
+                    pass
+
             elif len(statefile) == 0:
                 raise NoTreantsError('No Treants found in directory.')
             else:
@@ -206,17 +205,19 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
 
         # if a state file is given, try loading it
         elif os.path.exists(treant):
-            self._backend = treantfile(
-                    treant, categories=categories, tags=tags)
-
+            self._backend = treantfile(treant)
+            # try to add categories, tags
+            try:
+                self.categories.add(categories)
+                self.tags.add(tags)
+            except (OSError, IOError):
+                pass
         else:
             raise NoTreantsError('No Treants found in path.')
 
         self._start_logger(self._treanttype, self.name)
-        self._backend._start_logger(self._logger)
 
-    def _start_logger(self, treanttype, name, location=None,
-                      filehandler=False):
+    def _start_logger(self, treanttype, name):
         """Start up the logger.
 
         :Arguments:
@@ -224,11 +225,6 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
                 type of Treant the logger is a part of
             *name*
                 name of Treant
-            *location*
-                location of Treant
-            *filehandler*
-                if True, write output to a logfile in the Treant's main
-                directory [``False``]
 
         """
         # set up logging
@@ -237,39 +233,11 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         if not self._logger.handlers:
             self._logger.setLevel(logging.INFO)
 
-            if filehandler:
-                location = os.path.abspath(location)
-                # file handler if desired; beware of problems with too many
-                # open files when a large number of Treants are at play
-                logfile = os.path.join(location, statefiles.treantlog)
-                fh = logging.FileHandler(logfile)
-                ff = logging.Formatter('%(asctime)s %(name)-12s '
-                                       '%(levelname)-8s %(message)s')
-                fh.setFormatter(ff)
-                self._logger.addHandler(fh)
-
             # output handler
             ch = logging.StreamHandler(sys.stdout)
             cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
             ch.setFormatter(cf)
             self._logger.addHandler(ch)
-
-    def _makedirs(self, p):
-        """Make directories and all parents necessary.
-
-        :Arguments:
-            *p*
-                directory path to make
-        """
-        try:
-            os.makedirs(p)
-        except OSError as e:
-            # let slide errors that include directories already existing, but
-            # catch others
-            if e.errno == 17:
-                pass
-            else:
-                raise
 
     @property
     def name(self):
@@ -350,7 +318,7 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         directory.
 
         """
-        self._makedirs(value)
+        makedirs(value)
         oldpath = self._backend.get_location()
         newpath = os.path.join(value, self.name)
         statefile = os.path.join(newpath,
@@ -360,14 +328,11 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         self._regenerate(statefile)
 
     @property
-    def basedir(self):
-        """Absolute path to the Treant's base directory.
-
-        This is a convenience property; the same result can be obtained by
-        joining :attr:`location` and :attr:`name`.
+    def path(self):
+        """Treant directory as a :class:`pathlib.Path`.
 
         """
-        return self._backend.get_location()
+        return Path(self._backend.get_location())
 
     @property
     def filepath(self):
@@ -376,22 +341,15 @@ class Treant(six.with_metaclass(_Treantmeta, object)):
         """
         return self._backend.filename
 
-    def _new_uuid(self):
-        """Generate new uuid for Treant.
+    @property
+    def tree(self):
+        return Tree(self.abspath)
 
-        *Warning*: A Treant's uuid is used by Groups to identify whether or
-        not it is a member. Any Groups a Treant is a part of will cease
-        to recognize it when changed.
-
-        """
-        new_id = str(uuid4())
-        oldfile = self._backend.filename
-        olddir = os.path.dirname(self._backend.filename)
-        newfile = os.path.join(olddir,
-                               filesystem.statefilename(
-                                   self._treanttype, uuid))
-        os.rename(oldfile, newfile)
-        self._regenerate(newfile)
+    @property
+    def state(self):
+        with self._read:
+            state = self._state
+        return state
 
 
 class Group(Treant):
@@ -400,17 +358,11 @@ class Group(Treant):
     """
     # required components
     _treanttype = 'Group'
-    _backendclass = statefiles.GroupFile
 
     def __repr__(self):
-        members = list(self._backend.get_members_treanttype())
-
-        treants = members.count('Treant')
-        groups = members.count('Group')
-
-        out = "<Group: '{}'".format(self.name, len(members))
-        if members:
-            out = out + " | {} Members".format(len(members))
+        out = "<Group: '{}'".format(self.name)
+        if len(self.members):
+            out = out + " | {} Members".format(len(self.members))
         out = out + ">"
 
         return out

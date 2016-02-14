@@ -26,7 +26,7 @@ class TestTreant:
         assert treant.name == self.treantname
         assert treant.location == tmpdir.strpath
         assert treant.treanttype == self.treanttype
-        assert treant.basedir == os.path.join(tmpdir.strpath, self.treantname)
+        assert treant.abspath == os.path.join(tmpdir.strpath, self.treantname)
 
     def test_gen_methods(self, tmpdir):
         """Test the variety of ways we can generate a new Treant
@@ -73,7 +73,7 @@ class TestTreant:
             # 5
             t5 = self.treantclass('yet/more', new=True)
             assert os.path.exists(t5.filepath)
-            assert t5.basedir == t4.basedir
+            assert t5.abspath == t4.abspath
             assert t5.filepath != t4.filepath
 
             # 6
@@ -267,10 +267,10 @@ class TestReadOnly:
         with tmpdir.as_cwd():
             c = dtr.treants.Treant('testtreant')
             c.tags.add('72')
-            py.path.local(c.basedir).chmod(0o0550, rec=True)
+            py.path.local(c.abspath).chmod(0o0550, rec=True)
 
         def fin():
-            py.path.local(c.basedir).chmod(0o0770, rec=True)
+            py.path.local(c.abspath).chmod(0o0770, rec=True)
 
         request.addfinalizer(fin)
 
@@ -281,10 +281,10 @@ class TestReadOnly:
         with tmpdir.as_cwd():
             c = dtr.Group('testgroup')
             c.members.add(dtr.Treant('lark'), dtr.Group('bark'))
-            py.path.local(c.basedir).chmod(0o0550, rec=True)
+            py.path.local(c.abspath).chmod(0o0550, rec=True)
 
         def fin():
-            py.path.local(c.basedir).chmod(0o0770, rec=True)
+            py.path.local(c.abspath).chmod(0o0770, rec=True)
 
         request.addfinalizer(fin)
 

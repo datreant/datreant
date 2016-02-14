@@ -97,7 +97,7 @@ class Foxhound(object):
     TreantFiles use this class to find their file on disk when it moves.
 
     """
-    def __init__(self, caller, uuids, basedirs, timeout=10):
+    def __init__(self, caller, uuids, paths, timeout=10):
         """Generate a Foxhound to track down Treants.
 
         :Arguments:
@@ -107,8 +107,8 @@ class Foxhound(object):
                 for conducting the search
             *uuids*
                 list of unique identifiers of Treants to find
-            *basedirs*
-                dict of basedirs to start searching around; keys may be
+            *paths*
+                dict of directory paths to start searching around; keys may be
                 'abspath' or 'relpath', and values should be lists of paths
 
         :Keywords:
@@ -118,7 +118,7 @@ class Foxhound(object):
         """
         self.caller = caller
         self.uuids = uuids
-        self.basedirs = basedirs
+        self.paths = paths
 
         self.timeout = timeout
 
@@ -141,10 +141,10 @@ class Foxhound(object):
                 instead of paths for *as_treants* == True.
 
         """
-        from .limbs import Members
+        from .limbs import MemberBundle
         from .collections import Bundle
 
-        if isinstance(self.caller, Members):
+        if isinstance(self.caller, MemberBundle):
             results = self._find_Group_members()
         elif isinstance(self.caller, Bundle):
             results = self._find_Bundle_members()
@@ -155,7 +155,7 @@ class Foxhound(object):
 
         return results
 
-    def _check_basedirs(self):
+    def _check_paths(self):
         """Check last-known locations for Treants.
 
         :Returns:
@@ -168,8 +168,8 @@ class Foxhound(object):
         outpaths = {x: y for x, y in zip(self.uuids, [None]*len(self.uuids))}
 
         uuids = [x for x in outpaths if not outpaths[x]]
-        if 'abspath' in self.basedirs:
-            for path in self.basedirs['abspath']:
+        if 'abspath' in self.paths:
+            for path in self.paths['abspath']:
                 found = []
                 for uuid in uuids:
                     candidate = glob.glob(
@@ -182,14 +182,14 @@ class Foxhound(object):
                 for item in found:
                     uuids.remove(item)
 
-        if 'relpath' in self.basedirs:
+        if 'relpath' in self.paths:
             # get uuids for which paths haven't been found
-            for path in self.basedirs['relpath']:
+            for path in self.paths['relpath']:
                 found = []
                 for uuid in uuids:
                     candidate = glob.glob(
                             os.path.join(
-                                self.caller._backend.get_location(),
+                                self.caller._treant.location,
                                 path, '*.{}.json'.format(uuid)))
 
                     if candidate:
@@ -246,7 +246,7 @@ class Foxhound(object):
 
         """
         # search last-known locations
-        outpaths = self._check_basedirs()
+        outpaths = self._check_paths()
 
         # get current time
         currtime = time.time()
@@ -254,7 +254,7 @@ class Foxhound(object):
         # walk downwards on an upward path through filesystem from the Group's
         # basedir
         uuids = [x for x in outpaths if not outpaths[x]]
-        path = self.caller._backend.get_location()
+        path = self.caller._treant.location
         prev = None
         timedout = False
         while prev != path and uuids and not timedout:
@@ -317,7 +317,7 @@ class Foxhound(object):
 
         """
         # search last-known locations
-        outpaths = self._check_basedirs()
+        outpaths = self._check_paths()
 
         # get current time
         currtime = time.time()
