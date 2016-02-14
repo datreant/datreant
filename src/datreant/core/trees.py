@@ -8,7 +8,50 @@ from asciitree import LeftAligned
 from .util import makedirs
 
 
-class TreeMixin(object):
+class BrushMixin(object):
+    def __str__(self):
+        return str(self.path)
+
+    @property
+    def exists(self):
+        """Check existence of ``self.path`` in filesystem.
+
+        """
+        return self.path.exists()
+
+    @property
+    def path(self):
+        """Filesystem as a :class:`pathlib.Path`.
+
+        """
+        return self._path
+
+    @property
+    def abspath(self):
+        """Absolute path of ``self.path``.
+
+        """
+        return str(self.path.absolute())
+
+    @property
+    def relpath(self):
+        """Relative path of ``self.path`` from current working directory.
+
+        """
+        return str(self.path.relative_to(os.path.abspath('.')))
+
+
+class Tree(BrushMixin):
+    """A directory.
+
+    """
+    def __init__(self, dirpath):
+        makedirs(dirpath)
+        self._path = Path(os.path.abspath(dirpath))
+
+    def __repr__(self):
+        return "<Tree: '{}'>".format(self.relpath)
+
     def __getitem__(self, path):
         """Get trees or leaves in this tree.
 
@@ -29,6 +72,30 @@ class TreeMixin(object):
         else:
             return Leaf(fullpath)
 
+    @classmethod
+    def _attach_limb_class(cls, limb):
+        """Attach a limb to the class.
+
+        """
+        # property definition
+        def getter(self):
+            if not hasattr(self, "_"+limb._name):
+                setattr(self, "_"+limb._name, limb(self))
+            return getattr(self, "_"+limb._name)
+
+        # set the property
+        setattr(cls, limb._name,
+                property(getter, None, None, limb.__doc__))
+
+    def _attach_limb(self, limb):
+        """Attach a limb.
+
+        """
+        try:
+            setattr(self, limb._name, limb(self))
+        except AttributeError:
+            pass
+
     @property
     def leaves(self):
         """A list of the file names in the directory.
@@ -37,7 +104,7 @@ class TreeMixin(object):
 
         """
         for root, dirs, files in scandir.walk(self.abspath):
-            # remove hidden files 
+            # remove hidden files
             out = [f for f in files if f[0] != os.extsep]
             break
 
@@ -106,40 +173,6 @@ class TreeMixin(object):
 
         tr = LeftAligned()
         print tr(tree)
-
-
-class BrushMixin(object):
-    def __str__(self):
-        return str(self.path)
-
-    @property
-    def exists(self):
-        return self.path.exists
-
-    @property
-    def path(self):
-        return self._path
-
-    @property
-    def abspath(self):
-        return str(self.path.absolute())
-
-    @property
-    def relpath(self):
-        return str(self.path.relative_to(os.path.abspath('.')))
-
-
-class Tree(TreeMixin, BrushMixin):
-    """A directory.
-
-    """
-
-    def __init__(self, dirpath):
-        makedirs(dirpath)
-        self._path = Path(os.path.abspath(dirpath))
-
-    def __repr__(self):
-        return "<Tree: '{}'>".format(self.relpath)
 
 
 class Leaf(BrushMixin):

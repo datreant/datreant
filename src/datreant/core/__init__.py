@@ -18,6 +18,7 @@ _AGGLIMBS = dict()
 
 # Bring some often used objects into the current namespace
 from .treants import Treant, Group
+from .trees import Tree, Leaf
 from .collections import Bundle
 from . import attach
 

@@ -5,15 +5,16 @@ Basic Treant objects: the organizational units for :mod:`datreant`.
 import os
 import sys
 import shutil
-from uuid import uuid4
 import logging
 import functools
 import six
+from uuid import uuid4
+from pathlib import Path
 
 from . import limbs
 from . import filesystem
 from .collections import Bundle
-from .trees import TreeMixin, Tree
+from .trees import Tree
 from .util import makedirs
 
 from .backends.statefiles import treantfile
@@ -39,7 +40,7 @@ class _Treantmeta(type):
 
 
 @functools.total_ordering
-class Treant(six.with_metaclass(_Treantmeta, TreeMixin)):
+class Treant(six.with_metaclass(_Treantmeta, Tree)):
     """Core class for all Treants.
 
     """
@@ -81,30 +82,6 @@ class Treant(six.with_metaclass(_Treantmeta, TreeMixin)):
                 self._regenerate(treant, categories=categories, tags=tags)
             except NoTreantsError:
                 self._generate(treant, categories=categories, tags=tags)
-
-    @classmethod
-    def _attach_limb_class(cls, limb):
-        """Attach a limb to the class.
-
-        """
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, None, None, limb.__doc__))
-
-    def _attach_limb(self, limb):
-        """Attach a limb.
-
-        """
-        try:
-            setattr(self, limb._name, limb(self))
-        except AttributeError:
-            pass
 
     def attach(self, *limbname):
         """Attach limbs by name to this Treant.
@@ -350,18 +327,11 @@ class Treant(six.with_metaclass(_Treantmeta, TreeMixin)):
         self._regenerate(statefile)
 
     @property
-    def abspath(self):
-        """Absolute path to the Treant's directory.
+    def path(self):
+        """Treant directory as a :class:`pathlib.Path`.
 
         """
-        return self._backend.get_location()
-
-    @property
-    def relpath(self):
-        """Relative path to the Treant's directory.
-
-        """
-        return self.tree.relpath
+        return Path(self._backend.get_location())
 
     @property
     def filepath(self):
@@ -373,6 +343,12 @@ class Treant(six.with_metaclass(_Treantmeta, TreeMixin)):
     @property
     def tree(self):
         return Tree(self.abspath)
+
+    @property
+    def state(self):
+        with self._read:
+            state = self._state
+        return state
 
 
 class Group(Treant):
