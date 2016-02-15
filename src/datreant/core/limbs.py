@@ -131,8 +131,7 @@ class Tags(Limb):
 
         :Arguments:
            *tags*
-              Tags to add. Must be convertable to strings using the str()
-              builtin.  May also be a list of tags.
+              Tags to add. Must be strings or lists of strings.
 
         """
         outtags = list()
@@ -144,18 +143,15 @@ class Tags(Limb):
 
         with self._treant._write:
             # ensure tags are unique (we don't care about order)
-            # also they must be of a certain set of types
-            tags = set([tag for tag in outtags
-                        if (isinstance(tag,
-                                       (int, float, string_types, bool)) or
-                            tag is None)])
+            # also they must be strings
+            outtags = set([tag for tag in outtags if
+                           isinstance(tag, string_types)])
 
             # remove tags already present in metadata from list
-            tags = tags.difference(set(self._treant._state['tags']))
+            outtags = outtags.difference(set(self._treant._state['tags']))
 
             # add new tags
-
-            self._treant._state['tags'].extend(tags)
+            self._treant._state['tags'].extend(outtags)
 
     def remove(self, *tags):
         """Remove tags from Treant.
@@ -392,6 +388,18 @@ class MemberBundle(Limb, Bundle):
         self._cache = dict()
         self._searchtime = 10
 
+    def __set__(self, obj, val):
+        """Setting with a Bundle will make membership match the Bundle.
+
+        This is useful for quickly changing out the members or reordering them.
+
+        """
+        if isinstance(val, (list, Bundle)):
+            self.purge()
+            self.add(Bundle)
+        else:
+            raise TypeError("Can only set with a list or Bundle")
+
     def __repr__(self):
         return "<MemberBundle({})>".format(self._list())
 
@@ -414,6 +422,17 @@ class MemberBundle(Limb, Bundle):
 
         return out
 
+    @staticmethod
+    def _setter(self, val):
+        """Used for constructing the property when attaching this Limb to a class.
+
+        """
+        if isinstance(val, (list, Bundle)):
+            self.members.purge()
+            self.members.add(val)
+        else:
+            raise TypeError("Can only set with a list or Bundle")
+
     def _add_member(self, uuid, treanttype, basedir):
         """Add a member to the Group.
 
@@ -429,18 +448,21 @@ class MemberBundle(Limb, Bundle):
                 basedir of the new member in the filesystem
 
         """
+        member_rec = {'uuid': uuid,
+                      'treanttype': treanttype,
+                      'abspath': os.path.abspath(basedir),
+                      'relpath': os.path.relpath(
+                          basedir, self._treant.location)}
+
         with self._treant._write:
             # check if uuid already present
             uuids = [member['uuid'] for member in
                      self._treant._state['members']]
 
-            if uuid not in uuids:
-                self._treant._state['members'].append(
-                        {'uuid': uuid,
-                         'treanttype': treanttype,
-                         'abspath': os.path.abspath(basedir),
-                         'relpath': os.path.relpath(
-                             basedir, self._treant.location)})
+            if uuid in uuids:
+                self._treant._state['members'][uuids.index(uuid)] = member_rec
+            else:
+                self._treant._state['members'].append(member_rec)
 
     def _del_members(self, uuids=None, all=False):
         """Remove members from the Group.

@@ -397,4 +397,4 @@ class JSONFile(FileSerial):
         return json.load(handle)
 
     def _serialize(self, state, handle):
-        json.dump(state, handle)
+        json.dump(state, handle, indent=2)

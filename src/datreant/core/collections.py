@@ -58,9 +58,30 @@ class Bundle(object):
         """Get member corresponding to the given index or slice.
 
         """
-        if isinstance(index, int):
+        if isinstance(index, list):
+            # we can take lists of indices, names, or uuids; these return a
+            # Bundle; repeats already not respected since Bundle functions as a
+            # set
+            out = Bundle([self[item] for item in index])
+        elif isinstance(index, int):
+            # an index gets the member at that position
             out = self._list()[index]
-        else:
+        elif isinstance(index, string_types):
+            # a name or uuid can be used for indexing
+            # a name always returns a Bundle
+            out = Bundle([member for member in self if member.name == index])
+
+            # if no names match, we try uuids
+            if not len(out):
+                out = [member for member in self if member.uuid == index]
+                if not len(out):
+                    raise KeyError("No name or uuid matching string selection")
+                else:
+                    # we want to return a Treant, not a list for uuid matches
+                    out = out[0]
+
+        elif isinstance(index, slice):
+            # we also take slices, obviously
             out = Bundle(*self._list()[index])
 
         return out
@@ -414,13 +435,17 @@ class Bundle(object):
                 absolute path to directory of new member in the filesystem
 
         """
+        member_rec = {'uuid': uuid,
+                      'treanttype': treanttype,
+                      'abspath': os.path.abspath(abspath)}
+
         # check if uuid already present
         uuids = [member['uuid'] for member in self._state]
 
-        if uuid not in uuids:
-            self._state.append({'uuid': uuid,
-                                'treanttype': treanttype,
-                                'abspath': os.path.abspath(abspath)})
+        if uuid in uuids:
+            self._state[uuids.index(uuid)] = member_rec
+        else:
+            self._state.append(member_rec)
 
     def _del_members(self, uuids, all=False):
         """Remove members from the Bundle.

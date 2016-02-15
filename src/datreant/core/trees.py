@@ -84,9 +84,14 @@ class Tree(BrushMixin):
                 setattr(self, "_"+limb._name, limb(self))
             return getattr(self, "_"+limb._name)
 
+        try:
+            setter = limb._setter
+        except AttributeError:
+            setter = None
+
         # set the property
         setattr(cls, limb._name,
-                property(getter, None, None, limb.__doc__))
+                property(getter, setter, None, limb.__doc__))
 
     def _attach_limb(self, limb):
         """Attach a limb.

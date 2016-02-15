@@ -328,13 +328,14 @@ class Foxhound(object):
 
         # walk downwards on an upward trajectory through filesystem from the
         # current working directory
-        uuids = [x for x in outpaths if not outpaths[x]]
+        uuids = [str(x) for x in outpaths if not outpaths[x]]
         path = os.path.abspath(os.curdir)
         prev = None
         while prev != path and uuids:
 
             # if search runs over timeout, call it off
-            if ((time.time() - currtime) > self.timeout):
+            if ((time.time() - currtime) > self.timeout and
+                    self.timeout is not None):
                 self.caller._logger.info("Search for missing members timed" +
                                          " out at {}".format(self.timeout) +
                                          " seconds.")
