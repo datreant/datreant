@@ -223,10 +223,9 @@ class Leaf(BrushMixin):
 
         :Returns:
             *leaf*
-                this leaf 
+                this leaf
 
         """
         makedirs(os.path.dirname(str(self.path)))
 
         return self
-
