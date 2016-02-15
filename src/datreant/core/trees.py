@@ -47,7 +47,6 @@ class Tree(BrushMixin):
 
     """
     def __init__(self, dirpath):
-        makedirs(dirpath)
         self._path = Path(os.path.abspath(dirpath))
 
     def __repr__(self):
@@ -68,7 +67,7 @@ class Tree(BrushMixin):
         """
         fullpath = os.path.join(self.abspath, path)
 
-        if os.path.isdir(fullpath) or fullpath.endswith('/'):
+        if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
             return Tree(fullpath)
         else:
             return Leaf(fullpath)
@@ -192,6 +191,19 @@ class Tree(BrushMixin):
         tr = LeftAligned()
         print(tr(tree))
 
+    @property
+    def makedirs(self):
+        """Make all directories along path that do not currently exist.
+
+        :Returns:
+            *tree*
+                this tree
+
+        """
+        makedirs(str(self.path))
+
+        return self
+
 
 class Leaf(BrushMixin):
     """A file in the filesystem.
@@ -203,4 +215,18 @@ class Leaf(BrushMixin):
         self._path = Path(os.path.abspath(filepath))
 
     def __repr__(self):
-        return "<Leaf: '{}'>".format(self.relative)
+        return "<Leaf: '{}'>".format(self.relpath)
+
+    @property
+    def makedirs(self):
+        """Make all directories along path that do not currently exist.
+
+        :Returns:
+            *leaf*
+                this leaf 
+
+        """
+        makedirs(os.path.dirname(str(self.path)))
+
+        return self
+
