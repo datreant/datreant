@@ -56,6 +56,14 @@ class Bundle(object):
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
 
+        A single integer or uuid will yield a single Treant. Lists of
+        either will yield a Bundle with members in order by the given items.
+        Giving a name will always yield a Bundle, since names are not
+        guaranteed to be unique.
+
+        A boolean index by way of a numpy array can also be used to select
+        out members.
+
         """
         if isinstance(index, list):
             # we can take lists of indices, names, or uuids; these return a
@@ -78,10 +86,14 @@ class Bundle(object):
                 else:
                     # we want to return a Treant, not a list for uuid matches
                     out = out[0]
-
         elif isinstance(index, slice):
             # we also take slices, obviously
             out = Bundle(*self._list()[index])
+        elif hasattr(index, 'dtype') and str(index.dtype) == 'bool':
+            # boolean indexing with a numpy array
+            out = Bundle([self[i] for i, val in enumerate(index) if val])
+        else:
+            raise IndexError("Cannot index Bundle with given values")
 
         return out
 
