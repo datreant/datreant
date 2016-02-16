@@ -8,6 +8,7 @@ for dealing with many Treants at once.
 from __future__ import absolute_import
 
 import os
+import functools
 from collections import namedtuple, defaultdict
 
 import multiprocessing as mp
@@ -21,27 +22,25 @@ from . import filesystem
 from . import _LIMBS, _AGGLIMBS
 
 
+@functools.total_ordering
 class Bundle(object):
     """Non-persistent collection of treants.
 
     A Bundle is basically an indexable set. It is often used to return the
     results of a query on a  Group, but can be used on its own as well.
 
+    :Arguments:
+        *treants*
+            treants to be added, which may be nested lists of treants;
+            treants can be given as either objects or paths to directories
+            that contain treant statefiles; glob patterns are also allowed,
+            and all found treants will be added to the collection
     """
     _memberpaths = ['abspath']
     _fields = ['uuid', 'treanttype']
     _fields.extend(_memberpaths)
 
     def __init__(self, *treants, **kwargs):
-        """Generate a Bundle from any number of Treants.
-
-        :Arguments:
-            *treants*
-                treants to be added, which may be nested lists of treants;
-                treants can be given as either objects or paths to directories
-                that contain treant statefiles; glob patterns are also allowed,
-                and all found treants will be added to the collection
-        """
         self._cache = dict()
         self._state = list()
         self._searchtime = 10
@@ -86,13 +85,25 @@ class Bundle(object):
 
         return out
 
+    def __eq__(self, other):
+        try:
+            return set(self) == set(other)
+        except AttributeError:
+            return NotImplemented
+
+    def __lt__(self, other):
+        try:
+            return set(self) < set(other)
+        except AttributeError:
+            return NotImplemented
+
     def __add__(a, b):
         """Addition of collections with collections or treants yields Bundle.
 
         """
         from .treants import Treant
 
-        if isinstance(b, (Treant, Bundle)):
+        if isinstance(b, (Treant, Bundle, list)):
             return Bundle(a, b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
@@ -106,10 +117,37 @@ class Bundle(object):
         from .treants import Treant
 
         if isinstance(b, (Treant, Bundle)):
-            out = Bundle(a, b)
-            out.remove(b)
+            return Bundle(list(set(a) - set(b)))
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
+
+    def __or__(a, b):
+        """Return a Bundle giving the union of Bundles `a` and `b`.
+
+        """
+        if isinstance(b, Bundle):
+            return Bundle(a, b)
+        else:
+            raise TypeError("Operands must be Bundles.")
+
+    def __and__(a, b):
+        """Return a Bundle giving the intersection of Bundles `a` and `b`.
+
+        """
+        if isinstance(b, Bundle):
+            return Bundle(list(set(a) & set(b)))
+        else:
+            raise TypeError("Operands must be Bundles.")
+
+    def __xor__(a, b):
+        """Return a Bundle giving the symmetric difference of Bundles 
+        `a` and `b`.
+
+        """
+        if isinstance(b, Bundle):
+            return Bundle(list(set(a) ^ set(b)))
+        else:
+            raise TypeError("Operands must be Bundles.")
 
     @classmethod
     def _attach_agglimb_class(cls, limb):
@@ -224,7 +262,7 @@ class Bundle(object):
         for uuid in remove:
             self._cache.pop(uuid, None)
 
-    def purge(self):
+    def clear(self):
         """Remove all members.
 
         """

@@ -183,7 +183,7 @@ class TestTreant(TestTree):
             treant.tags.remove('fark')
             assert len(treant.tags) == 3
 
-            treant.tags.purge()
+            treant.tags.clear()
             assert len(treant.tags) == 0
 
     class TestCategories:
@@ -221,7 +221,7 @@ class TestTreant(TestTree):
             treant.categories['lark'] = 42
             treant.categories['fark'] = 32.3
 
-            treant.categories.purge()
+            treant.categories.clear()
             assert len(treant.categories) == 0
 
         def test_add_wrong(self, treant):
@@ -253,7 +253,7 @@ class TestGroup(TestTreant):
     def test_repr(self, treant):
         pass
 
-    class TestMembers(test_bundle.CollectionTests):
+    class TestMembers(test_bundle.TestBundle):
         """Test member functionality"""
 
         @pytest.fixture

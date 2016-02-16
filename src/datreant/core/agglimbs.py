@@ -4,11 +4,11 @@ AggLimbs are limbs specifically built for collections, in particular
 limbs but serve as aggregators over collections of them.
 
 """
-import six
+from six import string_types, with_metaclass
 
 from . import filesystem
-from . import collections
 from . import _AGGLIMBS
+from .collections import Bundle
 
 
 class _AggLimbmeta(type):
@@ -19,7 +19,7 @@ class _AggLimbmeta(type):
         _AGGLIMBS[limbname] = cls
 
 
-class AggLimb(six.with_metaclass(_AggLimbmeta, object)):
+class AggLimb(with_metaclass(_AggLimbmeta, object)):
     """Core functionality for limbs attached to a collection.
 
     """
@@ -62,18 +62,22 @@ class AggTags(AggLimb):
     def __len__(self):
         return len(self.all)
 
-    #TODO; not finished!
     def __getitem__(self, value):
+        sel = Bundle()
         if isinstance(value, list):
             # a list of tags gives only members with ALL the tags
-            sel = Bundle()
             for item in value:
-                Bundle | self[item] 
+                sel &= self[item] 
+        elif isinstance(value, tuple):
+            # a tuple of tags gives members with ANY of the tags
+            for item in value:
+                sel |= self[item] 
 
-            out = Bundle([self[item] for item in value])
-        if isinstance(value, string_types):
-            out = Bundle([member for member in self._collection
+        elif isinstance(value, string_types):
+            sel += Bundle([member for member in self._collection
                           if value in member.tags])
+
+        return sel
 
     @property
     def any(self):
@@ -125,12 +129,12 @@ class AggTags(AggLimb):
         for member in self._collection:
             member.tags.remove(*tags)
 
-    def purge(self):
+    def clear(self):
         """Remove all tags from each Treant in collection.
 
         """
         for member in self._collection:
-            member.tags.purge()
+            member.tags.clear()
 
 
 class AggCategories(AggLimb):
@@ -247,7 +251,7 @@ class AggCategories(AggLimb):
                 # continue even if key not already present
                 self._treant._state['categories'].pop(key, None)
 
-    def purge(self):
+    def clear(self):
         """Remove all categories from Treant.
 
         """

@@ -15,8 +15,12 @@ def return_nothing(cont):
     b = cont.name + cont.uuid
 
 
-class CollectionTests():
+class TestBundle():
     """Tests for common elements of Group.members and Bundle"""
+
+    @pytest.fixture
+    def collection(self):
+        return dtr.Bundle()
 
     @pytest.fixture
     def testtreant(self, tmpdir, request):
@@ -54,6 +58,12 @@ class CollectionTests():
             assert (len(b + testgroup.members) ==
                     len(b) + len(testgroup.members))
             assert isinstance(b + testgroup.members, dtr.Bundle)
+
+    def test_subset(self, collection):
+        pass
+
+    def test_superset(self, collection):
+        pass
 
     def test_difference(self, collection):
         pass
@@ -226,10 +236,3 @@ class CollectionTests():
 
     class TestAggCategories:
         pass
-
-class TestBundle(CollectionTests):
-    """Test Bundle features"""
-
-    @pytest.fixture
-    def collection(self):
-        return dtr.Bundle()

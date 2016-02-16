@@ -285,6 +285,7 @@ class FileSerial(File):
 
         return out
 
+    @staticmethod
     def _read(func):
         """Decorator for applying a shared lock on file and reading contents.
 
@@ -308,6 +309,7 @@ class FileSerial(File):
 
         return inner
 
+    @staticmethod
     def _write(func):
         """Decorator for applying an exclusive lock on file and modifying
         contents.

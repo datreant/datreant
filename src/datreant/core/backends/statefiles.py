@@ -40,7 +40,9 @@ def treantfile(filename, **kwargs):
     if not treant:
         raise IOError("No known treant type for file '{}'".format(filename))
 
-    return TreantFile(filename, **kwargs)
+    statefileclass = _TREANTS[treant]._backendclass
+
+    return statefileclass(filename, **kwargs)
 
 
 class TreantFile(JSONFile):

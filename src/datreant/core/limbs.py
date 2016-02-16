@@ -173,7 +173,7 @@ class Tags(Limb):
                 except ValueError:
                     pass
 
-    def purge(self):
+    def clear(self):
         """Remove all tags from Treant.
 
         """
@@ -324,7 +324,7 @@ class Categories(Limb):
                 # continue even if key not already present
                 self._treant._state['categories'].pop(key, None)
 
-    def purge(self):
+    def clear(self):
         """Remove all categories from Treant.
 
         """
@@ -395,7 +395,7 @@ class MemberBundle(Limb, Bundle):
 
         """
         if isinstance(val, (list, Bundle)):
-            self.purge()
+            self.clear()
             self.add(Bundle)
         else:
             raise TypeError("Can only set with a list or Bundle")
@@ -428,7 +428,7 @@ class MemberBundle(Limb, Bundle):
 
         """
         if isinstance(val, (list, Bundle)):
-            self.members.purge()
+            self.members.clear()
             self.members.add(val)
         else:
             raise TypeError("Can only set with a list or Bundle")

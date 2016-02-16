@@ -17,7 +17,7 @@ from .collections import Bundle
 from .trees import Tree
 from .util import makedirs
 
-from .backends.statefiles import treantfile
+from .backends.statefiles import treantfile, TreantFile
 from . import _TREANTS, _TREELIMBS, _LIMBS
 
 
@@ -44,6 +44,7 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
     """
     # required components
     _treanttype = 'Treant'
+    _backendclass = TreantFile
 
     def __init__(self, treant, new=False, categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Treant object.
@@ -116,6 +117,9 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
 
     def __setstate__(self, state):
         self.__init__(state)
+
+    def __hash__(self):
+        return hash(self.uuid)
 
     def __eq__(self, other):
         try:
