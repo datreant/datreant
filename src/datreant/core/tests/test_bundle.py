@@ -55,6 +55,21 @@ class CollectionTests():
                     len(b) + len(testgroup.members))
             assert isinstance(b + testgroup.members, dtr.Bundle)
 
+    def test_difference(self, collection):
+        pass
+
+    def test_symmetric_difference(self, collection):
+        pass
+
+    def test_union(self, collection):
+        pass
+
+    def test_intersection(self, collection):
+        pass
+
+    def test_intersection(self, collection):
+        pass
+
     def test_add_members(self, collection, tmpdir):
         """Try adding members in a number of ways"""
         with tmpdir.as_cwd():
@@ -108,6 +123,15 @@ class CollectionTests():
 
             assert c4 not in collection[:3]
             assert c4 == collection[-1]
+
+    def test_fancy_index(self, collection):
+        pass
+
+    def test_name_index(self, collection):
+        pass
+
+    def test_uuid_index(self, collection):
+        pass
 
     def test_remove_members(self, collection, tmpdir):
         """Try removing members"""
@@ -197,6 +221,11 @@ class CollectionTests():
         assert collection.map(return_nothing) is None
         assert collection.map(return_nothing, processes=2) is None
 
+    class TestAggTags:
+        pass
+
+    class TestAggCategories:
+        pass
 
 class TestBundle(CollectionTests):
     """Test Bundle features"""

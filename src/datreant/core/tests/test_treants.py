@@ -6,10 +6,12 @@ import datreant.core as dtr
 import pytest
 import os
 import py
+
 from . import test_bundle
+from .test_trees import TestTree
 
 
-class TestTreant:
+class TestTreant(TestTree):
     """Test generic Treant features"""
     treantname = 'testtreant'
     treanttype = 'Treant'

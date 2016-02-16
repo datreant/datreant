@@ -1,8 +1,9 @@
 import os
+from functools import reduce
 from six import string_types
+
 import scandir
 from pathlib import Path
-
 from asciitree import LeftAligned
 
 from .util import makedirs
@@ -39,7 +40,45 @@ class BrushMixin(object):
         """Relative path of ``self.path`` from current working directory.
 
         """
-        return str(self.path.relative_to(os.path.abspath('.')))
+        return os.path.relpath(str(self.path))
+
+
+class Leaf(BrushMixin):
+    """A file in the filesystem.
+
+    """
+
+    def __init__(self, filepath):
+        makedirs(os.path.dirname(filepath))
+        self._path = Path(os.path.abspath(filepath))
+
+    def __repr__(self):
+        return "<Leaf: '{}'>".format(self.relpath)
+
+    def makedirs(self):
+        """Make all directories along path that do not currently exist.
+
+        :Returns:
+            *leaf*
+                this leaf
+
+        """
+        makedirs(os.path.dirname(str(self.path)))
+
+        return self
+
+    def touch(self):
+        """Make file if it doesn't exist.
+
+        """
+        self.makedirs()
+        self.path.touch()
+
+    def make(self):
+        """Make the file if it doesn't exit. Equivalent to :meth:`touch`.
+
+        """
+        self.touch()
 
 
 class Tree(BrushMixin):
@@ -51,6 +90,20 @@ class Tree(BrushMixin):
 
     def __repr__(self):
         return "<Tree: '{}'>".format(self.relpath)
+
+    def __contains__(self, item):
+        """Returns True if given Tree, Leaf, or plain path resolves as being
+        within this Tree.
+
+        The given path need not exist in the filesystem.
+
+        """
+        if isinstance(item, (Tree, Leaf)):
+            return str(self) in str(item) 
+        elif isinstance(item, string_types):
+            return str(self) in os.path.abspath(item)
+        else:
+            raise TypeError("Item must be a Tree, Leaf, or plain path")
 
     def __getitem__(self, path):
         """Get trees or leaves in this tree.
@@ -120,13 +173,16 @@ class Tree(BrushMixin):
         Hidden files are not included.
 
         """
-        for root, dirs, files in scandir.walk(self.abspath):
-            # remove hidden files
-            out = [f for f in files if f[0] != os.extsep]
-            break
+        if self.exists:
+            for root, dirs, files in scandir.walk(self.abspath):
+                # remove hidden files
+                out = [f for f in files if f[0] != os.extsep]
+                break
 
-        out.sort()
-        return out
+            out.sort()
+            return out
+        else:
+            raise OSError("Tree doesn't exist in the filesystem")
 
     @property
     def trees(self):
@@ -135,6 +191,8 @@ class Tree(BrushMixin):
         Hidden directories are not included.
 
         """
+        if not self.exists:
+            raise OSError("Tree doesn't exist in the filesystem")
         for root, dirs, files in scandir.walk(self.abspath):
             # remove hidden directories
             out = [d for d in dirs if d[0] != os.extsep]
@@ -148,6 +206,8 @@ class Tree(BrushMixin):
         """A list of the hidden files and directories in the directory.
 
         """
+        if not self.exists:
+            raise OSError("Tree doesn't exist in the filesystem")
         for root, dirs, files in scandir.walk(self.abspath):
             outdirs = [d for d in dirs if d[0] == os.extsep]
             outdirs.sort()
@@ -165,6 +225,9 @@ class Tree(BrushMixin):
         """Print an asciified visual of the tree.
 
         """
+        if not self.exists:
+            raise OSError("Tree doesn't exist in the filesystem")
+
         tree = {}
         rootdir = self.abspath.rstrip(os.sep)
         start = rootdir.rfind(os.sep) + 1
@@ -191,7 +254,6 @@ class Tree(BrushMixin):
         tr = LeftAligned()
         print(tr(tree))
 
-    @property
     def makedirs(self):
         """Make all directories along path that do not currently exist.
 
@@ -204,28 +266,16 @@ class Tree(BrushMixin):
 
         return self
 
-
-class Leaf(BrushMixin):
-    """A file in the filesystem.
-
-    """
-
-    def __init__(self, filepath):
-        makedirs(os.path.dirname(filepath))
-        self._path = Path(os.path.abspath(filepath))
-
-    def __repr__(self):
-        return "<Leaf: '{}'>".format(self.relpath)
-
     @property
-    def makedirs(self):
-        """Make all directories along path that do not currently exist.
-
-        :Returns:
-            *leaf*
-                this leaf
+    def view(self):
+        """Return contents of tree as a view.
 
         """
-        makedirs(os.path.dirname(str(self.path)))
+        pass
 
-        return self
+    def make(self):
+        """Make the directory if it doesn't exit. Equivalent to :meth:`makedirs`.
+
+        """
+        self.makedirs()
+

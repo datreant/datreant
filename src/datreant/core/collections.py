@@ -92,9 +92,22 @@ class Bundle(object):
         """
         from .treants import Treant
 
-        if (isinstance(a, (Treant, Bundle)) and
-                isinstance(b, (Treant, Bundle))):
+        if isinstance(b, (Treant, Bundle)):
             return Bundle(a, b)
+        else:
+            raise TypeError("Operands must be Treant-derived or Bundles.")
+
+    def __sub__(a, b):
+        """Return a Bundle giving the Treants in `a` that are not in `b`.
+
+        Subtracting a Treant from a collection also works.
+
+        """
+        from .treants import Treant
+
+        if isinstance(b, (Treant, Bundle)):
+            out = Bundle(a, b)
+            out.remove(b)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
@@ -166,10 +179,13 @@ class Bundle(object):
                 tre = filesystem.path2treant(treant)
                 for t in tre:
                     outconts.append(t)
-            else:
+            elif isinstance(treant, string_types):
                 tre = filesystem.path2treant(*glob.glob(treant))
                 for t in tre:
                     outconts.append(t)
+            else:
+                raise TypeError("'{}' not a valid input "
+                                "for Bundle".format(treant))
 
         for treant in outconts:
             self._add_member(treant.uuid,

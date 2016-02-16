@@ -39,10 +39,10 @@ class AggTags(AggLimb):
         super(AggTags, self).__init__(collection)
 
     def __repr__(self):
-        return "<AggTags({})>".format(self.list())
+        return "<AggTags({})>".format(self.all)
 
     def __str__(self):
-        tags = self.list()
+        tags = self.all
         agg = "Tags"
         majsep = "="
         seplength = len(agg)
@@ -57,43 +57,31 @@ class AggTags(AggLimb):
         return out
 
     def __iter__(self):
-        return self.list().__iter__()
+        return self.all.__iter__()
 
     def __len__(self):
-        return len(self.list())
+        return len(self.all)
 
-    def _list(self):
-        """Get all tags for the Treants in the collection as a list.
+    #TODO; not finished!
+    def __getitem__(self, value):
+        if isinstance(value, list):
+            # a list of tags gives only members with ALL the tags
+            sel = Bundle()
+            for item in value:
+                Bundle | self[item] 
 
-        :Returns:
-            *tags*
-                list of all tags
-        """
-        with self._treant._read:
-            tags = self._treant._state['tags']
+            out = Bundle([self[item] for item in value])
+        if isinstance(value, string_types):
+            out = Bundle([member for member in self._collection
+                          if value in member.tags])
 
-        tags.sort()
-        return tags
-
-    def list(self, mode='any'):
-        """List tags present among Treants in collection.
-
-        :Arguments:
-            *mode*
-                'any' returns a list of tags present in at least one member
-                of the collection; 'all' returns only tags present in all
-                members.
-
-        :Returns:
-            *tags*
-                list of tags matching `mode`
+    @property
+    def any(self):
+        """List tags present among at least one Treant in collection.
 
         """
         tags = [set(member.tags) for member in self._collection]
-        if mode == 'any':
-            out = set.union(*tags)
-        elif mode == 'all':
-            out = set.intersection(*tags)
+        out = set.union(*tags)
 
         out = list(out)
         out.sort()
@@ -101,18 +89,17 @@ class AggTags(AggLimb):
         return out
 
     @property
-    def any(self):
-        """List tags present among at least one Treant in collection.
-
-        """
-        return self.list('any')
-
-    @property
     def all(self):
         """List tags present among all Treants in collection.
 
         """
-        return self.list('all')
+        tags = [set(member.tags) for member in self._collection]
+        out = set.intersection(*tags)
+
+        out = list(out)
+        out.sort()
+
+        return out
 
     def add(self, *tags):
         """Add any number of tags to each Treant in collection.
@@ -159,7 +146,7 @@ class AggCategories(AggLimb):
         return "<AggCategories({})>".format(self._dict())
 
     def __str__(self):
-        categories = self._dict()
+        categories = self.all()
         agg = "Categories"
         majsep = "="
         seplength = len(agg)
@@ -208,17 +195,6 @@ class AggCategories(AggLimb):
 
     def __len__(self):
         return len(self._dict())
-
-    def _dict(self):
-        """Get all categories for the Treant as a dictionary.
-
-        :Returns:
-            *categories*
-                dictionary of all categories
-
-        """
-        with self._treant._read:
-            return self._treant._state['categories']
 
     def add(self, *categorydicts, **categories):
         """Add any number of categories to the Treant.

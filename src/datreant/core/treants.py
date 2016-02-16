@@ -133,11 +133,10 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         """Addition of treants with collections or treants yields Bundle.
 
         """
-        if (isinstance(a, (Treant, Bundle)) and
-           isinstance(b, (Treant, Bundle))):
+        if isinstance(b, (Treant, Bundle)):
             return Bundle(a, b)
         else:
-            raise TypeError("Operands must be Treant-derived or Bundles.")
+            raise TypeError("Operands must be Treants or Bundles.")
 
     def _generate(self, treant, categories=None, tags=None):
         """Generate new Treant object.
