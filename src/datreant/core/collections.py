@@ -14,6 +14,7 @@ from collections import namedtuple, defaultdict
 import multiprocessing as mp
 import glob
 import fnmatch
+import scandir
 
 from six import string_types
 from six.moves import zip
@@ -76,7 +77,8 @@ class Bundle(object):
         elif isinstance(index, string_types):
             # a name or uuid can be used for indexing
             # a name always returns a Bundle
-            out = Bundle([member for member in self if member.name == index])
+            out = Bundle([self.filepaths[i] for i, name
+                          in enumerate(self.names) if name == index])
 
             # if no names match, we try uuids
             if not len(out):
@@ -88,7 +90,7 @@ class Bundle(object):
                     out = out[0]
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = Bundle(*self._list()[index])
+            out = Bundle(*self.filepaths[index])
         elif hasattr(index, 'dtype') and str(index.dtype) == 'bool':
             # boolean indexing with a numpy array
             out = Bundle([self[i] for i, val in enumerate(index) if val])
@@ -220,19 +222,19 @@ class Bundle(object):
         for treant in treants:
             if treant is None:
                 pass
-            elif isinstance(treant,
-                            (list, tuple, Bundle)):
+            elif isinstance(treant, (list, tuple)):
                 self.add(*treant)
+            elif isinstance(treant, Bundle):
+                self.add(*treant.filepaths)
             elif isinstance(treant, Treant):
                 outconts.append(treant)
+                self._cache[treant.uuid] = treant
             elif os.path.exists(treant):
                 tre = filesystem.path2treant(treant)
-                for t in tre:
-                    outconts.append(t)
+                outconts.extend(tre)
             elif isinstance(treant, string_types):
                 tre = filesystem.path2treant(*glob.glob(treant))
-                for t in tre:
-                    outconts.append(t)
+                outconts.extend(tre)
             else:
                 raise TypeError("'{}' not a valid input "
                                 "for Bundle".format(treant))
@@ -485,6 +487,23 @@ class Bundle(object):
             self._searchtime = value
         else:
             raise TypeError("Must give a number or `None` for searchtime")
+
+    @staticmethod
+    def discover(dirpath='.'):
+        """Find all Treants within given directory, recursively.
+
+        :Returns:
+            *found*
+                Bundle of found Treants
+
+        """
+        found = list()
+        for root, dirs, files in scandir.walk(dirpath):
+            paths = [os.path.join(root, d) for d in dirs]
+            for path in paths:
+                found.extend(filesystem.glob_treant(path))
+
+        return Bundle(found)
 
     def _add_member(self, uuid, treanttype, abspath):
         """Add a member to the Bundle.
