@@ -99,7 +99,7 @@ class Tree(BrushMixin):
 
         """
         if isinstance(item, (Tree, Leaf)):
-            return str(self) in str(item) 
+            return str(self) in str(item)
         elif isinstance(item, string_types):
             return str(self) in os.path.abspath(item)
         else:
@@ -278,4 +278,3 @@ class Tree(BrushMixin):
 
         """
         self.makedirs()
-

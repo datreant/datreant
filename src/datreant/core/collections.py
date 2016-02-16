@@ -140,7 +140,7 @@ class Bundle(object):
             raise TypeError("Operands must be Bundles.")
 
     def __xor__(a, b):
-        """Return a Bundle giving the symmetric difference of Bundles 
+        """Return a Bundle giving the symmetric difference of Bundles
         `a` and `b`.
 
         """
