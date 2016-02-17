@@ -4,12 +4,8 @@ Interface classes for state files.
 """
 
 import os
-import warnings
-import json
-from collections import defaultdict
 
-import datreant
-from .core import JSONFile, FileSerial
+from .core import JSONFile
 
 
 def treantfile(filename, **kwargs):

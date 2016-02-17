@@ -3,9 +3,6 @@ Basic Treant objects: the organizational units for :mod:`datreant`.
 
 """
 import os
-import sys
-import shutil
-import logging
 import functools
 import six
 from uuid import uuid4
@@ -146,8 +143,6 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         """Generate new Treant object.
 
         """
-
-
         # build basedir; stop if we hit a permissions error
         try:
             makedirs(treant)
@@ -161,18 +156,20 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         filename = filesystem.statefilename(self._treanttype, str(uuid4()))
 
         statefile = os.path.join(treant, filename)
-        self._start_logger(self._treanttype, treant)
 
         # generate state file
         self._backend = treantfile(statefile)
 
-        # add categories, tags in one go if they were given 
-        if categories or tags:
-            with self._write:
-                if categories:
-                    self.categories.add(categories)
-                if tags:
-                    self.tags.add(tags)
+        # add categories, tags in one go; doubles as file init so there's
+        # something there
+        if not tags:
+            tags = []
+        if not categories:
+            categories = {}
+
+        with self._write:
+            self.categories.add(categories)
+            self.tags.add(tags)
 
     def _regenerate(self, treant, categories=None, tags=None):
         """Re-generate existing Treant object.
@@ -220,30 +217,6 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
                     pass
         else:
             raise NoTreantsError('No Treants found in path.')
-
-        self._start_logger(self._treanttype, self.name)
-
-    def _start_logger(self, treanttype, name):
-        """Start up the logger.
-
-        :Arguments:
-            *treanttype*
-                type of Treant the logger is a part of
-            *name*
-                name of Treant
-
-        """
-        # set up logging
-        self._logger = logging.getLogger('{}.{}'.format(treanttype, name))
-
-        if not self._logger.handlers:
-            self._logger.setLevel(logging.INFO)
-
-            # output handler
-            ch = logging.StreamHandler(sys.stdout)
-            cf = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-            ch.setFormatter(cf)
-            self._logger.addHandler(ch)
 
     @property
     def name(self):
