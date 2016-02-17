@@ -541,11 +541,12 @@ class Bundle(object):
         """
         memberlist = self._list()
         flattened = Bundle()
+        guuids = list(exclude)
 
         for member in memberlist:
             if hasattr(member, 'members') and member.uuid not in exclude:
-                exclude.append(member.uuid)
-                flattened += member.members.flatten(exclude)
+                guuids.append(member.uuid)
+                flattened += member.members.flatten(guuids)
             else:
                 flattened.add(member)
 
