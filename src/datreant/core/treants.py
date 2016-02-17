@@ -227,7 +227,7 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         representation.
 
         """
-        return os.path.basename(os.path.dirname(self._backend.filename))
+        return os.path.basename(self._backend.get_location())
 
     @name.setter
     def name(self, name):

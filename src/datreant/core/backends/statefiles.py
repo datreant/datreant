@@ -26,17 +26,12 @@ def treantfile(filename, **kwargs):
     """
     from .. import _TREANTS
 
-    treant = None
-    basename = os.path.basename(filename)
-    for treanttype in _TREANTS:
-        if treanttype in basename:
-            treant = treanttype
-            break
+    treanttype = os.path.basename(filename).split(os.extsep)[0]
 
-    if not treant:
+    try:
+        statefileclass = _TREANTS[treanttype]._backendclass
+    except KeyError:
         raise IOError("No known treant type for file '{}'".format(filename))
-
-    statefileclass = _TREANTS[treant]._backendclass
 
     return statefileclass(filename, **kwargs)
 

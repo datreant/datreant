@@ -226,6 +226,7 @@ class Bundle(object):
                 self.add(*treant)
             elif isinstance(treant, Bundle):
                 self.add(*treant.filepaths)
+                self._cache.update(treant._cache)
             elif isinstance(treant, Treant):
                 outconts.append(treant)
                 self._cache[treant.uuid] = treant
