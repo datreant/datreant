@@ -433,6 +433,25 @@ class MemberBundle(Limb, Bundle):
         else:
             raise TypeError("Can only set with a list or Bundle")
 
+    def _add_members(self, uuids, treanttypes, abspaths):
+        """Add many members at once.
+
+        Given lists must be in the same order with respect to the members they
+        describe.
+
+        :Arguments:
+            *uuids*
+                list of uuids
+            *treanttypes*
+                list of treanttypes
+            *abspaths*
+                list of abspaths
+
+        """
+        with self._treant._write:
+            for uuid, treanttype, abspath in zip(uuids, treanttypes, abspaths):
+                self._add_member(uuid, treanttype, abspath)
+
     def _add_member(self, uuid, treanttype, basedir):
         """Add a member to the Group.
 

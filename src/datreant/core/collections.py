@@ -49,7 +49,11 @@ class Bundle(object):
         self.add(*treants)
 
     def __repr__(self):
-        return "<Bundle({})>".format(self._list())
+        members = ["<{}: '{}'>".format(tt, name) for tt, name
+                   in zip(self._get_members_treanttype(),
+                          self._get_members_names())]
+
+        return "<Bundle({})>".format(members)
 
     def __len__(self):
         return len(self._list())
@@ -91,6 +95,7 @@ class Bundle(object):
         elif isinstance(index, slice):
             # we also take slices, obviously
             out = Bundle(*self.filepaths[index])
+            out._cache.update(self._cache)
         elif hasattr(index, 'dtype') and str(index.dtype) == 'bool':
             # boolean indexing with a numpy array
             out = Bundle([self[i] for i, val in enumerate(index) if val])
@@ -231,19 +236,20 @@ class Bundle(object):
                 outconts.append(treant)
                 self._cache[treant.uuid] = treant
             elif os.path.exists(treant):
-                tre = filesystem.path2treant(treant)
+                tre = filesystem.path2record(treant)
                 outconts.extend(tre)
             elif isinstance(treant, string_types):
-                tre = filesystem.path2treant(*glob.glob(treant))
+                tre = filesystem.path2record(*glob.glob(treant))
                 outconts.extend(tre)
             else:
                 raise TypeError("'{}' not a valid input "
                                 "for Bundle".format(treant))
 
-        for treant in outconts:
-            self._add_member(treant.uuid,
-                             treant.treanttype,
-                             treant.abspath)
+        attrs = []
+        for attr in ('uuid', 'treanttype', 'abspath'):
+            attrs.append([getattr(treant, attr) for treant in outconts])
+
+        self._add_members(*attrs)
 
     def remove(self, *members):
         """Remove any number of members from the collection.
@@ -370,6 +376,27 @@ class Bundle(object):
 
         """
         return self._get_members_uuid()
+
+    def _check(self):
+        """Check that all member paths resolve properly.
+
+        """
+        members = self._get_members()
+
+        paths = {path: members[path] for path in self._memberpaths}
+
+        foxhound = filesystem.Foxhound(self, members['uuid'], paths,
+                                       timeout=self.searchtime)
+        found = foxhound.fetch(as_treants=False)
+
+        if None not in found.values():
+            treanttypes = [os.path.basename(path).split(os.extsep)[0]
+                           for path in found.values()]
+
+            self._add_members(found.keys(), treanttypes, found.values())
+            return True
+        else:
+            return False
 
     def _list(self):
         """Return a list of members.
@@ -506,6 +533,24 @@ class Bundle(object):
 
         return Bundle(found)
 
+    def _add_members(self, uuids, treanttypes, abspaths):
+        """Add many members at once.
+
+        Given lists must be in the same order with respect to the members they
+        describe.
+
+        :Arguments:
+            *uuids*
+                list of uuids
+            *treanttypes*
+                list of treanttypes
+            *abspaths*
+                list of abspaths
+
+        """
+        for uuid, treanttype, abspath in zip(uuids, treanttypes, abspaths):
+            self._add_member(uuid, treanttype, abspath)
+
     def _add_member(self, uuid, treanttype, abspath):
         """Add a member to the Bundle.
 
@@ -614,6 +659,15 @@ class Bundle(object):
                 list giving treanttype of each member, in order
         """
         return [member['uuid'] for member in self._state]
+
+    def _get_members_names(self):
+        """List uuid for each member.
+
+        :Returns:
+            *uuids*
+                list giving treanttype of each member, in order
+        """
+        return [os.path.basename(member['abspath']) for member in self._state]
 
     def _get_members_treanttype(self):
         """List treanttype for each member.
