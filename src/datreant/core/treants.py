@@ -147,11 +147,6 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
 
         """
 
-        # process keywords
-        if not categories:
-            categories = dict()
-        if not tags:
-            tags = list()
 
         # build basedir; stop if we hit a permissions error
         try:
@@ -171,19 +166,18 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         # generate state file
         self._backend = treantfile(statefile)
 
-        # add categories, tags
-        self.categories.add(categories)
-        self.tags.add(tags)
+        # add categories, tags in one go if they were given 
+        if categories or tags:
+            with self._write:
+                if categories:
+                    self.categories.add(categories)
+                if tags:
+                    self.tags.add(tags)
 
     def _regenerate(self, treant, categories=None, tags=None):
         """Re-generate existing Treant object.
 
         """
-        # process keywords
-        if not categories:
-            categories = dict()
-        if not tags:
-            tags = list()
 
         # convenient to give only name of object (its directory name)
         if os.path.isdir(treant):
@@ -192,12 +186,16 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
             # if only one state file, load it; otherwise, complain loudly
             if len(statefile) == 1:
                 self._backend = treantfile(statefile[0])
-                # try to add categories, tags
-                try:
-                    self.categories.add(categories)
-                    self.tags.add(tags)
-                except (OSError, IOError):
-                    pass
+                # try to add categories, tags in one go
+                if categories or tags:
+                    try:
+                        with self._write:
+                            if categories:
+                                self.categories.add(categories)
+                            if tags:
+                                self.tags.add(tags)
+                    except (OSError, IOError):
+                        pass
 
             elif len(statefile) == 0:
                 raise NoTreantsError('No Treants found in directory.')
@@ -210,11 +208,16 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         elif os.path.exists(treant):
             self._backend = treantfile(treant)
             # try to add categories, tags
-            try:
-                self.categories.add(categories)
-                self.tags.add(tags)
-            except (OSError, IOError):
-                pass
+            if categories or tags:
+                # try to add categories, tags in one go
+                try:
+                    with self._write:
+                        if categories:
+                            self.categories.add(categories)
+                        if tags:
+                            self.tags.add(tags)
+                except (OSError, IOError):
+                    pass
         else:
             raise NoTreantsError('No Treants found in path.')
 
