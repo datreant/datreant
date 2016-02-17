@@ -17,8 +17,6 @@ def treantfile(filename, **kwargs):
             path to state file (existing or to be created), including the
             filename
 
-    **kwargs passed to treant file ``__init__()`` method
-
     :Returns:
         *treantfile*
             treantfile instance attached to the given file

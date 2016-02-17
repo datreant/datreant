@@ -116,15 +116,11 @@ def path2treant(*paths):
         elif os.path.isdir(path):
             files = glob_treant(path)
             for item in files:
-                basename = os.path.basename(item)
-                for treanttype in _TREANTS:
-                    if treanttype in basename:
-                        treants.append(_TREANTS[treanttype](item))
+                treanttype = os.path.basename(item).split(os.extsep)[0]
+                treants.append(_TREANTS[treanttype](item))
         elif os.path.exists(path):
-            basename = os.path.basename(path)
-            for treanttype in _TREANTS:
-                if treanttype in basename:
-                    treants.append(_TREANTS[treanttype](path))
+            treanttype = os.path.basename(path).split(os.extsep)[0]
+            treants.append(_TREANTS[treanttype](path))
 
     return treants
 
@@ -207,36 +203,38 @@ class Foxhound(object):
                 that no state file could be found.
         """
         # initialize output dictionary with None
-        outpaths = {x: y for x, y in zip(self.uuids, [None]*len(self.uuids))}
+        outpaths = dict.fromkeys(self.uuids)
+        uuids = list(self.uuids)
 
-        uuids = [x for x in outpaths if not outpaths[x]]
         if 'abspath' in self.paths:
             for path in self.paths['abspath']:
                 found = []
-                for uuid in uuids:
-                    candidate = glob.glob(
-                            os.path.join(path, '*.{}.json'.format(uuid)))
+                candidates = glob.glob(
+                        os.path.join(path, '*.*.json'))
 
-                    if candidate:
-                        outpaths[uuid] = os.path.abspath(candidate[0])
-                        found.append(uuid)
+                for candidate in candidates:
+                    for uuid in uuids:
+                        if uuid in candidate:
+                            outpaths[uuid] = os.path.abspath(candidate)
+                            found.append(uuid)
+                            break
 
                 for item in found:
                     uuids.remove(item)
 
-        if 'relpath' in self.paths:
+        if 'relpath' in self.paths and uuids:
             # get uuids for which paths haven't been found
             for path in self.paths['relpath']:
                 found = []
-                for uuid in uuids:
-                    candidate = glob.glob(
-                            os.path.join(
-                                self.caller._treant.location,
-                                path, '*.{}.json'.format(uuid)))
+                candidates = glob.glob(
+                        os.path.join(path, '*.*.json'))
 
-                    if candidate:
-                        outpaths[uuid] = os.path.abspath(candidate[0])
-                        found.append(uuid)
+                for candidate in candidates:
+                    for uuid in uuids:
+                        if uuid in candidate:
+                            outpaths[uuid] = os.path.abspath(candidate)
+                            found.append(uuid)
+                            break
 
                 for item in found:
                     uuids.remove(item)
