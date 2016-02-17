@@ -535,6 +535,22 @@ class Bundle(object):
 
         return Bundle(found)
 
+    def flatten(self, exclude=[]):
+        """Return a flattened version of this Bundle.
+
+        """
+        memberlist = self._list()
+        flattened = Bundle()
+
+        for member in memberlist:
+            if hasattr(member, 'members') and member.uuid not in exclude:
+                exclude.append(member.uuid)
+                flattened += member.members.flatten(exclude)
+            else:
+                flattened.add(member)
+
+        return flattened
+
     def _add_members(self, uuids, treanttypes, abspaths):
         """Add many members at once.
 
