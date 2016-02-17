@@ -63,21 +63,7 @@ class AggTags(AggLimb):
         return len(self.all)
 
     def __getitem__(self, value):
-        sel = Bundle()
-        if isinstance(value, list):
-            # a list of tags gives only members with ALL the tags
-            for item in value:
-                sel &= self[item]
-        elif isinstance(value, tuple):
-            # a tuple of tags gives members with ANY of the tags
-            for item in value:
-                sel |= self[item]
-
-        elif isinstance(value, string_types):
-            sel += Bundle([member for member in self._collection
-                          if value in member.tags])
-
-        return sel
+        return [member.tags[value] for member in self._collection]
 
     @property
     def any(self):

@@ -104,6 +104,23 @@ class Tags(Limb):
                 out = out + "'{}'\n".format(tags[i])
         return out
 
+    def __getitem__(self, value):
+        with self._treant._read:
+            fits = False
+            if isinstance(value, list):
+                # a list of tags gives only members with ALL the tags
+                for item in value:
+                    fits &= self[item]
+            elif isinstance(value, tuple):
+                # a tuple of tags gives members with ANY of the tags
+                for item in value:
+                    fits |= self[item]
+
+            elif isinstance(value, string_types):
+                fits = value in self
+
+            return fits
+
     def __iter__(self):
         return self._list().__iter__()
 

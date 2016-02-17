@@ -49,14 +49,13 @@ class Bundle(object):
         self.add(*treants)
 
     def __repr__(self):
-        members = ["<{}: '{}'>".format(tt, name) for tt, name
-                   in zip(self._get_members_treanttype(),
-                          self._get_members_names())]
-
-        return "<Bundle({})>".format(members)
+        return "<Bundle({})>".format(self._list())
 
     def __len__(self):
         return len(self._list())
+
+    def __iter__(self):
+        return self._list().__iter__()
 
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
@@ -70,7 +69,11 @@ class Bundle(object):
         out members.
 
         """
-        if isinstance(index, list):
+        if isinstance(index, list) and all([isinstance(item, bool)
+                                            for item in index]):
+            # boolean indexing with a numpy array
+            out = Bundle([self[i] for i, val in enumerate(index) if val])
+        elif isinstance(index, list):
             # we can take lists of indices, names, or uuids; these return a
             # Bundle; repeats already not respected since Bundle functions as a
             # set
@@ -96,9 +99,6 @@ class Bundle(object):
             # we also take slices, obviously
             out = Bundle(*self.filepaths[index])
             out._cache.update(self._cache)
-        elif hasattr(index, 'dtype') and str(index.dtype) == 'bool':
-            # boolean indexing with a numpy array
-            out = Bundle([self[i] for i, val in enumerate(index) if val])
         else:
             raise IndexError("Cannot index Bundle with given values")
 
@@ -236,10 +236,10 @@ class Bundle(object):
                 outconts.append(treant)
                 self._cache[treant.uuid] = treant
             elif os.path.exists(treant):
-                tre = filesystem.path2record(treant)
+                tre = filesystem.path2treant(treant)
                 outconts.extend(tre)
             elif isinstance(treant, string_types):
-                tre = filesystem.path2record(*glob.glob(treant))
+                tre = filesystem.path2treant(*glob.glob(treant))
                 outconts.extend(tre)
             else:
                 raise TypeError("'{}' not a valid input "
@@ -422,31 +422,31 @@ class Bundle(object):
                 findlist.append(uuid)
 
         # track down our non-cached treants
-        paths = {path: members[path]
-                 for path in self._memberpaths}
-        foxhound = filesystem.Foxhound(self, findlist, paths,
-                                       timeout=self.searchtime)
-        foundconts = foxhound.fetch(as_treants=True)
+        if findlist:
+            paths = {path: members[path]
+                     for path in self._memberpaths}
+            foxhound = filesystem.Foxhound(self, findlist, paths,
+                                           timeout=self.searchtime)
+            foundconts = foxhound.fetch(as_treants=True)
 
-        # add to cache, and ensure we get updated paths with a re-add
-        # in case of an IOError, skip (probably due to permissions, but will
-        # need something more robust later
-        self._cache.update(foundconts)
-        try:
-            self.add(*foundconts.values())
-        except OSError:
-            pass
+            # add to cache, and ensure we get updated paths with a re-add in
+            # case of an IOError, skip (probably due to permissions, but will
+            # need something more robust later
+            self._cache.update(foundconts)
+            try:
+                self.add(*foundconts.values())
+            except OSError:
+                pass
 
-        # insert found treants into output list
-        for uuid in findlist:
-            result = foundconts[uuid]
-            if not result:
-                ind = list(members['uuid']).index(uuid)
-                raise IOError("Could not find member" +
-                              " {} (uuid: {});".format(ind, uuid) +
-                              " re-add or remove it.")
+            # insert found treants into output list
+            for uuid in findlist:
+                result = foundconts[uuid]
+                if not result:
+                    ind = list(members['uuid']).index(uuid)
+                    raise IOError("Could not find member {} (uuid: {});"
+                                  " re-add or remove it.".format(ind, uuid))
 
-            memberlist[list(uuids).index(uuid)] = result
+                memberlist[list(uuids).index(uuid)] = result
 
         return memberlist
 

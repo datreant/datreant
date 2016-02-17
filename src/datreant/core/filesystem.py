@@ -223,6 +223,8 @@ class Foxhound(object):
                     uuids.remove(item)
 
         if 'relpath' in self.paths and uuids:
+            import pdb
+            pdb.set_trace()
             # get uuids for which paths haven't been found
             for path in self.paths['relpath']:
                 found = []
@@ -372,6 +374,8 @@ class Foxhound(object):
         path = os.path.abspath(os.curdir)
         prev = None
         while prev != path and uuids:
+            import pdb
+            pdb.set_trace()
 
             # if search runs over timeout, call it off
             if ((time.time() - currtime) > self.timeout and
