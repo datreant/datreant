@@ -65,19 +65,21 @@ class Bundle(object):
         Giving a name will always yield a Bundle, since names are not
         guaranteed to be unique.
 
-        A boolean index by way of a numpy array can also be used to select
-        out members.
+        A boolean index by way of a list or numpy array can also be used to
+        select out members.
 
         """
-        if isinstance(index, list) and all([isinstance(item, bool)
-                                            for item in index]):
-            # boolean indexing with a numpy array
-            out = Bundle([self[i] for i, val in enumerate(index) if val])
+        # we can take lists of indices, names, or uuids; these return a
+        # Bundle; repeats already not respected since Bundle functions as a
+        # set
+        if ((isinstance(index, list) or hasattr(index, 'dtype')) and
+                all([isinstance(item, bool) for item in index])):
+            # boolean indexing
+            memberlist = self._list()
+            out = Bundle([memberlist[i] for i, val in enumerate(index) if val])
         elif isinstance(index, list):
-            # we can take lists of indices, names, or uuids; these return a
-            # Bundle; repeats already not respected since Bundle functions as a
-            # set
-            out = Bundle([self[item] for item in index])
+            memberlist = self._list()
+            out = Bundle([memberlist[item] for item in index])
         elif isinstance(index, int):
             # an index gets the member at that position
             out = self._list()[index]

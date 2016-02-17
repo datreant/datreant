@@ -106,16 +106,12 @@ class Tags(Limb):
 
     def __getitem__(self, value):
         with self._treant._read:
-            fits = False
             if isinstance(value, list):
                 # a list of tags gives only members with ALL the tags
-                for item in value:
-                    fits &= self[item]
+                fits = all([self[item] for item in value])
             elif isinstance(value, tuple):
                 # a tuple of tags gives members with ANY of the tags
-                for item in value:
-                    fits |= self[item]
-
+                fits = any([self[item] for item in value])
             elif isinstance(value, string_types):
                 fits = value in self
 
