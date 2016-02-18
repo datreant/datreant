@@ -482,14 +482,16 @@ class Bundle(object):
         if processes > 1:
             pool = mp.Pool(processes=processes)
             results = dict()
-            for member in self:
-                results[member.uuid] = pool.apply_async(
-                        function, args=(member,), kwds=kwargs).get()
+            results = {member.uuid: pool.apply_async(
+                    function, args=(member,), kwds=kwargs) for member in self}
+
+            output = {key: results[key].get() for key in results}
+
             pool.close()
             pool.join()
 
             # sort by member order
-            results = [results[uuid] for uuid in self.uuids]
+            results = [output[uuid] for uuid in self.uuids]
         else:
             results = [function(member, **kwargs) for member in self]
 
