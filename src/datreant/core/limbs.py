@@ -112,6 +112,10 @@ class Tags(Limb):
             elif isinstance(value, tuple):
                 # a tuple of tags gives members with ANY of the tags
                 fits = any([self[item] for item in value])
+            if isinstance(value, set):
+                # a set of tags gives only members WITHOUT ALL the tags
+                # can be used for `not`, basically
+                fits = all([not self[item] for item in value])
             elif isinstance(value, string_types):
                 fits = value in self
 
