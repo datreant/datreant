@@ -10,7 +10,10 @@ from .util import makedirs
 from . import _TREELIMBS
 
 
-class BrushMixin(object):
+class Veg(object):
+    def __init__(self, filepath):
+        self._path = Path(os.path.abspath(filepath))
+
     def __str__(self):
         return str(self.path)
 
@@ -43,13 +46,12 @@ class BrushMixin(object):
         return os.path.relpath(str(self.path))
 
 
-class Leaf(BrushMixin):
+class Leaf(Veg):
     """A file in the filesystem.
 
     """
 
     def __init__(self, filepath):
-        makedirs(os.path.dirname(filepath))
         self._path = Path(os.path.abspath(filepath))
 
     def __repr__(self):
@@ -81,7 +83,7 @@ class Leaf(BrushMixin):
         self.touch()
 
 
-class Tree(BrushMixin):
+class Tree(Veg):
     """A directory.
 
     """
@@ -124,13 +126,27 @@ class Tree(BrushMixin):
         Tree or Leaf
 
         """
-        fullpath = os.path.join(self.abspath, path)
+        from .collections import View
 
-        if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
-            limbs = self._classtreelimbs + self._treelimbs
-            return Tree(fullpath, limbs=limbs)
+        if isinstance(path, list):
+            outview = []
+            for item in path:
+                fullpath = os.path.join(self.abspath, item)
+
+                if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
+                    limbs = self._classtreelimbs + self._treelimbs
+                    outview.append(Tree(fullpath, limbs=limbs))
+                else:
+                    outview.append(Leaf(fullpath))
+            return View(outview)
         else:
-            return Leaf(fullpath)
+            fullpath = os.path.join(self.abspath, path)
+
+            if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
+                limbs = self._classtreelimbs + self._treelimbs
+                return Tree(fullpath, limbs=limbs)
+            else:
+                return Leaf(fullpath)
 
     @classmethod
     def _attach_limb_class(cls, limb):
@@ -180,20 +196,36 @@ class Tree(BrushMixin):
                 self._attach_limb(limb)
 
     @property
+    def abspath(self):
+        """Absolute path of ``self.path``.
+
+        """
+        return str(self.path.absolute()) + os.sep
+
+    @property
+    def relpath(self):
+        """Relative path of ``self.path`` from current working directory.
+
+        """
+        return os.path.relpath(str(self.path)) + os.sep
+
+    @property
     def leaves(self):
         """A list of the file names in the directory.
 
         Hidden files are not included.
 
         """
+        from .collections import View
+
         if self.exists:
             for root, dirs, files in scandir.walk(self.abspath):
                 # remove hidden files
-                out = [f for f in files if f[0] != os.extsep]
+                out = [Leaf(f) for f in files if f[0] != os.extsep]
                 break
 
             out.sort()
-            return out
+            return View(out)
         else:
             raise OSError("Tree doesn't exist in the filesystem")
 
@@ -204,35 +236,39 @@ class Tree(BrushMixin):
         Hidden directories are not included.
 
         """
+        from .collections import View
+
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
         for root, dirs, files in scandir.walk(self.abspath):
             # remove hidden directories
-            out = [d for d in dirs if d[0] != os.extsep]
+            out = [Tree(d) for d in dirs if d[0] != os.extsep]
             break
 
         out.sort()
-        return out
+        return View(out)
 
     @property
     def hidden(self):
         """A list of the hidden files and directories in the directory.
 
         """
+        from .collections import View
+
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
         for root, dirs, files in scandir.walk(self.abspath):
-            outdirs = [d for d in dirs if d[0] == os.extsep]
+            outdirs = [Tree(d) for d in dirs if d[0] == os.extsep]
             outdirs.sort()
 
-            outfiles = [f for f in files if f[0] == os.extsep]
+            outfiles = [Leaf(f) for f in files if f[0] == os.extsep]
             outfiles.sort()
 
             # want directories then files
             out = outdirs + outfiles
             break
 
-        return out
+        return View(out)
 
     def draw(self, depth=None, hidden=False):
         """Print an asciified visual of the tree.

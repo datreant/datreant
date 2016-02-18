@@ -23,6 +23,102 @@ from . import filesystem
 from . import _LIMBS, _AGGLIMBS
 
 
+class View(object):
+    """A collection of Trees and Leaves.
+
+    """
+    def __init__(self, *vegs, **kwargs):
+        self._state = list()
+        self.add(*vegs)
+
+    def __repr__(self):
+        return "<View({})>".format(self._list())
+
+    def __str__(self):
+        out =  "<- View ->\n"
+
+        for member in self._list():
+            out += "  {}\n".format(member.relpath)
+
+        out += "<- ---- ->"
+        return out
+
+    def add(self, *vegs):
+        """Add any number of members to this collection.
+
+        :Arguments:
+            *vegs*
+                Trees or Leaves to add; lists, tuples, or other
+                Views with Trees or Leaves will also work; strings 
+                giving a path (existing or not) also work, since these
+                are what define Trees and Leaves
+                
+        """
+        from .trees import Veg, Leaf, Tree
+
+        outconts = list()
+        for veg in vegs:
+            if veg is None:
+                pass
+            elif isinstance(veg, (list, tuple)):
+                self.add(*veg)
+            elif isinstance(veg, View):
+                self.add(*veg.abspaths)
+            elif isinstance(veg, Veg):
+                outconts.append(veg.abspath)
+            elif (isinstance(veg, string_types) and
+                    (os.path.isdir(veg) or veg.endswith(os.sep))):
+                tre = Tree(veg)
+                outconts.append(tre.abspath)
+            elif isinstance(veg, string_types):
+                tre = Leaf(veg)
+                outconts.append(tre.abspath)
+            else:
+                raise TypeError("'{}' not a valid input "
+                                "for View".format(veg))
+
+        self._add_members(*outconts)
+
+    def _add_members(self, *abspaths):
+        """Add many members at once.
+
+        :Arguments:
+            *abspaths*
+                list of abspaths
+
+        """
+        for abspath in abspaths:
+            self._add_member(abspath)
+
+    def _add_member(self, abspath):
+        """Add a member to the View.
+
+        :Arguments:
+            *abspath*
+                absolute path of new member
+
+        """
+        # check if uuid already present
+        paths = [member for member in self._state]
+
+        if abspath not in paths:
+            self._state.append(abspath)
+
+    def _list(self):
+        """Return a list of members.
+
+        """
+        from .trees import Leaf, Tree
+
+        outlist = []
+        for abspath in self._state:
+            if os.path.isdir(abspath) or abspath.endswith(os.sep):
+                outlist.append(Tree(abspath))
+            else:
+                outlist.append(Leaf(abspath))
+
+        return outlist
+
 @functools.total_ordering
 class Bundle(object):
     """Non-persistent collection of treants.

@@ -7,17 +7,17 @@ import os
 import py
 from . import test_bundle
 
-from datreant.core import Tree, Leaf
+from datreant.core import Veg, Leaf, Tree
 
 
-class Brush:
+class TestVeg:
     """Common element tests of Trees and Leaves"""
 
-    def test_exists(self, brush):
+    def test_exists(self, veg):
         pass
 
 
-class TestTree(Brush):
+class TestTree(TestVeg):
     """Test generic Treant features"""
     treeroot = 'testtreant'
 
@@ -27,7 +27,7 @@ class TestTree(Brush):
             t = Tree(self.treeroot)
         return t
 
-    brush = tree
+    veg = tree
 
     def test_getitem(self, tree):
         """Test that using getitem syntax returns Trees and Leaves as it
@@ -139,7 +139,7 @@ class TestTree(Brush):
         pass
 
 
-class TestLeaf(Brush):
+class TestLeaf(TestVeg):
     """Test Leaf-specific features.
 
     """
@@ -151,7 +151,7 @@ class TestLeaf(Brush):
             l = Leaf(self.leafname)
         return l
 
-    brush = leaf
+    veg = leaf
 
     def test_makedirs(self, leaf):
         pass
