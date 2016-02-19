@@ -20,7 +20,7 @@ from six import string_types
 from six.moves import zip
 
 from . import filesystem
-from . import _LIMBS, _AGGLIMBS
+from . import _TREANTS, _LIMBS, _AGGLIMBS
 
 
 @functools.total_ordering
@@ -531,9 +531,11 @@ class Bundle(object):
         """
         found = list()
         for root, dirs, files in scandir.walk(dirpath):
-            paths = [os.path.join(root, d) for d in dirs]
-            for path in paths:
-                found.extend(filesystem.glob_treant(path))
+            for treanttype in _TREANTS:
+                outnames = fnmatch.filter(files,
+                                          "{}.*.json".format(treanttype))
+                paths = [os.path.join(root, file) for file in outnames]
+                found.extend(paths)
 
         return Bundle(found)
 
