@@ -4,6 +4,7 @@ Interface classes for state files.
 """
 
 import os
+import warnings
 
 from .core import JSONFile
 
@@ -29,7 +30,9 @@ def treantfile(filename, **kwargs):
     try:
         statefileclass = _TREANTS[treanttype]._backendclass
     except KeyError:
-        raise IOError("No known treant type for file '{}'".format(filename))
+        warnings.warn("No known treant type for file '{}'; "
+                      "defaulting to TreantFile".format(filename))
+        statefileclass = _TREANTS['Treant']._backendclass
 
     return statefileclass(filename, **kwargs)
 
