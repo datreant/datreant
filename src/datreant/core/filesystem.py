@@ -117,10 +117,18 @@ def path2treant(*paths):
             files = glob_treant(path)
             for item in files:
                 treanttype = os.path.basename(item).split(os.extsep)[0]
-                treants.append(_TREANTS[treanttype](item))
+                try:
+                    treants.append(_TREANTS[treanttype](item))
+                except KeyError:
+                    # default to base Treant
+                    treants.append(_TREANTS['Treant'](item))
         elif os.path.exists(path):
             treanttype = os.path.basename(path).split(os.extsep)[0]
-            treants.append(_TREANTS[treanttype](path))
+            try:
+                treants.append(_TREANTS[treanttype](path))
+            except KeyError:
+                # default to base Treant
+                treants.append(_TREANTS['Treant'](path))
 
     return treants
 

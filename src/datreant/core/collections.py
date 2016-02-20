@@ -601,7 +601,7 @@ class Bundle(object):
         else:
             self._state.append(member_rec)
 
-    def _del_members(self, uuids, all=False):
+    def _del_members(self, uuids=None, all=False):
         """Remove members from the Bundle.
 
         :Arguments:
