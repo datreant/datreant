@@ -265,11 +265,16 @@ class FileSerial(File):
     """File object base class for serialization formats, such as JSON.
 
     """
+    @property
+    def _writebuffer(self):
+        wbuffer = ".{}.buffer".format(os.path.basename(self.filename))
+        return os.path.join(os.path.dirname(self.filename), wbuffer)
+
     def _open_file_r(self):
         return open(self.filename, 'r')
 
     def _open_file_w(self):
-        return open(self.filename, 'w')
+        return open(self._writebuffer, 'w')
 
     def read_file(self):
         """Return deserialized representation of file.
@@ -385,6 +390,7 @@ class FileSerial(File):
         self.handle = self._open_file_w()
         self._serialize(self._state, self.handle)
         self.handle.close()
+        os.rename(self._writebuffer, self.filename)
 
     def _serialize(self, state, handle):
         """Serialize full state to open file handle.
