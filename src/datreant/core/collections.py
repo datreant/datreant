@@ -137,8 +137,10 @@ class Bundle(object):
         """
         from .treants import Treant
 
-        if isinstance(b, (Treant, Bundle)):
+        if isinstance(b, Bundle):
             return Bundle(list(set(a) - set(b)))
+        elif isinstance(b, Treant):
+            return Bundle(list(set(a) - set([b])))
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
