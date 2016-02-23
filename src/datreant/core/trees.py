@@ -57,7 +57,12 @@ class BrushMixin(object):
 
     @property
     def parent(self):
-        return Tree(str(self.path.parent))
+        if isinstance(self, Tree):
+            limbs = self._classtreelimbs | self._treelimbs
+        else:
+            limbs = None
+
+        return Tree(str(self.path.parent), limbs=limbs)
 
 
 class Leaf(BrushMixin):
@@ -117,8 +122,8 @@ class Tree(BrushMixin):
     """A directory.
 
     """
-    _classtreelimbs = []
-    _treelimbs = []
+    _classtreelimbs = set()
+    _treelimbs = set()
 
     def __init__(self, dirpath, limbs=None):
         self._path = Path(os.path.abspath(dirpath))
@@ -159,7 +164,7 @@ class Tree(BrushMixin):
         fullpath = os.path.join(self.abspath, path)
 
         if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
-            limbs = self._classtreelimbs + self._treelimbs
+            limbs = self._classtreelimbs | self._treelimbs
             return Tree(fullpath, limbs=limbs)
         else:
             return Leaf(fullpath)
@@ -185,7 +190,7 @@ class Tree(BrushMixin):
                 property(getter, setter, None, limb.__doc__))
 
         if limb._name in _TREELIMBS:
-            cls._classtreelimbs.append(limb._name)
+            cls._classtreelimbs.add(limb._name)
 
     def _attach_limb(self, limb):
         """Attach a limb.
@@ -197,7 +202,7 @@ class Tree(BrushMixin):
             pass
 
         if limb._name in _TREELIMBS:
-            self._treelimbs.append(limb._name)
+            self._treelimbs.add(limb._name)
 
     def attach(self, *limbname):
         """Attach limbs by name to this Tree.
