@@ -97,6 +97,21 @@ class Leaf(BrushMixin):
         """
         self.touch()
 
+    def read(self, size=None):
+        """Read file, or up to `size` in bytes.
+
+        :Arguments:
+            *size*
+                extent of the file to read, in bytes
+
+        """
+        with open(self.abspath, 'r') as f:
+            if size:
+                out = f.read(size)
+            else:
+                out = f.read()
+        return out
+
 
 class Tree(BrushMixin):
     """A directory.
