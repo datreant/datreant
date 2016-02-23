@@ -42,6 +42,10 @@ class BrushMixin(object):
         """
         return os.path.relpath(str(self.path))
 
+    @property
+    def parent(self):
+        return self.path.parent
+
 
 class Leaf(BrushMixin):
     """A file in the filesystem.
