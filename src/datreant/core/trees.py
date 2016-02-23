@@ -1,5 +1,5 @@
 import os
-from functools import reduce
+from functools import reduce, total_ordering
 from six import string_types
 
 import scandir
@@ -10,9 +10,22 @@ from .util import makedirs
 from . import _TREELIMBS
 
 
+@total_ordering
 class BrushMixin(object):
     def __str__(self):
         return str(self.path)
+
+    def __eq__(self, other):
+        try:
+            return self.abspath == other.abspath
+        except AttributeError:
+            return NotImplemented
+
+    def __lt__(self, other):
+        try:
+            return self.abspath < other.abspath
+        except AttributeError:
+            return NotImplemented
 
     @property
     def exists(self):
@@ -235,6 +248,25 @@ class Tree(BrushMixin):
             # want directories then files
             out = outdirs + outfiles
             break
+
+        return out
+
+    def glob(self, pattern):
+        """Yield all existing Leaves and Trees matching given globbing pattern.
+
+        :Arguments:
+            *pattern*
+               globbing pattern to match files and directories with
+
+        """
+        if not self.exists:
+            raise OSError("Tree doesn't exist in the filesystem")
+
+        out = []
+        for item in self.path.glob(pattern):
+            out.append(self[str(item)])
+
+        out.sort()
 
         return out
 
