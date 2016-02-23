@@ -44,7 +44,7 @@ class BrushMixin(object):
 
     @property
     def parent(self):
-        return self.path.parent
+        return Tree(str(self.path.parent))
 
 
 class Leaf(BrushMixin):
