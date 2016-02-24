@@ -118,18 +118,18 @@ class Bundle(object):
         except AttributeError:
             return NotImplemented
 
-    def __add__(a, b):
+    def __add__(self, other):
         """Addition of collections with collections or treants yields Bundle.
 
         """
         from .treants import Treant
 
-        if isinstance(b, (Treant, Bundle, list)):
-            return Bundle(a, b)
+        if isinstance(other, (Treant, Bundle, list)):
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
-    def __sub__(a, b):
+    def __sub__(self, other):
         """Return a Bundle giving the Treants in `a` that are not in `b`.
 
         Subtracting a Treant from a collection also works.
@@ -137,38 +137,38 @@ class Bundle(object):
         """
         from .treants import Treant
 
-        if isinstance(b, Bundle):
-            return Bundle(list(set(a) - set(b)))
-        elif isinstance(b, Treant):
-            return Bundle(list(set(a) - set([b])))
+        if isinstance(other, Bundle):
+            return Bundle(list(set(self) - set(other)))
+        elif isinstance(other, Treant):
+            return Bundle(list(set(self) - set([other])))
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
-    def __or__(a, b):
+    def __or__(self, other):
         """Return a Bundle giving the union of Bundles `a` and `b`.
 
         """
-        if isinstance(b, Bundle):
-            return Bundle(a, b)
+        if isinstance(other, Bundle):
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Bundles.")
 
-    def __and__(a, b):
+    def __and__(self, other):
         """Return a Bundle giving the intersection of Bundles `a` and `b`.
 
         """
-        if isinstance(b, Bundle):
-            return Bundle(list(set(a) & set(b)))
+        if isinstance(other, Bundle):
+            return Bundle(list(set(self) & set(other)))
         else:
             raise TypeError("Operands must be Bundles.")
 
-    def __xor__(a, b):
+    def __xor__(self, other):
         """Return a Bundle giving the symmetric difference of Bundles
         `a` and `b`.
 
         """
-        if isinstance(b, Bundle):
-            return Bundle(list(set(a) ^ set(b)))
+        if isinstance(other, Bundle):
+            return Bundle(list(set(self) ^ set(other)))
         else:
             raise TypeError("Operands must be Bundles.")
 
@@ -275,7 +275,7 @@ class Bundle(object):
             elif isinstance(member, string_types):
                 names = fnmatch.filter(self.names, member)
                 uuids = [member.uuid for member in self
-                         if (member.name in names)]
+                         if member.name in names]
                 remove.extend(uuids)
 
             else:
@@ -620,7 +620,6 @@ class Bundle(object):
             uuids = set([str(uuid) for uuid in uuids])
 
             # get matching rows
-            # TODO: possibly faster to use table.where
             memberlist = list()
             for i, member in enumerate(self._state):
                 for uuid in uuids:
