@@ -42,7 +42,9 @@ the project, clone the repository to your local machine with::
 Contributing
 ============
 This project is still under heavy development, and there are certainly rough
-edges and bugs. Issues and pull requests welcome! Check out our `contributor's guide`_
+edges and bugs. Issues and pull requests welcome! 
+
+Check out our `contributor's guide`_
 if you learn how to get started with contributing back.
 
 .. _`contributor's guide`: https://github.com/datreant/datreant/wiki/Contributing
