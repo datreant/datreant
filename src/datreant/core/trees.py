@@ -99,8 +99,14 @@ class Leaf(BrushMixin):
     def make(self):
         """Make the file if it doesn't exit. Equivalent to :meth:`touch`.
 
+        :Returns:
+            *leaf*
+                this leaf
+
         """
         self.touch()
+
+        return self
 
     def read(self, size=None):
         """Read file, or up to `size` in bytes.
@@ -345,5 +351,11 @@ class Tree(BrushMixin):
     def make(self):
         """Make the directory if it doesn't exit. Equivalent to :meth:`makedirs`.
 
+        :Returns:
+            *tree*
+                this tree
+
         """
         self.makedirs()
+
+        return self

@@ -14,7 +14,10 @@ class Brush:
     """Common element tests of Trees and Leaves"""
 
     def test_exists(self, brush):
-        pass
+        brush.make()
+
+        assert os.path.exists(brush.abspath)
+        assert brush.exists is True
 
 
 class TestTree(Brush):
@@ -112,31 +115,28 @@ class TestTree(Brush):
 
         assert len(tree.hidden) == 2
 
-    # def test_draw(self, tree):
-    #     from io import StringIO
-    #     import sys
+    def test_equal(self, tree):
+        t1 = tree['a dir/']
+        t2 = tree['another dir/']
 
-    #     with pytest.raises(OSError):
-    #         tree.draw()
+        assert t1 != t2
+        assert t1['.'] == t1
 
-    #     class Capturing(list):
-    #         def __enter__(self):
-    #             self._stdout = sys.stdout
-    #             sys.stdout = self._stringio = StringIO()
-    #             return self
-    #         def __exit__(self, *args):
-    #             self.extend(self._stringio.getvalue().splitlines())
-    #             sys.stdout = self._stdout
-
-    #     tree.makedirs()
-
-    #     with Capturing() as output:
-    #         tree.draw()
-
-    #     assert tree.relpath in output[0]
+    def test_compare(self, tree):
+        assert tree['bark/'] <= tree['dark/']
 
     def test_makedirs(self, tree):
-        pass
+        t1 = tree['a/ton of/stupid/bricks/'].makedirs()
+
+        assert t1.exists
+
+    def test_glob(self, tree):
+        tm = tree['moe'].make()
+        tl = tree['larry'].make()
+        tc = tree['curly'].make()
+
+        assert tl in tree.glob('*r*y')
+        assert tc in tree.glob('*r*y')
 
 
 class TestLeaf(Brush):
