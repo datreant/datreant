@@ -60,7 +60,7 @@ the project, clone the repository to your local machine with::
 
 Dependencies
 ============
-The dependencies of `datreant.core` are light, with many being pure-Python
+The dependencies of ``datreant.core`` are light, with many being pure-Python
 packages themselves. 
 
 
@@ -86,8 +86,8 @@ Documentation
     Tags-Categories
     Trees
     Views
-    Bundle
-    Group
+    Bundles
+    Groups
 
 
 For Developers

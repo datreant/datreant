@@ -1,18 +1,17 @@
 ==========================
 Creating and using Treants
 ==========================
-**datreant** is not an analysis code. Its scope is limited to the boring but
+**datreant** is not an analysis library. Its scope is limited to the boring but
 tedious task of data management and storage. It is intended to bring value to
 analysis results by making them easily accessible now and later.
 
 The basic functionality of datreant is condensed into one object: the
 **Treant**. Named after the `talking trees of D&D lore 
 <http://wikipedia.org/wiki/Treant>`__, Treants are persistent objects
-that live as directory trees in the filesystem. Treants store their
-underlying data persistently to disk on the fly. The file locking needed for
-each transaction is handled automatically, so more than one python process can
-be working with any number of instances of the same Treant at the same
-time.
+that live as directory trees in the filesystem and store their state information
+to disk on the fly. The file locking needed for each transaction is handled
+automatically, so more than one python process can be working with any number
+of instances of the same Treant at the same time.
 
 .. warning:: File locking is performed with POSIX advisory locks. These are
              not guaranteed to work perfectly on all platforms and file
@@ -28,7 +27,7 @@ Treants store their data as directory structures in the file system. Generating
 a new Treant, for example, with the following ::
     
     >>> # python session 1
-    >>> import datreant as dtr
+    >>> import datreant.core as dtr
     >>> s = dtr.Treant('sprout')
 
 creates a directory called ``sprout`` in the current working directory. It contains
@@ -36,7 +35,7 @@ a single file at the moment ::
 
     > # shell 
     > ls sprout
-    Treant.2b4b5800-48a7-4814-ba6d-1e631a09a199.h5
+    Treant.2b4b5800-48a7-4814-ba6d-1e631a09a199.json
 
 The name of this file includes the type of Treant it corresponds to, as
 well as the ``uuid`` of the Treant, which is its unique identifier. This
@@ -45,7 +44,7 @@ identical instance of this Treant. In fact, we can open a separate python
 session (go ahead!) and regenerate this Treant immediately there ::
 
     >>> # python session 2
-    >>> import datreant as dtr
+    >>> import datreant.core as dtr
     >>> t = dtr.Treant('sprout')
 
 Making a modification to the Treant in one session, perhaps by adding a tag,
@@ -71,12 +70,12 @@ What goes into a state file?
 The state file of a Treant contains the core pieces of information that define
 it. A few of these things are defined in the filesystem itself, including ::
 
-    /home/bob/research/arborea/sprout/Treant.2b4b5800-48a7-4814-ba6d-1e631a09a199.h5
-    |_________________________|______|______|____________________________________|__|
-              location          name     ^                 uuid                   ^
-    |________________________________|   |                                        |
-                basedir               treanttype                        statefiletype
-    |________________________________________________________________________________|
+    /home/bob/research/arborea/sprout/Treant.2b4b5800-48a7-4814-ba6d-1e631a09a199.json
+    |_________________________|______|______|____________________________________|____|
+              location          name     ^                 uuid                    ^
+    |________________________________|   |                                         |
+                abspath               treanttype                         statefiletype
+    |_________________________________________________________________________________|
                                       filepath
 
 This means that changing the location or name of a Treant can be done at the
@@ -89,7 +88,7 @@ the state file (see :ref:`tags_categories` for more on these).
 
 Reference: Treant
 =================
-.. autoclass:: datreant.Treant
+.. autoclass:: datreant.core.Treant
     :members:
     :inherited-members:
 
