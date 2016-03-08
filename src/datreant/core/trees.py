@@ -341,13 +341,6 @@ class Tree(BrushMixin):
 
         return self
 
-    @property
-    def view(self):
-        """Return contents of tree as a view.
-
-        """
-        pass
-
     def make(self):
         """Make the directory if it doesn't exit. Equivalent to :meth:`makedirs`.
 

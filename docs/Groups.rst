@@ -3,26 +3,30 @@ Leveraging Groups for aggregate data
 ====================================
 
 A **Group** is a special type of Treant that can keep track of any number of
-Treants it counts as members, and it can store datasets derived from these
-objects. Just as a normal Treant manages data obtained from a single study, a
-Group is designed to manage data obtained from a collection of Treants in
-aggregate.
+Treants it counts as members. Just as a normal Treant can be used to manage
+data obtained from a single study, a Group is useful for managing data obtained
+from a collection of Treants in aggregate.
 
 As with a normal Treant, to generate a Group from scratch, we need only give it
-a name. We can also give any number of existing Treants to add them as 
-members ::
+a name ::
 
-    >>> from datreant import Group
-    >>> g = Group('gruffy', members=[s1, s2, s3, g4, g5])
+    >>> from datreant.core import Group
+    >>> g = Group('gruffy')
     >>> g
-    <Group: 'gruffy' | 5 Members: 3 Treant, 2 Group>
+    <Group: 'gruffy'>
+
+We can also give any number of existing Treants to add them as 
+members, including other Groups ::
+
+    >>> members=[s1, s2, s3, g4, g5])
+    <Group: 'gruffy' | 5 Members>
 
 This will create a directory ``gruffy`` that contains a single file
-(``Group.<uuid>.h5``). That file is a persistent representation of the Group on
-disk. We can access its members with ::
+(``Group.<uuid>.json``). That file is a persistent representation of the Group
+on disk. We can access its members with ::
 
     >>> g.members
-    <Members(['marklar', 'scruffy', 'fluffy', 'buffy', 'gorp'])>
+    <MemberBundle(['marklar', 'scruffy', 'fluffy', 'buffy', 'gorp'])>
     >>> g.members[2]
     <Treant: 'fluffy'>
 
@@ -63,16 +67,15 @@ the same stored information at all times ::
 
 Reference: Group
 ================
-.. autoclass:: datreant.Group
+.. autoclass:: datreant.core.Group
     :members:
     :inherited-members:
 
 Reference: Members
 ==================
-The class :class:`datreant.limbs.Members` is the interface used
-by a Group to manage its members. It is not intended to be used on its own,
-but is shown here to give a detailed view of its methods.
+The class :class:`datreant.core.limbs.MemberBundle` is the interface used
+by a Group to manage its members. 
 
-.. autoclass:: datreant.limbs.Members
+.. autoclass:: datreant.core.limbs.MemberBundle
     :members:
     :inherited-members:
