@@ -20,7 +20,7 @@ from six import string_types
 from six.moves import zip
 
 from . import filesystem
-from . import _LIMBS, _AGGLIMBS
+from . import _TREANTS, _LIMBS, _AGGLIMBS
 
 
 class View(object):
@@ -34,8 +34,11 @@ class View(object):
     def __repr__(self):
         return "<View({})>".format(self._list())
 
+    def __len__(self):
+        return len(self._list())
+
     def __str__(self):
-        out =  "<- View ->\n"
+        out = "<- View ->\n"
 
         for member in self._list():
             out += "  {}\n".format(member.relpath)
@@ -49,10 +52,10 @@ class View(object):
         :Arguments:
             *vegs*
                 Trees or Leaves to add; lists, tuples, or other
-                Views with Trees or Leaves will also work; strings 
+                Views with Trees or Leaves will also work; strings
                 giving a path (existing or not) also work, since these
                 are what define Trees and Leaves
-                
+
         """
         from .trees import Veg, Leaf, Tree
 
@@ -118,6 +121,7 @@ class View(object):
                 outlist.append(Leaf(abspath))
 
         return outlist
+
 
 @functools.total_ordering
 class Bundle(object):
@@ -214,18 +218,18 @@ class Bundle(object):
         except AttributeError:
             return NotImplemented
 
-    def __add__(a, b):
+    def __add__(self, other):
         """Addition of collections with collections or treants yields Bundle.
 
         """
         from .treants import Treant
 
-        if isinstance(b, (Treant, Bundle, list)):
-            return Bundle(a, b)
+        if isinstance(other, (Treant, Bundle, list)):
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
-    def __sub__(a, b):
+    def __sub__(self, other):
         """Return a Bundle giving the Treants in `a` that are not in `b`.
 
         Subtracting a Treant from a collection also works.
@@ -233,36 +237,38 @@ class Bundle(object):
         """
         from .treants import Treant
 
-        if isinstance(b, (Treant, Bundle)):
-            return Bundle(list(set(a) - set(b)))
+        if isinstance(other, Bundle):
+            return Bundle(list(set(self) - set(other)))
+        elif isinstance(other, Treant):
+            return Bundle(list(set(self) - set([other])))
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
-    def __or__(a, b):
+    def __or__(self, other):
         """Return a Bundle giving the union of Bundles `a` and `b`.
 
         """
-        if isinstance(b, Bundle):
-            return Bundle(a, b)
+        if isinstance(other, Bundle):
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Bundles.")
 
-    def __and__(a, b):
+    def __and__(self, other):
         """Return a Bundle giving the intersection of Bundles `a` and `b`.
 
         """
-        if isinstance(b, Bundle):
-            return Bundle(list(set(a) & set(b)))
+        if isinstance(other, Bundle):
+            return Bundle(list(set(self) & set(other)))
         else:
             raise TypeError("Operands must be Bundles.")
 
-    def __xor__(a, b):
+    def __xor__(self, other):
         """Return a Bundle giving the symmetric difference of Bundles
         `a` and `b`.
 
         """
-        if isinstance(b, Bundle):
-            return Bundle(list(set(a) ^ set(b)))
+        if isinstance(other, Bundle):
+            return Bundle(list(set(self) ^ set(other)))
         else:
             raise TypeError("Operands must be Bundles.")
 
@@ -369,7 +375,7 @@ class Bundle(object):
             elif isinstance(member, string_types):
                 names = fnmatch.filter(self.names, member)
                 uuids = [member.uuid for member in self
-                         if (member.name in names)]
+                         if member.name in names]
                 remove.extend(uuids)
 
             else:
@@ -627,9 +633,11 @@ class Bundle(object):
         """
         found = list()
         for root, dirs, files in scandir.walk(dirpath):
-            paths = [os.path.join(root, d) for d in dirs]
-            for path in paths:
-                found.extend(filesystem.glob_treant(path))
+            for treanttype in _TREANTS:
+                outnames = fnmatch.filter(files,
+                                          "{}.*.json".format(treanttype))
+                paths = [os.path.join(root, file) for file in outnames]
+                found.extend(paths)
 
         return Bundle(found)
 
@@ -695,7 +703,7 @@ class Bundle(object):
         else:
             self._state.append(member_rec)
 
-    def _del_members(self, uuids, all=False):
+    def _del_members(self, uuids=None, all=False):
         """Remove members from the Bundle.
 
         :Arguments:
@@ -712,7 +720,6 @@ class Bundle(object):
             uuids = set([str(uuid) for uuid in uuids])
 
             # get matching rows
-            # TODO: possibly faster to use table.where
             memberlist = list()
             for i, member in enumerate(self._state):
                 for uuid in uuids:

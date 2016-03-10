@@ -1,5 +1,5 @@
 """
-Basic Treant objects: the organizational units for :mod:`datreant`.
+Treants: the organizational units for :mod:`datreant`.
 
 """
 import os
@@ -340,8 +340,14 @@ class Group(Treant):
 
     def __repr__(self):
         out = "<Group: '{}'".format(self.name)
-        if len(self.members):
-            out = out + " | {} Members".format(len(self.members))
+        with self._read:
+            try:
+                n_mems = len(self._state['members'])
+            except KeyError:
+                n_mems = 0
+
+        if n_mems:
+            out = out + " | {} Members".format(n_mems)
         out = out + ">"
 
         return out

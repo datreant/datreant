@@ -13,8 +13,11 @@ from datreant.core import Veg, Leaf, Tree
 class TestVeg:
     """Common element tests of Trees and Leaves"""
 
-    def test_exists(self, veg):
-        pass
+    @pytest.fixture
+    def veg(self, tmpdir):
+        with tmpdir.as_cwd():
+            v = Veg('veggie')
+        return v
 
 
 class TestTree(TestVeg):
@@ -28,6 +31,48 @@ class TestTree(TestVeg):
         return t
 
     veg = tree
+
+    def test_init(self, tmpdir):
+        """Test tree init.
+
+        Test that tree works for:
+            1. nonexistent directory
+            2. existing directory
+
+        Test that exception raised for:
+            1. tree initialized with existing file
+
+        """
+        with tmpdir.as_cwd():
+
+            # test nonexistent directory
+            t = Tree('bark')
+            assert not t.exists
+
+            # test existent directory
+            t2 = t['lark/'].make()
+            assert t2.exists
+
+            t3 = Tree('bark/lark')
+            assert t3.exists
+
+            # test that init with file raises ValueError
+
+            # this should create a nonexistent Tree
+            t4 = Tree('bark/mark.txt')
+            assert not t4.exists
+
+            # this makes a file
+            t['mark.txt'].make()
+
+            with pytest.raises(ValueError):
+                t5 = Tree('bark/mark.txt')
+
+    def test_exists(self, tree):
+        tree.make()
+
+        assert os.path.exists(tree.abspath)
+        assert tree.exists is True
 
     def test_getitem(self, tree):
         """Test that using getitem syntax returns Trees and Leaves as it
@@ -112,31 +157,28 @@ class TestTree(TestVeg):
 
         assert len(tree.hidden) == 2
 
-    # def test_draw(self, tree):
-    #     from io import StringIO
-    #     import sys
+    def test_equal(self, tree):
+        t1 = tree['a dir/']
+        t2 = tree['another dir/']
 
-    #     with pytest.raises(OSError):
-    #         tree.draw()
+        assert t1 != t2
+        assert t1['.'] == t1
 
-    #     class Capturing(list):
-    #         def __enter__(self):
-    #             self._stdout = sys.stdout
-    #             sys.stdout = self._stringio = StringIO()
-    #             return self
-    #         def __exit__(self, *args):
-    #             self.extend(self._stringio.getvalue().splitlines())
-    #             sys.stdout = self._stdout
-
-    #     tree.makedirs()
-
-    #     with Capturing() as output:
-    #         tree.draw()
-
-    #     assert tree.relpath in output[0]
+    def test_compare(self, tree):
+        assert tree['bark/'] <= tree['dark/']
 
     def test_makedirs(self, tree):
-        pass
+        t1 = tree['a/ton of/stupid/bricks/'].makedirs()
+
+        assert t1.exists
+
+    def test_glob(self, tree):
+        tm = tree['moe'].make()
+        tl = tree['larry'].make()
+        tc = tree['curly'].make()
+
+        assert tl in tree.glob('*r*y')
+        assert tc in tree.glob('*r*y')
 
 
 class TestLeaf(TestVeg):
@@ -152,6 +194,44 @@ class TestLeaf(TestVeg):
         return l
 
     veg = leaf
+
+    def test_init(self, tmpdir):
+        """
+        Test that leaf works for:
+            1. nonexistent file
+            2. existing file
+
+        Test that exception raised for:
+            1. leaf initialized with existing directory
+
+        """
+        with tmpdir.as_cwd():
+
+            # test nonexistent file
+            t = Leaf('bark')
+            assert not t.exists
+
+            # test existent file
+            t.make()
+            assert t.exists
+
+            t2 = Leaf('bark')
+            assert t2.exists
+
+            # test that init with directory raises ValueError
+
+            # this should create a nonexistent Tree
+            t3 = Tree('mark/').make()
+            assert t3.exists
+
+            with pytest.raises(ValueError):
+                t4 = Leaf('mark')
+
+    def test_exists(self, leaf):
+        leaf.make()
+
+        assert os.path.exists(leaf.abspath)
+        assert leaf.exists is True
 
     def test_makedirs(self, leaf):
         pass

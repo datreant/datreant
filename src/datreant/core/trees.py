@@ -1,5 +1,10 @@
+"""Trees and Leaves: filesystem manipulation interfaces for directories and
+files.
+
+"""
+
 import os
-from functools import reduce
+from functools import reduce, total_ordering
 from six import string_types
 
 import scandir
@@ -10,12 +15,25 @@ from .util import makedirs
 from . import _TREELIMBS
 
 
+@total_ordering
 class Veg(object):
     def __init__(self, filepath):
         self._path = Path(os.path.abspath(filepath))
 
     def __str__(self):
         return str(self.path)
+
+    def __eq__(self, other):
+        try:
+            return self.abspath == other.abspath
+        except AttributeError:
+            return NotImplemented
+
+    def __lt__(self, other):
+        try:
+            return self.abspath < other.abspath
+        except AttributeError:
+            return NotImplemented
 
     @property
     def exists(self):
@@ -45,6 +63,15 @@ class Veg(object):
         """
         return os.path.relpath(str(self.path))
 
+    @property
+    def parent(self):
+        if isinstance(self, Tree):
+            limbs = self._classtreelimbs | self._treelimbs
+        else:
+            limbs = None
+
+        return Tree(str(self.path.parent), limbs=limbs)
+
 
 class Leaf(Veg):
     """A file in the filesystem.
@@ -52,6 +79,10 @@ class Leaf(Veg):
     """
 
     def __init__(self, filepath):
+        if os.path.isdir(filepath):
+            raise ValueError("'{}' is an existing directory; "
+                             "a Leaf must be a file".format(filepath))
+
         self._path = Path(os.path.abspath(filepath))
 
     def __repr__(self):
@@ -79,18 +110,42 @@ class Leaf(Veg):
     def make(self):
         """Make the file if it doesn't exit. Equivalent to :meth:`touch`.
 
+        :Returns:
+            *leaf*
+                this leaf
+
         """
         self.touch()
+        return self
+
+    def read(self, size=None):
+        """Read file, or up to `size` in bytes.
+
+        :Arguments:
+            *size*
+                extent of the file to read, in bytes
+
+        """
+        with open(self.abspath, 'r') as f:
+            if size:
+                out = f.read(size)
+            else:
+                out = f.read()
+        return out
 
 
 class Tree(Veg):
     """A directory.
 
     """
-    _classtreelimbs = []
-    _treelimbs = []
+    _classtreelimbs = set()
+    _treelimbs = set()
 
     def __init__(self, dirpath, limbs=None):
+        if os.path.isfile(dirpath):
+            raise ValueError("'{}' is an existing file; "
+                             "a Tree must be a directory".format(dirpath))
+
         self._path = Path(os.path.abspath(dirpath))
 
         if limbs:
@@ -134,7 +189,7 @@ class Tree(Veg):
                 fullpath = os.path.join(self.abspath, item)
 
                 if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
-                    limbs = self._classtreelimbs + self._treelimbs
+                    limbs = self._classtreelimbs | self._treelimbs
                     outview.append(Tree(fullpath, limbs=limbs))
                 else:
                     outview.append(Leaf(fullpath))
@@ -143,7 +198,7 @@ class Tree(Veg):
             fullpath = os.path.join(self.abspath, path)
 
             if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
-                limbs = self._classtreelimbs + self._treelimbs
+                limbs = self._classtreelimbs | self._treelimbs
                 return Tree(fullpath, limbs=limbs)
             else:
                 return Leaf(fullpath)
@@ -169,7 +224,7 @@ class Tree(Veg):
                 property(getter, setter, None, limb.__doc__))
 
         if limb._name in _TREELIMBS:
-            cls._classtreelimbs.append(limb._name)
+            cls._classtreelimbs.add(limb._name)
 
     def _attach_limb(self, limb):
         """Attach a limb.
@@ -181,7 +236,7 @@ class Tree(Veg):
             pass
 
         if limb._name in _TREELIMBS:
-            self._treelimbs.append(limb._name)
+            self._treelimbs.add(limb._name)
 
     def attach(self, *limbname):
         """Attach limbs by name to this Tree.
@@ -200,7 +255,7 @@ class Tree(Veg):
         """Absolute path of ``self.path``.
 
         """
-        return str(self.path.absolute()) + os.sep
+        return str(self.path.absolute())
 
     @property
     def relpath(self):
@@ -270,6 +325,25 @@ class Tree(Veg):
 
         return View(out)
 
+    def glob(self, pattern):
+        """Yield all existing Leaves and Trees matching given globbing pattern.
+
+        :Arguments:
+            *pattern*
+               globbing pattern to match files and directories with
+
+        """
+        if not self.exists:
+            raise OSError("Tree doesn't exist in the filesystem")
+
+        out = []
+        for item in self.path.glob(pattern):
+            out.append(self[str(item)])
+
+        out.sort()
+
+        return out
+
     def draw(self, depth=None, hidden=False):
         """Print an asciified visual of the tree.
 
@@ -315,15 +389,14 @@ class Tree(Veg):
 
         return self
 
-    @property
-    def view(self):
-        """Return contents of tree as a view.
-
-        """
-        pass
-
     def make(self):
         """Make the directory if it doesn't exit. Equivalent to :meth:`makedirs`.
 
+        :Returns:
+            *tree*
+                this tree
+
         """
         self.makedirs()
+
+        return self
