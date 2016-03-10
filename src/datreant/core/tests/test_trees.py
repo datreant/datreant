@@ -32,6 +32,18 @@ class TestTree(Brush):
 
     brush = tree
 
+    def test_init(self, tmpdir):
+        """
+        Test that tree works for:
+            1. nonexistent directory
+            2. existing directory
+
+        Test that exception raised for:
+            1. tree initialized with existing file
+
+        """
+        pass
+
     def test_getitem(self, tree):
         """Test that using getitem syntax returns Trees and Leaves as it
         should.
@@ -152,6 +164,18 @@ class TestLeaf(Brush):
         return l
 
     brush = leaf
+
+    def test_init(self, tmpdir):
+        """
+        Test that leaf works for:
+            1. nonexistent file
+            2. existing file
+
+        Test that exception raised for:
+            1. leaf initialized with existing directory
+
+        """
+        pass
 
     def test_makedirs(self, leaf):
         pass

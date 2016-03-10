@@ -71,7 +71,10 @@ class Leaf(BrushMixin):
     """
 
     def __init__(self, filepath):
-        makedirs(os.path.dirname(filepath))
+        if os.path.isdir(filepath):
+            raise ValueError("'{}' is an existing directory; "
+                             "a Leaf must be a file".format(dirpath))
+
         self._path = Path(os.path.abspath(filepath))
 
     def __repr__(self):
@@ -105,7 +108,6 @@ class Leaf(BrushMixin):
 
         """
         self.touch()
-
         return self
 
     def read(self, size=None):
@@ -132,6 +134,10 @@ class Tree(BrushMixin):
     _treelimbs = set()
 
     def __init__(self, dirpath, limbs=None):
+        if os.path.isfile(dirpath):
+            raise ValueError("'{}' is an existing file; "
+                             "a Tree must be a directory".format(dirpath))
+
         self._path = Path(os.path.abspath(dirpath))
 
         if limbs:

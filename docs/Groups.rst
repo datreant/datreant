@@ -50,9 +50,9 @@ A Group can even be a member of itself ::
     >>> g.members[-1].members[-1]
     <Group: 'gruffy' | 6 Members: 3 Treant, 3 Group>
 
-As a technical aside, note that a Group returned as a member of itself
-is not the same object in memory as the Group that returned it. They are
-two different instances of the same Group ::
+As an aside, note that a Group returned as a member of itself is not the same
+object in memory as the Group that returned it. They are two different
+instances of the same Group ::
 
     >>> g2 = g.members[-1]
     >>> g2 is g
