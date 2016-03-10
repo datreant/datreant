@@ -1,3 +1,9 @@
+"""Trees and Leaves: filesystem manipulation interfaces for directories and
+files.
+
+"""
+
+
 import os
 from functools import reduce, total_ordering
 from six import string_types
