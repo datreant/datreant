@@ -31,7 +31,8 @@ class TestTreant(TestTree):
         assert treant.name == self.treantname
         assert treant.location == tmpdir.strpath
         assert treant.treanttype == self.treanttype
-        assert treant.abspath == os.path.join(tmpdir.strpath, self.treantname)
+        assert treant.abspath == (os.path.join(tmpdir.strpath,
+                                               self.treantname) + os.sep)
 
     def test_gen_methods(self, tmpdir, treantclass):
         """Test the variety of ways we can generate a new Treant

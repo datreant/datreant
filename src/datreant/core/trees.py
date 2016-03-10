@@ -44,33 +44,43 @@ class Veg(object):
 
     @property
     def path(self):
-        """Filesystem as a :class:`pathlib.Path`.
+        """Filesystem path as a :class:`pathlib.Path`.
 
         """
         return self._path
 
     @property
     def abspath(self):
-        """Absolute path of ``self.path``.
+        """Absolute path. 
 
         """
         return str(self.path.absolute())
 
     @property
     def relpath(self):
-        """Relative path of ``self.path`` from current working directory.
+        """Relative path from current working directory.
 
         """
         return os.path.relpath(str(self.path))
 
     @property
     def parent(self):
+        """Parent directory for this path.
+
+        """
         if isinstance(self, Tree):
             limbs = self._classtreelimbs | self._treelimbs
         else:
             limbs = None
 
         return Tree(str(self.path.parent), limbs=limbs)
+
+    @property
+    def name(self):
+        """Basename for this path.
+
+        """
+        return os.path.basename(os.path.abspath(self.abspath))
 
 
 class Leaf(Veg):
@@ -183,25 +193,24 @@ class Tree(Veg):
         """
         from .collections import View
 
-        if isinstance(path, list):
-            outview = []
-            for item in path:
-                fullpath = os.path.join(self.abspath, item)
+        def filt(path):
+            fullpath = os.path.abspath(os.path.join(self.abspath, path))
 
-                if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
-                    limbs = self._classtreelimbs | self._treelimbs
-                    outview.append(Tree(fullpath, limbs=limbs))
-                else:
-                    outview.append(Leaf(fullpath))
-            return View(outview)
-        else:
-            fullpath = os.path.join(self.abspath, path)
-
-            if os.path.isdir(fullpath) or fullpath.endswith(os.sep):
+            if (os.path.isdir(fullpath) or path.endswith(os.sep) or
+                    (fullpath in self.abspath)):
                 limbs = self._classtreelimbs | self._treelimbs
                 return Tree(fullpath, limbs=limbs)
             else:
                 return Leaf(fullpath)
+
+        if isinstance(path, list):
+            outview = []
+            for item in path:
+                outview.append(filt(item))
+
+            return View(outview)
+        else:
+            return filt(path)
 
     @classmethod
     def _attach_limb_class(cls, limb):
@@ -255,7 +264,7 @@ class Tree(Veg):
         """Absolute path of ``self.path``.
 
         """
-        return str(self.path.absolute())
+        return str(self.path.absolute()) + os.sep
 
     @property
     def relpath(self):
@@ -266,7 +275,7 @@ class Tree(Veg):
 
     @property
     def leaves(self):
-        """A list of the file names in the directory.
+        """A View of the files in this Tree.
 
         Hidden files are not included.
 
@@ -286,7 +295,7 @@ class Tree(Veg):
 
     @property
     def trees(self):
-        """A list of the directories in the directory.
+        """A View of the directories in this Tree.
 
         Hidden directories are not included.
 
@@ -305,7 +314,7 @@ class Tree(Veg):
 
     @property
     def hidden(self):
-        """A list of the hidden files and directories in the directory.
+        """A View of the hidden files and directories in this Tree.
 
         """
         from .collections import View

@@ -21,9 +21,35 @@ from six.moves import zip
 
 from . import filesystem
 from . import _TREANTS, _LIMBS, _AGGLIMBS
+from .trees import Tree, Leaf
 
 
-class View(object):
+@functools.total_ordering
+class CollectionMixin(object):
+    """Mixin class for collections.
+
+    """
+
+    def __len__(self):
+        return len(self._list())
+
+    def __iter__(self):
+        return self._list().__iter__()
+
+    def __eq__(self, other):
+        try:
+            return set(self) == set(other)
+        except AttributeError:
+            return NotImplemented
+
+    def __lt__(self, other):
+        try:
+            return set(self) < set(other)
+        except AttributeError:
+            return NotImplemented
+
+
+class View(CollectionMixin):
     """A collection of Trees and Leaves.
 
     """
@@ -34,8 +60,46 @@ class View(object):
     def __repr__(self):
         return "<View({})>".format(self._list())
 
-    def __len__(self):
-        return len(self._list())
+    def __getitem__(self, index):
+        """Get member corresponding to the given index or slice.
+
+        A single integer will yield a single member. Lists of either will yield
+        a View with members in order by the given items. Giving a basename will
+        always yield a View, since more than one Tree or Leaf may have the same
+        basename and so they are not guaranteed to be unique.
+
+        A boolean index by way of a list or numpy array can also be used to
+        select out members.
+
+        """
+        # we can take lists of indices, names, or uuids; these return a
+        # View; repeats already not respected since View functions as a
+        # set
+        if ((isinstance(index, list) or hasattr(index, 'dtype')) and
+                all([isinstance(item, bool) for item in index])):
+            # boolean indexing
+            memberlist = self._list()
+            out = View([memberlist[i] for i, val in enumerate(index) if val])
+        elif isinstance(index, list):
+            memberlist = self._list()
+            out = View([memberlist[item] for item in index])
+        elif isinstance(index, int):
+            # an index gets the member at that position
+            out = self._list()[index]
+        elif isinstance(index, string_types):
+            # a name can be used for indexing
+            # always returns a View
+            out = View([self.abspaths[i] for i, name
+                        in enumerate(self.names) if name == index])
+
+        elif isinstance(index, slice):
+            # we also take slices, obviously
+            out = Bundle(*self.filepaths[index])
+            out._cache.update(self._cache)
+        else:
+            raise IndexError("Cannot index View with given values")
+
+        return out
 
     def __str__(self):
         out = "<- View ->\n"
@@ -122,9 +186,52 @@ class View(object):
 
         return outlist
 
+    @property
+    def names(self):
+        """List the basenames for the members in this View.
 
-@functools.total_ordering
-class Bundle(object):
+        """
+        return [member.name for member in self]
+
+    @property
+    def trees(self):
+        """Return a View giving only members that are Trees (or subclasses).
+
+        """
+        return View([member for member in self if isinstance(member, Tree)])
+
+    @property
+    def leaves(self):
+        """Return a View giving only members that are Leaves (or subclasses).
+
+        """
+        return View([member for member in self if isinstance(member, Leaf)])
+
+    @property
+    def abspaths(self):
+        """List the absolute paths for the members in this View.
+
+        """
+        return [member.abspath for member in self]
+
+    @property
+    def relpaths(self):
+        """List the relative paths from the current working directory for the
+        members in this View.
+
+        """
+        return [member.relpath for member in self]
+
+    @property
+    def treants(self):
+        """Obtain a Bundle of all existing Treants among the Trees and Leaves
+        in this View.
+
+        """
+        return Bundle(self)
+
+
+class Bundle(CollectionMixin):
     """Non-persistent collection of treants.
 
     A Bundle is basically an indexable set. It is often used to return the
@@ -150,12 +257,6 @@ class Bundle(object):
 
     def __repr__(self):
         return "<Bundle({})>".format(self._list())
-
-    def __len__(self):
-        return len(self._list())
-
-    def __iter__(self):
-        return self._list().__iter__()
 
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
@@ -205,18 +306,6 @@ class Bundle(object):
             raise IndexError("Cannot index Bundle with given values")
 
         return out
-
-    def __eq__(self, other):
-        try:
-            return set(self) == set(other)
-        except AttributeError:
-            return NotImplemented
-
-    def __lt__(self, other):
-        try:
-            return set(self) < set(other)
-        except AttributeError:
-            return NotImplemented
 
     def __add__(self, other):
         """Addition of collections with collections or treants yields Bundle.
@@ -331,7 +420,7 @@ class Bundle(object):
         for treant in treants:
             if treant is None:
                 pass
-            elif isinstance(treant, (list, tuple)):
+            elif isinstance(treant, (list, tuple, View)):
                 self.add(*treant)
             elif isinstance(treant, Bundle):
                 self.add(*treant.filepaths)
@@ -339,6 +428,9 @@ class Bundle(object):
             elif isinstance(treant, Treant):
                 outconts.append(treant)
                 self._cache[treant.uuid] = treant
+            elif isinstance(treant, (Leaf, Tree)):
+                tre = filesystem.path2treant(treant.abspath)
+                outconts.extend(tre)
             elif os.path.exists(treant):
                 tre = filesystem.path2treant(treant)
                 outconts.extend(tre)
