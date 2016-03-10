@@ -73,7 +73,7 @@ class Leaf(BrushMixin):
     def __init__(self, filepath):
         if os.path.isdir(filepath):
             raise ValueError("'{}' is an existing directory; "
-                             "a Leaf must be a file".format(dirpath))
+                             "a Leaf must be a file".format(filepath))
 
         self._path = Path(os.path.abspath(filepath))
 

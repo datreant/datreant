@@ -33,7 +33,8 @@ class TestTree(Brush):
     brush = tree
 
     def test_init(self, tmpdir):
-        """
+        """Test tree init.
+
         Test that tree works for:
             1. nonexistent directory
             2. existing directory
@@ -42,7 +43,30 @@ class TestTree(Brush):
             1. tree initialized with existing file
 
         """
-        pass
+        with tmpdir.as_cwd():
+
+            # test nonexistent directory
+            t = Tree('bark')
+            assert not t.exists
+
+            # test existent directory
+            t2 = t['lark/'].make()
+            assert t2.exists
+
+            t3 = Tree('bark/lark')
+            assert t3.exists
+
+            # test that init with file raises ValueError
+
+            # this should create a nonexistent Tree
+            t4 = Tree('bark/mark.txt')
+            assert not t4.exists
+
+            # this makes a file
+            t['mark.txt'].make()
+
+            with pytest.raises(ValueError):
+                t5 = Tree('bark/mark.txt')
 
     def test_getitem(self, tree):
         """Test that using getitem syntax returns Trees and Leaves as it
@@ -175,7 +199,27 @@ class TestLeaf(Brush):
             1. leaf initialized with existing directory
 
         """
-        pass
+        with tmpdir.as_cwd():
+
+            # test nonexistent file
+            t = Leaf('bark')
+            assert not t.exists
+
+            # test existent file
+            t.make()
+            assert t.exists
+
+            t2 = Leaf('bark')
+            assert t2.exists
+
+            # test that init with directory raises ValueError
+
+            # this should create a nonexistent Tree
+            t3 = Tree('mark/').make()
+            assert t3.exists
+
+            with pytest.raises(ValueError):
+                t4 = Leaf('mark')
 
     def test_makedirs(self, leaf):
         pass
