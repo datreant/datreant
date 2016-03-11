@@ -208,31 +208,31 @@ class TestTreant(TestTree):
                     assert t in tags_union
 
                 tags_intersect = t1.tags & t2.tags
-                for t in ['sprout']:
-                    assert t in tags_intersect
+                assert 'sprout' in tags_intersect
+                for t in ['deciduous', 'evergreen']:
+                    assert t not in tags_intersect
 
                 tags_diff = t1.tags - t2.tags
                 assert 'deciduous' in tags_diff
+                for t in ['sprout', 'evergreen']:
+                    assert t not in tags_diff
 
                 tags_symm_diff = t1.tags ^ t2.tags
                 for t in ['deciduous', 'evergreen']:
                     assert t in tags_symm_diff
+                assert 'sprout' not in tags_symm_diff
 
                 # 3
                 t3 = treantclass('oak')
                 assert os.path.exists(t3.filepath)
                 t3.tags.add(['deciduous'])
 
-                tags_subset0 = t1.tags <= t1.tags
-                assert tags_subset0 is True
-                tags_subset1 = t1.tags < t1.tags
-                assert tags_subset1 is False
-                tags_subset2 = t1.tags == t1.tags
-                assert tags_subset2 is True
-                tags_subset3 = t1.tags < t3.tags
-                assert tags_subset3 is False
-                tags_subset4 = t1.tags > t3.tags
-                assert tags_subset4 is True
+                # Test set membership
+                assert t1.tags <= t1.tags
+                assert not t1.tags < t1.tags
+                assert t1.tags == t1.tags
+                assert not t1.tags < t3.tags
+                assert t1.tags > t3.tags
 
     class TestCategories:
         """Test treant categories"""

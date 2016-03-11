@@ -59,6 +59,7 @@ class Limb(with_metaclass(_Limbmeta, object)):
     def _logger(self):
         return self._treant._logger
 
+
 @functools.total_ordering
 class Tags(Limb):
     """Interface to tags.
