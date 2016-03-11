@@ -190,6 +190,50 @@ class TestTreant(TestTree):
             treant.tags.clear()
             assert len(treant.tags) == 0
 
+        def test_tags_set_behavior(self, tmpdir, treantclass):
+
+            with tmpdir.as_cwd():
+                # 1
+                t1 = treantclass('maple')
+                assert os.path.exists(t1.filepath)
+                t1.tags.add(['sprout', 'deciduous'])
+
+                # 2
+                t2 = treantclass('sequoia')
+                assert os.path.exists(t2.filepath)
+                t2.tags.add(['sprout', 'evergreen'])
+
+                tags_union = t1.tags | t2.tags
+                for t in ['sprout', 'deciduous', 'evergreen']:
+                    assert t in tags_union
+
+                tags_intersect = t1.tags & t2.tags
+                assert 'sprout' in tags_intersect
+                for t in ['deciduous', 'evergreen']:
+                    assert t not in tags_intersect
+
+                tags_diff = t1.tags - t2.tags
+                assert 'deciduous' in tags_diff
+                for t in ['sprout', 'evergreen']:
+                    assert t not in tags_diff
+
+                tags_symm_diff = t1.tags ^ t2.tags
+                for t in ['deciduous', 'evergreen']:
+                    assert t in tags_symm_diff
+                assert 'sprout' not in tags_symm_diff
+
+                # 3
+                t3 = treantclass('oak')
+                assert os.path.exists(t3.filepath)
+                t3.tags.add(['deciduous'])
+
+                # Test set membership
+                assert t1.tags <= t1.tags
+                assert not t1.tags < t1.tags
+                assert t1.tags == t1.tags
+                assert not t1.tags < t3.tags
+                assert t1.tags > t3.tags
+
     class TestCategories:
         """Test treant categories"""
 

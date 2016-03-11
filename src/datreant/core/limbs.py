@@ -4,6 +4,7 @@ the state of an object.
 
 """
 import os
+import functools
 from six import string_types, with_metaclass
 from collections import defaultdict
 
@@ -59,6 +60,7 @@ class Limb(with_metaclass(_Limbmeta, object)):
         return self._treant._logger
 
 
+@functools.total_ordering
 class Tags(Limb):
     """Interface to tags.
 
@@ -137,6 +139,55 @@ class Tags(Limb):
 
     def __len__(self):
         return len(self._list())
+
+    def __eq__(self, other):
+        try:
+            return set(self) == set(other)
+        except AttributeError:
+            raise TypeError("Operands must be Tags.")
+
+    def __lt__(self, other):
+        if isinstance(other, Tags):
+            return set(self) < set(other)
+        else:
+            raise TypeError("Operands must be Tags.")
+
+    def __sub__(self, other):
+        """Return a set giving the Tags in `a` that are not in `b`.
+
+        """
+        if isinstance(other, Tags):
+            return set(self) - set(other)
+        else:
+            raise TypeError("Operands must be Tags.")
+
+    def __or__(self, other):
+        """Return a set giving the union of Tags `a` and `b`.
+
+        """
+        if isinstance(other, Tags):
+            return set(self) | set(other)
+        else:
+            raise TypeError("Operands must be Tags.")
+
+    def __and__(self, other):
+        """Return a set giving the intersection of Tags `a` and `b`.
+
+        """
+        if isinstance(other, Tags):
+            return set(self) & set(other)
+        else:
+            raise TypeError("Operands must be Tags.")
+
+    def __xor__(self, other):
+        """Return a set giving the symmetric difference of Tags
+        `a` and `b`.
+
+        """
+        if isinstance(other, Tags):
+            return set(self) ^ set(other)
+        else:
+            raise TypeError("Operands must be Tags.")
 
     def _list(self):
         """Get all tags for the Treant as a list.
