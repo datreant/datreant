@@ -1,7 +1,8 @@
 """
 The Bundle object is the primary manipulator for Treants in aggregate. They are
 returned as queries to Groups and other Bundles. They offer convenience methods
-for dealing with many Treants at once.
+for dealing with many Treants at once. Views give the same kind of aggregation
+conveniences for Trees and Leaves.
 
 """
 
@@ -272,6 +273,55 @@ class View(CollectionMixin):
 
         """
         return Bundle(self)
+
+    def map(self, function, processes=1, **kwargs):
+        """Apply a function to each member, perhaps in parallel.
+
+        A pool of processes is created for *processes* > 1; for example,
+        with 40 members and 'processes=4', 4 processes will be created,
+        each working on a single member at any given time. When each process
+        completes work on a member, it grabs another, until no members remain.
+
+        *kwargs* are passed to the given function when applied to each member
+
+        :Arguments:
+            *function*
+                function to apply to each member; must take only a single
+                treant instance as input, but may take any number of keyword
+                arguments
+
+        :Keywords:
+            *processes*
+                how many processes to use; if 1, applies function to each
+                member in member order
+
+        :Returns:
+            *results*
+                list giving the result of the function for each member,
+                in member order; if the function returns ``None`` for each
+                member, then only ``None`` is returned instead of a list
+            """
+        if processes > 1:
+            pool = mp.Pool(processes=processes)
+            results = dict()
+            results = {member.abspath: pool.apply_async(
+                    function, args=(member,), kwds=kwargs) for member in self}
+
+            output = {key: results[key].get() for key in results}
+
+            pool.close()
+            pool.join()
+
+            # sort by member order
+            results = [output[abspath] for abspath in self.abspaths]
+        else:
+            results = [function(member, **kwargs) for member in self]
+
+        # check if list is all ``None``: if so, we return ``None``
+        if all([(i is None) for i in results]):
+            results = None
+
+        return results
 
 
 class Bundle(CollectionMixin):
@@ -789,19 +839,36 @@ class Bundle(CollectionMixin):
 
         return Bundle(found)
 
-    def flatten(self, exclude=[]):
+    def flatten(self, exclude=None):
         """Return a flattened version of this Bundle.
 
+        The resulting Bundle will have all members of any member Groups,
+        without the Groups.
+
+        Parameters
+        ----------
+        exclude : list
+            uuids of Groups to leave out of flattening; these will not in the
+            resulting Bundle.
+
+        Returns
+        -------
+        flattened : Bundle
+            the flattened Bundle with no Groups
+
         """
+        if not exclude:
+            exclude = list()
+
+        guuids = list(exclude)
         memberlist = self._list()
         flattened = Bundle()
-        guuids = list(exclude)
 
         for member in memberlist:
             if hasattr(member, 'members') and member.uuid not in exclude:
                 guuids.append(member.uuid)
                 flattened += member.members.flatten(guuids)
-            else:
+            elif not hasattr(member, 'members'):
                 flattened.add(member)
 
         return flattened

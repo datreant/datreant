@@ -7,7 +7,7 @@ import pytest
 import os
 import py
 
-from . import test_bundle
+from . import test_collections
 from .test_trees import TestTree
 
 
@@ -304,7 +304,7 @@ class TestGroup(TestTreant):
     def test_repr(self, treant):
         pass
 
-    class TestMembers(test_bundle.TestBundle):
+    class TestMembers(test_collections.TestBundle):
         """Test member functionality"""
 
         @pytest.fixture

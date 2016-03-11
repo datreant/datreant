@@ -5,7 +5,6 @@
 import pytest
 import os
 import py
-from . import test_bundle
 
 from datreant.core import Veg, Leaf, Tree
 
