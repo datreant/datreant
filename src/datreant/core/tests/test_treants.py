@@ -190,6 +190,50 @@ class TestTreant(TestTree):
             treant.tags.clear()
             assert len(treant.tags) == 0
 
+        def test_tags_set_behavior(self, tmpdir, treantclass):
+
+            with tmpdir.as_cwd():
+                # 1
+                t1 = treantclass('maple')
+                assert os.path.exists(t1.filepath)
+                t1.tags.add(['sprout', 'deciduous'])
+
+                # 2
+                t2 = treantclass('sequoia')
+                assert os.path.exists(t2.filepath)
+                t2.tags.add(['sprout', 'evergreen'])
+
+                tags_union = t1.tags | t2.tags
+                for t in ['sprout', 'deciduous', 'evergreen']:
+                    assert t in tags_union
+
+                tags_intersect = t1.tags & t2.tags
+                for t in ['sprout']:
+                    assert t in tags_intersect
+
+                tags_diff = t1.tags - t2.tags
+                assert 'deciduous' in tags_diff
+
+                tags_symm_diff = t1.tags ^ t2.tags
+                for t in ['deciduous', 'evergreen']:
+                    assert t in tags_symm_diff
+
+                # 3
+                t3 = treantclass('oak')
+                assert os.path.exists(t3.filepath)
+                t3.tags.add(['deciduous'])
+
+                tags_subset0 = t1.tags <= t1.tags
+                assert tags_subset0 is True
+                tags_subset1 = t1.tags < t1.tags
+                assert tags_subset1 is False
+                tags_subset2 = t1.tags == t1.tags
+                assert tags_subset2 is True
+                tags_subset3 = t1.tags < t3.tags
+                assert tags_subset3 is False
+                tags_subset4 = t1.tags > t3.tags
+                assert tags_subset4 is True
+
     class TestCategories:
         """Test treant categories"""
 
