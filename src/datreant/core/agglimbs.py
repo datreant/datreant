@@ -7,8 +7,16 @@ limbs but serve as aggregators over collections of them.
 from six import string_types, with_metaclass
 
 from . import filesystem
-from . import _AGGLIMBS
+from . import _AGGTREELIMBS, _AGGLIMBS
 from .collections import Bundle
+
+
+class _AggTreeLimbmeta(type):
+    def __init__(cls, name, bases, classdict):
+        type.__init__(type, name, bases, classdict)
+
+        limbname = classdict['_name']
+        _AGGTREELIMBS[limbname] = cls
 
 
 class _AggLimbmeta(type):
@@ -19,8 +27,18 @@ class _AggLimbmeta(type):
         _AGGLIMBS[limbname] = cls
 
 
+class AggTreeLimb(with_metaclass(_AggTreeLimbmeta, object)):
+    """Core functionality for limbs attached to a View.
+
+    """
+    _name = 'aggtreelimb'
+
+    def __init__(self, collection):
+        self._collection = collection
+
+
 class AggLimb(with_metaclass(_AggLimbmeta, object)):
-    """Core functionality for limbs attached to a collection.
+    """Core functionality for limbs attached to a collection of Treants.
 
     """
     _name = 'agglimb'
