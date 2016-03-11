@@ -94,8 +94,7 @@ class View(CollectionMixin):
 
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = Bundle(*self.filepaths[index])
-            out._cache.update(self._cache)
+            out = View(*self.abspaths[index])
         else:
             raise IndexError("Cannot index View with given values")
 
@@ -109,6 +108,50 @@ class View(CollectionMixin):
 
         out += "<- ---- ->"
         return out
+
+    @classmethod
+    def _attach_aggtreelimb_class(cls, limb):
+        """Attach an aggtreelimb to the class.
+
+        """
+        # property definition
+        def getter(self):
+            if not hasattr(self, "_"+limb._name):
+                setattr(self, "_"+limb._name, limb(self))
+            return getattr(self, "_"+limb._name)
+
+        # set the property
+        setattr(cls, limb._name,
+                property(getter, None, None, limb.__doc__))
+
+    def _attach_aggtreelimb(self, limb):
+        """Attach an aggtreelimb.
+
+        """
+        setattr(self, limb._name, limb(self))
+
+    def attach(self, *aggtreelimbname):
+        """Attach aggtreelimbs by name to this View. Attaches corresponding limb
+        to any member Trees.
+
+        """
+        for ln in aggtreelimbname:
+            # try and get the aggtreelimb class specified
+            try:
+                aggtreelimb = _AGGTREELIMBS[ln]
+            except KeyError:
+                raise KeyError("No such aggtreelimb '{}'".format(ln))
+
+            # attach agglimb; if it's already there, that's okay
+            try:
+                self._attach_aggtreelimb(aggtreelimb)
+            except AttributeError:
+                pass
+
+            # attach limb to each member
+            for member in self._list():
+                if isinstance(member, Tree):
+                    member.attach(ln)
 
     def add(self, *vegs):
         """Add any number of members to this collection.
@@ -258,6 +301,15 @@ class Bundle(CollectionMixin):
     def __repr__(self):
         return "<Bundle({})>".format(self._list())
 
+    def __str__(self):
+        out = "<- Bundle ->\n"
+
+        for member in self._list():
+            out += "  {}\n".format(member)
+
+        out += "<- ---- ->"
+        return out
+
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
 
@@ -388,11 +440,15 @@ class Bundle(CollectionMixin):
 
         """
         for ln in agglimbname:
-            # try and get the agglimb class specified
+            # try and get the aggtreelimb class specified
             try:
-                agglimb = _AGGLIMBS[ln]
+                agglimb = _AGGTREELIMBS[ln]
             except KeyError:
-                raise KeyError("No such agglimb '{}'".format(ln))
+                # if not an aggtreelimb, perhaps its an agglimb?
+                try:
+                    agglimb = _AGGLIMBS[ln]
+                except KeyError:
+                    raise KeyError("No such agglimb '{}'".format(ln))
 
             # attach agglimb; if it's already there, that's okay
             try:

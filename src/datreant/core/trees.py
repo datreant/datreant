@@ -51,7 +51,7 @@ class Veg(object):
 
     @property
     def abspath(self):
-        """Absolute path. 
+        """Absolute path.
 
         """
         return str(self.path.absolute())
