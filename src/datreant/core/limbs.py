@@ -105,6 +105,17 @@ class Tags(Limb):
                 out = out + "'{}'\n".format(tags[i])
         return out
 
+    @staticmethod
+    def _setter(self, val):
+        """Used for constructing the property when attaching this Limb to a class.
+
+        """
+        if isinstance(val, (list, set)):
+            self.members.clear()
+            self.members.add(list(val))
+        else:
+            raise TypeError("Can only set with a list or set")
+
     def __getitem__(self, value):
         with self._treant._read:
             if isinstance(value, list):

@@ -16,31 +16,36 @@ it is often necessary to store intermediate results obtained from large amounts
 of simulation data so it can be accessed and explored interactively.
 
 These problems make data management difficult, and serve as a barrier to
-answering scientific questions. To make things easier, **datreant** is a Python
-package that addresses the tedious and time-consuming logistics of intermediate
-data storage and retrieval. It solves a boring problem, so we can focus on
-interesting ones.
+answering scientific questions. To make things easier, ``datreant`` is a
+collection of Python packages that provide a pythonic interface to the
+filesystem and the data that lives within it. It solves a boring problem, so we
+can focus on interesting ones.
+
 
 Stay organized
 ==============
-datreant offers a layer of flexibility and sanity to the task of analyzing data
+``datreant`` offers a layer of flexibility and sanity to the task of analyzing data
 from many studies, whether they be individual simulations or data from field
-work. It is a library that is designed to be subclassed: the classes in
-datreant are useful on their own but vanilla by design, and are built to be
-easily extended into domain-specific objects.
+work. Its core object, the **Treant**, is designed to be subclassed: the
+classes in datreant are useful on their own but vanilla by design, and are
+built to be easily extended into domain-specific objects.
 
 As an example: `MDSynthesis`_, a package for storing, recalling, and aggregating
 data from molecular dynamics simulations, is built on top of datreant.
 
 .. _`MDSynthesis`: https://github.com/datreant/MDSynthesis 
 
-Collect aggregated data and keep track of it, too
--------------------------------------------------
-**Treants** can be gathered into arbitrary collections with **Group** objects.
-**Groups** can store datasets obtained from these collections, and can even
-contain other **Groups** as members. **Groups** can keep track of any
-**Treant**-derived subclasses, even domain-specific ones that you've defined
-for getting your work done.
+
+The datreant namespace
+======================
+``datreant`` is a namespace package, which means that it's more a package of
+packages. These packages are all dependent on a central, core library, called
+``datreant.core``. This documentation is for that core library.
+
+Other packages in the ``datreant`` namespace currently include::
+
+    `datreant.data <http://datreantdata.readthedocs.org/en/latest/>`_
+
 
 Getting datreant
 ================
@@ -52,21 +57,17 @@ the project, clone the repository to your local machine with::
 
     git clone https://github.com/datreant/datreant.core.git
 
+
 Dependencies
 ============
-* `scandir`_: 1.0 or higher
-* `six`_ 
+The dependencies of ``datreant.core`` are light, with many being pure-Python
+packages themselves. 
 
-.. _`scandir`: https://pypi.python.org/pypi/scandir
-.. _`six`: https://pypi.python.org/pypi/six
 
 Contributing
 ============
 This project is still under heavy development, and there are certainly rough
-edges and bugs. Issues and pull requests welcome! Check out our `contributor's guide`_
-if you learn how to get started with contributing back.
-
-.. _`contributor's guide`: https://github.com/datreant/datreant/wiki/Contributing
+edges and bugs. Issues and pull requests welcome! 
 
 .. raw:: html
 
@@ -81,14 +82,25 @@ Documentation
     :maxdepth: 1
 
     install
-    Treant
-    Data
-    Group
+    Treants
     Tags-Categories
-    Coordinator
+    Trees
+    Views
+    Bundles
+    Groups
 
-Misc
-----
+
+For Developers
+--------------
+.. toctree::
+    :maxdepth: 1
+
+    Limbs-TreeLimbs
+    AggLimbs-AggTreeLimbs
+
+
+Miscellaneous
+-------------
 
 .. toctree::
     :maxdepth: 1

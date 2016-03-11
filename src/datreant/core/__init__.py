@@ -19,9 +19,9 @@ _AGGLIMBS = dict()
 
 # Bring some often used objects into the current namespace
 from .treants import Treant, Group
-from .trees import Tree, Leaf
-from .collections import Bundle
+from .trees import Veg, Leaf, Tree
+from .collections import View, Bundle
 from . import attach
 
-__all__ = ['Treant', 'Group', 'Bundle']
+__all__ = ['Treant', 'Group', 'Tree', 'Leaf', 'Bundle']
 __version__ = "0.6.0-dev"  # NOTE: keep in sync with RELEASE in setup.py

@@ -1,5 +1,5 @@
 """
-Basic Treant objects: the organizational units for :mod:`datreant`.
+Treants: the organizational units for :mod:`datreant`.
 
 """
 import os

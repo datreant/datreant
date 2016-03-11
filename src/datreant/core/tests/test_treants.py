@@ -15,7 +15,10 @@ class TestTreant(TestTree):
     """Test generic Treant features"""
     treantname = 'testtreant'
     treanttype = 'Treant'
-    treantclass = dtr.treants.Treant
+
+    @pytest.fixture
+    def treantclass(self):
+        return dtr.treants.Treant
 
     @pytest.fixture
     def treant(self, tmpdir):
@@ -28,9 +31,10 @@ class TestTreant(TestTree):
         assert treant.name == self.treantname
         assert treant.location == tmpdir.strpath
         assert treant.treanttype == self.treanttype
-        assert treant.abspath == os.path.join(tmpdir.strpath, self.treantname)
+        assert treant.abspath == (os.path.join(tmpdir.strpath,
+                                               self.treantname) + os.sep)
 
-    def test_gen_methods(self, tmpdir):
+    def test_gen_methods(self, tmpdir, treantclass):
         """Test the variety of ways we can generate a new Treant
 
         1. ``Treant('treant')``, where 'treant' is not an existing file or
@@ -55,25 +59,25 @@ class TestTreant(TestTree):
         """
         with tmpdir.as_cwd():
             # 1
-            t1 = self.treantclass('newone')
+            t1 = treantclass('newone')
             assert os.path.exists(t1.filepath)
 
             # 2
             os.mkdir('another')
-            t2 = self.treantclass('another')
+            t2 = treantclass('another')
             assert os.path.exists(t2.filepath)
 
             # 3
-            t3 = self.treantclass('yet/another')
+            t3 = treantclass('yet/another')
             assert os.path.exists(t3.filepath)
 
             # 4
             os.mkdir('yet/more')
-            t4 = self.treantclass('yet/more')
+            t4 = treantclass('yet/more')
             assert os.path.exists(t4.filepath)
 
             # 5
-            t5 = self.treantclass('yet/more', new=True)
+            t5 = treantclass('yet/more', new=True)
             assert os.path.exists(t5.filepath)
             assert t5.abspath == t4.abspath
             assert t5.filepath != t4.filepath
@@ -82,10 +86,10 @@ class TestTreant(TestTree):
             compare = t1.uuid
             os.rename(t1.filepath,
                       t1.filepath.replace(t1.treanttype, 'Another'))
-            t6 = self.treantclass('newone')
+            t6 = treantclass('newone')
             assert t6.uuid != compare
 
-    def test_regen(self, tmpdir):
+    def test_regen(self, tmpdir, treantclass):
         """Test regenerating Treant.
 
         - create Treant
@@ -94,15 +98,15 @@ class TestTreant(TestTree):
         - check that modifications were saved
         """
         with tmpdir.as_cwd():
-            C1 = self.treantclass('regen')
+            C1 = treantclass('regen')
             C1.tags.add('fantastic')
-            C2 = self.treantclass('regen')  # should be regen of C1
+            C2 = treantclass('regen')  # should be regen of C1
             assert 'fantastic' in C2.tags
 
             # they point to the same file, but they are not the same object
             assert C1 is not C2
 
-    def test_regen_methods(self, tmpdir):
+    def test_regen_methods(self, tmpdir, treantclass):
         """Test the variety of ways Treants can be regenerated.
 
         1. ``Treant('treant')``, where there exists *only one* ``Treant`` state
@@ -113,17 +117,17 @@ class TestTreant(TestTree):
 
         """
         with tmpdir.as_cwd():
-            t1 = self.treantclass('newone')
-            t2 = self.treantclass('newone')
+            t1 = treantclass('newone')
+            t2 = treantclass('newone')
             assert t1.uuid == t2.uuid
 
-            t3 = self.treantclass('newone', new=True)
+            t3 = treantclass('newone', new=True)
             assert t3.uuid != t2.uuid
 
-            t4 = self.treantclass(t3.filepath)
+            t4 = treantclass(t3.filepath)
             assert t4.uuid == t3.uuid
 
-    def test_noregen(self, tmpdir):
+    def test_noregen(self, tmpdir, treantclass):
         """Test a variety of ways that generation of a new Treant should fail.
 
         1. `Treant('somedir/treant')` should raise `MultipleTreantsError` if
@@ -132,19 +136,19 @@ class TestTreant(TestTree):
         """
         with tmpdir.as_cwd():
             # 1
-            t1 = self.treantclass('newone')
-            t2 = self.treantclass('newone', new=True)
+            t1 = treantclass('newone')
+            t2 = treantclass('newone', new=True)
             assert t1.uuid != t2.uuid
 
             with pytest.raises(dtr.treants.MultipleTreantsError):
-                t3 = self.treantclass('newone')
+                t3 = treantclass('newone')
 
-    def test_cmp(self, tmpdir):
+    def test_cmp(self, tmpdir, treantclass):
         """Test the comparison of Treants when sorting"""
         with tmpdir.as_cwd():
-            c1 = self.treantclass('a')
-            c2 = self.treantclass('b')
-            c3 = self.treantclass('c')
+            c1 = treantclass('a')
+            c2 = treantclass('b')
+            c3 = treantclass('c')
 
         assert sorted([c3, c2, c1]) == [c1, c2, c3]
         assert c1 <= c2 < c3
@@ -242,13 +246,16 @@ class TestGroup(TestTreant):
     """
     treantname = 'testgroup'
     treanttype = 'Group'
-    treantclass = dtr.Group
 
     @pytest.fixture
     def treant(self, tmpdir):
         with tmpdir.as_cwd():
             g = dtr.Group(TestGroup.treantname)
         return g
+
+    @pytest.fixture
+    def treantclass(self):
+        return dtr.treants.Group
 
     def test_repr(self, treant):
         pass
