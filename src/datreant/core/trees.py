@@ -69,7 +69,7 @@ class Veg(object):
 
         """
         if isinstance(self, Tree):
-            limbs = self._classtreelimbs | self._treelimbs
+            limbs = self._classlimbs | self._limbs
         else:
             limbs = None
 
@@ -148,8 +148,8 @@ class Tree(Veg):
     """A directory.
 
     """
-    _classtreelimbs = set()
-    _treelimbs = set()
+    _classlimbs = set()
+    _limbs = set()
 
     def __init__(self, dirpath, limbs=None):
         if os.path.isfile(dirpath):
@@ -198,7 +198,7 @@ class Tree(Veg):
 
             if (os.path.isdir(fullpath) or path.endswith(os.sep) or
                     (fullpath in self.abspath)):
-                limbs = self._classtreelimbs | self._treelimbs
+                limbs = self._classlimbs | self._limbs
                 return Tree(fullpath, limbs=limbs)
             else:
                 return Leaf(fullpath)
@@ -233,7 +233,7 @@ class Tree(Veg):
                 property(getter, setter, None, limb.__doc__))
 
         if limb._name in _TREELIMBS:
-            cls._classtreelimbs.add(limb._name)
+            cls._classlimbs.add(limb._name)
 
     def _attach_limb(self, limb):
         """Attach a limb.
@@ -245,7 +245,7 @@ class Tree(Veg):
             pass
 
         if limb._name in _TREELIMBS:
-            self._treelimbs.add(limb._name)
+            self._limbs.add(limb._name)
 
     def attach(self, *limbname):
         """Attach limbs by name to this Tree.

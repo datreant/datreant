@@ -15,7 +15,19 @@ def return_nothing(cont):
     b = cont.name + cont.uuid
 
 
-class TestBundle():
+class CollectionsTests:
+    """Mixin tests for collections"""
+
+
+class TestView:
+    """Tests for Views"""
+
+    @pytest.fixture
+    def collection(self):
+        return dtr.View()
+
+
+class TestBundle:
     """Tests for common elements of Group.members and Bundle"""
 
     @pytest.fixture
