@@ -87,6 +87,12 @@ class TestTree(TestVeg):
         assert isinstance(leaf, Leaf)
         assert leaf in tree
 
+        v = tree[['a/file', 'a/tree/']]
+
+        assert len(v) == 2
+        assert len(v.leaves) == 1
+        assert len(v.trees) == 1
+
     def test_leaves(self, tree):
         with pytest.raises(OSError):
             tree.leaves

@@ -184,11 +184,15 @@ class Tree(Veg):
         Parameters
         ----------
         path : str
-            Path to desired tree or leaf, relative to this tree
+            Path to desired tree or leaf, relative to this tree; a list of
+            paths will give a View of the resulting Trees and Leaves
 
         Returns
         -------
-        Tree or Leaf
+        result : Tree or Leaf, View
+            Tree or Leaf corresponding to given path; if multiple paths
+            given in a list, a View of the resulting Trees or Leaves is
+            returned
 
         """
         from .collections import View

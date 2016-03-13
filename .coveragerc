@@ -12,4 +12,4 @@ exclude_lines =
     if __name__ == .__main__.:
 
 omit =
-    datreant/tests/*
+    src/datreant/core/tests/*
