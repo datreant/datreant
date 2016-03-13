@@ -170,62 +170,36 @@ class File(object):
         self._close_fd()
         self.fdlock = None
 
-    @staticmethod
-    def _read(func):
-        """Decorator for opening state file for reading and applying shared
-        lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for reading and that a shared lock is obtained before that method is
-        executed. It also ensures that the lock is removed and the file closed
-        after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.fdlock:
-                out = func(self, *args, **kwargs)
-            else:
-                self._apply_shared_lock()
-
+    @contextmanager
+    def read(self):
+        # if we already have any lock, proceed
+        if self.fdlock:
+            yield self.handle
+        else:
+            self._apply_shared_lock()
+            try:
                 # open the file using the actual reader
                 self.handle = self._open_file_r()
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
-                    self._release_lock()
-            return out
+                yield self.handle
+            finally:
+                self.handle.close()
+                self._release_lock()
 
-        return inner
+    @contextmanager
+    def write(self):
+        # if we already have an exclusive lock, proceed
+        if self.fdlock == 'exclusive':
+            yield self.handle
+        else:
+            self._apply_exclusive_lock()
 
-    @staticmethod
-    def _write(func):
-        """Decorator for opening state file for writing and applying exclusive lock.
-
-        Applying this decorator to a method will ensure that the file is opened
-        for appending and that an exclusive lock is obtained before that method
-        is executed. It also ensures that the lock is removed and the file
-        closed after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.fdlock == 'exclusive':
-                out = func(self, *args, **kwargs)
-            else:
-                self._apply_exclusive_lock()
-
-                # open the file using the actual writer
-                self.handle = self._open_file_w()
-                try:
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self.handle.close()
-                    self._release_lock()
-            return out
-
-        return inner
+            # open the file using the actual writer
+            self.handle = self._open_file_w()
+            try:
+                yield self.handle
+            finally:
+                self.handle.close()
+                self._release_lock()
 
     def _open_r(self):
         """Open file with intention to write.
@@ -289,60 +263,6 @@ class FileSerial(File):
         self._release_lock()
 
         return out
-
-    @staticmethod
-    def _read(func):
-        """Decorator for applying a shared lock on file and reading contents.
-
-        Applying this decorator to a method will ensure a shared lock and the
-        latest version of the data is obtained before that method is executed.
-        It also ensures that the lock is removed after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.fdlock:
-                out = func(self, *args, **kwargs)
-            else:
-                self._apply_shared_lock()
-                try:
-                    self._pull_state()
-                    out = func(self, *args, **kwargs)
-                finally:
-                    self._release_lock()
-            return out
-
-        return inner
-
-    @staticmethod
-    def _write(func):
-        """Decorator for applying an exclusive lock on file and modifying
-        contents.
-
-        Applying this decorator to a method will ensure an exclusive lock and
-        the latest version of the data is obtained before that method is
-        executed. It also ensures that changes to the data are written to the
-        file and the lock removed after the method returns.
-
-        """
-        @wraps(func)
-        def inner(self, *args, **kwargs):
-            if self.fdlock == 'exclusive':
-                out = func(self, *args, **kwargs)
-            else:
-                self._apply_exclusive_lock()
-                try:
-                    try:
-                        self._pull_state()
-                    except IOError:
-                        self._init_state()
-                    out = func(self, *args, **kwargs)
-                    self._push_state()
-                finally:
-                    self._release_lock()
-            return out
-
-        return inner
 
     @contextmanager
     def read(self):
