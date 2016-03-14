@@ -291,7 +291,8 @@ class Tree(Veg):
         if self.exists:
             for root, dirs, files in scandir.walk(self.abspath):
                 # remove hidden files
-                out = [Leaf(f) for f in files if f[0] != os.extsep]
+                out = [Leaf(os.path.join(root, f)) for f in files
+                       if f[0] != os.extsep]
                 break
 
             out.sort()
@@ -312,22 +313,12 @@ class Tree(Veg):
             raise OSError("Tree doesn't exist in the filesystem")
         for root, dirs, files in scandir.walk(self.abspath):
             # remove hidden directories
-            out = [Tree(d) for d in dirs if d[0] != os.extsep]
+            out = [Tree(os.path.join(root, d)) for d in dirs
+                   if d[0] != os.extsep]
             break
 
         out.sort()
         return View(out)
-
-    @property
-    def treants(self):
-        """Bundle of all Treants found within this Tree.
-
-        This does not return a Treant for a bare state file found within this
-        Tree. In effect this gives the same result as ``Bundle(self.trees)``.
-
-        """
-        from .collections import Bundle
-        return Bundle(self.trees)
 
     @property
     def hidden(self):
@@ -339,10 +330,12 @@ class Tree(Veg):
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
         for root, dirs, files in scandir.walk(self.abspath):
-            outdirs = [Tree(d) for d in dirs if d[0] == os.extsep]
+            outdirs = [Tree(os.path.join(root, d)) for d in dirs
+                       if d[0] == os.extsep]
             outdirs.sort()
 
-            outfiles = [Leaf(f) for f in files if f[0] == os.extsep]
+            outfiles = [Leaf(os.path.join(root, f)) for f in files
+                        if f[0] == os.extsep]
             outfiles.sort()
 
             # want directories then files
@@ -350,6 +343,17 @@ class Tree(Veg):
             break
 
         return View(out)
+
+    @property
+    def treants(self):
+        """Bundle of all Treants found within this Tree.
+
+        This does not return a Treant for a bare state file found within this
+        Tree. In effect this gives the same result as ``Bundle(self.trees)``.
+
+        """
+        from .collections import Bundle
+        return Bundle(self.trees + self.hidden.trees)
 
     def glob(self, pattern):
         """Yield all existing Leaves and Trees matching given globbing pattern.

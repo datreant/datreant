@@ -46,31 +46,41 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
     def __init__(self, treant, new=False, categories=None, tags=None):
         """Generate a new or regenerate an existing (on disk) Treant object.
 
-        :Required arguments:
-            *treant*
-                base directory of a new or existing Treant; will regenerate
-                a Treant if a state file is found, but will genereate a new
-                one otherwise
+        `treant` should be a base directory of a new or existing Treant. An
+        existing Treant will be regenerated if a state file is found.
+        If no state file is found, a new Treant will be created.
 
-                if multiple Treant state files are in the given directory,
-                will raise :exception:`MultipleTreantsError`; specify
-                the full path to the desired state file to regenerate the
-                desired Treant in this case
+        A Tree object may also be used in the same way as a directory string.
 
-                use the *new* keyword to force generation of a new Treant
-                at the given path
+        If multiple Treant state files are in the given directory,
+        :exception:`MultipleTreantsError` will be raised; specify the full path
+        to the desired state file to regenerate the desired Treant in this
+        case. It is generally better to avoid having multiple state files in
+        the same directory.
 
-        :Optional arguments:
-            *new*
-                generate a new Treant even if one already exists at the given
-                location *treant*
-            *categories*
-                dictionary with user-defined keys and values; used to give
-                Treants distinguishing characteristics
-            *tags*
-                list with user-defined values; like categories, but useful for
-                adding many distinguishing descriptors
+        Use the `new` keyword to force generation of a new Treant at the given
+        path.
+
+        Parameters
+        ----------
+        treant : str or Tree
+            Base directory of a new or existing Treant; will regenerate
+            a Treant if a state file is found, but will genereate a new
+            one otherwise; may also be a Tree object
+        new : bool
+            Generate a new Treant even if one already exists at the given
+            location
+        categories : dict
+            dictionary with user-defined keys and values; used to give
+            Treants distinguishing characteristics
+        tags : list
+            list with user-defined values; like categories, but useful for
+            adding many distinguishing descriptors
         """
+        # if given a Tree, get path out of it
+        if isinstance(treant, Tree):
+            treant = treant.abspath
+
         if new:
             self._generate(treant, categories=categories, tags=tags)
         else:

@@ -208,14 +208,15 @@ class Tags(Limb):
         Tags are individual strings that serve to differentiate Treants from
         one another. Sometimes preferable to categories.
 
-        :Arguments:
-           *tags*
-              Tags to add. Must be strings or lists of strings.
+        Parameters
+        ----------
+        tags : str or list
+            Tags to add. Must be strings or lists of strings.
 
         """
         outtags = list()
         for tag in tags:
-            if isinstance(tag, list):
+            if isinstance(tag, (list, set)):
                 outtags.extend(tag)
             else:
                 outtags.append(tag)
