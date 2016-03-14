@@ -34,6 +34,15 @@ class TestTreant(TestTree):
         assert treant.abspath == (os.path.join(tmpdir.strpath,
                                                self.treantname) + os.sep)
 
+        # check initing with tags, categories
+        tags = ['lurch', 'snotty']
+        categories = {'variety': 'elm'}
+
+        with tmpdir.as_cwd():
+            t = dtr.Treant('babs', tags=tags, categories=categories)
+
+        assert t.tags == tags
+
     def test_gen_methods(self, tmpdir, treantclass):
         """Test the variety of ways we can generate a new Treant
 
@@ -191,7 +200,6 @@ class TestTreant(TestTree):
             assert len(treant.tags) == 0
 
         def test_tags_set_behavior(self, tmpdir, treantclass):
-
             with tmpdir.as_cwd():
                 # 1
                 t1 = treantclass('maple')
@@ -233,6 +241,9 @@ class TestTreant(TestTree):
                 assert t1.tags == t1.tags
                 assert not t1.tags < t3.tags
                 assert t1.tags > t3.tags
+
+        def test_tags_setting(self, tmpdir, treantclass):
+            pass
 
     class TestCategories:
         """Test treant categories"""

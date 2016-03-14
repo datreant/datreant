@@ -93,6 +93,17 @@ class TestTree(TestVeg):
         assert len(v.leaves) == 1
         assert len(v.trees) == 1
 
+        with pytest.raises(ValueError):
+            tree['lolcats', 'a/not/file']
+
+        tree['ground/hogs/on/mars/'].make()
+        tree['the/file/of your/life'].make()
+
+        v = tree[['ground/hogs/on/mars', 'the/file/of your/life']]
+
+        assert isinstance(v[0], Tree)
+        assert isinstance(v[1], Leaf)
+
     def test_leaves(self, tree):
         with pytest.raises(OSError):
             tree.leaves

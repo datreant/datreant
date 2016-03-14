@@ -15,14 +15,14 @@ from collections import namedtuple, defaultdict
 import multiprocessing as mp
 import glob
 import fnmatch
-import scandir
 
 from six import string_types
 from six.moves import zip
 
 from . import filesystem
-from . import _TREANTS, _LIMBS, _AGGLIMBS
+from . import _AGGLIMBS
 from .trees import Tree, Leaf
+from .manipulators import discover
 
 
 @functools.total_ordering
@@ -109,6 +109,56 @@ class View(CollectionMixin):
 
         out += "<- ---- ->"
         return out
+
+    def __add__(self, other):
+        """Addition of View with a View or Tree/Leaf View.
+
+        """
+        if isinstance(other, (Tree, Leaf, View, list)):
+            return View(self, other)
+        else:
+            raise TypeError("Right operand must be a Tree, Leaf, or View.")
+
+    def __sub__(self, other):
+        """Return a View giving the Treants in `self` that are not in `other`.
+
+        Subtracting a Tree/Leaf from a View also works.
+
+        """
+        if isinstance(other, View):
+            return View(list(set(self) - set(other)))
+        elif isinstance(other, (Tree, Leaf)):
+            return View(list(set(self) - set([other])))
+        else:
+            raise TypeError("Right operand must be a Tree, Leaf, or View.")
+
+    def __or__(self, other):
+        """Return a View giving the union of Views `self` and `other`.
+
+        """
+        if isinstance(other, View):
+            return View(self, other)
+        else:
+            raise TypeError("Operands must be Views.")
+
+    def __and__(self, other):
+        """Return a View giving the intersection of Views `self` and `other`.
+
+        """
+        if isinstance(other, View):
+            return View(list(set(self) & set(other)))
+        else:
+            raise TypeError("Operands must be Views.")
+
+    def __xor__(self, other):
+        """Return a View giving the symmetric difference of Views `self` and
+        `other`.
+
+        """
+        if isinstance(other, View):
+            return View(list(set(self) ^ set(other)))
+        else:
+            raise TypeError("Operands must be Views.")
 
     @classmethod
     def _attach_aggtreelimb_class(cls, limb):
@@ -273,6 +323,13 @@ class View(CollectionMixin):
 
         """
         return Bundle(self)
+
+    @property
+    def exists(self):
+        """List giving existence of each member as a boolean.
+
+        """
+        return [member.exists for member in self]
 
     def map(self, function, processes=1, **kwargs):
         """Apply a function to each member, perhaps in parallel.
@@ -820,24 +877,7 @@ class Bundle(CollectionMixin):
         else:
             raise TypeError("Must give a number or `None` for searchtime")
 
-    @staticmethod
-    def discover(dirpath='.'):
-        """Find all Treants within given directory, recursively.
-
-        :Returns:
-            *found*
-                Bundle of found Treants
-
-        """
-        found = list()
-        for root, dirs, files in scandir.walk(dirpath):
-            for treanttype in _TREANTS:
-                outnames = fnmatch.filter(files,
-                                          "{}.*.json".format(treanttype))
-                paths = [os.path.join(root, file) for file in outnames]
-                found.extend(paths)
-
-        return Bundle(found)
+    discover = staticmethod(discover)
 
     def flatten(self, exclude=None):
         """Return a flattened version of this Bundle.

@@ -322,6 +322,9 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
 
     @property
     def tree(self):
+        """This Treant's directory as a Tree.
+
+        """
         return Tree(self.abspath)
 
     @property

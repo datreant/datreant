@@ -17,6 +17,7 @@ def return_nothing(cont):
 
 class CollectionsTests:
     """Mixin tests for collections"""
+    pass
 
 
 class TestView:
@@ -25,6 +26,9 @@ class TestView:
     @pytest.fixture
     def collection(self):
         return dtr.View()
+
+    def test_exists(self, collection, tmpdir):
+        pass
 
 
 class TestBundle:
@@ -285,7 +289,39 @@ class TestBundle:
             assert 'mark' in collection.flatten([g.uuid]).names
 
     class TestAggTags:
-        pass
+        """Test behavior of manipulating tags collectively.
+
+        """
+        def test_add_tags(self, collection, testtreant, testgroup, tmpdir):
+            with tmpdir.as_cwd():
+                collection.add(testtreant, testgroup)
+
+                assert len(collection.tags) == 0
+
+                collection.tags.add('broiled', 'not baked')
+
+                assert len(collection.tags) == 2
+                for tag in ('broiled', 'not baked'):
+                    assert tag in collection.tags
+
+        def test_tags_setting(self, collection, testtreant, testgroup, tmpdir):
+            pass
+
+        def test_tags_all(self, collection, testtreant, testgroup, tmpdir):
+            pass
+
+        def test_tags_any(self, collection, testtreant, testgroup, tmpdir):
+            pass
+
+        def test_tags_any(self, collection, testtreant, testgroup, tmpdir):
+            pass
+
+        def test_tags_set_behavior(self, collection, testtreant, testgroup,
+                                   tmpdir):
+            pass
+
+        def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):
+            pass
 
     class TestAggCategories:
         pass

@@ -37,7 +37,7 @@ class Veg(object):
 
     @property
     def exists(self):
-        """Check existence of ``self.path`` in filesystem.
+        """Check existence of this path in filesystem.
 
         """
         return self.path.exists()
@@ -213,8 +213,10 @@ class Tree(Veg):
                 outview.append(filt(item))
 
             return View(outview)
-        else:
+        elif isinstance(path, string_types):
             return filt(path)
+        else:
+            raise ValueError('Must use a path or a list of paths')
 
     @classmethod
     def _attach_limb_class(cls, limb):
@@ -315,6 +317,17 @@ class Tree(Veg):
 
         out.sort()
         return View(out)
+
+    @property
+    def treants(self):
+        """Bundle of all Treants found within this Tree.
+
+        This does not return a Treant for a bare state file found within this
+        Tree. In effect this gives the same result as ``Bundle(self.trees)``.
+
+        """
+        from .collections import Bundle
+        return Bundle(self.trees)
 
     @property
     def hidden(self):
