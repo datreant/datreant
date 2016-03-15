@@ -311,9 +311,10 @@ class Tree(Veg):
 
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
+
         for root, dirs, files in scandir.walk(self.abspath):
             # remove hidden directories
-            out = [Tree(os.path.join(root, d)) for d in dirs
+            out = [Tree(os.path.join(root, d), limbs=self.limbs) for d in dirs
                    if d[0] != os.extsep]
             break
 
@@ -330,8 +331,8 @@ class Tree(Veg):
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
         for root, dirs, files in scandir.walk(self.abspath):
-            outdirs = [Tree(os.path.join(root, d)) for d in dirs
-                       if d[0] == os.extsep]
+            outdirs = [Tree(os.path.join(root, d), limbs=self.limbs)
+                       for d in dirs if d[0] == os.extsep]
             outdirs.sort()
 
             outfiles = [Leaf(os.path.join(root, f)) for f in files
@@ -440,3 +441,10 @@ class Tree(Veg):
         self.makedirs()
 
         return self
+
+    @property
+    def limbs(self):
+        """A list of this Tree's attached limbs.
+
+        """
+        return list(self._classlimbs | self._limbs)
