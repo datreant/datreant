@@ -913,6 +913,13 @@ class Bundle(CollectionMixin):
 
         return flattened
 
+    @property
+    def trees(self):
+        """Obtain a View giving the Tree for each Treant in this Bundle.
+
+        """
+        return View([member.tree for member in self])
+
     def _add_members(self, uuids, treanttypes, abspaths):
         """Add many members at once.
 
