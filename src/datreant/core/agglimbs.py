@@ -153,6 +153,7 @@ class AggCategories(AggLimb):
     def __repr__(self):
         return "<AggCategories({})>".format(self._dict())
 
+    # FIX
     def __str__(self):
         categories = self.all()
         agg = "Categories"
@@ -168,20 +169,45 @@ class AggCategories(AggLimb):
                 out = out + "'{}': '{}'\n".format(key, categories[key])
         return out
 
-    def __getitem__(self, key):
-        """Get value at given key.
+    # FIXX
+    def __getitem__(self, keys):
+        """Get values for a given key, list of keys, or set of keys.
+
+        If a string is provided for *key*, a list is returned containing the
+        values for each member in the collection in member order.
+
+        If a list of keys is provided, a list of lists is returned, where each
+        list is the set of values (in member order) corresponding to its
+        respective key in the order the keys are given.
+
+        If a set of keys is provided, a dict of lists is returned, where theach
+        dict contains the provided keys and the value for each key is a list of
+        the corresponding values (in member order) of each member in the
+        collection.
 
         :Arguments:
-            *key*
-                key of value to return
-
-        :Returns:
-            *value*
-                value corresponding to given key
+            *keys*
+                key(s) of value(s) to return
         """
-        categories = self._dict()
-        return categories[key]
+        keys_type = type(keys)
+        if isinstance(keys_type, str):
+            return [member.categories[keys] for member in self._collection]
+        elif isinstance(keys_type, list):
+            outlist = []
+            for key in keys:
+                outlist.append([member.categories[keys] for member in self._collection])
+            return outlist
+        elif isinstance(keys_type, set):
+            outdict = {}
+            for key in keys:
+                outdict[key] = [member.categories[keys] for member in self._collection]
+            return outdict
+        else:
+            raise TypeError("Invalid argument; argument must be" +
+                            " a string, list of strings, or dict" +
+                            " of strings.")
 
+    ## FIX
     def __setitem__(self, key, value):
         """Set value at given key.
 
@@ -192,20 +218,25 @@ class AggCategories(AggLimb):
         outdict = {key: value}
         self.add(outdict)
 
+    ## FIXX
     def __delitem__(self, category):
-        """Remove category from Treant.
+        """Remove category from each Treant in collection.
 
         """
-        self.remove(category)
+        for member in self._collection:
+            member.categories.remove(category)
 
+    ## FIX
     def __iter__(self):
         return self._dict().__iter__()
 
+    ## FIX
     def __len__(self):
         return len(self._dict())
 
+    ## FIXX
     def add(self, *categorydicts, **categories):
-        """Add any number of categories to the Treant.
+        """Add any number of categories to each Treant in collection.
 
         Categories are key-value pairs of strings that serve to differentiate
         Treants from one another. Sometimes preferable to tags.
@@ -223,22 +254,10 @@ class AggCategories(AggLimb):
                 Both must be convertible to strings using the str() builtin.
 
         """
-        outcats = dict()
-        for categorydict in categorydicts:
-            if isinstance(categorydict, dict):
-                outcats.update(categorydict)
-            else:
-                raise TypeError("Invalid arguments; non-keyword" +
-                                " arguments must be dicts")
+        for member in self._collection:
+            member.categories.add(*categorydicts, **categories)
 
-        outcats.update(categories)
-
-        with self._treant._write:
-            for key, value in outcats.items():
-                if (isinstance(value, (int, float, string_types, bool)) or
-                        value is None):
-                    self._treant._state['categories'][key] = value
-
+    ## FIXX
     def remove(self, *categories):
         """Remove categories from Treant.
 
@@ -250,34 +269,56 @@ class AggCategories(AggLimb):
                 Categories to delete.
 
         """
-        with self._treant._write:
-            for key in categories:
-                # continue even if key not already present
-                self._treant._state['categories'].pop(key, None)
+        for member in self._collection:
+            member.categories.remove(*categories)
 
+    ## FIXX
     def clear(self):
         """Remove all categories from Treant.
 
         """
-        with self._treant._write:
-            self._treant._state['categories'] = dict()
+        for member in self._collection:
+            membmer.categories.clear()
 
+    ## FIXX
     def keys(self):
-        """Get category keys.
+        """Get the keys present among Categories of each Treant in collection.
 
         :Returns:
             *keys*
-                keys present among categories
+                keys present among Categories
         """
-        with self._treant._read:
-            return self._treant._state['categories'].keys()
+        outlist = []
+        for member in self._collection:
+            outlist.append(member.categories.keys())
+        return outlist
+        # Should this return a list (with duplicates), a list of lists (of
+        # keys for each Treant), or a set?
 
+    ## FIXX
     def values(self):
         """Get category values.
 
         :Returns:
             *values*
-                values present among categories
+                values present among Categories
         """
-        with self._treant._read:
-            return self._treant._state['categories'].values()
+        outlist = []
+        for member in self._collection:
+            outlist.append(member.categories.values())
+        return outlist
+        # Should this return a list (with duplicates), a list of lists (of
+        # keys for each Treant), or a set? See keys() method too!
+
+    ## FIX
+    def groupby(self, keys):
+        """Return groupings of Treants based on Categories.
+
+        :Arguments:
+            *keys*
+                keys present among Categories
+
+        """
+
+        # given a inputted "keys", return groupings of treants where each group
+        # is based on the category values in common among the treants
