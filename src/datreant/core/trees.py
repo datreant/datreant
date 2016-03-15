@@ -345,6 +345,15 @@ class Tree(Veg):
         return View(out)
 
     @property
+    def children(self):
+        """A View of all files and directories in this Tree.
+
+        Includes hidden files and directories.
+
+        """
+        return View(self.trees + self.leaves + self.hidden)
+
+    @property
     def treants(self):
         """Bundle of all Treants found within this Tree.
 

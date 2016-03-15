@@ -289,28 +289,35 @@ class View(CollectionMixin):
 
     @property
     def trees(self):
-        """Return a View giving only members that are Trees (or subclasses).
+        """A View giving only members that are Trees (or subclasses).
 
         """
         return View([member for member in self if isinstance(member, Tree)])
 
     @property
     def leaves(self):
-        """Return a View giving only members that are Leaves (or subclasses).
+        """A View giving only members that are Leaves (or subclasses).
 
         """
         return View([member for member in self if isinstance(member, Leaf)])
 
     @property
+    def children(self):
+        """A View giving all children from each Tree in the View.
+
+        """
+        return View([member.children for member in self.trees])
+
+    @property
     def abspaths(self):
-        """List the absolute paths for the members in this View.
+        """List of absolute paths for the members in this View.
 
         """
         return [member.abspath for member in self]
 
     @property
     def relpaths(self):
-        """List the relative paths from the current working directory for the
+        """List of relative paths from the current working directory for the
         members in this View.
 
         """
@@ -318,7 +325,7 @@ class View(CollectionMixin):
 
     @property
     def treants(self):
-        """Obtain a Bundle of all existing Treants among the Trees and Leaves
+        """A Bundle of all existing Treants among the Trees and Leaves
         in this View.
 
         """
