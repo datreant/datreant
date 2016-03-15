@@ -351,6 +351,7 @@ class Tree(Veg):
         Includes hidden files and directories.
 
         """
+        from .collections import View
         return View(self.trees + self.leaves + self.hidden)
 
     @property
