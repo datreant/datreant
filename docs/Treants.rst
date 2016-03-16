@@ -45,16 +45,16 @@ session (go ahead!) and regenerate this Treant immediately there ::
 
     >>> # python session 2
     >>> import datreant.core as dtr
-    >>> t = dtr.Treant('sprout')
+    >>> s = dtr.Treant('sprout')
 
 Making a modification to the Treant in one session, perhaps by adding a tag,
 will be reflected in the Treant in the other session ::
 
     >>> # python session 1
-    >>> t.tags.add('elm')
+    >>> s.tags.add('elm')
 
     >>> # python session 2
-    >>> t.tags
+    >>> s.tags
     <Tags(['elm'])>
 
 This is because both objects pull their identifying information from the same

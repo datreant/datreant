@@ -90,12 +90,12 @@ class View(CollectionMixin):
         elif isinstance(index, string_types):
             # a name can be used for indexing
             # always returns a View
-            out = View([self.abspaths[i] for i, name
+            out = View([self._list()[i] for i, name
                         in enumerate(self.names) if name == index])
 
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = View(*self.abspaths[index])
+            out = View(*self._list()[index])
         else:
             raise IndexError("Cannot index View with given values")
 
@@ -224,61 +224,49 @@ class View(CollectionMixin):
             elif isinstance(veg, (list, tuple)):
                 self.add(*veg)
             elif isinstance(veg, View):
-                self.add(*veg.abspaths)
+                self.add(*list(veg))
             elif isinstance(veg, Veg):
-                outconts.append(veg.abspath)
+                outconts.append(veg)
             elif (isinstance(veg, string_types) and
                     (os.path.isdir(veg) or veg.endswith(os.sep))):
                 tre = Tree(veg)
-                outconts.append(tre.abspath)
+                outconts.append(tre)
             elif isinstance(veg, string_types):
                 tre = Leaf(veg)
-                outconts.append(tre.abspath)
+                outconts.append(tre)
             else:
                 raise TypeError("'{}' not a valid input "
                                 "for View".format(veg))
 
         self._add_members(*outconts)
 
-    def _add_members(self, *abspaths):
+    def _add_members(self, *members):
         """Add many members at once.
 
         :Arguments:
-            *abspaths*
-                list of abspaths
+            *members*
+                list of Trees and Leaves
 
         """
-        for abspath in abspaths:
-            self._add_member(abspath)
+        for member in members:
+            self._add_member(member)
 
-    def _add_member(self, abspath):
+    def _add_member(self, member):
         """Add a member to the View.
 
         :Arguments:
-            *abspath*
-                absolute path of new member
+            *member*
+                Tree or Leaf to add
 
         """
-        # check if uuid already present
-        paths = [member for member in self._state]
-
-        if abspath not in paths:
-            self._state.append(abspath)
+        if member not in self._state:
+            self._state.append(member)
 
     def _list(self):
         """Return a list of members.
 
         """
-        from .trees import Leaf, Tree
-
-        outlist = []
-        for abspath in self._state:
-            if os.path.isdir(abspath) or abspath.endswith(os.sep):
-                outlist.append(Tree(abspath))
-            else:
-                outlist.append(Leaf(abspath))
-
-        return outlist
+        return list(self._state)
 
     @property
     def names(self):
@@ -386,6 +374,18 @@ class View(CollectionMixin):
             results = None
 
         return results
+
+    def glob(self, pattern):
+        """Return a View of all child Leaves and Trees of members matching
+        given globbing pattern.
+
+        :Arguments:
+            *pattern*
+               globbing pattern to match files and directories with
+
+        """
+        return View([member.glob(pattern) for member in self
+                     if isinstance(member, Tree)])
 
 
 class Bundle(CollectionMixin):
