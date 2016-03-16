@@ -150,11 +150,9 @@ class AggCategories(AggLimb):
     def __init__(self, collection):
         super(AggCategories, self).__init__(collection)
 
-    # FIXX
     def __repr__(self):
         return "<AggCategories({})>".format(self.all)
 
-    # FIXX
     def __str__(self):
         categories = self.all
         agg = "Categories"
@@ -192,23 +190,29 @@ class AggCategories(AggLimb):
         """
         keys_type = type(keys)
         if isinstance(keys_type, str):
-            return [member.categories[keys] for member in self._collection]
+            return [member.categories[key] for member in self._collection]
         elif isinstance(keys_type, list):
-            outlist = []
+            out = []
             for key in keys:
-                outlist.append([member.categories[keys] for member in self._collection])
-            return outlist
+                out.append([member.categories[key] for member in self._collection])
+            return out
+            # return [[member.categories[key] for member in self._collection]
+            #         for key in keys]
         elif isinstance(keys_type, set):
-            outdict = {}
+            out = {}
             for key in keys:
-                outdict[key] = [member.categories[keys] for member in self._collection]
-            return outdict
+                out[key] = [member.categories[key] for member in self._collection]
+            return out
+            # return {key: [member.categories[key] for member in self._collection]
+            #         for key in keys}
+            # Python 2.6 and earlier
+            # return dict((key,[member.categories[key] for member in self._collection])
+            #         for key in keys)
         else:
             raise TypeError("Invalid argument; argument must be" +
                             " a string, list of strings, or dict" +
                             " of strings.")
 
-    ## FIXX
     def __setitem__(self, key, value):
         """Set value at given key.
 
@@ -219,7 +223,6 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.add({key: value})
 
-    ## FIXX
     def __delitem__(self, category):
         """Remove category from each Treant in collection.
 
@@ -227,14 +230,12 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.remove(category)
 
-    ## FIXX
     def __iter__(self):
         """Return an iterator across each unique Category in collection.
 
         """
         return self.all.__iter__()
 
-    ## FIXX
     def __len__(self):
         """Return number of unique Categories in collection.
 
@@ -290,7 +291,6 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.add(*categorydicts, **categories)
 
-    ## FIXX
     def remove(self, *categories):
         """Remove categories from Treant.
 
@@ -305,7 +305,6 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.remove(*categories)
 
-    ## FIXX
     def clear(self):
         """Remove all categories from Treant.
 
@@ -313,7 +312,7 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.clear()
 
-    ## FIXX - this now has same behavior as any()
+    ## FIXX - this now has analogous behavior as any() for the keys
     def keys(self):
         """Get the unique Categories (keys) of all Treants in collection.
 
@@ -325,6 +324,7 @@ class AggCategories(AggLimb):
         for member in self._collection:
             out.add(member.categories.keys())
         return out
+        # return {member.categories.keys() for member in self._collection}
 
     ## FIXX - this now has analogous behavior as any() for the values
     def values(self):
@@ -338,6 +338,7 @@ class AggCategories(AggLimb):
         for member in self._collection:
             out.add(member.categories.values())
         return out
+        # return {member.categories.values() for member in self._collection}
 
     ## FIX
     def groupby(self, keys):
@@ -351,3 +352,8 @@ class AggCategories(AggLimb):
 
         # given a inputted "keys", return groupings of treants where each group
         # is based on the category values in common among the treants
+
+        # the return type should depend on the input *keys*, so that a string
+        # gives a list (or Bundle) of Treants, a list of str gives a list of
+        # lists (or Bundles) of Treants, and a dict of str gives a dict of lists
+        # of Treants.
