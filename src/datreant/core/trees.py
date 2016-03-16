@@ -389,7 +389,15 @@ class Tree(Veg):
         return View(out)
 
     def draw(self, depth=None, hidden=False):
-        """Print an asciified visual of the tree.
+        """Print an ASCII-fied visual of the tree.
+
+        Parameters
+        ----------
+        depth : int
+            Maximum directory depth to display. ``None`` indicates no limit.
+        hidden : bool
+            If False, do not show hidden files; hidden directories are still
+            shown if they contain non-hidden files or directories.
 
         """
         if not self.exists:
@@ -447,7 +455,7 @@ class Tree(Veg):
 
     @property
     def limbs(self):
-        """A list of this Tree's attached limbs.
+        """A set of this Tree's attached limbs.
 
         """
-        return list(self._classlimbs | self._limbs)
+        return self._classlimbs | self._limbs

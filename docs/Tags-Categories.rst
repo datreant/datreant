@@ -13,14 +13,14 @@ Tags are individual strings that describe a Treant. Using our Treant
 ``sprout`` as an example, we can add many tags at once ::
 
     >>> from datreant import Treant
-    >>> t = Treant('sprout')
-    >>> t.tags.add('elm', 'mirky', 'misty')
-    >>> t.tags
+    >>> s = Treant('sprout')
+    >>> s.tags.add('elm', 'mirky', 'misty')
+    >>> s.tags
     <Tags(['elm', 'mirky', 'misty'])>
 
 They can be iterated through as well ::
 
-    >>> for tag in t.tags:
+    >>> for tag in s.tags:
     >>>     print tag
     elm
     mirky
@@ -31,15 +31,15 @@ analysis code. For example, if we have Treants with different shades of bark
 (say, "dark" and "light"), we can make a category that reflects this. In this
 case, we categorize ``sprout`` as "dark" ::
     
-    >>> t.categories['roots'] = 'dark'
-    >>> t.categories
+    >>> s.categories['roots'] = 'dark'
+    >>> s.categories
     <Categories({'roots': 'shallow'})>
 
 Perhaps we've written some analysis code that will take both "dark" and "light"
 Treants as input but needs to handle them differently. It can see what variety
 of **Treant** it is working with using ::
 
-    >>> t.categories['roots']
+    >>> s.categories['roots']
     'shallow'
 
 The keys for categories must be strings, but the values may be strings, numbers
