@@ -179,7 +179,7 @@ class AggCategories(AggLimb):
         list is the set of values (in member order) corresponding to its
         respective key in the order the keys are given.
 
-        If a set of keys is provided, a dict of lists is returned, where theach
+        If a set of keys is provided, a dict of lists is returned, where each
         dict contains the provided keys and the value for each key is a list of
         the corresponding values (in member order) of each member in the
         collection.
@@ -190,24 +190,18 @@ class AggCategories(AggLimb):
         """
         keys_type = type(keys)
         if isinstance(keys_type, str):
-            return [member.categories[key] for member in self._collection]
+            return [memb.categories[key] for memb in self._collection]
         elif isinstance(keys_type, list):
-            out = []
-            for key in keys:
-                out.append([member.categories[key] for member in self._collection])
-            return out
-            # return [[member.categories[key] for member in self._collection]
-            #         for key in keys]
+            return [[memb.categories[key] for memb in self._collection]
+                    for key in keys]
         elif isinstance(keys_type, set):
-            out = {}
-            for key in keys:
-                out[key] = [member.categories[key] for member in self._collection]
-            return out
-            # return {key: [member.categories[key] for member in self._collection]
+            # return {key: [memb.categories[key] for memb in self._collection]
             #         for key in keys}
             # Python 2.6 and earlier
-            # return dict((key,[member.categories[key] for member in self._collection])
-            #         for key in keys)
+            return dict(
+                        (key,
+                            [m.categories[key] for m in self._collection])
+                        for key in keys)
         else:
             raise TypeError("Invalid argument; argument must be" +
                             " a string, list of strings, or dict" +
@@ -268,7 +262,7 @@ class AggCategories(AggLimb):
 
         return out
 
-    ## FIXX
+    # FIXX
     def add(self, *categorydicts, **categories):
         """Add any number of categories to each Treant in collection.
 
@@ -312,7 +306,7 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.clear()
 
-    ## FIXX - this now has analogous behavior as any() for the keys
+    # FIXX - this now has analogous behavior as any() for the keys
     def keys(self):
         """Get the unique Categories (keys) of all Treants in collection.
 
@@ -326,7 +320,7 @@ class AggCategories(AggLimb):
         return out
         # return {member.categories.keys() for member in self._collection}
 
-    ## FIXX - this now has analogous behavior as any() for the values
+    # FIXX - this now has analogous behavior as any() for the values
     def values(self):
         """Get the unique category values of all Treants in collection.
 
@@ -340,7 +334,7 @@ class AggCategories(AggLimb):
         return out
         # return {member.categories.values() for member in self._collection}
 
-    ## FIXX
+    # FIXX
     def groupby(self, keys):
         """Return groupings of Treants based on Categories.
 
@@ -386,11 +380,13 @@ class AggCategories(AggLimb):
                         group.append(member)
                 out[key] = group
             return out
-            # return {key: [member.categories[key] for member in self._collection]
-            #         for key in keys}
+            # return {
+            #      key: [member.categories[key] for member in self._collection]
+            #      for key in keys}
             # Python 2.6 and earlier
-            # return dict((key,[member.categories[key] for member in self._collection])
-            #         for key in keys)
+            # return dict(
+            #     (key,[member.categories[key] for member in self._collection])
+            #     for key in keys)
         else:
             raise TypeError("Invalid argument; argument must be" +
                             " a string, list of strings, or dict" +
