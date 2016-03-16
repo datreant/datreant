@@ -280,7 +280,7 @@ class Tree(Veg):
         return os.path.relpath(str(self.path)) + os.sep
 
     @property
-    def leaves(self):
+    def childleaves(self):
         """A View of the files in this Tree.
 
         Hidden files are not included.
@@ -301,7 +301,7 @@ class Tree(Veg):
             raise OSError("Tree doesn't exist in the filesystem")
 
     @property
-    def trees(self):
+    def childtrees(self):
         """A View of the directories in this Tree.
 
         Hidden directories are not included.
@@ -322,7 +322,7 @@ class Tree(Veg):
         return View(out)
 
     @property
-    def hidden(self):
+    def childhidden(self):
         """A View of the hidden files and directories in this Tree.
 
         """
@@ -353,7 +353,7 @@ class Tree(Veg):
 
         """
         from .collections import View
-        return View(self.trees + self.leaves + self.hidden)
+        return View(self.childtrees + self.childleaves + self.childhidden)
 
     @property
     def treants(self):
@@ -364,16 +364,19 @@ class Tree(Veg):
 
         """
         from .collections import Bundle
-        return Bundle(self.trees + self.hidden.trees)
+        return Bundle(self.childtrees + self.childhidden.trees)
 
     def glob(self, pattern):
-        """Yield all existing Leaves and Trees matching given globbing pattern.
+        """Return a View of all child Leaves and Trees matching given globbing
+        pattern.
 
         :Arguments:
             *pattern*
                globbing pattern to match files and directories with
 
         """
+        from .collections import View
+
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
 
@@ -383,7 +386,7 @@ class Tree(Veg):
 
         out.sort()
 
-        return out
+        return View(out)
 
     def draw(self, depth=None, hidden=False):
         """Print an asciified visual of the tree.

@@ -375,6 +375,18 @@ class View(CollectionMixin):
 
         return results
 
+    def glob(self, pattern):
+        """Return a View of all child Leaves and Trees of members matching
+        given globbing pattern.
+
+        :Arguments:
+            *pattern*
+               globbing pattern to match files and directories with
+
+        """
+        return View([member.glob(pattern) for member in self
+                     if isinstance(member, Tree)])
+
 
 class Bundle(CollectionMixin):
     """Non-persistent collection of treants.
