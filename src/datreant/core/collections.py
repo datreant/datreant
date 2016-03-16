@@ -90,12 +90,12 @@ class View(CollectionMixin):
         elif isinstance(index, string_types):
             # a name can be used for indexing
             # always returns a View
-            out = View([self.abspaths[i] for i, name
+            out = View([self._list()[i] for i, name
                         in enumerate(self.names) if name == index])
 
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = View(*self.abspaths[index])
+            out = View(*self._list()[index])
         else:
             raise IndexError("Cannot index View with given values")
 
