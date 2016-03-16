@@ -8,6 +8,13 @@ them as a single logical unit.
 
 
 
+Filtering on Treant tags
+========================
+
+
+Grouping with Treant categories
+===============================
+
 
 Reference: Bundle
 =================

@@ -23,7 +23,15 @@ We can build a View immediately ::
     >>> v
     <View([<Tree: 'moe/'>, <Tree: 'larry/'>, <Leaf: 'curly.txt'>])>
 
-And we can 
+And we can get to work using it. Since Views are firstly a collection of
+members, individual members can be accessed through indexing and slicing ::
+
+    >>> v[1]
+    <Tree: 'larry/'>
+
+    >>> v[1:]
+    <View([<Tree: 'larry/'>, <Leaf: 'curly.txt'>])>
+
 
 
 Views from a Tree
