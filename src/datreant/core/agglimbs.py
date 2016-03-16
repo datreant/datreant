@@ -340,20 +340,58 @@ class AggCategories(AggLimb):
         return out
         # return {member.categories.values() for member in self._collection}
 
-    ## FIX
+    ## FIXX
     def groupby(self, keys):
         """Return groupings of Treants based on Categories.
+
+        Groups Treants according to a given key, list of keys, or set of keys.
+        Mirrors the behavior of *__getitem()__*:
+            * a string as a key returns a list of Treants with that Category
+            * a list of keys returns a list of lists of Treants, where the Nth
+              list of Treants are those having the Category defined by the Nth
+              key
+            * a set of keys returns a dict of list of Treants (analogous to
+              inputting a list of keys) where for each key is a list of Treants
+              having the Category corresponding to that key
 
         :Arguments:
             *keys*
                 keys present among Categories
 
         """
-
-        # given a inputted "keys", return groupings of treants where each group
-        # is based on the category values in common among the treants
-
-        # the return type should depend on the input *keys*, so that a string
-        # gives a list (or Bundle) of Treants, a list of str gives a list of
-        # lists (or Bundles) of Treants, and a dict of str gives a dict of lists
-        # of Treants.
+        keys_type = type(keys)
+        if isinstance(keys_type, str):
+            group = []
+            for member in self._collection:
+                if member.categories[key] is not None:
+                    group.append(member)
+            return group
+        elif isinstance(keys_type, list):
+            out = []
+            for key in keys:
+                group = []
+                for member in self._collection:
+                    if member.categories[key] is not None:
+                        group.append(member)
+                out.append(group)
+            return out
+            # return [[member.categories[key] for member in self._collection]
+            #         for key in keys]
+        elif isinstance(keys_type, set):
+            out = {}
+            for key in keys:
+                group = []
+                for member in self._collection:
+                    if member.categories[key] is not None:
+                        group.append(member)
+                out[key] = group
+            return out
+            # return {key: [member.categories[key] for member in self._collection]
+            #         for key in keys}
+            # Python 2.6 and earlier
+            # return dict((key,[member.categories[key] for member in self._collection])
+            #         for key in keys)
+        else:
+            raise TypeError("Invalid argument; argument must be" +
+                            " a string, list of strings, or dict" +
+                            " of strings.")
