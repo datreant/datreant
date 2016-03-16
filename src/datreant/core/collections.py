@@ -54,7 +54,7 @@ class CollectionMixin(object):
         """A set giving the names of this collection's attached limbs.
 
         """
-        return self._classlimbs | self._limbs
+        return self._classagglimbs | self._agglimbs
 
 
 class View(CollectionMixin):
