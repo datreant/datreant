@@ -324,4 +324,42 @@ class TestBundle:
             pass
 
     class TestAggCategories:
-        pass
+        """Test behavior of manipulating categories collectively.
+
+        """
+        def test_add_categories(self, collection, testtreant, testgroup,
+                                tmpdir):
+            with tmpdir.as_cwd():
+                collection.add(testtreant, testgroup)
+
+                assert len(collection.categories) == 0
+
+                collection.categories.add('broiled', 'not baked')
+
+                assert len(collection.categories) == 2
+                for tag in ('broiled', 'not baked'):
+                    assert tag in collection.categories
+
+        def test_categories_setting(self, collection, testtreant, testgroup,
+                                    tmpdir):
+            pass
+
+        def test_categories_all(self, collection, testtreant, testgroup,
+                                tmpdir):
+            pass
+
+        def test_categories_any(self, collection, testtreant, testgroup,
+                                tmpdir):
+            pass
+
+        def test_categories_any(self, collection, testtreant, testgroup,
+                                tmpdir):
+            pass
+
+        def test_categories_set_behavior(self, collection, testtreant,
+                                        testgroup, tmpdir):
+            pass
+
+        def test_categories_getitem(self, collection, testtreant, testgroup,
+                                    tmpdir):
+            pass
