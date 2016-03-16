@@ -278,37 +278,33 @@ class AggCategories(AggLimb):
 
         """
         for member in self._collection:
-            membmer.categories.clear()
+            member.categories.clear()
 
     ## FIXX
     def keys(self):
-        """Get the keys present among Categories of each Treant in collection.
+        """Get the unique Categories (keys) of all Treants in collection.
 
         :Returns:
             *keys*
-                keys present among Categories
+                set of keys present among Categories
         """
-        outlist = []
+        out = set()
         for member in self._collection:
-            outlist.append(member.categories.keys())
-        return outlist
-        # Should this return a list (with duplicates), a list of lists (of
-        # keys for each Treant), or a set?
+            out.add(member.categories.keys())
+        return out
 
     ## FIXX
     def values(self):
-        """Get category values.
+        """Get the unique category values of all Treants in collection.
 
         :Returns:
             *values*
-                values present among Categories
+                set of values present among Categories
         """
-        outlist = []
+        out = set()
         for member in self._collection:
-            outlist.append(member.categories.values())
-        return outlist
-        # Should this return a list (with duplicates), a list of lists (of
-        # keys for each Treant), or a set? See keys() method too!
+            out.add(member.categories.values())
+        return out
 
     ## FIX
     def groupby(self, keys):
