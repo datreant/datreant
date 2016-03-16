@@ -20,7 +20,7 @@ from six import string_types
 from six.moves import zip
 
 from . import filesystem
-from . import _AGGLIMBS
+from . import _AGGLIMBS, _AGGTREELIMBS
 from .trees import Tree, Leaf
 from .manipulators import discover
 
@@ -49,11 +49,21 @@ class CollectionMixin(object):
         except AttributeError:
             return NotImplemented
 
+    @property
+    def limbs(self):
+        """A set giving the names of this collection's attached limbs.
+
+        """
+        return self._classlimbs | self._limbs
+
 
 class View(CollectionMixin):
     """A collection of Trees and Leaves.
 
     """
+    _classagglimbs = set()
+    _agglimbs = set()
+
     def __init__(self, *vegs, **kwargs):
         self._state = list()
         self.add(*vegs)
@@ -175,11 +185,20 @@ class View(CollectionMixin):
         setattr(cls, limb._name,
                 property(getter, None, None, limb.__doc__))
 
+        if limb._name in _AGGTREELIMBS:
+            cls._classagglimbs.add(limb._name)
+
     def _attach_aggtreelimb(self, limb):
         """Attach an aggtreelimb.
 
         """
-        setattr(self, limb._name, limb(self))
+        try:
+            setattr(self, limb._name, limb(self))
+        except AttributeError:
+            pass
+
+        if limb._name in _AGGTREELIMBS:
+            self._agglimbs.add(limb._name)
 
     def attach(self, *aggtreelimbname):
         """Attach aggtreelimbs by name to this View. Attaches corresponding limb
@@ -405,6 +424,9 @@ class Bundle(CollectionMixin):
     _fields = ['uuid', 'treanttype']
     _fields.extend(_memberpaths)
 
+    _classagglimbs = set()
+    _agglimbs = set()
+
     def __init__(self, *treants, **kwargs):
         self._cache = dict()
         self._state = list()
@@ -542,11 +564,20 @@ class Bundle(CollectionMixin):
         setattr(cls, limb._name,
                 property(getter, None, None, limb.__doc__))
 
+        if limb._name in _AGGTREELIMBS or limb._name in _AGGLIMBS:
+            cls._classagglimbs.add(limb._name)
+
     def _attach_agglimb(self, limb):
         """Attach an agglimb.
 
         """
-        setattr(self, limb._name, limb(self))
+        try:
+            setattr(self, limb._name, limb(self))
+        except AttributeError:
+            pass
+
+        if limb._name in _AGGTREELIMBS or limb._name in _AGGLIMBS:
+            self._agglimbs.add(limb._name)
 
     def attach(self, *agglimbname):
         """Attach agglimbs by name to this collection. Attaches corresponding limb
