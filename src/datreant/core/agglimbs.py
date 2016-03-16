@@ -168,25 +168,28 @@ class AggCategories(AggLimb):
                 out = out + "'{}': '{}'\n".format(key, categories[key])
         return out
 
-    # FIXX
     def __getitem__(self, keys):
         """Get values for a given key, list of keys, or set of keys.
 
-        If a string is provided for *key*, a list is returned containing the
-        values for each member in the collection in member order.
+        If *keys* is a string specifying one key (for a single category),
+        return a list of the values among all Treants (in this collection) that
+        have that category.
 
-        If a list of keys is provided, a list of lists is returned, where each
-        list is the set of values (in member order) corresponding to its
-        respective key in the order the keys are given.
+        If *keys* is a list of keys, return a list of lists whose order
+        corresponds to the order of the elements in *keys*. Each element in
+        *keys* is a key specifying a category; each element in the output is
+        a list of the values among all Treants (in this collection) that have
+        the category specified by the respective key in *keys*.
 
-        If a set of keys is provided, a dict of lists is returned, where each
-        dict contains the provided keys and the value for each key is a list of
-        the corresponding values (in member order) of each member in the
-        collection.
+        If *keys* is a set of keys, return a dict of lists whose keys are the
+        same as those provided in *keys*; the value corresponding to each key
+        in the output is a list of values among all Treants (in this
+        collection) that have the category corresponding to that key.
 
-        :Arguments:
-            *keys*
-                key(s) of value(s) to return
+        Parameters
+        ----------
+        keys
+            Key(s) of value(s) to return.
         """
         keys_type = type(keys)
         if isinstance(keys_type, str):
@@ -195,43 +198,41 @@ class AggCategories(AggLimb):
             return [[memb.categories[key] for memb in self._collection]
                     for key in keys]
         elif isinstance(keys_type, set):
-            # return {key: [memb.categories[key] for memb in self._collection]
-            #         for key in keys}
-            # Python 2.6 and earlier
-            return dict(
-                        (key,
-                            [m.categories[key] for m in self._collection])
-                        for key in keys)
+            return {key: [memb.categories[key] for memb in self._collection]
+                    for key in keys}
         else:
             raise TypeError("Invalid argument; argument must be" +
-                            " a string, list of strings, or dict" +
+                            " a string, list of strings, or set" +
                             " of strings.")
 
     def __setitem__(self, key, value):
-        """Set value at given key.
+        """Set the value of a category for all Treants in the collection.
 
-        :Arguments:
-            *key*
-                key of value to set
+        Parameters
+        ----------
+        key
+            Key for the category whose value should be set to *value*.
+        value
+            The value of the category specified by *key*
         """
         for member in self._collection:
             member.categories.add({key: value})
 
     def __delitem__(self, category):
-        """Remove category from each Treant in collection.
+        """Remove *category* from each Treant in collection.
 
         """
         for member in self._collection:
             member.categories.remove(category)
 
     def __iter__(self):
-        """Return an iterator across each unique Category in collection.
+        """Iterator over Categories common to all Treants in collection.
 
         """
         return self.all.__iter__()
 
     def __len__(self):
-        """Return number of unique Categories in collection.
+        """The number of Categories common to all Treants in collection.
 
         """
         return len(self.all)
@@ -240,6 +241,10 @@ class AggCategories(AggLimb):
     def any(self):
         """List Categories present among at least one Treant in collection.
 
+        Returns
+        -------
+        list
+            All unique Categories among members.
         """
         cats = [set(member.categories) for member in self._collection]
         out = set.union(*cats)
@@ -251,8 +256,12 @@ class AggCategories(AggLimb):
 
     @property
     def all(self):
-        """List Categories present among all Treants in collection.
+        """List Categories common to all Treants in collection.
 
+        Returns
+        -------
+        list
+            Categories common to all members.
         """
         cats = [set(member.categories) for member in self._collection]
         out = set.intersection(*cats)
@@ -272,15 +281,15 @@ class AggCategories(AggLimb):
         If a given category already exists (same key), the value given will
         replace the value for that category.
 
-        :Keywords:
-            *categorydict*
-                dict of categories to add; keys used as keys, values used as
-                values. Both keys and values must be convertible to strings
-                using the str() builtin.
-            *categories*
-                Categories to add. Keyword used as key, value used as value.
-                Both must be convertible to strings using the str() builtin.
-
+        Parameters
+        ----------
+        *categorydict
+            dict of categories to add; keys used as keys, values used as
+            values. Both keys and values must be convertible to strings
+            using the str() builtin.
+        **categories
+            Categories to add. Keyword used as key, value used as value.
+            Both must be convertible to strings using the str() builtin.
         """
         for member in self._collection:
             member.categories.add(*categorydicts, **categories)
@@ -291,10 +300,10 @@ class AggCategories(AggLimb):
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
 
-        :Arguments:
-            *categories*
-                Categories to delete.
-
+        Parameters
+        ----------
+        *categories
+            Categories to delete.
         """
         for member in self._collection:
             member.categories.remove(*categories)
@@ -306,88 +315,79 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.clear()
 
-    # FIXX - this now has analogous behavior as any() for the keys
     def keys(self):
         """Get the unique Categories (keys) of all Treants in collection.
 
-        :Returns:
-            *keys*
-                set of keys present among Categories
+        Returns
+        -------
+        set
+            All unique keys present among all Categories in collection.
         """
-        out = set()
-        for member in self._collection:
-            out.add(member.categories.keys())
-        return out
-        # return {member.categories.keys() for member in self._collection}
+        return {member.categories.keys() for member in self._collection}
 
-    # FIXX - this now has analogous behavior as any() for the values
     def values(self):
         """Get the unique category values of all Treants in collection.
 
-        :Returns:
-            *values*
-                set of values present among Categories
+        Returns
+        -------
+        set
+            All unique values present among all Categories in collection.
         """
-        out = set()
-        for member in self._collection:
-            out.add(member.categories.values())
-        return out
-        # return {member.categories.values() for member in self._collection}
+        return {member.categories.values() for member in self._collection}
 
-    # FIXX
     def groupby(self, keys):
         """Return groupings of Treants based on Categories.
 
         Groups Treants according to a given key, list of keys, or set of keys.
-        Mirrors the behavior of *__getitem()__*:
-            * a string as a key returns a list of Treants with that Category
-            * a list of keys returns a list of lists of Treants, where the Nth
-              list of Treants are those having the Category defined by the Nth
-              key
-            * a set of keys returns a dict of list of Treants (analogous to
-              inputting a list of keys) where for each key is a list of Treants
-              having the Category corresponding to that key
+        Mirrors the behavior of *__getitem()__*, where the output type is
+        controlled by the input type of *keys*:
 
-        :Arguments:
-            *keys*
-                keys present among Categories
+        If *keys* is a string specifying one key (for a single category),
+        *groupby()* returns a list of Treants that have that category.
 
+        If *keys* is a list of keys, *groupby()* returns a list of lists whose
+        order corresponds to the order of the elements in *keys*. Each element
+        in *keys* is a key specifying a category; each element in the output is
+        a list of the Treants (in this collection) that have the category
+        specified by that key.
+
+        If *keys* is a set of keys, *groupby()* returns a dict of lists whose
+        keys are the same as those provided in *keys*; the value corresponding
+        to each key in the output is a list of Treants (in this collection)
+        that have the Category corresponding to that key.
+
+        Parameters
+        ----------
+        keys : str, list of str, set of str
+            Key(s) of Categories in this collection.
+
+        Returns
+        -------
+        list of Treant
+            Treants with the specified (single) category when *keys* is str.
+        list of list of Treant
+            Groupings of Treants, each grouping a list of Treants, where the
+            first grouping contains Treants with the Category specified by the
+            first value in *keys*, the second grouping contains Treants for the
+            second value in *keys*, etc. when *keys* is a list of str.
+        dict of list of Treant
+            Values in the dict corresponding to each of the provided *keys*
+            is a grouping (list) of Treants that have the Category specified by
+            that key when *keys* is a set of str.
         """
         keys_type = type(keys)
         if isinstance(keys_type, str):
-            group = []
-            for member in self._collection:
-                if member.categories[key] is not None:
-                    group.append(member)
-            return group
+            return [m for m in self._collection
+                    if m.categories[key] is not None]
         elif isinstance(keys_type, list):
-            out = []
-            for key in keys:
-                group = []
-                for member in self._collection:
-                    if member.categories[key] is not None:
-                        group.append(member)
-                out.append(group)
-            return out
-            # return [[member.categories[key] for member in self._collection]
-            #         for key in keys]
+            return [[m for m in self._collection
+                    if m.categories[key] is not None]
+                    for key in keys]
         elif isinstance(keys_type, set):
-            out = {}
-            for key in keys:
-                group = []
-                for member in self._collection:
-                    if member.categories[key] is not None:
-                        group.append(member)
-                out[key] = group
-            return out
-            # return {
-            #      key: [member.categories[key] for member in self._collection]
-            #      for key in keys}
-            # Python 2.6 and earlier
-            # return dict(
-            #     (key,[member.categories[key] for member in self._collection])
-            #     for key in keys)
+            return {key: [m for m in self._collection
+                    if m.categories[key] is not None]
+                    for key in keys}
         else:
             raise TypeError("Invalid argument; argument must be" +
-                            " a string, list of strings, or dict" +
+                            " a string, list of strings, or set" +
                             " of strings.")
