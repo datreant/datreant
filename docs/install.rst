@@ -4,6 +4,8 @@ Installing datreant.core
 There are no official releases of datreant yet, but the master branch on GitHub
 gives the most current state of the package. 
 
+.. note:: Python 2.7 or above is required for all datreant packages.
+
 To install from source, clone the repository and switch to the master branch ::
 
     git clone git@github.com:datreant/datreant.core.git
