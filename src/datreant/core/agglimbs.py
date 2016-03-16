@@ -150,12 +150,13 @@ class AggCategories(AggLimb):
     def __init__(self, collection):
         super(AggCategories, self).__init__(collection)
 
+    # FIXX
     def __repr__(self):
-        return "<AggCategories({})>".format(self._dict())
+        return "<AggCategories({})>".format(self.all)
 
-    # FIX
+    # FIXX
     def __str__(self):
-        categories = self.all()
+        categories = self.all
         agg = "Categories"
         majsep = "="
         seplength = len(agg)
@@ -207,7 +208,7 @@ class AggCategories(AggLimb):
                             " a string, list of strings, or dict" +
                             " of strings.")
 
-    ## FIX
+    ## FIXX
     def __setitem__(self, key, value):
         """Set value at given key.
 
@@ -215,8 +216,8 @@ class AggCategories(AggLimb):
             *key*
                 key of value to set
         """
-        outdict = {key: value}
-        self.add(outdict)
+        for member in self._collection:
+            member.categories.add({key: value})
 
     ## FIXX
     def __delitem__(self, category):
@@ -226,13 +227,45 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.remove(category)
 
-    ## FIX
+    ## FIXX
     def __iter__(self):
-        return self._dict().__iter__()
+        """Return an iterator across each unique Category in collection.
 
-    ## FIX
+        """
+        return self.all.__iter__()
+
+    ## FIXX
     def __len__(self):
-        return len(self._dict())
+        """Return number of unique Categories in collection.
+
+        """
+        return len(self.all)
+
+    @property
+    def any(self):
+        """List Categories present among at least one Treant in collection.
+
+        """
+        cats = [set(member.categories) for member in self._collection]
+        out = set.union(*cats)
+
+        out = list(out)
+        out.sort()
+
+        return out
+
+    @property
+    def all(self):
+        """List Categories present among all Treants in collection.
+
+        """
+        cats = [set(member.categories) for member in self._collection]
+        out = set.intersection(*cats)
+
+        out = list(out)
+        out.sort()
+
+        return out
 
     ## FIXX
     def add(self, *categorydicts, **categories):
@@ -280,7 +313,7 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.clear()
 
-    ## FIXX
+    ## FIXX - this now has same behavior as any()
     def keys(self):
         """Get the unique Categories (keys) of all Treants in collection.
 
@@ -293,7 +326,7 @@ class AggCategories(AggLimb):
             out.add(member.categories.keys())
         return out
 
-    ## FIXX
+    ## FIXX - this now has analogous behavior as any() for the values
     def values(self):
         """Get the unique category values of all Treants in collection.
 
