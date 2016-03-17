@@ -13,3 +13,4 @@ exclude_lines =
 
 omit =
     src/datreant/core/tests/*
+    src/datreant/__init__.py
