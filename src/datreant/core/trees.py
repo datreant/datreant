@@ -455,7 +455,7 @@ class Tree(Veg):
 
     @property
     def limbs(self):
-        """A set of this Tree's attached limbs.
+        """A set giving the names of this Tree's attached limbs.
 
         """
         return self._classlimbs | self._limbs
