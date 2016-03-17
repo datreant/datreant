@@ -442,8 +442,8 @@ class TestBundle:
                 t1 = dtr.Treant('hickory')
                 t1.categories.add(bark='shaggy', species='ovata')
                 collection.add(t1)
-                # check the contents of 'bark', ensure 'age' and 'species' are not
-                # shared categories of the collection
+                # check the contents of 'bark', ensure 'age' and 'species' are
+                # not shared categories of the collection
                 collection.add(t1)
                 common_categories = collection.categories.all
                 assert len(collection.categories) == len(common_categories)
@@ -606,7 +606,7 @@ class TestBundle:
                 assert values_list[1] == [42, 'smooth']
                 assert values_list[2] == ['deciduous', 'rough', 'seedling']
                 assert values_list[3] == ['adult', 'evergreen', 'redwood',
-                        'rough']
+                                          'rough']
 
         def test_categories_groupby(self, collection, testtreant, testgroup,
                                     tmpdir):
