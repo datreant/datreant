@@ -224,6 +224,10 @@ class AggCategories(AggLimb):
                             " a string, list of strings, or set" +
                             " of strings.")
 
+    # FIX -  should be able to take a sequence for value (tuple, list) that
+    # matches order of Treants in collection
+    # If None is a value in the value, then treat that as an indication to
+    # delete that value
     def __setitem__(self, key, value):
         """Set the value of a category for all Treants in the collection.
 
@@ -355,7 +359,11 @@ class AggCategories(AggLimb):
         """
         return [member.categories.values() for member in self._collection]
 
-    def groupby(self, keys):
+    # FIX - given a key (or keys) as input, return a dictionary whose keys
+    # are now the (combinations of) category values and whose corresponding
+    # values are Bundles of the Treants that have those keys as values of the
+    # inputted key
+    def groupby(self, keys):``
         """Return groupings of Treants based on Categories.
 
         Groups Treants according to a given key, list of keys, or set of keys.
