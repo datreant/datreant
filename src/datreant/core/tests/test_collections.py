@@ -576,13 +576,12 @@ class TestBundle:
                 collection.add(t1, t2)
 
                 keys_list = collection.categories.keys()
-                for keys in keys_list:
-                    keys.sort()
 
-                assert keys_list[0] == ['age', 'bark']
-                assert keys_list[1] == ['age', 'bark']
-                assert keys_list[2] == ['age', 'bark', 'type']
-                assert keys_list[3] == ['age', 'bark', 'nickname', 'type']
+                assert sorted(keys_list[0]) == ['age', 'bark']
+                assert sorted(keys_list[1]) == ['age', 'bark']
+                assert sorted(keys_list[2]) == ['age', 'bark', 'type']
+                assert sorted(keys_list[3]) == ['age', 'bark', 'nickname',
+                                                'type']
 
         def test_categories_values(self, collection, testtreant, testgroup,
                                    tmpdir):
@@ -599,14 +598,13 @@ class TestBundle:
                 collection.add(t1, t2)
 
                 values_list = collection.categories.values()
-                for values in values_list:
-                    values.sort()
 
-                assert values_list[0] == [42, 'smooth']
-                assert values_list[1] == [42, 'smooth']
-                assert values_list[2] == ['deciduous', 'rough', 'seedling']
-                assert values_list[3] == ['adult', 'evergreen', 'redwood',
-                                          'rough']
+                assert sorted(values_list[0]) == [42, 'smooth']
+                assert sorted(values_list[1]) == [42, 'smooth']
+                assert sorted(values_list[2]) == ['deciduous', 'rough',
+                                                  'seedling']
+                assert sorted(values_list[3]) == ['adult', 'evergreen',
+                                                  'redwood', 'rough']
 
         def test_categories_groupby(self, collection, testtreant, testgroup,
                                     tmpdir):
