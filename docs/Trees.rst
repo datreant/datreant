@@ -27,6 +27,7 @@ These objects point to a specific path in the filesystem, which doesn't
 necessarily have to exist. Just as with Treants, more than one instance
 of a Tree or Leaf can point to the same place.
 
+
 Working with paths
 ==================
 **Tree** objects can be used to introspect downward into their directory
@@ -65,6 +66,7 @@ in which case whether a Tree or Leaf is returned is dependent on an ending
           sensitive to ending ``/`` separators to determine whether to give a
           Tree or a Leaf.
 
+
 A Treant is a Tree
 ==================
 The **Treant** object is a subclass of a Tree, so the above all applies to
@@ -91,6 +93,11 @@ collection of Trees and/or Leaves in the Tree with globbing ::
 
 See :ref:`Views` for more about the **View** object, and how it can be used to
 manipulate many Trees and Leaves as a single logical unit.
+
+
+File operations with Leaves
+===========================
+
 
 Reference: Tree
 ===============

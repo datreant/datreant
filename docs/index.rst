@@ -42,9 +42,9 @@ The datreant namespace
 packages. These packages are all dependent on a central, core library, called
 ``datreant.core``. This documentation is for that core library.
 
-Other packages in the ``datreant`` namespace currently include::
+Other packages in the ``datreant`` namespace currently include:
 
-    `datreant.data <http://datreantdata.readthedocs.org/en/latest/>`_
+- `datreant.data <http://datreantdata.readthedocs.org/en/latest/>`_
 
 
 Getting datreant
