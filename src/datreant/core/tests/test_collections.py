@@ -330,16 +330,30 @@ class TestBundle:
         def test_add_categories(self, collection, testtreant, testgroup,
                                 tmpdir):
             with tmpdir.as_cwd():
-                # collection.add(testtreant, testgroup)
-                #
-                # assert len(collection.categories) == 0
-                #
-                # collection.categories.add('broiled', 'not baked')
-                #
-                # assert len(collection.categories) == 2
-                # for tag in ('broiled', 'not baked'):
-                #     assert tag in collection.categories
-                pass
+                t1 = dtr.Treant('hickory')
+
+                collection.add(testtreant, testgroup)
+                assert len(collection.categories) == 0
+
+                collection.categories.add({'age': 42}, bark='smooth')
+                assert len(collection.categories) == 2
+
+                for member in collection:
+                    assert member.categories['age'] == 42
+                    assert member.categories['bark'] == 'smooth'
+
+                t1.categories.add(bark='shaggy', species='ovata')
+                collection.add(t1)
+                assert len(collection.categories) == 1
+                assert len(collection.categories.all) == 1
+                assert len(collection.categories.any) == 3
+
+                collection.categories.add(location='USA')
+                assert len(collection.categories) == 2
+                assert len(collection.categories.all) == 2
+                assert len(collection.categories.any) == 4
+                for member in collection:
+                    assert member.categories['location'] == 'USA'
 
         def test_categories_setting(self, collection, testtreant, testgroup,
                                     tmpdir):
@@ -347,15 +361,153 @@ class TestBundle:
 
         def test_categories_all(self, collection, testtreant, testgroup,
                                 tmpdir):
-            pass
+            with tmpdir.as_cwd():
+                t1 = dtr.Treant('hickory')
+
+                # add a test Treant and a test Group to collection
+                collection.add(testtreant, testgroup)
+                assert len(collection.categories) == 0
+
+                # add 'age' and 'bark' as categories of this collection
+                collection.categories.add({'age': 42}, bark='bare')
+                assert len(collection.categories) == 2
+                for member in collection:
+                    assert member.categories['age'] == 42
+                    assert member.categories['bark'] == 'bare'
+
+                # add categories to 'hickory' Treant, then add to collection
+                t1.categories.add(bark='shaggy', species='ovata')
+                collection.add(t1)
+                # check the contents of 'bark', ensure 'age' and 'species' are not
+                # shared categories of the collection
+                collection.add(t1)
+                common_categories = collection.categories.all
+                assert len(collection.categories) == len(common_categories)
+                assert 'age' not in common_categories
+                assert 'species' not in common_categories
+                assert common_categories['bark'] == ['bare', 'bare', 'shaggy']
+
+                # add 'location' category to collection
+                collection.categories.add(location='USA')
+                common_categories = collection.categories.all
+                # ensure all members have 'USA' for their 'location'
+                assert len(collection.categories) == len(common_categories)
+                assert 'age' not in common_categories
+                assert 'species' not in common_categories
+                assert common_categories['bark'] == ['bare', 'bare', 'shaggy']
+                assert common_categories['location'] == ['USA', 'USA', 'USA']
+
+                # add 'location' category to collection
+                collection.categories.remove('bark')
+                common_categories = collection.categories.all
+                # check that only 'location' is a shared category
+                assert len(collection.categories) == len(common_categories)
+                assert 'age' not in common_categories
+                assert 'bark' not in common_categories
+                assert 'species' not in common_categories
+                assert common_categories['location'] == ['USA', 'USA', 'USA']
 
         def test_categories_any(self, collection, testtreant, testgroup,
                                 tmpdir):
-            pass
+            with tmpdir.as_cwd():
+                t1 = dtr.Treant('hickory')
 
-        def test_categories_any(self, collection, testtreant, testgroup,
-                                tmpdir):
-            pass
+                # add a test Treant and a test Group to collection
+                collection.add(testtreant, testgroup)
+                assert len(collection.categories) == 0
+
+                # add 'age' and 'bark' as categories of this collection
+                collection.categories.add({'age': 42}, bark='smooth')
+                assert len(collection.categories.any) == 2
+                for member in collection:
+                    assert member.categories['age'] == 42
+                    assert member.categories['bark'] == 'smooth'
+
+                # add categories to 'hickory' Treant, then add to collection
+                t1.categories.add(bark='shaggy', species='ovata')
+                collection.add(t1)
+                # check the contents of 'bark', ensure 'age' and 'species' are
+                # not shared categories of the collection
+                every_category = collection.categories.any
+                assert len(every_category) == 3
+                assert every_category['age'] == [42, 42, None]
+                assert every_category['bark'] == ['smooth', 'smooth', 'shaggy']
+                assert every_category['species'] == [None, None, 'ovata']
+
+                # add 'location' category to collection
+                collection.categories.add(location='USA')
+                every_category = collection.categories.any
+                # ensure all members have 'USA' for their 'location'
+                assert len(every_category) == 4
+                assert every_category['age'] == [42, 42, None]
+                assert every_category['bark'] == ['smooth', 'smooth', 'shaggy']
+                assert every_category['species'] == [None, None, 'ovata']
+                assert every_category['location'] == ['USA', 'USA', 'USA']
+
+                # add 'sprout' to 'age' category of 'hickory' Treant
+                t1.categories['age'] = 'sprout'
+                every_category = collection.categories.any
+                # check 'age' is category for 'hickory' and is 'sprout'
+                assert len(every_category) == 4
+                assert every_category['age'] == [42, 42, 'sprout']
+                assert every_category['bark'] == ['smooth', 'smooth', 'shaggy']
+                assert every_category['species'] == [None, None, 'ovata']
+                assert every_category['location'] == ['USA', 'USA', 'USA']
+
+                # add 'location' category to collection
+                collection.categories.remove('bark')
+                every_category = collection.categories.any
+                # check that only 'location' is a shared category
+                assert len(every_category) == 3
+                assert every_category['age'] == [42, 42, 'sprout']
+                assert every_category['species'] == [None, None, 'ovata']
+                assert every_category['location'] == ['USA', 'USA', 'USA']
+                assert 'bark' not in every_category
+
+        def test_categories_remove(self, collection, testtreant, testgroup,
+                                   tmpdir):
+            with tmpdir.as_cwd():
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('sequoia')
+
+                collection.add(t1, t2)
+                assert len(collection.categories) == 0
+
+                collection.categories.add({'age': 'sprout'}, bark='rough')
+                assert len(collection.categories) == 2
+                for key in ['age', 'bark']:
+                    assert key in collection.categories.any
+
+                collection.add(testtreant, testgroup)
+                assert len(collection.categories) == 0
+                assert len(collection.categories.any) == 2
+
+                # add 'USA', ensure 'location', 'age', 'bark' is a category in
+                # at least one of the members
+                collection.categories.add(location='USA')
+                assert len(collection.categories) == 1
+                for key in ['location', 'age', 'bark']:
+                    assert key in collection.categories.any
+                # ensure 'age' and 'bark' are each not categories for all
+                # members in collection
+                assert 'age' not in collection.categories
+                assert 'bark' not in collection.categories
+
+                # remove 'bark', test for any instance of 'bark' in the
+                # collection
+                collection.categories.remove('bark')
+                assert len(collection.categories) == 1
+                for key in ['location', 'age']:
+                    assert key in collection.categories.any
+                assert 'bark' not in collection.categories.any
+
+                # remove 'age', test that 'age' is not a category for each
+                # member in collection
+                collection.categories.remove('age')
+                for member in collection:
+                    assert 'age' not in member.categories
+                # test that 'age' is not a category of this collection
+                assert 'age' not in collection.categories.any
 
         def test_categories_set_behavior(self, collection, testtreant,
                                          testgroup, tmpdir):

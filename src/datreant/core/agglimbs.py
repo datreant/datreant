@@ -164,8 +164,8 @@ class AggCategories(AggLimb):
         else:
             out = agg + '\n'
             out = out + majsep * seplength + '\n'
-            for key in categories.keys():
-                out = out + "'{}': '{}'\n".format(key, categories[key])
+            for key, value in categories.items():
+                out = out + "'{}': '{}'\n".format(key, value)
         return out
 
     def __getitem__(self, keys):
@@ -188,8 +188,23 @@ class AggCategories(AggLimb):
 
         Parameters
         ----------
-        keys
-            Key(s) of value(s) to return.
+        keys : str, list of str, set of str
+            Key(s) of Categories in this collection.
+
+        Returns
+        -------
+        list, list of list, dict of list
+            Values for the (single) specified category when *keys* is str.
+
+            Groupings of values, each grouping a list, where the first grouping
+            contains the values for all members of the collection corresponding
+            to the first value in *keys*, the second grouping contains values
+            for all members of the collection corresponding the second value in
+            *keys*, etc. when *keys* is a list of str.
+
+            Values in the dict corresponding to each of the provided *keys*
+            is a grouping (list) of Treants that have the Category specified by
+            that key when *keys* is a set of str.
         """
         keys_type = type(keys)
         if isinstance(keys_type, str):
@@ -210,7 +225,7 @@ class AggCategories(AggLimb):
 
         Parameters
         ----------
-        key
+        key : str
             Key for the category whose value should be set to *value*.
         value
             The value of the category specified by *key*
@@ -239,39 +254,36 @@ class AggCategories(AggLimb):
 
     @property
     def any(self):
-        """List Categories present among at least one Treant in collection.
+        """Get Categories present among at least one Treant in collection.
 
         Returns
         -------
-        list
+        dict
             All unique Categories among members.
         """
-        cats = [set(member.categories) for member in self._collection]
-        out = set.union(*cats)
+        keys = [set(member.categories.keys()) for member in self._collection]
+        everykey = set.union(*keys)
 
-        out = list(out)
-        out.sort()
-
-        return out
+        return {k: [m.categories[k] if k in m.categories else None
+                for m in self._collection]
+                for k in everykey}
 
     @property
     def all(self):
-        """List Categories common to all Treants in collection.
+        """Get Categories common to all Treants in collection.
 
         Returns
         -------
-        list
+        dict
             Categories common to all members.
         """
-        cats = [set(member.categories) for member in self._collection]
-        out = set.intersection(*cats)
+        keys = [set(member.categories.keys()) for member in self._collection]
+        sharedkeys = set.intersection(*keys)
 
-        out = list(out)
-        out.sort()
+        return {k: [m.categories[k] if k in m.categories else None
+                for m in self._collection]
+                for k in sharedkeys}
 
-        return out
-
-    # FIXX
     def add(self, *categorydicts, **categories):
         """Add any number of categories to each Treant in collection.
 
@@ -363,14 +375,14 @@ class AggCategories(AggLimb):
 
         Returns
         -------
-        list of Treant
+        list of Treant, list of list of Treant, dict of list of Treant
             Treants with the specified (single) category when *keys* is str.
-        list of list of Treant
+
             Groupings of Treants, each grouping a list of Treants, where the
             first grouping contains Treants with the Category specified by the
             first value in *keys*, the second grouping contains Treants for the
             second value in *keys*, etc. when *keys* is a list of str.
-        dict of list of Treant
+
             Values in the dict corresponding to each of the provided *keys*
             is a grouping (list) of Treants that have the Category specified by
             that key when *keys* is a set of str.
