@@ -235,6 +235,7 @@ class View(CollectionMixin):
 
         """
         from .trees import Veg, Leaf, Tree
+        from .treants import Treant
 
         outconts = list()
         for veg in vegs:
@@ -242,8 +243,10 @@ class View(CollectionMixin):
                 pass
             elif isinstance(veg, (list, tuple)):
                 self.add(*veg)
-            elif isinstance(veg, View):
+            elif isinstance(veg, (View, Bundle)):
                 self.add(*list(veg))
+            elif isinstance(veg, Treant):
+                outconts.append(veg.tree)
             elif isinstance(veg, Veg):
                 outconts.append(veg)
             elif (isinstance(veg, string_types) and
