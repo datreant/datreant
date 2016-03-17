@@ -578,26 +578,39 @@ class TestBundle:
                 collection.add(t1, t2)
 
                 keys_list = collection.categories.keys()
-                for key in ['age', 'bark']:
-                    assert key in keys_list[0]
-                assert 'type' not in keys_list[0]
-                assert 'nickname' not in keys_list[0]
+                for keys in keys_list:
+                    keys.sort()
 
-                for key in ['age', 'bark']:
-                    assert key in keys_list[1]
-                assert 'type' not in keys_list[1]
-                assert 'nickname' not in keys_list[1]
-
-                for key in ['age', 'bark', 'type']:
-                    assert key in keys_list[2]
-                assert 'nickname' not in keys_list[2]
-
-                for key in ['age', 'bark', 'type', 'nickname']:
-                    assert key in keys_list[3]
+                assert keys_list[0] == ['age', 'bark']
+                assert keys_list[1] == ['age', 'bark']
+                assert keys_list[2] == ['age', 'bark', 'type']
+                assert keys_list[3] == ['age', 'bark', 'nickname', 'type']
 
         def test_categories_values(self, collection, testtreant, testgroup,
                                    tmpdir):
-            pass
+            with tmpdir.as_cwd():
+                # add a test Treant and a test Group to collection
+                collection.add(testtreant, testgroup)
+                # add 'age' and 'bark' as categories of this collection
+                collection.categories.add({'age': 42, 'bark': 'smooth'})
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('sequoia')
+                t1.categories.add({'age': 'seedling', 'bark': 'rough',
+                                   'type': 'deciduous'})
+                t2.categories.add({'age': 'adult', 'bark': 'rough',
+                                   'type': 'evergreen', 'nickname': 'redwood'})
+                collection.add(t1, t2)
+
+                values_list = collection.categories.values()
+                for values in values_list:
+                    values.sort()
+
+                assert values_list[0] == [42, 'smooth']
+                assert values_list[1] == [42, 'smooth']
+                assert values_list[2] == ['deciduous', 'rough', 'seedling']
+                assert values_list[3] == ['adult', 'evergreen', 'redwood',
+                        'rough']
 
         def test_categories_groupby(self, collection, testtreant, testgroup,
                                     tmpdir):
