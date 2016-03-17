@@ -341,9 +341,6 @@ class AggCategories(AggLimb):
             lists for each member has the same order as the members in the
             collection.
         """
-        # return all category keys as a set
-        # return {k for m in self._collection for k in m.categories.keys()}
-        # return all category keys as a list of key lists
         return [member.categories.keys() for member in self._collection]
 
     def values(self):
@@ -356,9 +353,6 @@ class AggCategories(AggLimb):
             the lists for each member has the same order as the members in the
             collection.
         """
-        # return all category values as a set
-        # return {v for m in self._collection for v in m.categories.values()}
-        # return all category values as a list of value lists
         return [member.categories.values() for member in self._collection]
 
     def groupby(self, keys):
