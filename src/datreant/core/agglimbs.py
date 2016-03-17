@@ -206,15 +206,18 @@ class AggCategories(AggLimb):
             is a grouping (list) of Treants that have the Category specified by
             that key when *keys* is a set of str.
         """
-        keys_type = type(keys)
-        if isinstance(keys_type, str):
-            return [memb.categories[key] for memb in self._collection]
-        elif isinstance(keys_type, list):
-            return [[memb.categories[key] for memb in self._collection]
-                    for key in keys]
-        elif isinstance(keys_type, set):
-            return {key: [memb.categories[key] for memb in self._collection]
-                    for key in keys}
+        if isinstance(keys, str):
+            k = keys
+            return [m.categories[k] if k in m.categories else None
+                    for m in self._collection]
+        elif isinstance(keys, list):
+            return [[m.categories[k] if k in m.categories else None
+                    for m in self._collection]
+                    for k in keys]
+        elif isinstance(keys, set):
+            return {k: [m.categories[k] if k in m.categories else None
+                    for m in self._collection]
+                    for k in keys}
         else:
             raise TypeError("Invalid argument; argument must be" +
                             " a string, list of strings, or set" +
@@ -327,6 +330,7 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.clear()
 
+    # FIX - make default behavior to return a list of lists of keys
     def keys(self):
         """Get the unique Categories (keys) of all Treants in collection.
 
@@ -334,9 +338,17 @@ class AggCategories(AggLimb):
         -------
         set
             All unique keys present among all Categories in collection.
+        list of list
+            Keys for each member are returned as a list, where the list of the
+            lists for each member has the same order as the members in the
+            collection.
         """
-        return {member.categories.keys() for member in self._collection}
+        # return all category keys as a set
+        return {k for m in self._collection for k in m.categories.keys()}
+        # return all category keys as a list of key lists
+        return [member.categories.keys() for member in self._collection]
 
+    # FIX - make default behavior to return a list of lists of keys
     def values(self):
         """Get the unique category values of all Treants in collection.
 
@@ -344,8 +356,15 @@ class AggCategories(AggLimb):
         -------
         set
             All unique values present among all Categories in collection.
+        list of list
+            Values for each member are returned as a list, where the list of
+            the lists for each member has the same order as the members in the
+            collection.
         """
-        return {member.categories.values() for member in self._collection}
+        # return all category values as a set
+        return {v for m in self._collection for v in m.categories.values()}
+        # return all category values as a list of value lists
+        return [member.categories.values() for member in self._collection]
 
     def groupby(self, keys):
         """Return groupings of Treants based on Categories.

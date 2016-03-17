@@ -327,29 +327,24 @@ class TestBundle:
         """Test behavior of manipulating categories collectively.
 
         """
-        def test_categories_setitem(self, collection, testtreant, testgroup,
-                                    tmpdir):
-            pass
-
-        def test_categories_getitem(self, collection, testtreant, testgroup,
-                                    tmpdir):
-            pass
-
         def test_add_categories(self, collection, testtreant, testgroup,
                                 tmpdir):
             with tmpdir.as_cwd():
-                t1 = dtr.Treant('hickory')
-
+                # add a test Treant and a test Group to collection
                 collection.add(testtreant, testgroup)
                 assert len(collection.categories) == 0
 
+                # add 'age' and 'bark' as categories of this collection
                 collection.categories.add({'age': 42}, bark='smooth')
                 assert len(collection.categories) == 2
 
                 for member in collection:
                     assert member.categories['age'] == 42
                     assert member.categories['bark'] == 'smooth'
+                for key in ['age', 'bark']:
+                    assert key in collection.categories.any
 
+                t1 = dtr.Treant('hickory')
                 t1.categories.add(bark='shaggy', species='ovata')
                 collection.add(t1)
                 assert len(collection.categories) == 1
@@ -363,23 +358,88 @@ class TestBundle:
                 for member in collection:
                     assert member.categories['location'] == 'USA'
 
+        def test_categories_getitem(self, collection, testtreant, testgroup,
+                                    tmpdir):
+            with tmpdir.as_cwd():
+                # add a test Treant and a test Group to collection
+                collection.add(testtreant, testgroup)
+                # add 'age' and 'bark' as categories of this collection
+                collection.categories.add({'age': 42, 'bark': 'smooth'})
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('sequoia')
+                t1.categories.add({'age': 'seedling', 'bark': 'rough',
+                                   'type': 'deciduous'})
+                t2.categories.add({'age': 'adult', 'bark': 'rough',
+                                   'type': 'evergreen', 'nickname': 'redwood'})
+                collection.add(t1, t2)
+                assert len(collection.categories) == 2
+                assert len(collection.categories.any) == 4
+
+                # test values for each category in the collection
+                age_list = [42, 42, 'seedling', 'adult']
+                assert age_list == collection.categories['age']
+                bark_list = collection.categories['bark']
+                assert bark_list == ['smooth', 'smooth', 'rough', 'rough']
+                type_list = collection.categories['type']
+                assert type_list == [None, None, 'deciduous', 'evergreen']
+                nick_list = collection.categories['nickname']
+                assert nick_list == [None, None,  None, 'redwood']
+
+                # test list of keys as input
+                cat_list = collection.categories[['age', 'type']]
+                assert cat_list == [age_list, type_list]
+
+                # test set of keys as input
+                cat_set = collection.categories[{'bark', 'nickname'}]
+                assert cat_set == {'bark': bark_list, 'nickname': nick_list}
+
+        def test_categories_setitem(self, collection, testtreant, testgroup,
+                                    tmpdir):
+            with tmpdir.as_cwd():
+                # add a test Treant and a test Group to collection
+                collection.add(testtreant, testgroup)
+                # add 'age' and 'bark' as categories of this collection
+                collection.categories.add({'age': 42, 'bark': 'smooth'})
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('sequoia')
+                t1.categories.add({'age': 'seedling', 'bark': 'rough',
+                                   'type': 'deciduous'})
+                t2.categories.add({'age': 'adult', 'bark': 'rough',
+                                   'type': 'evergreen', 'nickname': 'redwood'})
+                collection.add(t1, t2)
+
+                # test setting a category when all members have it
+                for value in collection.categories['age']:
+                    assert value in [42, 42, 'seedling', 'adult']
+                collection.categories['age'] = 'old'
+                for value in collection.categories['age']:
+                    assert value in ['old', 'old', 'old', 'old']
+
+                # test setting a new category (no members have it)
+                assert 'location' not in collection.categories.any
+                collection.categories['location'] = 'USA'
+                for value in collection.categories['location']:
+                    assert value in ['USA', 'USA', 'USA', 'USA']
+
+                # test setting a category that only some members have
+                assert 'nickname' in collection.categories.any
+                assert 'nickname' not in collection.categories.all
+                collection.categories['nickname'] = 'friend'
+                for value in collection.categories['nickname']:
+                    assert value in ['friend', 'friend', 'friend', 'friend']
+
         def test_categories_all(self, collection, testtreant, testgroup,
                                 tmpdir):
             with tmpdir.as_cwd():
-                t1 = dtr.Treant('hickory')
-
                 # add a test Treant and a test Group to collection
                 collection.add(testtreant, testgroup)
-                assert len(collection.categories) == 0
-
                 # add 'age' and 'bark' as categories of this collection
                 collection.categories.add({'age': 42}, bark='bare')
-                assert len(collection.categories) == 2
-                for member in collection:
-                    assert member.categories['age'] == 42
-                    assert member.categories['bark'] == 'bare'
 
                 # add categories to 'hickory' Treant, then add to collection
+                t1 = dtr.Treant('hickory')
                 t1.categories.add(bark='shaggy', species='ovata')
                 collection.add(t1)
                 # check the contents of 'bark', ensure 'age' and 'species' are not
@@ -414,20 +474,15 @@ class TestBundle:
         def test_categories_any(self, collection, testtreant, testgroup,
                                 tmpdir):
             with tmpdir.as_cwd():
-                t1 = dtr.Treant('hickory')
-
                 # add a test Treant and a test Group to collection
                 collection.add(testtreant, testgroup)
-                assert len(collection.categories) == 0
 
                 # add 'age' and 'bark' as categories of this collection
                 collection.categories.add({'age': 42}, bark='smooth')
                 assert len(collection.categories.any) == 2
-                for member in collection:
-                    assert member.categories['age'] == 42
-                    assert member.categories['bark'] == 'smooth'
 
                 # add categories to 'hickory' Treant, then add to collection
+                t1 = dtr.Treant('hickory')
                 t1.categories.add(bark='shaggy', species='ovata')
                 collection.add(t1)
                 # check the contents of 'bark', ensure 'age' and 'species' are
@@ -475,12 +530,8 @@ class TestBundle:
                 t2 = dtr.Treant('sequoia')
 
                 collection.add(t1, t2)
-                assert len(collection.categories) == 0
 
                 collection.categories.add({'age': 'sprout'}, bark='rough')
-                assert len(collection.categories) == 2
-                for key in ['age', 'bark']:
-                    assert key in collection.categories.any
 
                 collection.add(testtreant, testgroup)
                 assert len(collection.categories) == 0
