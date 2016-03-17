@@ -9,25 +9,6 @@ import fnmatch
 from . import _TREANTS
 
 
-def get(*treants):
-    """Get instances of the given Treants.
-
-    Parameters
-    ----------
-    treants : str
-        Filesystem paths to Treants in the filesystem, or Treant instances,
-        to return new Treant instances for.
-
-    Returns
-    -------
-    instances : Bundle
-        Bundle of new instances for each Treant given.
-
-    """
-    from .collections import Bundle
-    return Bundle(*treants)
-
-
 def discover(dirpath='.', depth=None, treantdepth=None):
     """Find all Treants within given directory, recursively.
 

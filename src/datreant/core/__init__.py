@@ -20,7 +20,7 @@ _AGGTREELIMBS = dict()
 _AGGLIMBS = dict()
 
 # Bring some often used objects into the current namespace
-from .manipulators import get, discover
+from .manipulators import discover
 from .treants import Treant, Group
 from .trees import Veg, Leaf, Tree
 from .collections import View, Bundle

@@ -47,65 +47,25 @@ def glob_treant(treant):
     return paths
 
 
-class TreantRec(object):
-    def __init__(self, filepath):
-        self.abspath = os.path.abspath(os.path.dirname(filepath))
-        _basesplit = (os.path.basename(filepath)).split(os.extsep)
-
-        self.treanttype = _basesplit[0]
-        self.uuid = _basesplit[1]
-
-
-def path2record(*paths):
-    """Return Treants from directories or full paths containing Treant
-        state files.
-
-    *Note*: If there are multiple state files in a given directory, Treants
-            will be returned for each.
-
-    :Arguments:
-        *paths*
-            directories containing state files or full paths to state files to
-            load Treants from; if ``None`` is an element, then ``None``
-            returned in output list
-
-    :Returns:
-        *treants*
-            list of Treants obtained from directories; ``None`` as an
-            element indicates that ``None`` was present in the list of paths
-
-    """
-    treantrecs = list()
-    for path in paths:
-        if path is None:
-            treantrecs.append(None)
-        elif os.path.isdir(path):
-            files = glob_treant(path)
-            for item in files:
-                treantrecs.append(TreantRec(item))
-        elif os.path.exists(path):
-            treantrecs.append(TreantRec(path))
-
-    return treantrecs
-
-
 def path2treant(*paths):
     """Return Treants from directories or full paths containing Treant
         state files.
 
-    *Note*: If there are multiple state files in a given directory, Treants
-            will be returned for each.
+    .. note:: If there are multiple state files in a given directory, Treants
+              will be returned for each.
 
-    :Arguments:
-        *paths*
-            directories containing state files or full paths to state files to
-            load Treants from; if ``None`` is an element, then ``None``
-            returned in output list
+    Parameters
+    ----------
+    paths : list
+        List of directories containing state files or full paths to state files
+        to load Treants from; if ``None`` is an element, then ``None`` returned
+        in output list.
 
-    :Returns:
-        *treants*
-            list of Treants obtained from directories; ``None`` as an
-            element indicates that ``None`` was present in the list of paths
+    Returns
+    -------
+    treants : list
+        List of Treants obtained from directories; ``None`` as an element
+        indicates that ``None`` was present in the list of paths.
 
     """
     from . import _TREANTS
@@ -231,8 +191,6 @@ class Foxhound(object):
                     uuids.remove(item)
 
         if 'relpath' in self.paths and uuids:
-            import pdb
-            pdb.set_trace()
             # get uuids for which paths haven't been found
             for path in self.paths['relpath']:
                 found = []
@@ -382,8 +340,6 @@ class Foxhound(object):
         path = os.path.abspath(os.curdir)
         prev = None
         while prev != path and uuids:
-            import pdb
-            pdb.set_trace()
 
             # if search runs over timeout, call it off
             if ((time.time() - currtime) > self.timeout and
