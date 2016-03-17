@@ -379,20 +379,20 @@ class TestBundle:
                 # test values for each category in the collection
                 age_list = [42, 42, 'seedling', 'adult']
                 assert age_list == collection.categories['age']
-                bark_list = collection.categories['bark']
-                assert bark_list == ['smooth', 'smooth', 'rough', 'rough']
-                type_list = collection.categories['type']
-                assert type_list == [None, None, 'deciduous', 'evergreen']
-                nick_list = collection.categories['nickname']
-                assert nick_list == [None, None,  None, 'redwood']
+                bark_list = ['smooth', 'smooth', 'rough', 'rough']
+                assert bark_list == collection.categories['bark']
+                type_list = [None, None, 'deciduous', 'evergreen']
+                assert type_list == collection.categories['type']
+                nick_list = [None, None,  None, 'redwood']
+                assert nick_list == collection.categories['nickname']
 
                 # test list of keys as input
-                cat_list = collection.categories[['age', 'type']]
-                assert cat_list == [age_list, type_list]
+                cat_list = [age_list, type_list]
+                assert cat_list == collection.categories[['age', 'type']]
 
                 # test set of keys as input
-                cat_set = collection.categories[{'bark', 'nickname'}]
-                assert cat_set == {'bark': bark_list, 'nickname': nick_list}
+                cat_set = {'bark': bark_list, 'nickname': nick_list}
+                assert cat_set == collection.categories[{'bark', 'nickname'}]
 
         def test_categories_setitem(self, collection, testtreant, testgroup,
                                     tmpdir):
@@ -564,9 +564,7 @@ class TestBundle:
         def test_categories_keys(self, collection, testtreant, testgroup,
                                  tmpdir):
             with tmpdir.as_cwd():
-                # add a test Treant and a test Group to collection
                 collection.add(testtreant, testgroup)
-                # add 'age' and 'bark' as categories of this collection
                 collection.categories.add({'age': 42, 'bark': 'smooth'})
 
                 t1 = dtr.Treant('maple')
@@ -589,9 +587,7 @@ class TestBundle:
         def test_categories_values(self, collection, testtreant, testgroup,
                                    tmpdir):
             with tmpdir.as_cwd():
-                # add a test Treant and a test Group to collection
                 collection.add(testtreant, testgroup)
-                # add 'age' and 'bark' as categories of this collection
                 collection.categories.add({'age': 42, 'bark': 'smooth'})
 
                 t1 = dtr.Treant('maple')
@@ -614,4 +610,34 @@ class TestBundle:
 
         def test_categories_groupby(self, collection, testtreant, testgroup,
                                     tmpdir):
-            pass
+            with tmpdir.as_cwd():
+                collection.add(testtreant, testgroup)
+                collection.categories.add({'age': 42, 'bark': 'smooth'})
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('sequoia')
+                t1.categories.add({'age': 'seedling', 'bark': 'rough',
+                                   'type': 'deciduous'})
+                t2.categories.add({'age': 'adult', 'bark': 'rough',
+                                   'type': 'evergreen', 'nickname': 'redwood'})
+                collection.add(t1, t2)
+
+                # test values for each category in the collection
+                age_list = [testtreant, testgroup, t1, t2]
+                assert age_list == collection.categories.groupby('age')
+                bark_list = [testtreant, testgroup, t1, t2]
+                assert bark_list == collection.categories.groupby('bark')
+                type_list = [t1, t2]
+                assert type_list == collection.categories.groupby('type')
+                nick_list = [t2]
+                assert nick_list == collection.categories.groupby('nickname')
+
+                # test list of keys as input
+                cat_list = [age_list, type_list]
+                assert cat_list == collection.categories.groupby(
+                        ['age', 'type'])
+
+                # test set of keys as input
+                cat_set = {'bark': bark_list, 'nickname': nick_list}
+                assert cat_set == collection.categories.groupby(
+                        {'bark', 'nickname'})

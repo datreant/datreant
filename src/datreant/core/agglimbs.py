@@ -404,12 +404,12 @@ class AggCategories(AggLimb):
         collection = self._collection
         if isinstance(keys, str):
             k = keys
-            return [m for m in collection if m.categories[k] is not None]
+            return [m for m in collection if k in m.categories]
         elif isinstance(keys, list):
-            return [[m for m in collection if m.categories[k] is not None]
+            return [[m for m in collection if k in m.categories]
                     for k in keys]
         elif isinstance(keys, set):
-            return {k: [m for m in collection if m.categories[k] is not None]
+            return {k: [m for m in collection if k in m.categories]
                     for k in keys}
         else:
             raise TypeError("Invalid argument; argument must be" +
