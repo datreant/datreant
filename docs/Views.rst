@@ -54,7 +54,9 @@ returns a View.
 
 A View is an abstract Tree...kind of
 ====================================
-A View 
+A View is roughly duck-typed to behave like an abstract Tree, in which the
+contents of all its member Trees are manipulatable as if the View itself
+was a Tree with those contents.
 
 
 
