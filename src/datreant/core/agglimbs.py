@@ -4,6 +4,7 @@ AggLimbs are limbs specifically built for collections, in particular
 limbs but serve as aggregators over collections of them.
 
 """
+import itertools
 from six import string_types, with_metaclass
 
 from . import filesystem
@@ -188,8 +189,8 @@ class AggCategories(AggLimb):
 
         Parameters
         ----------
-        keys : str, list of str, set of str
-            Key(s) of Categories in this collection.
+        keys
+            Valid key(s) of Categories in this collection.
 
         Returns
         -------
@@ -206,40 +207,63 @@ class AggCategories(AggLimb):
             is a grouping (list) of Treants that have the Category specified by
             that key when *keys* is a set of str.
         """
-        collection = self._collection
-        if isinstance(keys, str):
+        if keys is None:
+            return
+
+        members = self._collection
+        elif isinstance(keys, (int, float, string_types, bool)):
             k = keys
             return [m.categories[k] if k in m.categories else None
-                    for m in collection]
+                    for m in members]
         elif isinstance(keys, list):
             return [[m.categories[k] if k in m.categories else None
-                    for m in collection]
+                    for m in members]
                     for k in keys]
         elif isinstance(keys, set):
             return {k: [m.categories[k] if k in m.categories else None
-                    for m in collection]
+                    for m in members]
                     for k in keys}
         else:
             raise TypeError("Invalid argument; argument must be" +
                             " a string, list of strings, or set" +
                             " of strings.")
 
-    # FIX -  should be able to take a sequence for value (tuple, list) that
-    # matches order of Treants in collection
-    # If None is a value in the value, then treat that as an indication to
-    # delete that value
-    def __setitem__(self, key, value):
-        """Set the value of a category for all Treants in the collection.
+    def __setitem__(self, key, values):
+        """Set the value of Categories for each Treant in the collection.
+
+        If *values* is not a sequence and is a valid category type (int,
+        string_types, bool, float), then it is broadcasted over all members of
+        the collection for the category specified by *key*.
+
+        If *values* is a sequence, it must have the same length as the number
+        of members in the collection so that, for each member, the value
+        assigned to its category (specified by *key*) is the element in
+        *values* whose index matches the index of that member in the
+        collection.
 
         Parameters
         ----------
-        key : str
-            Key for the category whose value should be set to *value*.
-        value
-            The value of the category specified by *key*
+        key
+            Valid key for the category whose value should be set to *values*.
+        values
+            Value(s) for the category specified by *key*.
         """
-        for member in self._collection:
-            member.categories.add({key: value})
+        if values is None:
+            return
+
+        members = self._collection
+        if isinstance(keys, (int, float, string_types, bool)):
+            v = values
+            for m in members:
+                m.categories.add({key: v})
+        elif isinstance(values, (list, tuple)):
+            if len(values) != len(members):
+                raise ValueError("Invalid argument; values must be a list of" +
+                                 " the same length as the number of members" +
+                                 " in the collection.")
+            for m in members:
+                for v in values if v is not None:
+                    m.categories.add({key: v})
 
     def __delitem__(self, category):
         """Remove *category* from each Treant in collection.
@@ -363,8 +387,8 @@ class AggCategories(AggLimb):
     # are now the (combinations of) category values and whose corresponding
     # values are Bundles of the Treants that have those keys as values of the
     # inputted key
-    def groupby(self, keys):``
-        """Return groupings of Treants based on Categories.
+    def groupby(self, keys):
+        """Return groupings of Treants based on values of Categories.
 
         Groups Treants according to a given key, list of keys, or set of keys.
         Mirrors the behavior of *__getitem()__*, where the output type is
@@ -386,12 +410,12 @@ class AggCategories(AggLimb):
 
         Parameters
         ----------
-        keys : str, list of str, set of str
-            Key(s) of Categories in this collection.
+        keys : int, float, string_types, bool, list, set
+            Valid key(s) of Categories in this collection.
 
         Returns
         -------
-        list of Treant, list of list of Treant, dict of list of Treant
+        dict of Bundle
             Treants with the specified (single) category when *keys* is str.
 
             Groupings of Treants, each grouping a list of Treants, where the
@@ -403,17 +427,22 @@ class AggCategories(AggLimb):
             is a grouping (list) of Treants that have the Category specified by
             that key when *keys* is a set of str.
         """
-        collection = self._collection
-        if isinstance(keys, str):
+        if keys is None:
+            return
+
+        members = self._collection
+        elif isinstance(keys, (int, float, string_types, bool)):
             k = keys
-            return [m for m in collection if k in m.categories]
-        elif isinstance(keys, list):
-            return [[m for m in collection if k in m.categories]
-                    for k in keys]
-        elif isinstance(keys, set):
-            return {k: [m for m in collection if k in m.categories]
-                    for k in keys}
+            groups = dict.fromkeys(members.categories[k], Bundle())
+            for m in members if k in m.categories:
+                groups[k].add(m)
+        elif isinstance(keys, (list, set)):
+            groupkeys = set(itertools.product(*collection.categories[keys]))
+            groups = dict.fromkeys(groupkeys, Bundle())
+            for gk in groupkeys if None not in gk:
+                for m in members if True:# gk (the values) are present for member
+                    groups[gk].add(m)
         else:
-            raise TypeError("Invalid argument; argument must be" +
-                            " a string, list of strings, or set" +
-                            " of strings.")
+            raise TypeError("Invalid argument; keys must be a valid Category" +
+                            " type (i.e. int, float, bool, string_types, or" +
+                            " a list or set thereof.")
