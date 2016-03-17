@@ -327,6 +327,14 @@ class TestBundle:
         """Test behavior of manipulating categories collectively.
 
         """
+        def test_categories_setitem(self, collection, testtreant, testgroup,
+                                    tmpdir):
+            pass
+
+        def test_categories_getitem(self, collection, testtreant, testgroup,
+                                    tmpdir):
+            pass
+
         def test_add_categories(self, collection, testtreant, testgroup,
                                 tmpdir):
             with tmpdir.as_cwd():
@@ -354,10 +362,6 @@ class TestBundle:
                 assert len(collection.categories.any) == 4
                 for member in collection:
                     assert member.categories['location'] == 'USA'
-
-        def test_categories_setting(self, collection, testtreant, testgroup,
-                                    tmpdir):
-            pass
 
         def test_categories_all(self, collection, testtreant, testgroup,
                                 tmpdir):
@@ -501,7 +505,7 @@ class TestBundle:
                     assert key in collection.categories.any
                 assert 'bark' not in collection.categories.any
 
-                # remove 'age', test that 'age' is not a category for each
+                # remove 'age', test that 'age' is not a category for any
                 # member in collection
                 collection.categories.remove('age')
                 for member in collection:
@@ -509,10 +513,14 @@ class TestBundle:
                 # test that 'age' is not a category of this collection
                 assert 'age' not in collection.categories.any
 
-        def test_categories_set_behavior(self, collection, testtreant,
-                                         testgroup, tmpdir):
+        def test_categories_keys(self, collection, testtreant, testgroup,
+                                 tmpdir):
             pass
 
-        def test_categories_getitem(self, collection, testtreant, testgroup,
+        def test_categories_values(self, collection, testtreant, testgroup,
+                                   tmpdir):
+            pass
+
+        def test_categories_groupby(self, collection, testtreant, testgroup,
                                     tmpdir):
             pass
