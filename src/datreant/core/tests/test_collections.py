@@ -476,7 +476,6 @@ class TestBundle:
             with tmpdir.as_cwd():
                 # add a test Treant and a test Group to collection
                 collection.add(testtreant, testgroup)
-
                 # add 'age' and 'bark' as categories of this collection
                 collection.categories.add({'age': 42}, bark='smooth')
                 assert len(collection.categories.any) == 2
@@ -528,9 +527,7 @@ class TestBundle:
             with tmpdir.as_cwd():
                 t1 = dtr.Treant('maple')
                 t2 = dtr.Treant('sequoia')
-
                 collection.add(t1, t2)
-
                 collection.categories.add({'age': 'sprout'}, bark='rough')
 
                 collection.add(testtreant, testgroup)
@@ -566,7 +563,37 @@ class TestBundle:
 
         def test_categories_keys(self, collection, testtreant, testgroup,
                                  tmpdir):
-            pass
+            with tmpdir.as_cwd():
+                # add a test Treant and a test Group to collection
+                collection.add(testtreant, testgroup)
+                # add 'age' and 'bark' as categories of this collection
+                collection.categories.add({'age': 42, 'bark': 'smooth'})
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('sequoia')
+                t1.categories.add({'age': 'seedling', 'bark': 'rough',
+                                   'type': 'deciduous'})
+                t2.categories.add({'age': 'adult', 'bark': 'rough',
+                                   'type': 'evergreen', 'nickname': 'redwood'})
+                collection.add(t1, t2)
+
+                keys_list = collection.categories.keys()
+                for key in ['age', 'bark']:
+                    assert key in keys_list[0]
+                assert 'type' not in keys_list[0]
+                assert 'nickname' not in keys_list[0]
+
+                for key in ['age', 'bark']:
+                    assert key in keys_list[1]
+                assert 'type' not in keys_list[1]
+                assert 'nickname' not in keys_list[1]
+
+                for key in ['age', 'bark', 'type']:
+                    assert key in keys_list[2]
+                assert 'nickname' not in keys_list[2]
+
+                for key in ['age', 'bark', 'type', 'nickname']:
+                    assert key in keys_list[3]
 
         def test_categories_values(self, collection, testtreant, testgroup,
                                    tmpdir):
