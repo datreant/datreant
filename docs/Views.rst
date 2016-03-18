@@ -51,17 +51,34 @@ As well as indexing by name ::
 Note that since the name of a file or directory need not be unique, this always
 returns a View.
 
+.. _Views_from_Tree:
+
+Views from a Tree
+=================
+A common use of a View is to introspect the children of a Tree. If we have
+a look inside one of our directories ::
+
+    > ls moe/
+    about_moe.txt  more_moe.pdf  sprout/
+
+We find two files and a directory. We can get at the files with ::
+
+    >>> moe = v['moe'][0]
+    >>> moe.childleaves
+
+
 
 A View is an abstract Tree...kind of
 ====================================
 A View is roughly duck-typed to behave like an abstract Tree, in which the
 contents of all its member Trees are manipulatable as if the View itself
-was a Tree with those contents.
+was a Tree with those contents. For example, we can directly get all
+directories and files within each Tree that match a glob pattern ::
+
+    >>> 
 
 
 
-Views from a Tree
-=================
 
 Reference: View
 ===============

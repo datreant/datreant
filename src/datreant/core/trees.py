@@ -442,11 +442,12 @@ class Tree(Veg):
         return self
 
     def make(self):
-        """Make the directory if it doesn't exit. Equivalent to :meth:`makedirs`.
+        """Make the directory if it doesn't exist. Equivalent to :meth:`makedirs`.
 
-        :Returns:
-            *tree*
-                this tree
+        Returns
+        -------
+        Tree
+            This Tree.
 
         """
         self.makedirs()

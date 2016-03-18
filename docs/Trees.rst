@@ -92,7 +92,8 @@ collection of Trees and/or Leaves in the Tree with globbing ::
     <View([<Tree: 'sprout/a/.hidden/'>, <Tree: 'sprout/a/new/'>])>
 
 See :ref:`Views` for more about the **View** object, and how it can be used to
-manipulate many Trees and Leaves as a single logical unit.
+manipulate many Trees and Leaves as a single logical unit. More details on
+how to introspect Trees with Views can be found in :ref:`Views_from_Tree`.
 
 
 File operations with Leaves

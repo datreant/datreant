@@ -312,13 +312,6 @@ class View(CollectionMixin):
         return View([member for member in self if isinstance(member, Leaf)])
 
     @property
-    def children(self):
-        """A View giving all children from each Tree in the View.
-
-        """
-        return View([member.children for member in self.trees])
-
-    @property
     def abspaths(self):
         """List of absolute paths for the members in this View.
 
@@ -408,6 +401,48 @@ class View(CollectionMixin):
         """
         return View([member.glob(pattern) for member in self
                      if isinstance(member, Tree)])
+
+    def make(self):
+        """Make the Trees and Leaves in this View if they don't already exist.
+
+        Returns
+        -------
+        View
+            This View.
+
+        """
+        for member in self:
+            self.make()
+
+        return self
+
+    @property
+    def childleaves(self):
+        """A View giving all child leaves from each Tree in the View.
+
+        """
+        return View([member.childleaves for member in self.trees])
+
+    @property
+    def childtrees(self):
+        """A View giving all child trees from each Tree in the View.
+
+        """
+        return View([member.childtrees for member in self.trees])
+
+    @property
+    def childhidden(self):
+        """A View giving all hidden children from each Tree in the View.
+
+        """
+        return View([member.childhidden for member in self.trees])
+
+    @property
+    def children(self):
+        """A View giving all children from each Tree in the View.
+
+        """
+        return View([member.children for member in self.trees])
 
 
 class Bundle(CollectionMixin):
