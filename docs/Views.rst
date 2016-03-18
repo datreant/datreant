@@ -125,6 +125,10 @@ in no change to the View::
     >>> v
     <View([<Tree: 'moe/'>, <Tree: 'larry/'>, <Leaf: 'curly.txt'>])>
 
+    # addition of Trees/Leaves to a View also returns a View
+    >>> v + dtr.Tree('moe')
+    <View([<Tree: 'moe/'>, <Tree: 'larry/'>, <Leaf: 'curly.txt'>])>
+
 But a View does have a sense of order, so we could, for example, meaningfully
 get a View with the order of members reversed::
 
