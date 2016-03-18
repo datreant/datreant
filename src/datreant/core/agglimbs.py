@@ -207,11 +207,10 @@ class AggCategories(AggLimb):
             is a grouping (list) of Treants that have the Category specified by
             that key when *keys* is a set of str.
         """
-        if keys is None:
-            return
+        if keys is None: return None
 
         members = self._collection
-        elif isinstance(keys, (int, float, string_types, bool)):
+        if isinstance(keys, (int, float, string_types, bool)):
             k = keys
             return [m.categories[k] if k in m.categories else None
                     for m in members]
@@ -248,11 +247,10 @@ class AggCategories(AggLimb):
         values
             Value(s) for the category specified by *key*.
         """
-        if values is None:
-            return
+        if values is None: return
 
         members = self._collection
-        if isinstance(keys, (int, float, string_types, bool)):
+        if isinstance(key, (int, float, string_types, bool)):
             v = values
             for m in members:
                 m.categories.add({key: v})
@@ -262,7 +260,8 @@ class AggCategories(AggLimb):
                                  " the same length as the number of members" +
                                  " in the collection.")
             for m in members:
-                for v in values if v is not None:
+                gen = (v for v in values if v is not None)
+                for v in gen:
                     m.categories.add({key: v})
 
     def __delitem__(self, category):
@@ -397,16 +396,11 @@ class AggCategories(AggLimb):
         If *keys* is a string specifying one key (for a single category),
         *groupby()* returns a list of Treants that have that category.
 
-        If *keys* is a list of keys, *groupby()* returns a list of lists whose
-        order corresponds to the order of the elements in *keys*. Each element
-        in *keys* is a key specifying a category; each element in the output is
-        a list of the Treants (in this collection) that have the category
-        specified by that key.
-
-        If *keys* is a set of keys, *groupby()* returns a dict of lists whose
-        keys are the same as those provided in *keys*; the value corresponding
-        to each key in the output is a list of Treants (in this collection)
-        that have the Category corresponding to that key.
+        If *keys* is a list or set of keys, *groupby()* returns a list of lists
+        whose order corresponds to the order of the elements in *keys*. Each
+        element in *keys* is a key specifying a category; each element in the
+        output is a list of the Treants (in this collection) that have the
+        category specified by that key.
 
         Parameters
         ----------
@@ -416,33 +410,34 @@ class AggCategories(AggLimb):
         Returns
         -------
         dict of Bundle
-            Treants with the specified (single) category when *keys* is str.
-
-            Groupings of Treants, each grouping a list of Treants, where the
-            first grouping contains Treants with the Category specified by the
-            first value in *keys*, the second grouping contains Treants for the
-            second value in *keys*, etc. when *keys* is a list of str.
-
-            Values in the dict corresponding to each of the provided *keys*
-            is a grouping (list) of Treants that have the Category specified by
-            that key when *keys* is a set of str.
         """
-        if keys is None:
-            return
+        if keys is None: return None
 
         members = self._collection
-        elif isinstance(keys, (int, float, string_types, bool)):
+        if isinstance(keys, (int, float, string_types, bool)):
+            catvals = members.categories[keys]
+            groupkeys = [v for v in catvals if v is not None]
+            groups = dict.fromkeys(groupkeys)
+            # initialize groups with empty Bundles
+            for k in groupkeys:
+                groups[k] = Bundle()
+
             k = keys
-            groups = dict.fromkeys(members.categories[k], Bundle())
-            for m in members if k in m.categories:
-                groups[k].add(m)
+            gen = ((m, m.categories[k]) for m in members if
+                   k in m.categories and m.categories[k] in groupkeys)
+            for m, catval in gen:
+                groups[catval].add(m)
+
         elif isinstance(keys, (list, set)):
-            groupkeys = set(itertools.product(*collection.categories[keys]))
-            groups = dict.fromkeys(groupkeys, Bundle())
-            for gk in groupkeys if None not in gk:
-                for m in members if True:# gk (the values) are present for member
-                    groups[gk].add(m)
+            cats = zip(collection.categories[keys])
+            groups = dict.fromkeys(set(*cats), Bundle())
+            for k in groups.keys():
+                groups[k] = Bundle()
+
+            for i, m in enumerate(members):
+                groups[cats[i]].add(m)
         else:
             raise TypeError("Invalid argument; keys must be a valid Category" +
                             " type (i.e. int, float, bool, string_types, or" +
                             " a list or set thereof.")
+        return groups
