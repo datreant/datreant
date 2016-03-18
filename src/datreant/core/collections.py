@@ -312,6 +312,13 @@ class View(CollectionMixin):
         return View([member for member in self if isinstance(member, Leaf)])
 
     @property
+    def hidden(self):
+        """A View giving only members that are hidden.
+
+        """
+        return View([member for member in self if member.name[0] == os.extsep])
+
+    @property
     def abspaths(self):
         """List of absolute paths for the members in this View.
 
@@ -415,27 +422,6 @@ class View(CollectionMixin):
             self.make()
 
         return self
-
-    @property
-    def childleaves(self):
-        """A View giving all child leaves from each Tree in the View.
-
-        """
-        return View([member.childleaves for member in self.trees])
-
-    @property
-    def childtrees(self):
-        """A View giving all child trees from each Tree in the View.
-
-        """
-        return View([member.childtrees for member in self.trees])
-
-    @property
-    def childhidden(self):
-        """A View giving all hidden children from each Tree in the View.
-
-        """
-        return View([member.childhidden for member in self.trees])
 
     @property
     def children(self):
