@@ -298,25 +298,50 @@ class View(CollectionMixin):
         return [member.name for member in self]
 
     @property
-    def trees(self):
+    def membertrees(self):
         """A View giving only members that are Trees (or subclasses).
 
         """
         return View([member for member in self if isinstance(member, Tree)])
 
     @property
-    def leaves(self):
+    def memberleaves(self):
         """A View giving only members that are Leaves (or subclasses).
 
         """
         return View([member for member in self if isinstance(member, Leaf)])
 
     @property
-    def hidden(self):
-        """A View giving only members that are hidden.
+    def children(self):
+        """A View of all children within the member Trees.
 
         """
-        return View([member for member in self if member.name[0] == os.extsep])
+        return View([member.children for member in self.trees])
+
+    @property
+    def trees(self):
+        """A View of directories within the member Trees.
+
+        Hidden directories are not included.
+
+        """
+        return View([member.trees for member in self.membertrees])
+
+    @property
+    def leaves(self):
+        """A View of the files within the member Trees.
+
+        Hidden files are not included.
+
+        """
+        return View([member.leaves for member in self.membertrees])
+
+    @property
+    def hidden(self):
+        """A View of the hidden files and directories within the member Trees.
+
+        """
+        return View([member.hidden for member in self.membertrees])
 
     @property
     def abspaths(self):
@@ -351,30 +376,29 @@ class View(CollectionMixin):
     def map(self, function, processes=1, **kwargs):
         """Apply a function to each member, perhaps in parallel.
 
-        A pool of processes is created for *processes* > 1; for example,
-        with 40 members and 'processes=4', 4 processes will be created,
+        A pool of processes is created for `processes` > 1; for example,
+        with 40 members and ``processes=4'`, 4 processes will be created,
         each working on a single member at any given time. When each process
         completes work on a member, it grabs another, until no members remain.
 
-        *kwargs* are passed to the given function when applied to each member
+        `kwargs` are passed to the given function when applied to each member
 
-        :Arguments:
-            *function*
-                function to apply to each member; must take only a single
-                treant instance as input, but may take any number of keyword
-                arguments
+        Parameters
+        ----------
+        function : function
+            Function to apply to each member. Must take only a single Treant
+            instance as input, but may take any number of keyword arguments.
+        processes : int
+            How many processes to use. If 1, applies function to each member in
+            member order in serial.
 
-        :Keywords:
-            *processes*
-                how many processes to use; if 1, applies function to each
-                member in member order
-
-        :Returns:
-            *results*
-                list giving the result of the function for each member,
-                in member order; if the function returns ``None`` for each
-                member, then only ``None`` is returned instead of a list
-            """
+        Returns
+        -------
+        results : list
+            List giving the result of the function for each member, in member
+            order. If the function returns ``None`` for each member, then only
+            ``None`` is returned instead of a list.
+        """
         if processes > 1:
             pool = mp.Pool(processes=processes)
             results = dict()
@@ -436,13 +460,6 @@ class View(CollectionMixin):
             self.make()
 
         return self
-
-    @property
-    def children(self):
-        """A View giving all children from each Tree in the View.
-
-        """
-        return View([member.children for member in self.trees])
 
 
 class Bundle(CollectionMixin):

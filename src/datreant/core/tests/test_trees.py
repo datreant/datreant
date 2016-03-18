@@ -90,8 +90,8 @@ class TestTree(TestVeg):
         v = tree[['a/file', 'a/tree/']]
 
         assert len(v) == 2
-        assert len(v.leaves) == 1
-        assert len(v.trees) == 1
+        assert len(v.memberleaves) == 1
+        assert len(v.membertrees) == 1
 
         with pytest.raises(ValueError):
             tree['lolcats', 'a/not/file']

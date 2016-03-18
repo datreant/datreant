@@ -364,7 +364,7 @@ class Tree(Veg):
 
         """
         from .collections import Bundle
-        return Bundle(self.trees + self.hidden.trees)
+        return Bundle(self.trees + self.hidden.membertrees)
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees matching given globbing
