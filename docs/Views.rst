@@ -51,12 +51,41 @@ As well as indexing by name ::
 Note that since the name of a file or directory need not be unique, this always
 returns a View.
 
+
+Filtering View members
+======================
+Often we might obtain a View of a set of files and directories and then use
+the View itself to filter down into the set of things we actually want. There
+are a number of convenient ways to do this.
+
+Want only the Trees? ::
+
+    >>> v.membertrees
+    <View([<Tree: 'moe/'>, <Tree: 'larry/'>])>
+
+Or only the Leaves? ::
+
+    >>> v.memberleaves
+    <View([<Leaf: 'curly.txt'>])>
+
+We can get more granular and filter members using glob patterns on their names::
+
+    >>> v.filter('*r*')
+    <View([<Tree: 'larry/'>, <Leaf: 'curly.txt'>])>
+
+And since all these properties and methods return Views, we can stack
+operations::
+
+    >>> v.filter('*r*').memberleaves
+    <View([<Leaf: 'curly.txt'>])>
+
+
 .. _Views_from_Tree:
 
 Views from a Tree
 =================
-A common use of a View is to introspect the children of a Tree. If we have
-a look inside one of our directories ::
+A common use of a View is to introspect the children of a Tree. If we have a
+look inside one of our directories ::
 
     > ls moe/
     about_moe.txt  more_moe.pdf  sprout/
@@ -64,20 +93,45 @@ a look inside one of our directories ::
 We find two files and a directory. We can get at the files with ::
 
     >>> moe = v['moe'][0]
-    >>> moe.childleaves
+    >>> moe.leaves
+    <View([<Leaf: 'moe/about_moe.txt'>, <Leaf: 'moe/more_moe.pdf'>])>
 
+
+and the directories with ::
+
+    >>> moe.trees
+    <View([<Tree: 'moe/sprout/'>])>
+
+Both these properties leave out hidden children, since hidden files are often
+hidden to keep them out of the way of most work. But we can get at these
+easily, too::
+
+    >>> moe.hidden
+    <View([<Leaf: 'moe/.hiding_here'>])>
+
+Want all the children? ::
+
+    >>> moe.children
+    <View([<Tree: 'moe/sprout/'>, <Leaf: 'moe/about_moe.txt'>,
+           <Leaf: 'moe/more_moe.pdf'>, <Leaf: 'moe/.hiding_here'>])>
 
 
 A View is an abstract Tree...kind of
 ====================================
-A View is roughly duck-typed to behave like an abstract Tree, in which the
-contents of all its member Trees are manipulatable as if the View itself
-was a Tree with those contents. For example, we can directly get all
-directories and files within each Tree that match a glob pattern ::
+A View is a collection of Trees and Leaves, but it has methods and properties
+that mirror those of Trees and Leaves that allow actions on all of its members
+in aggregate. For example, we can directly get all directories and files within
+each member Tree that match a glob pattern::
 
-    >>> 
+    >>> v.glob('*moe*')
+    <View([<Leaf: 'moe/about_moe.txt'>, <Leaf: 'moe/more_moe.pdf'>])>
 
+Note that this is the equivalent of doing something like::
 
+    >>> dtr.View([tree.glob(pattern) for tree in v.membertrees])
+
+In this way, a View functions analogously for Trees and Leaves as a Bundle does
+for Treants. See :ref:`Bundles` for more on this theme.
 
 
 Reference: View

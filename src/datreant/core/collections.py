@@ -58,13 +58,24 @@ class CollectionMixin(object):
 
 
 class View(CollectionMixin):
-    """A collection of Trees and Leaves.
+    """An ordered set of Trees and Leaves.
 
     """
     _classagglimbs = set()
     _agglimbs = set()
 
     def __init__(self, *vegs, **kwargs):
+        """Generate a new View.
+
+        Parameters
+        ----------
+        vegs : Tree, Leaf, or list
+            Trees and/or Leaves to be added, which may be nested lists of Trees
+            and Leaves. Trees and Leaves can be given as either objects or
+            paths.
+
+        """
+
         self._state = list()
         self.add(*vegs)
 
@@ -463,17 +474,8 @@ class View(CollectionMixin):
 
 
 class Bundle(CollectionMixin):
-    """Non-persistent collection of treants.
+    """An ordered set of Treants.
 
-    A Bundle is basically an indexable set. It is often used to return the
-    results of a query on a  Group, but can be used on its own as well.
-
-    :Arguments:
-        *treants*
-            treants to be added, which may be nested lists of treants;
-            treants can be given as either objects or paths to directories
-            that contain treant statefiles; glob patterns are also allowed,
-            and all found treants will be added to the collection
     """
     _memberpaths = ['abspath']
     _fields = ['uuid', 'treanttype']
@@ -483,6 +485,16 @@ class Bundle(CollectionMixin):
     _agglimbs = set()
 
     def __init__(self, *treants, **kwargs):
+        """Generate a new Bundle.
+
+        Parameters
+        ----------
+        treants : Treant, list
+            Treants to be added, which may be nested lists of Treants. Treants
+            can be given as either objects or paths to directories that contain
+            Treant statefiles. Glob patterns are also allowed, and all found
+            Treants will be added to the collection.
+        """
         self._cache = dict()
         self._state = list()
         self._searchtime = 10
