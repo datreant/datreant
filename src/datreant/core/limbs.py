@@ -442,7 +442,7 @@ class Categories(Limb):
 
 
 class MemberBundle(Limb, Bundle):
-    """Member manager for Groups.
+    """Persistent Bundle for Groups.
 
     """
     _name = 'members'

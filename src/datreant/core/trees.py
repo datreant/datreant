@@ -35,6 +35,9 @@ class Veg(object):
         except AttributeError:
             return NotImplemented
 
+    def __hash__(self):
+        return hash(self.abspath)
+
     @property
     def exists(self):
         """Check existence of this path in filesystem.

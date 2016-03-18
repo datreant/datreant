@@ -116,12 +116,65 @@ Want all the children? ::
            <Leaf: 'moe/more_moe.pdf'>, <Leaf: 'moe/.hiding_here'>])>
 
 
-A View is an abstract Tree...kind of
-====================================
+A View is an ordered set
+========================
+Because a View is a set, adding members that are already present results
+in no change to the View::
+
+    >>> v.add('moe')
+    >>> v
+    <View([<Tree: 'moe/'>, <Tree: 'larry/'>, <Leaf: 'curly.txt'>])>
+
+But a View does have a sense of order, so we could, for example, meaningfully
+get a View with the order of members reversed::
+
+    >>> v[::-1]
+    <View([<Leaf: 'curly.txt'>, <Tree: 'larry/'>, <Tree: 'moe/'>])>
+
+Because it is functionally a set, operations between Views work as expected.
+Making another View with ::
+
+    >>> v2 = dtr.View('moe', 'nonexistent_file.txt')
+
+we can get the union::
+
+    >>> v | v2
+    <View([<Tree: 'moe/'>, <Tree: 'larry/'>, <Leaf: 'curly.txt'>,
+           <Leaf: 'nonexistent_file.txt'>])>
+
+the intersection::
+
+    >>> v & v2
+    <View([<Tree: 'moe/'>])>
+
+differences::
+
+    >>> v - v2
+    <View([<Tree: 'larry/'>, <Leaf: 'curly.txt'>])>
+
+    >>> v2 - v
+    <View([<Leaf: 'nonexistent_file.txt'>])>
+
+or the symmetric difference::
+
+    >>> v ^ v2
+    <View([<Leaf: 'curly.txt'>, <Tree: 'larry/'>,
+           <Leaf: 'nonexistent_file.txt'>])>
+
+
+Collective properties and methods of a View
+===========================================
 A View is a collection of Trees and Leaves, but it has methods and properties
 that mirror those of Trees and Leaves that allow actions on all of its members
 in aggregate. For example, we can directly get all directories and files within
-each member Tree that match a glob pattern::
+each member Tree::
+    
+    >>> v.children
+    <View([<Tree: 'moe/sprout/'>, <Leaf: 'moe/about_moe.txt'>,
+           <Leaf: 'moe/more_moe.pdf'>, <Leaf: 'moe/.hiding_here'>,
+           <Leaf: 'larry/about_larry.txt'>])>
+
+Or we could get all children that match a glob pattern::
 
     >>> v.glob('*moe*')
     <View([<Leaf: 'moe/about_moe.txt'>, <Leaf: 'moe/more_moe.pdf'>])>
