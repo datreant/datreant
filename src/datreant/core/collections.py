@@ -401,13 +401,27 @@ class View(CollectionMixin):
         """Return a View of all child Leaves and Trees of members matching
         given globbing pattern.
 
-        :Arguments:
-            *pattern*
-               globbing pattern to match files and directories with
+        Parameters
+        ----------
+        pattern : string
+            globbing pattern to match files and directories with
 
         """
         return View([member.glob(pattern) for member in self
                      if isinstance(member, Tree)])
+
+    def filter(self, pattern):
+        """Return a View of members that match by name the given globbing
+        pattern.
+
+        Parameters
+        ----------
+        pattern : string
+            globbing pattern to match member names with
+
+        """
+        return View([self[name] for name in
+                     fnmatch.filter(self.names, pattern)])
 
     def make(self):
         """Make the Trees and Leaves in this View if they don't already exist.
