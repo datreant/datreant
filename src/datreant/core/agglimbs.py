@@ -85,27 +85,21 @@ class AggTags(AggLimb):
 
     @property
     def any(self):
-        """List tags present among at least one Treant in collection.
+        """Set of tags present among at least one Treant in collection.
 
         """
         tags = [set(member.tags) for member in self._collection]
         out = set.union(*tags)
 
-        out = list(out)
-        out.sort()
-
         return out
 
     @property
     def all(self):
-        """List tags present among all Treants in collection.
+        """Set of tags present among all Treants in collection.
 
         """
         tags = [set(member.tags) for member in self._collection]
         out = set.intersection(*tags)
-
-        out = list(out)
-        out.sort()
 
         return out
 

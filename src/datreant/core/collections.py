@@ -1018,6 +1018,19 @@ class Bundle(CollectionMixin):
         """
         return View([member.tree for member in self])
 
+    def filter(self, pattern):
+        """Return a Bundle of members that match by name the given globbing
+        pattern.
+
+        Parameters
+        ----------
+        pattern : string
+            globbing pattern to match member names with
+
+        """
+        return Bundle([self[name] for name in
+                      fnmatch.filter(self.names, pattern)])
+
     def _add_members(self, uuids, treanttypes, abspaths):
         """Add many members at once.
 

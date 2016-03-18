@@ -43,11 +43,23 @@ from a project spanning years, ``discover`` lets you get a Bundle of all Treants
 in the tree with little effort. You can then filter on tags and categories to
 get Bundles of the Treants you actually want to work with (see below).
 
-
 .. autofunction:: datreant.core.discover
+
+
+Basic member selection
+======================
+
+
 
 Filtering on Treant tags
 ========================
+Treants are more useful than plain Trees because they carry distinguishing
+characteristics beyond just their path in the filesystem. Tags are one of these
+distinguishing features, and Bundles can use them directly to filter their
+members.
+
+    
+
 
 
 Grouping with Treant categories

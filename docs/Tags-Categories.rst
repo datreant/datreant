@@ -47,6 +47,9 @@ The keys for categories must be strings, but the values may be strings, numbers
 this is used in aggregations (see :ref:`Bundles`) to indicate keys that are
 absent.
 
+Tags and categories are especially useful for filtering and grouping Treants.
+See :ref:`Bundles` for the details on how to flexibly do this.
+
 Reference: Tags
 ===============
 The class :class:`datreant.core.limbs.Tags` is the interface used by Treants to
