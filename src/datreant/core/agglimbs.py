@@ -201,7 +201,8 @@ class AggCategories(AggLimb):
             is a grouping (list) of Treants that have the Category specified by
             that key when *keys* is a set of str.
         """
-        if keys is None: return None
+        if keys is None:
+            return None
 
         members = self._collection
         if isinstance(keys, (int, float, string_types, bool)):
@@ -241,7 +242,8 @@ class AggCategories(AggLimb):
         values
             Value(s) for the category specified by *key*.
         """
-        if values is None: return
+        if values is None:
+            return
 
         members = self._collection
         if isinstance(key, (int, float, string_types, bool)):
@@ -406,7 +408,8 @@ class AggCategories(AggLimb):
         dict of Bundle
             Groupings of members by category values.
         """
-        if keys is None: return None
+        if keys is None:
+            return None
 
         members = self._collection
         if isinstance(keys, (int, float, string_types, bool)):

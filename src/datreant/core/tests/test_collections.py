@@ -657,17 +657,17 @@ class TestBundle:
                 # test list of keys as input
                 age_bark = collection.categories.groupby(['age', 'bark'])
                 assert len(age_bark) == 4
-                assert {t1} == set(age_bark[('young','smooth')])
-                assert {t2} == set(age_bark[('adult','fibrous')])
-                assert {t3} == set(age_bark[('old','mossy')])
-                assert {t4} == set(age_bark[('young','mossy')])
+                assert {t1} == set(age_bark[('young', 'smooth')])
+                assert {t2} == set(age_bark[('adult', 'fibrous')])
+                assert {t3} == set(age_bark[('old', 'mossy')])
+                assert {t4} == set(age_bark[('young', 'mossy')])
 
                 age_bark = collection.categories.groupby({'age', 'bark'})
                 assert len(age_bark) == 4
-                assert {t1} == set(age_bark[('young','smooth')])
-                assert {t2} == set(age_bark[('adult','fibrous')])
-                assert {t3} == set(age_bark[('old','mossy')])
-                assert {t4} == set(age_bark[('young','mossy')])
+                assert {t1} == set(age_bark[('young', 'smooth')])
+                assert {t2} == set(age_bark[('adult', 'fibrous')])
+                assert {t3} == set(age_bark[('old', 'mossy')])
+                assert {t4} == set(age_bark[('young', 'mossy')])
 
                 type_health = collection.categories.groupby(['type', 'health'])
                 assert len(type_health) == 2
@@ -693,7 +693,7 @@ class TestBundle:
                 age_bark_health = collection.categories.groupby(keys)
                 assert len(age_bark_health) == 2
                 assert {t3} == set(age_bark_health[('old', 'mossy', 'poor')])
-                assert {t4} == set(age_bark_health[('young', 'mossy','good')])
+                assert {t4} == set(age_bark_health[('young', 'mossy', 'good')])
                 for bundle in age_bark_health.values():
                     assert {t1, t2}.isdisjoint(set(bundle))
 
