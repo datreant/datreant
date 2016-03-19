@@ -8,6 +8,8 @@ import functools
 from six import string_types, with_metaclass
 from collections import defaultdict
 
+from fuzzywuzzy import process
+
 from . import filesystem
 from .collections import Bundle
 from . import _TREELIMBS, _LIMBS
@@ -259,6 +261,35 @@ class Tags(Limb):
         """
         with self._treant._write:
             self._treant._state['tags'] = list()
+
+    def fuzzy(self, tag, threshold=80):
+        """Get a tuple of existing tags that fuzzily match a given one.
+
+        Parameters
+        ----------
+        tags : str or list
+            Tag or tags to get fuzzy matches for.
+        threshold : int
+            Lowest match score to return. Setting to 0 will return every tag,
+            while setting to 100 will return only exact matches.
+
+        Returns
+        -------
+        matches : tuple
+            Tuple of tags that match.
+        """
+        if isinstance(tag, string_types):
+            tags = [tag]
+        else:
+            tags = tag
+
+        matches = []
+
+        for tag in tags:
+            matches += [i[0] for i in process.extract(tag, self, limit=None)
+                        if i[1] > threshold]
+
+        return tuple(matches)
 
 
 class Categories(Limb):
