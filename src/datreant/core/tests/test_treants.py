@@ -245,6 +245,9 @@ class TestTreant(TestTree):
         def test_tags_setting(self, tmpdir, treantclass):
             pass
 
+        def test_tags_fuzzy(self, tmpdir, treant):
+            pass
+
     class TestCategories:
         """Test treant categories"""
 

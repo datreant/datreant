@@ -323,5 +323,8 @@ class TestBundle:
         def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):
             pass
 
+        def test_tags_fuzzy(self, collection, testtreant, testgroup, tmpdir):
+            pass
+
     class TestAggCategories:
         pass

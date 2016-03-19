@@ -7,6 +7,8 @@ A **View** makes it possible to work with arbitrary Trees and Leaves as a
 single logical unit. It is an ordered set of its members.
 
 
+.. _Views_selecting:
+
 Building a View and selecting members
 =====================================
 Views can be built from a list of paths, existing or not. Taking our working

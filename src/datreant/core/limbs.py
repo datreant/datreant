@@ -130,7 +130,7 @@ class Tags(Limb):
             if isinstance(value, set):
                 # a set of tags gives only members WITHOUT ALL the tags
                 # can be used for `not`, basically
-                fits = all([not self[item] for item in value])
+                fits = not all([self[item] for item in value])
             elif isinstance(value, string_types):
                 fits = value in self
 
