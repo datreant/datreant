@@ -629,10 +629,6 @@ class TestBundle:
                                    'type': 'deciduous', 'health': 'good'})
                 collection.add(t1, t2, t3, t4)
 
-                # test values for each category in the collection
-                # age_list = [testtreant, testgroup, t1, t2]
-                # assert age_list == collection.categories.groupby('age')
-
                 age_group = collection.categories.groupby('age')
                 assert {t1, t4} == set(age_group['young'])
                 assert {t2} == set(age_group['adult'])
@@ -659,7 +655,8 @@ class TestBundle:
                     assert {t1, t2}.isdisjoint(set(bundle))
 
                 # test list of keys as input
-                # cat_list = [age_list, type_list]
+                age_bark = collection.categories.groupby(['age', 'bark'])
+                print age_bark
                 # assert cat_list == collection.categories.groupby(
                 #         ['age', 'type'])
 

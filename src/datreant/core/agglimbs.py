@@ -376,25 +376,21 @@ class AggCategories(AggLimb):
         """
         return [member.categories.values() for member in self._collection]
 
-    # FIX - given a key (or keys) as input, return a dictionary whose keys
-    # are now the (combinations of) category values and whose corresponding
-    # values are Bundles of the Treants that have those keys as values of the
-    # inputted key
     def groupby(self, keys):
         """Return groupings of Treants based on values of Categories.
 
-        Groups Treants according to a given key, list of keys, or set of keys.
-        Mirrors the behavior of *__getitem()__*, where the output type is
-        controlled by the input type of *keys*:
+        If a single category is specified by *keys* (*keys* is neither a list
+        nor a set of category names), *groupby()* returns a dict of Bundles
+        whose (new) keys are the values of the category specified by *keys*;
+        the corresponding Bundles are groupings of members in the collection
+        having the same category values (for the category specied by *keys*).
 
-        If *keys* is a string specifying one key (for a single category),
-        *groupby()* returns a list of Treants that have that category.
-
-        If *keys* is a list or set of keys, *groupby()* returns a list of lists
-        whose order corresponds to the order of the elements in *keys*. Each
-        element in *keys* is a key specifying a category; each element in the
-        output is a list of the Treants (in this collection) that have the
-        category specified by that key.
+        If *keys* is a list or set of keys, *groupby()* returns a dict of
+        Bundles whose (new) keys are tuples of category values. The
+        corresponding Bundles contain the members in the collection that have
+        the same set of category values (for the categories specified by
+        *keys*); note that members in each Bundle must have all of the category
+        values specified by the tuple for that Bundle's key.
 
         Parameters
         ----------
@@ -404,6 +400,7 @@ class AggCategories(AggLimb):
         Returns
         -------
         dict of Bundle
+            Groupings of members by category values.
         """
         if keys is None: return None
 
