@@ -423,9 +423,7 @@ class AggCategories(AggLimb):
         elif isinstance(keys, (list, set)):
             keys = sorted(keys)
             catvals = zip(*members.categories[keys])
-            print '\n-----> catvals\n', catvals
             groupkeys = [v for v in catvals if None not in v]
-            print '\n-----> groupkeys\n', groupkeys
             groups = {k: Bundle() for k in groupkeys}
 
             gen = ((i, m) for i, m in enumerate(members) if

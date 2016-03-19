@@ -707,7 +707,6 @@ class TestBundle:
 
                 keys = ['bark', 'nickname', 'type', 'age']
                 abtn2 = collection.categories.groupby(keys)
-                print abtn2
                 assert len(abtn2) == 1
                 assert {t2} == set(abtn2[('adult', 'fibrous', 'redwood',
                                           'evergreen')])
