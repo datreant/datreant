@@ -425,7 +425,7 @@ class AggCategories(AggLimb):
 
         elif isinstance(keys, (list, set)):
             keys = sorted(keys)
-            catvals = zip(*members.categories[keys])
+            catvals = list(zip(*members.categories[keys]))
             groupkeys = [v for v in catvals if None not in v]
             groups = {k: Bundle() for k in groupkeys}
 
