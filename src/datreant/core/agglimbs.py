@@ -5,6 +5,7 @@ limbs but serve as aggregators over collections of them.
 
 """
 import itertools
+import collections
 from six import string_types, with_metaclass
 
 from . import filesystem
@@ -287,11 +288,13 @@ class AggCategories(AggLimb):
             All unique Categories among members.
         """
         keys = [set(member.categories.keys()) for member in self._collection]
-        everykey = set.union(*keys)
+        keys = set.union(*keys)
 
         return {k: [m.categories[k] if k in m.categories else None
                 for m in self._collection]
-                for k in everykey}
+                for k in keys}
+        # return {k: [m.categories.get(k, None) for m in self._collection]
+        #         for k in keys}
 
     @property
     def all(self):
@@ -303,11 +306,13 @@ class AggCategories(AggLimb):
             Categories common to all members.
         """
         keys = [set(member.categories.keys()) for member in self._collection]
-        sharedkeys = set.intersection(*keys)
+        keys = set.intersection(*keys)
 
         return {k: [m.categories[k] if k in m.categories else None
                 for m in self._collection]
-                for k in sharedkeys}
+                for k in keys}
+        # return {k: [m.categories.get(k, None) for m in self._collection]
+        #         for k in keys}
 
     def add(self, *categorydicts, **categories):
         """Add any number of categories to each Treant in collection.
@@ -417,12 +422,16 @@ class AggCategories(AggLimb):
                 groups[catval].add(m)
 
         elif isinstance(keys, (list, set)):
-            catvals = zip(members.categories[keys])
-            groupkeys = [v for v in set(*catvals) if None not in v]
+            keys = sorted(keys)
+            catvals = zip(*members.categories[keys])
+            print '\n-----> catvals\n', catvals
+            groupkeys = [v for v in catvals if None not in v]
+            print '\n-----> groupkeys\n', groupkeys
             groups = {k: Bundle() for k in groupkeys}
 
-            gen = ((i, m) for m in enumerate(members) if
-                   k in m.categories and m.categories[k] in groupkeys)
+            gen = ((i, m) for i, m in enumerate(members) if
+                   set(keys) <= set(m.categories) and
+                   tuple([m.categories[k] for k in keys]) in groupkeys)
             for i, m in gen:
                 groups[catvals[i]].add(m)
 
