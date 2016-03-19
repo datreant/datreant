@@ -5,7 +5,6 @@ limbs but serve as aggregators over collections of them.
 
 """
 import itertools
-import collections
 from six import string_types, with_metaclass
 
 from . import filesystem
