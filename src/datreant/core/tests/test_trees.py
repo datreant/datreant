@@ -90,8 +90,8 @@ class TestTree(TestVeg):
         v = tree[['a/file', 'a/tree/']]
 
         assert len(v) == 2
-        assert len(v.leaves) == 1
-        assert len(v.trees) == 1
+        assert len(v.memberleaves) == 1
+        assert len(v.membertrees) == 1
 
         with pytest.raises(ValueError):
             tree['lolcats', 'a/not/file']
@@ -106,7 +106,7 @@ class TestTree(TestVeg):
 
     def test_leaves(self, tree):
         with pytest.raises(OSError):
-            tree.childleaves
+            tree.leaves
 
         # actually make the directory now
         tree.makedirs()
@@ -114,64 +114,64 @@ class TestTree(TestVeg):
         tree['.hide/me'].make()
         tree['.hide/here/'].make()
 
-        assert len(tree.childleaves) == 0
+        assert len(tree.leaves) == 0
 
         tree['thing1'].make()
         tree['thing2'].make()
         tree['thing3'].make()
 
-        assert len(tree.childleaves) == 3
+        assert len(tree.leaves) == 3
 
         tree['larry/'].make()
         tree['curly/'].make()
 
-        assert len(tree.childleaves) == 3
+        assert len(tree.leaves) == 3
 
     def test_trees(self, tree):
         with pytest.raises(OSError):
-            tree.childtrees
+            tree.trees
 
         # actually make the directory now
         tree.makedirs()
 
-        assert len(tree.childtrees) == 0
+        assert len(tree.trees) == 0
 
         tree['thing1'].make()
         tree['thing2'].make()
         tree['thing3'].make()
 
-        assert len(tree.childtrees) == 0
+        assert len(tree.trees) == 0
 
         tree['larry/'].make()
         tree['curly/'].make()
 
-        assert len(tree.childtrees) == 2
+        assert len(tree.trees) == 2
 
     def test_hidden(self, tree):
         with pytest.raises(OSError):
-            tree.childhidden
+            tree.hidden
 
         # actually make the directory now
         tree.makedirs()
 
-        assert len(tree.childhidden) == 0
+        assert len(tree.hidden) == 0
 
         tree['.hide/me'].make()
         tree['.hide/here/'].make()
         tree['.hide.nothing/here/'].make()
 
-        assert len(tree.childhidden) == 2
+        assert len(tree.hidden) == 2
 
         tree['thing1'].make()
         tree['thing2'].make()
         tree['thing3'].make()
 
-        assert len(tree.childhidden) == 2
+        assert len(tree.hidden) == 2
 
         tree['larry/'].make()
         tree['curly/'].make()
 
-        assert len(tree.childhidden) == 2
+        assert len(tree.hidden) == 2
 
     def test_treants(self, tree):
         with pytest.raises(OSError):

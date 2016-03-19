@@ -58,7 +58,14 @@ class CollectionMixin(object):
 
 
 class View(CollectionMixin):
-    """A collection of Trees and Leaves.
+    """An ordered set of Trees and Leaves.
+
+    Parameters
+    ----------
+    vegs : Tree, Leaf, or list
+        Trees and/or Leaves to be added, which may be nested lists of Trees
+        and Leaves. Trees and Leaves can be given as either objects or
+        paths.
 
     """
     _classagglimbs = set()
@@ -298,14 +305,14 @@ class View(CollectionMixin):
         return [member.name for member in self]
 
     @property
-    def trees(self):
+    def membertrees(self):
         """A View giving only members that are Trees (or subclasses).
 
         """
         return View([member for member in self if isinstance(member, Tree)])
 
     @property
-    def leaves(self):
+    def memberleaves(self):
         """A View giving only members that are Leaves (or subclasses).
 
         """
@@ -313,10 +320,35 @@ class View(CollectionMixin):
 
     @property
     def children(self):
-        """A View giving all children from each Tree in the View.
+        """A View of all children within the member Trees.
 
         """
-        return View([member.children for member in self.trees])
+        return View([member.children for member in self.membertrees])
+
+    @property
+    def trees(self):
+        """A View of directories within the member Trees.
+
+        Hidden directories are not included.
+
+        """
+        return View([member.trees for member in self.membertrees])
+
+    @property
+    def leaves(self):
+        """A View of the files within the member Trees.
+
+        Hidden files are not included.
+
+        """
+        return View([member.leaves for member in self.membertrees])
+
+    @property
+    def hidden(self):
+        """A View of the hidden files and directories within the member Trees.
+
+        """
+        return View([member.hidden for member in self.membertrees])
 
     @property
     def abspaths(self):
@@ -351,30 +383,29 @@ class View(CollectionMixin):
     def map(self, function, processes=1, **kwargs):
         """Apply a function to each member, perhaps in parallel.
 
-        A pool of processes is created for *processes* > 1; for example,
-        with 40 members and 'processes=4', 4 processes will be created,
+        A pool of processes is created for `processes` > 1; for example,
+        with 40 members and ``processes=4'`, 4 processes will be created,
         each working on a single member at any given time. When each process
         completes work on a member, it grabs another, until no members remain.
 
-        *kwargs* are passed to the given function when applied to each member
+        `kwargs` are passed to the given function when applied to each member
 
-        :Arguments:
-            *function*
-                function to apply to each member; must take only a single
-                treant instance as input, but may take any number of keyword
-                arguments
+        Parameters
+        ----------
+        function : function
+            Function to apply to each member. Must take only a single Treant
+            instance as input, but may take any number of keyword arguments.
+        processes : int
+            How many processes to use. If 1, applies function to each member in
+            member order in serial.
 
-        :Keywords:
-            *processes*
-                how many processes to use; if 1, applies function to each
-                member in member order
-
-        :Returns:
-            *results*
-                list giving the result of the function for each member,
-                in member order; if the function returns ``None`` for each
-                member, then only ``None`` is returned instead of a list
-            """
+        Returns
+        -------
+        results : list
+            List giving the result of the function for each member, in member
+            order. If the function returns ``None`` for each member, then only
+            ``None`` is returned instead of a list.
+        """
         if processes > 1:
             pool = mp.Pool(processes=processes)
             results = dict()
@@ -401,27 +432,53 @@ class View(CollectionMixin):
         """Return a View of all child Leaves and Trees of members matching
         given globbing pattern.
 
-        :Arguments:
-            *pattern*
-               globbing pattern to match files and directories with
+        Parameters
+        ----------
+        pattern : string
+            globbing pattern to match files and directories with
 
         """
         return View([member.glob(pattern) for member in self
                      if isinstance(member, Tree)])
 
+    def filter(self, pattern):
+        """Return a View of members that match by name the given globbing
+        pattern.
+
+        Parameters
+        ----------
+        pattern : string
+            globbing pattern to match member names with
+
+        """
+        return View([self[name] for name in
+                     fnmatch.filter(self.names, pattern)])
+
+    def make(self):
+        """Make the Trees and Leaves in this View if they don't already exist.
+
+        Returns
+        -------
+        View
+            This View.
+
+        """
+        for member in self:
+            self.make()
+
+        return self
+
 
 class Bundle(CollectionMixin):
-    """Non-persistent collection of treants.
+    """An ordered set of Treants.
 
-    A Bundle is basically an indexable set. It is often used to return the
-    results of a query on a  Group, but can be used on its own as well.
-
-    :Arguments:
-        *treants*
-            treants to be added, which may be nested lists of treants;
-            treants can be given as either objects or paths to directories
-            that contain treant statefiles; glob patterns are also allowed,
-            and all found treants will be added to the collection
+    Parameters
+    ----------
+    treants : Treant, list
+        Treants to be added, which may be nested lists of Treants. Treants
+        can be given as either objects or paths to directories that contain
+        Treant statefiles. Glob patterns are also allowed, and all found
+        Treants will be added to the collection.
     """
     _memberpaths = ['abspath']
     _fields = ['uuid', 'treanttype']
@@ -960,6 +1017,19 @@ class Bundle(CollectionMixin):
 
         """
         return View([member.tree for member in self])
+
+    def filter(self, pattern):
+        """Return a Bundle of members that match by name the given globbing
+        pattern.
+
+        Parameters
+        ----------
+        pattern : string
+            globbing pattern to match member names with
+
+        """
+        return Bundle([self[name] for name in
+                      fnmatch.filter(self.names, pattern)])
 
     def _add_members(self, uuids, treanttypes, abspaths):
         """Add many members at once.

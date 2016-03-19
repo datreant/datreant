@@ -290,6 +290,38 @@ class TestTreant(TestTree):
             with pytest.raises(TypeError):
                 treant.categories.add(['mark', 'matt'])
 
+        def test_add_wrong_keys(self, treant):
+            with pytest.raises(TypeError):
+                treant.categories[2] = 'twenty'
+
+            with pytest.raises(TypeError):
+                treant.categories[['blarg']] = "nothin'"
+
+            with pytest.raises(TypeError):
+                treant.categories[None] = "literally nothin'"
+
+            with pytest.raises(TypeError):
+                treant.categories[True] = "tautologically"
+
+        def test_add_wrong_values(self, treant):
+            with pytest.raises(TypeError):
+                treant.categories['bark'] = ['shaggy']
+
+            with pytest.raises(TypeError):
+                treant.categories['snark'] = {'yes'}
+
+        def test_None_no_change(self, treant):
+            """Setting a category to ``None`` should not change the value.
+            """
+            treant.categories['bark'] = 'smooth'
+            treant.categories['bark'] = None
+
+            assert treant.categories['bark'] == 'smooth'
+
+            treant.categories.add(bark=None)
+
+            assert treant.categories['bark'] == 'smooth'
+
         def test_KeyError(self, treant):
             with pytest.raises(KeyError):
                 treant.categories['hello?']

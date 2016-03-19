@@ -209,19 +209,6 @@ class Foxhound(object):
 
         return outpaths
 
-    def _downward_search(self, path):
-        """Check for Treants downward from specified path.
-
-        :Arguments:
-            *path*
-                path to begin downward search from
-
-        """
-        pass
-
-    def _outward_search(self, path):
-        pass
-
     def _find_TreantFile(self):
         """Find Treant for a TreantFile.
 
@@ -375,6 +362,3 @@ class Foxhound(object):
         # members, should we compare these to what is in outpaths?
 
         return outpaths
-
-    def discover(self, path):
-        pass

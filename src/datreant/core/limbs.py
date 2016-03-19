@@ -356,20 +356,24 @@ class Categories(Limb):
     def add(self, *categorydicts, **categories):
         """Add any number of categories to the Treant.
 
-        Categories are key-value pairs of strings that serve to differentiate
-        Treants from one another. Sometimes preferable to tags.
+        Categories are key-value pairs that serve to differentiate Treants from
+        one another. Sometimes preferable to tags.
 
         If a given category already exists (same key), the value given will
         replace the value for that category.
 
-        :Keywords:
-            *categorydict*
-                dict of categories to add; keys used as keys, values used as
-                values. Both keys and values must be convertible to strings
-                using the str() builtin.
-            *categories*
-                Categories to add. Keyword used as key, value used as value.
-                Both must be convertible to strings using the str() builtin.
+        Keys must be strings.
+
+        Values may be ints, floats, strings, or bools. ``None`` as a value
+        will not the existing value for the key, if present.
+
+        Parameters
+        ----------
+        categorydict : dict
+            Dict of categories to add; keys used as keys, values used as
+            values.
+        categories : dict
+            Categories to add. Keyword used as key, value used as value.
 
         """
         outcats = dict()
@@ -377,16 +381,21 @@ class Categories(Limb):
             if isinstance(categorydict, dict):
                 outcats.update(categorydict)
             else:
-                raise TypeError("Invalid arguments; non-keyword" +
+                raise TypeError("Invalid arguments; non-keyword"
                                 " arguments must be dicts")
 
         outcats.update(categories)
 
         with self._treant._write:
             for key, value in outcats.items():
-                if (isinstance(value, (int, float, string_types, bool)) or
-                        value is None):
+                if not isinstance(key, string_types):
+                    raise TypeError("Keys must be strings.")
+
+                if (isinstance(value, (int, float, string_types, bool))):
                     self._treant._state['categories'][key] = value
+                elif value is not None:
+                    raise TypeError("Values must be ints, floats,"
+                                    " strings, or bools.")
 
     def remove(self, *categories):
         """Remove categories from Treant.
@@ -433,7 +442,7 @@ class Categories(Limb):
 
 
 class MemberBundle(Limb, Bundle):
-    """Member manager for Groups.
+    """Persistent Bundle for Groups.
 
     """
     _name = 'members'

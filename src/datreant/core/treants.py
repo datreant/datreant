@@ -36,47 +36,44 @@ class _Treantmeta(type):
 
 @functools.total_ordering
 class Treant(six.with_metaclass(_Treantmeta, Tree)):
-    """Core class for all Treants.
+    """The Treant: a Tree with a state file.
 
+    `treant` should be a base directory of a new or existing Treant. An
+    existing Treant will be regenerated if a state file is found.
+    If no state file is found, a new Treant will be created.
+
+    A Tree object may also be used in the same way as a directory string.
+
+    If multiple Treant state files are in the given directory,
+    :exception:`MultipleTreantsError` will be raised; specify the full path
+    to the desired state file to regenerate the desired Treant in this
+    case. It is generally better to avoid having multiple state files in
+    the same directory.
+
+    Use the `new` keyword to force generation of a new Treant at the given
+    path.
+
+    Parameters
+    ----------
+    treant : str or Tree
+        Base directory of a new or existing Treant; will regenerate
+        a Treant if a state file is found, but will genereate a new
+        one otherwise; may also be a Tree object
+    new : bool
+        Generate a new Treant even if one already exists at the given
+        location
+    categories : dict
+        dictionary with user-defined keys and values; used to give
+        Treants distinguishing characteristics
+    tags : list
+        list with user-defined values; like categories, but useful for
+        adding many distinguishing descriptors
     """
     # required components
     _treanttype = 'Treant'
     _backendclass = TreantFile
 
     def __init__(self, treant, new=False, categories=None, tags=None):
-        """Generate a new or regenerate an existing (on disk) Treant object.
-
-        `treant` should be a base directory of a new or existing Treant. An
-        existing Treant will be regenerated if a state file is found.
-        If no state file is found, a new Treant will be created.
-
-        A Tree object may also be used in the same way as a directory string.
-
-        If multiple Treant state files are in the given directory,
-        :exception:`MultipleTreantsError` will be raised; specify the full path
-        to the desired state file to regenerate the desired Treant in this
-        case. It is generally better to avoid having multiple state files in
-        the same directory.
-
-        Use the `new` keyword to force generation of a new Treant at the given
-        path.
-
-        Parameters
-        ----------
-        treant : str or Tree
-            Base directory of a new or existing Treant; will regenerate
-            a Treant if a state file is found, but will genereate a new
-            one otherwise; may also be a Tree object
-        new : bool
-            Generate a new Treant even if one already exists at the given
-            location
-        categories : dict
-            dictionary with user-defined keys and values; used to give
-            Treants distinguishing characteristics
-        tags : list
-            list with user-defined values; like categories, but useful for
-            adding many distinguishing descriptors
-        """
         # if given a Tree, get path out of it
         if isinstance(treant, Tree):
             treant = treant.abspath
@@ -345,8 +342,38 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
 
 
 class Group(Treant):
-    """The Group object is a collection of Treants and Groups.
+    """A Treant with a persistent Bundle of other Treants.
 
+    `treant` should be a base directory of a new or existing Group. An
+    existing Group will be regenerated if a state file is found.  If no state
+    file is found, a new Group will be created.
+
+    A Tree object may also be used in the same way as a directory string.
+
+    If multiple Treant/Group state files are in the given directory,
+    :exception:`MultipleTreantsError` will be raised; specify the full path
+    to the desired state file to regenerate the desired Group in this case. It
+    is generally better to avoid having multiple state files in the same
+    directory.
+
+    Use the `new` keyword to force generation of a new Group at the given
+    path.
+
+    Parameters
+    ----------
+    treant : str or Tree
+        Base directory of a new or existing Group; will regenerate
+        a Group if a state file is found, but will genereate a new
+        one otherwise; may also be a Tree object
+    new : bool
+        Generate a new Group even if one already exists at the given
+        location
+    categories : dict
+        dictionary with user-defined keys and values; used to give
+        Groups distinguishing characteristics
+    tags : list
+        list with user-defined values; like categories, but useful for
+        adding many distinguishing descriptors
     """
     # required components
     _treanttype = 'Group'
