@@ -625,29 +625,38 @@ class TestBundle:
                                    'type': 'evergreen', 'nickname': 'redwood'})
                 t3.categories.add({'age': 'old', 'bark': 'mossy',
                                    'type': 'deciduous', 'health': 'poor'})
-                t4.categories.add({'age': 'old', 'bark': 'mossy',
-                                   'type': 'deciduous'})
+                t4.categories.add({'age': 'young', 'bark': 'mossy',
+                                   'type': 'deciduous', 'health': 'good'})
                 collection.add(t1, t2, t3, t4)
 
                 # test values for each category in the collection
                 # age_list = [testtreant, testgroup, t1, t2]
                 # assert age_list == collection.categories.groupby('age')
 
-                print collection.categories.groupby('age')
+                age_group = collection.categories.groupby('age')
+                assert {t1, t4} == set(age_group['young'])
+                assert {t2} == set(age_group['adult'])
+                assert {t3} == set(age_group['old'])
 
-                print collection.categories.groupby('bark')
+                bark_group = collection.categories.groupby('bark')
+                assert {t1} == set(bark_group['smooth'])
+                assert {t2} == set(bark_group['fibrous'])
+                assert {t3, t4} == set(bark_group['mossy'])
 
-                print collection.categories.groupby('type')
+                type_group = collection.categories.groupby('type')
+                assert {t1, t3, t4} == set(type_group['deciduous'])
+                assert {t2} == set(type_group['evergreen'])
 
-                print collection.categories.groupby('nickname')
+                nick_group = collection.categories.groupby('nickname')
+                assert {t2} == set(nick_group['redwood'])
+                for bundle in nick_group.values():
+                    assert {t1, t3, t4}.isdisjoint(set(bundle))
 
-                print collection.categories.groupby('health')
-                # bark_list = [testtreant, testgroup, t1, t2]
-                # assert bark_list == collection.categories.groupby('bark')
-                # type_list = [t1, t2]
-                # assert type_list == collection.categories.groupby('type')
-                # nick_list = [t2]
-                # assert nick_list == collection.categories.groupby('nickname')
+                health_group = collection.categories.groupby('health')
+                assert {t3} == set(health_group['poor'])
+                assert {t4} == set(health_group['good'])
+                for bundle in health_group.values():
+                    assert {t1, t2}.isdisjoint(set(bundle))
 
                 # test list of keys as input
                 # cat_list = [age_list, type_list]

@@ -417,10 +417,7 @@ class AggCategories(AggLimb):
         if isinstance(keys, (int, float, string_types, bool)):
             catvals = members.categories[keys]
             groupkeys = [v for v in catvals if v is not None]
-            groups = dict.fromkeys(groupkeys)
-            # initialize groups with empty Bundles
-            for k in groupkeys:
-                groups[k] = Bundle()
+            groups = {k: Bundle() for k in groupkeys}
 
             k = keys
             gen = ((m, m.categories[k]) for m in members if
@@ -429,13 +426,15 @@ class AggCategories(AggLimb):
                 groups[catval].add(m)
 
         elif isinstance(keys, (list, set)):
-            cats = zip(collection.categories[keys])
-            groups = dict.fromkeys(set(*cats), Bundle())
-            for k in groups.keys():
-                groups[k] = Bundle()
+            catvals = zip(members.categories[keys])
+            groupkeys = [v for v in set(*catvals) if None not in v]
+            groups = {k: Bundle() for k in groupkeys}
 
-            for i, m in enumerate(members):
-                groups[cats[i]].add(m)
+            gen = ((i, m) for m in enumerate(members) if
+                   k in m.categories and m.categories[k] in groupkeys)
+            for i, m in gen:
+                groups[catvals[i]].add(m)
+
         else:
             raise TypeError("Invalid argument; keys must be a valid Category" +
                             " type (i.e. int, float, bool, string_types, or" +
