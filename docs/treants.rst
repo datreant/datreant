@@ -84,10 +84,7 @@ uuid as well, this is generally not recommended.
 
 Other components, such as the Treant's tags and categories, are stored internally in
 the state file (see :ref:`tags_categories` for more on these).
-    
 
-Reference: Treant
-=================
-.. autoclass:: datreant.core.Treant
-    :members:
-    :inherited-members:
+API Reference: Treant
+=====================
+See the :ref:`Treant_api` API reference for more details.

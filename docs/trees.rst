@@ -28,7 +28,7 @@ necessarily have to exist. Just as with Treants, more than one instance
 of a Tree or Leaf can point to the same place.
 
 
-Working with paths
+Working with Trees 
 ==================
 **Tree** objects can be used to introspect downward into their directory
 structure. Since a Tree is essentially a container for its own child Trees and
@@ -66,6 +66,10 @@ in which case whether a Tree or Leaf is returned is dependent on an ending
           sensitive to ending ``/`` separators to determine whether to give a
           Tree or a Leaf.
 
+API Reference: Tree
+-------------------
+See the :ref:`Tree_api` API reference for more details.
+
 
 A Treant is a Tree
 ==================
@@ -100,14 +104,7 @@ File operations with Leaves
 ===========================
 
 
-Reference: Tree
-===============
-.. autoclass:: datreant.core.Tree
-    :members:
-    :inherited-members:
+API Reference: Leaf 
+-------------------
+See the :ref:`Leaf_api` API reference for more details.
 
-Reference: Leaf
-===============
-.. autoclass:: datreant.core.Leaf
-    :members:
-    :inherited-members:

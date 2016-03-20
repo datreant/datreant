@@ -9,6 +9,9 @@ handled according to their characteristics. To make it possible to write code
 that tailors its approach according to the Treant it encounters, we can use
 tags and categories.
 
+
+Using tags
+==========
 Tags are individual strings that describe a Treant. Using our Treant
 ``sprout`` as an example, we can add many tags at once ::
 
@@ -26,6 +29,21 @@ They can be iterated through as well ::
     mirky
     misty
 
+Or checked for membership ::
+
+    >>> 'mirky' in s.tags
+    True
+
+Since the tags of a Treant behave as a set, we can do set operations directly ::
+
+    >>> 
+
+API Reference: Tags
+-------------------
+See the :ref:`Tags_api` API reference for more details.
+
+Using categories
+================
 Categories are key-value pairs. They are particularly useful as switches for
 analysis code. For example, if we have Treants with different shades of bark
 (say, "dark" and "light"), we can make a category that reflects this. In this
@@ -47,23 +65,12 @@ The keys for categories must be strings, but the values may be strings, numbers
 this is used in aggregations (see :ref:`Bundles`) to indicate keys that are
 absent.
 
+API Reference: Categories
+-------------------------
+See the :ref:`Categories_api` API reference for more details.
+
+
+Filtering and grouping on tags and categories
+=============================================
 Tags and categories are especially useful for filtering and grouping Treants.
 See :ref:`Bundles` for the details on how to flexibly do this.
-
-Reference: Tags
-===============
-The class :class:`datreant.core.limbs.Tags` is the interface used by Treants to
-access their tags. 
-
-.. autoclass:: datreant.core.limbs.Tags
-    :members:
-    :inherited-members:
-
-Reference: Categories
-=====================
-The class :class:`datreant.core.limbs.Categories` is the interface used by
-Treants to access their categories.
-
-.. autoclass:: datreant.core.limbs.Categories
-    :members:
-    :inherited-members:

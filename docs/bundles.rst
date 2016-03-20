@@ -41,10 +41,9 @@ For this simple example all our Treants were in this directory, so it's not
 quite as useful. But for a directory structure that is deep and convoluted perhaps
 from a project spanning years, ``discover`` lets you get a Bundle of all Treants
 in the tree with little effort. You can then filter on tags and categories to
-get Bundles of the Treants you actually want to work with (see below).
+get Bundles of the Treants you actually want to work with.
 
-.. autofunction:: datreant.core.discover
-
+See the :func:`datreant.core.discover` API reference for more details.
 
 Basic member selection
 ======================
@@ -173,20 +172,6 @@ Fuzzy matching for tags
 Grouping with Treant categories
 ===============================
 
-Reference: Bundle
-=================
-.. autoclass:: datreant.core.Bundle
-    :members:
-    :inherited-members:
-
-Reference: AggTags
-==================
-.. autoclass:: datreant.core.agglimbs.AggTags
-    :members:
-    :inherited-members:
-
-Reference: AggCategories
-========================
-.. autoclass:: datreant.core.agglimbs.AggCategories
-    :members:
-    :inherited-members:
+API Reference: Bundle
+=====================
+See the :ref:`Bundle_api` API reference for more details.

@@ -65,17 +65,6 @@ the same stored information at all times ::
     >>> g2.tags
     <Tags(['oaks'])>
 
-Reference: Group
-================
-.. autoclass:: datreant.core.Group
-    :members:
-    :inherited-members:
-
-Reference: Members
-==================
-The class :class:`datreant.core.limbs.MemberBundle` is the interface used
-by a Group to manage its members. 
-
-.. autoclass:: datreant.core.limbs.MemberBundle
-    :members:
-    :inherited-members:
+API Reference: Group
+====================
+See the :ref:`Group_api` API reference for more details.

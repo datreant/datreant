@@ -192,9 +192,6 @@ Note that this is the equivalent of doing something like::
 In this way, a View functions analogously for Trees and Leaves as a Bundle does
 for Treants. See :ref:`Bundles` for more on this theme.
 
-
-Reference: View
-===============
-.. autoclass:: datreant.core.View
-    :members:
-    :inherited-members:
+API Reference: View
+===================
+See the :ref:`View_api` API reference for more details.

@@ -69,47 +69,30 @@ Contributing
 This project is still under heavy development, and there are certainly rough
 edges and bugs. Issues and pull requests welcome! 
 
-.. raw:: html
-
-    <div style="display:none">
-
 --------------------------------------------------------------------------------
-
-Documentation
--------------
 
 .. toctree::
     :maxdepth: 1
+    :caption: User Documentation
 
     install
-    Treants
-    Tags-Categories
-    Trees
-    Views
-    Bundles
-    Groups
-    API
+    treants
+    tags-categories
+    trees
+    views
+    bundles
+    groups
+    api 
 
+.. .. toctree::
+..     :maxdepth: 1
+    :caption: For Developers
+    limbs-treelimbs
+    agglimbs-aggtreelimbs
 
-For Developers
---------------
-.. toctree::
-    :maxdepth: 1
-
-    Limbs-TreeLimbs
-    AggLimbs-AggTreeLimbs
-
-
-Miscellaneous
--------------
 
 .. toctree::
     :maxdepth: 1
+    :caption: Miscellaneous
 
     faq
-
---------------------------------------------------------------------------------
-
-.. raw:: html
-
-   </div>

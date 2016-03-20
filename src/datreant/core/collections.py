@@ -975,8 +975,6 @@ class Bundle(CollectionMixin):
         else:
             raise TypeError("Must give a number or `None` for searchtime")
 
-    discover = staticmethod(discover)
-
     def flatten(self, exclude=None):
         """Return a flattened version of this Bundle.
 
