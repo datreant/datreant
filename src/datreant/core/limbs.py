@@ -384,7 +384,7 @@ class Categories(Limb):
         with self._treant._read:
             return self._treant._state['categories']
 
-    def add(self, *categorydicts, **categories):
+    def add(self, categorydict=None, **categories):
         """Add any number of categories to the Treant.
 
         Categories are key-value pairs that serve to differentiate Treants from
@@ -408,12 +408,13 @@ class Categories(Limb):
 
         """
         outcats = dict()
-        for categorydict in categorydicts:
-            if isinstance(categorydict, dict):
-                outcats.update(categorydict)
-            else:
-                raise TypeError("Invalid arguments; non-keyword"
-                                " arguments must be dicts")
+        if isinstance(categorydict, dict):
+            outcats.update(categorydict)
+        elif categorydict is None:
+            pass
+        else:
+            raise TypeError("Invalid arguments; non-keyword"
+                            " argument must be dict")
 
         outcats.update(categories)
 
@@ -434,8 +435,9 @@ class Categories(Limb):
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
 
-        :Arguments:
-            *categories*
+        Parameters
+        ----------
+        categories : str
                 Categories to delete.
 
         """

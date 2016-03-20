@@ -336,8 +336,6 @@ class AggCategories(AggLimb):
         return {k: [m.categories[k] if k in m.categories else None
                 for m in self._collection]
                 for k in keys}
-        # return {k: [m.categories.get(k, None) for m in self._collection]
-        #         for k in keys}
 
     @property
     def all(self):
@@ -354,30 +352,32 @@ class AggCategories(AggLimb):
         return {k: [m.categories[k] if k in m.categories else None
                 for m in self._collection]
                 for k in keys}
-        # return {k: [m.categories.get(k, None) for m in self._collection]
-        #         for k in keys}
 
-    def add(self, *categorydicts, **categories):
+    def add(self, categorydict=None, **categories):
         """Add any number of categories to each Treant in collection.
 
-        Categories are key-value pairs of strings that serve to differentiate
-        Treants from one another. Sometimes preferable to tags.
+        Categories are key-value pairs that serve to differentiate Treants from
+        one another. Sometimes preferable to tags.
 
         If a given category already exists (same key), the value given will
         replace the value for that category.
 
+        Keys must be strings.
+
+        Values may be ints, floats, strings, or bools. ``None`` as a value
+        will not the existing value for the key, if present.
+
         Parameters
         ----------
-        *categorydict
-            dict of categories to add; keys used as keys, values used as
-            values. Both keys and values must be convertible to strings
-            using the str() builtin.
-        **categories
+        categorydict : dict
+            Dict of categories to add; keys used as keys, values used as
+            values.
+        categories
             Categories to add. Keyword used as key, value used as value.
-            Both must be convertible to strings using the str() builtin.
+
         """
         for member in self._collection:
-            member.categories.add(*categorydicts, **categories)
+            member.categories.add(categorydict, **categories)
 
     def remove(self, *categories):
         """Remove categories from Treant.
@@ -387,14 +387,14 @@ class AggCategories(AggLimb):
 
         Parameters
         ----------
-        *categories
+        categories : str
             Categories to delete.
         """
         for member in self._collection:
             member.categories.remove(*categories)
 
     def clear(self):
-        """Remove all categories from Treant.
+        """Remove all categories from all Treants in collection.
 
         """
         for member in self._collection:
