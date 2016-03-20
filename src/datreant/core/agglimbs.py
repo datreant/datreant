@@ -356,25 +356,25 @@ class AggCategories(AggLimb):
         return [member.categories.values() for member in self._collection]
 
     def groupby(self, keys):
-        """Return groupings of Treants based on Categories.
+        """Return groupings of Treants based on categories.
 
         Groups Treants according to a given key, list of keys, or set of keys.
-        Mirrors the behavior of *__getitem()__*, where the output type is
-        controlled by the input type of *keys*:
+        Mirrors the behavior of ``__getitem()__``, where the output type is
+        controlled by the input type of `keys`:
 
-        If *keys* is a string specifying one key (for a single category),
-        *groupby()* returns a list of Treants that have that category.
+        If `keys` is a string specifying one key (for a single category),
+        returns a list of Treants that have that category.
 
-        If *keys* is a list of keys, *groupby()* returns a list of lists whose
-        order corresponds to the order of the elements in *keys*. Each element
-        in *keys* is a key specifying a category; each element in the output is
-        a list of the Treants (in this collection) that have the category
+        If `keys` is a list of keys, returns a list of lists whose order
+        corresponds to the order of the elements in `keys`. Each element in
+        `keys` is a key specifying a category; each element in the output is a
+        list of the Treants (in this collection) that have the category
         specified by that key.
 
-        If *keys* is a set of keys, *groupby()* returns a dict of lists whose
-        keys are the same as those provided in *keys*; the value corresponding
-        to each key in the output is a list of Treants (in this collection)
-        that have the Category corresponding to that key.
+        If `keys` is a set of keys, returns a dict of lists whose keys are the
+        same as those provided in *keys*; the value corresponding to each key
+        in the output is a list of Treants (in this collection) that have the
+        Category corresponding to that key.
 
         Parameters
         ----------
@@ -383,17 +383,17 @@ class AggCategories(AggLimb):
 
         Returns
         -------
-        list of Treant, list of list of Treant, dict of list of Treant
-            Treants with the specified (single) category when *keys* is str.
+        list of Treants, list of list of Treants, dict of list of Treant
+            Treants with the specified (single) category when `keys` is str.
 
             Groupings of Treants, each grouping a list of Treants, where the
             first grouping contains Treants with the Category specified by the
-            first value in *keys*, the second grouping contains Treants for the
-            second value in *keys*, etc. when *keys* is a list of str.
+            first value in `keys`, the second grouping contains Treants for the
+            second value in `keys`, etc. when `keys` is a list of str.
 
-            Values in the dict corresponding to each of the provided *keys*
+            Values in the dict corresponding to each of the provided `keys`
             is a grouping (list) of Treants that have the Category specified by
-            that key when *keys* is a set of str.
+            that key when `keys` is a set of str.
         """
         collection = self._collection
         if isinstance(keys, str):
