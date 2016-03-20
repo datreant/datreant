@@ -169,25 +169,24 @@ Fuzzy matching for tags
 -----------------------
 
 
-Reference: AggTags
-------------------
-.. autoclass:: datreant.core.agglimbs.AggTags
-    :members:
-    :inherited-members:
-
-
 
 Grouping with Treant categories
 ===============================
 
-Reference: AggCategories
-------------------------
-.. autoclass:: datreant.core.agglimbs.AggCategories
-    :members:
-    :inherited-members:
-
 Reference: Bundle
 =================
 .. autoclass:: datreant.core.Bundle
+    :members:
+    :inherited-members:
+
+Reference: AggTags
+==================
+.. autoclass:: datreant.core.agglimbs.AggTags
+    :members:
+    :inherited-members:
+
+Reference: AggCategories
+========================
+.. autoclass:: datreant.core.agglimbs.AggCategories
     :members:
     :inherited-members:

@@ -91,4 +91,3 @@ Reference: Treant
 .. autoclass:: datreant.core.Treant
     :members:
     :inherited-members:
-

@@ -4,6 +4,7 @@ AggLimbs are limbs specifically built for collections, in particular
 limbs but serve as aggregators over collections of them.
 
 """
+import itertools
 from six import string_types, with_metaclass
 
 from fuzzywuzzy import process
@@ -187,10 +188,10 @@ class AggCategories(AggLimb):
         super(AggCategories, self).__init__(collection)
 
     def __repr__(self):
-        return "<AggCategories({})>".format(self._dict())
+        return "<AggCategories({})>".format(self.all)
 
     def __str__(self):
-        categories = self.all()
+        categories = self.all
         agg = "Categories"
         majsep = "="
         seplength = len(agg)
@@ -200,80 +201,183 @@ class AggCategories(AggLimb):
         else:
             out = agg + '\n'
             out = out + majsep * seplength + '\n'
-            for key in categories.keys():
-                out = out + "'{}': '{}'\n".format(key, categories[key])
+            for key, value in categories.items():
+                out = out + "'{}': '{}'\n".format(key, value)
         return out
 
-    def __getitem__(self, key):
-        """Get value at given key.
+    def __getitem__(self, keys):
+        """Get values for a given key, list of keys, or set of keys.
 
-        :Arguments:
-            *key*
-                key of value to return
+        If *keys* is a string specifying one key (for a single category),
+        return a list of the values among all Treants (in this collection) that
+        have that category.
 
-        :Returns:
-            *value*
-                value corresponding to given key
+        If *keys* is a list of keys, return a list of lists whose order
+        corresponds to the order of the elements in *keys*. Each element in
+        *keys* is a key specifying a category; each element in the output is
+        a list of the values among all Treants (in this collection) that have
+        the category specified by the respective key in *keys*.
+
+        If *keys* is a set of keys, return a dict of lists whose keys are the
+        same as those provided in *keys*; the value corresponding to each key
+        in the output is a list of values among all Treants (in this
+        collection) that have the category corresponding to that key.
+
+        Parameters
+        ----------
+        keys
+            Valid key(s) of Categories in this collection.
+
+        Returns
+        -------
+        list, list of list, dict of list
+            Values for the (single) specified category when *keys* is str.
+
+            Groupings of values, each grouping a list, where the first grouping
+            contains the values for all members of the collection corresponding
+            to the first value in *keys*, the second grouping contains values
+            for all members of the collection corresponding the second value in
+            *keys*, etc. when *keys* is a list of str.
+
+            Values in the dict corresponding to each of the provided *keys*
+            is a grouping (list) of Treants that have the Category specified by
+            that key when *keys* is a set of str.
         """
-        categories = self._dict()
-        return categories[key]
+        if keys is None:
+            return None
 
-    def __setitem__(self, key, value):
-        """Set value at given key.
+        members = self._collection
+        if isinstance(keys, (int, float, string_types, bool)):
+            k = keys
+            return [m.categories[k] if k in m.categories else None
+                    for m in members]
+        elif isinstance(keys, list):
+            return [[m.categories[k] if k in m.categories else None
+                    for m in members]
+                    for k in keys]
+        elif isinstance(keys, set):
+            return {k: [m.categories[k] if k in m.categories else None
+                    for m in members]
+                    for k in keys}
+        else:
+            raise TypeError("Invalid argument; argument must be" +
+                            " a string, list of strings, or set" +
+                            " of strings.")
 
-        :Arguments:
-            *key*
-                key of value to set
+    def __setitem__(self, key, values):
+        """Set the value of Categories for each Treant in the collection.
+
+        If *values* is not a sequence and is a valid category type (int,
+        string_types, bool, float), then it is broadcasted over all members of
+        the collection for the category specified by *key*.
+
+        If *values* is a sequence, it must have the same length as the number
+        of members in the collection so that, for each member, the value
+        assigned to its category (specified by *key*) is the element in
+        *values* whose index matches the index of that member in the
+        collection.
+
+        Parameters
+        ----------
+        key
+            Valid key for the category whose value should be set to *values*.
+        values
+            Value(s) for the category specified by *key*.
         """
-        outdict = {key: value}
-        self.add(outdict)
+        if values is None:
+            return
+
+        members = self._collection
+        if isinstance(key, (int, float, string_types, bool)):
+            v = values
+            for m in members:
+                m.categories.add({key: v})
+        elif isinstance(values, (list, tuple)):
+            if len(values) != len(members):
+                raise ValueError("Invalid argument; values must be a list of" +
+                                 " the same length as the number of members" +
+                                 " in the collection.")
+            for m in members:
+                gen = (v for v in values if v is not None)
+                for v in gen:
+                    m.categories.add({key: v})
 
     def __delitem__(self, category):
-        """Remove category from Treant.
+        """Remove *category* from each Treant in collection.
 
         """
-        self.remove(category)
+        for member in self._collection:
+            member.categories.remove(category)
 
     def __iter__(self):
-        return self._dict().__iter__()
+        """Iterator over Categories common to all Treants in collection.
+
+        """
+        return self.all.__iter__()
 
     def __len__(self):
-        return len(self._dict())
+        """The number of Categories common to all Treants in collection.
 
-    def add(self, *categorydicts, **categories):
-        """Add any number of categories to the Treant.
+        """
+        return len(self.all)
 
-        Categories are key-value pairs of strings that serve to differentiate
-        Treants from one another. Sometimes preferable to tags.
+    @property
+    def any(self):
+        """Get Categories present among at least one Treant in collection.
+
+        Returns
+        -------
+        dict
+            All unique Categories among members.
+        """
+        keys = [set(member.categories.keys()) for member in self._collection]
+        keys = set.union(*keys)
+
+        return {k: [m.categories[k] if k in m.categories else None
+                for m in self._collection]
+                for k in keys}
+
+    @property
+    def all(self):
+        """Get Categories common to all Treants in collection.
+
+        Returns
+        -------
+        dict
+            Categories common to all members.
+        """
+        keys = [set(member.categories.keys()) for member in self._collection]
+        keys = set.intersection(*keys)
+
+        return {k: [m.categories[k] if k in m.categories else None
+                for m in self._collection]
+                for k in keys}
+
+    def add(self, categorydict=None, **categories):
+        """Add any number of categories to each Treant in collection.
+
+        Categories are key-value pairs that serve to differentiate Treants from
+        one another. Sometimes preferable to tags.
 
         If a given category already exists (same key), the value given will
         replace the value for that category.
 
-        :Keywords:
-            *categorydict*
-                dict of categories to add; keys used as keys, values used as
-                values. Both keys and values must be convertible to strings
-                using the str() builtin.
-            *categories*
-                Categories to add. Keyword used as key, value used as value.
-                Both must be convertible to strings using the str() builtin.
+        Keys must be strings.
+
+        Values may be ints, floats, strings, or bools. ``None`` as a value
+        will not the existing value for the key, if present.
+
+        Parameters
+        ----------
+        categorydict : dict
+            Dict of categories to add; keys used as keys, values used as
+            values.
+        categories
+            Categories to add. Keyword used as key, value used as value.
 
         """
-        outcats = dict()
-        for categorydict in categorydicts:
-            if isinstance(categorydict, dict):
-                outcats.update(categorydict)
-            else:
-                raise TypeError("Invalid arguments; non-keyword" +
-                                " arguments must be dicts")
-
-        outcats.update(categories)
-
-        with self._treant._write:
-            for key, value in outcats.items():
-                if (isinstance(value, (int, float, string_types, bool)) or
-                        value is None):
-                    self._treant._state['categories'][key] = value
+        for member in self._collection:
+            member.categories.add(categorydict, **categories)
 
     def remove(self, *categories):
         """Remove categories from Treant.
@@ -281,39 +385,99 @@ class AggCategories(AggLimb):
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
 
-        :Arguments:
-            *categories*
-                Categories to delete.
-
+        Parameters
+        ----------
+        categories : str
+            Categories to delete.
         """
-        with self._treant._write:
-            for key in categories:
-                # continue even if key not already present
-                self._treant._state['categories'].pop(key, None)
+        for member in self._collection:
+            member.categories.remove(*categories)
 
     def clear(self):
-        """Remove all categories from Treant.
+        """Remove all categories from all Treants in collection.
 
         """
-        with self._treant._write:
-            self._treant._state['categories'] = dict()
+        for member in self._collection:
+            member.categories.clear()
 
     def keys(self):
-        """Get category keys.
+        """Get the unique Categories (keys) of all Treants in collection.
 
-        :Returns:
-            *keys*
-                keys present among categories
+        Returns
+        -------
+        list of list
+            Keys for each member are returned as a list, where the list of the
+            lists for each member has the same order as the members in the
+            collection.
         """
-        with self._treant._read:
-            return self._treant._state['categories'].keys()
+        return [member.categories.keys() for member in self._collection]
 
     def values(self):
-        """Get category values.
+        """Get the unique category values of all Treants in collection.
 
-        :Returns:
-            *values*
-                values present among categories
+        Returns
+        -------
+        list of list
+            Values for each member are returned as a list, where the list of
+            the lists for each member has the same order as the members in the
+            collection.
         """
-        with self._treant._read:
-            return self._treant._state['categories'].values()
+        return [member.categories.values() for member in self._collection]
+
+    def groupby(self, keys):
+        """Return groupings of Treants based on values of Categories.
+
+        If a single category is specified by `keys` (`keys` is neither a list
+        nor a set of category names), returns a dict of Bundles whose (new)
+        keys are the values of the category specified by `keys`; the
+        corresponding Bundles are groupings of members in the collection having
+        the same category values (for the category specied by `keys`).
+
+        If `keys` is a list or set of keys, returns a dict of Bundles whose
+        (new) keys are tuples of category values. The corresponding Bundles
+        contain the members in the collection that have the same set of
+        category values (for the categories specified by `keys`); members in
+        each Bundle will have all of the category values specified by the tuple
+        for that Bundle's key.
+
+        Parameters
+        ----------
+        keys : str, list, set
+            Valid key(s) of categories in this collection.
+
+        Returns
+        -------
+        dict
+            Bundles of members by category values.
+        """
+        if keys is None:
+            return None
+
+        members = self._collection
+        if isinstance(keys, (string_types)):
+            catvals = members.categories[keys]
+            groupkeys = [v for v in catvals if v is not None]
+            groups = {k: Bundle() for k in groupkeys}
+
+            k = keys
+            gen = ((m, m.categories[k]) for m in members if
+                   k in m.categories and m.categories[k] in groupkeys)
+            for m, catval in gen:
+                groups[catval].add(m)
+
+        elif isinstance(keys, (list, set)):
+            keys = sorted(keys)
+            catvals = list(zip(*members.categories[keys]))
+            groupkeys = [v for v in catvals if None not in v]
+            groups = {k: Bundle() for k in groupkeys}
+
+            gen = ((i, m) for i, m in enumerate(members) if
+                   set(keys) <= set(m.categories) and
+                   tuple([m.categories[k] for k in keys]) in groupkeys)
+            for i, m in gen:
+                groups[catvals[i]].add(m)
+
+        else:
+            raise TypeError("Keys must be a string or a list or set of"
+                            " strings")
+        return groups
