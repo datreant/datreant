@@ -46,13 +46,13 @@ Paths that resolve as being inside a Tree give `True` for membership tests ::
     >>> t['a/file'] in t
     True
 
-Note that neither of these items need exist ::
+Note that these items need not exist ::
 
     >>> t['a/file'].exists
     False
 
 in which case whether a Tree or Leaf is returned is dependent on an ending
-``/``. We can create directories and empty files easily enough, though ::
+``/``. We can create directories and empty files easily enough, though::
 
     >>> adir = t['a/directory/'].make()
     >>> adir.exists

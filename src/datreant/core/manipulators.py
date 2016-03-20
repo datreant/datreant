@@ -14,8 +14,9 @@ def discover(dirpath='.', depth=None, treantdepth=None):
 
     Parameters
     ----------
-    dirpath : string
-        Directory within which to search for Treants.
+    dirpath : string, Tree
+        Directory within which to search for Treants. May also be an existing
+        Tree.
     depth : int
         Maximum directory depth to tolerate while traversing in search of
         Treants. ``None`` indicates no depth limit.
@@ -30,6 +31,14 @@ def discover(dirpath='.', depth=None, treantdepth=None):
 
     """
     from .collections import Bundle
+    from .trees import Tree
+
+    if isinstance(dirpath, Tree):
+        if not dirpath.exists:
+            raise OSError("Tree doesn't exist in the filesystem")
+
+        dirpath = dirpath.abspath
+
     found = list()
 
     startdepth = len(dirpath.split(os.sep))

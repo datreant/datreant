@@ -12,6 +12,7 @@ from pathlib import Path
 from asciitree import LeftAligned
 
 from .util import makedirs
+from .manipulators import discover
 from . import _TREELIMBS
 
 
@@ -357,6 +358,8 @@ class Tree(Veg):
         """
         from .collections import View
         return View(self.trees + self.leaves + self.hidden)
+
+    discover = discover
 
     @property
     def treants(self):

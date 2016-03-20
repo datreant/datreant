@@ -31,16 +31,16 @@ analysis code. For example, if we have Treants with different shades of bark
 (say, "dark" and "light"), we can make a category that reflects this. In this
 case, we categorize ``sprout`` as "dark" ::
     
-    >>> s.categories['roots'] = 'dark'
+    >>> s.categories['bark'] = 'dark'
     >>> s.categories
-    <Categories({'roots': 'shallow'})>
+    <Categories({'bark': 'dark'})>
 
 Perhaps we've written some analysis code that will take both "dark" and "light"
 Treants as input but needs to handle them differently. It can see what variety
 of **Treant** it is working with using ::
 
-    >>> s.categories['roots']
-    'shallow'
+    >>> s.categories['bark']
+    'dark'
 
 The keys for categories must be strings, but the values may be strings, numbers
 (floats, ints), or booleans (``True``, ``False``). ``None`` may not be used since
