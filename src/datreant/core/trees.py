@@ -12,6 +12,7 @@ from pathlib import Path
 from asciitree import LeftAligned
 
 from .util import makedirs
+from .manipulators import discover
 from . import _TREELIMBS
 
 
@@ -34,6 +35,9 @@ class Veg(object):
             return self.abspath < other.abspath
         except AttributeError:
             return NotImplemented
+
+    def __hash__(self):
+        return hash(self.abspath)
 
     @property
     def exists(self):
@@ -280,7 +284,7 @@ class Tree(Veg):
         return os.path.relpath(str(self.path)) + os.sep
 
     @property
-    def childleaves(self):
+    def leaves(self):
         """A View of the files in this Tree.
 
         Hidden files are not included.
@@ -301,7 +305,7 @@ class Tree(Veg):
             raise OSError("Tree doesn't exist in the filesystem")
 
     @property
-    def childtrees(self):
+    def trees(self):
         """A View of the directories in this Tree.
 
         Hidden directories are not included.
@@ -322,7 +326,7 @@ class Tree(Veg):
         return View(out)
 
     @property
-    def childhidden(self):
+    def hidden(self):
         """A View of the hidden files and directories in this Tree.
 
         """
@@ -353,7 +357,9 @@ class Tree(Veg):
 
         """
         from .collections import View
-        return View(self.childtrees + self.childleaves + self.childhidden)
+        return View(self.trees + self.leaves + self.hidden)
+
+    discover = discover
 
     @property
     def treants(self):
@@ -364,7 +370,7 @@ class Tree(Veg):
 
         """
         from .collections import Bundle
-        return Bundle(self.childtrees + self.childhidden.trees)
+        return Bundle(self.trees + self.hidden.membertrees)
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees matching given globbing
@@ -442,11 +448,12 @@ class Tree(Veg):
         return self
 
     def make(self):
-        """Make the directory if it doesn't exit. Equivalent to :meth:`makedirs`.
+        """Make the directory if it doesn't exist. Equivalent to :meth:`makedirs`.
 
-        :Returns:
-            *tree*
-                this tree
+        Returns
+        -------
+        Tree
+            This Tree.
 
         """
         self.makedirs()

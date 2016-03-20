@@ -8,6 +8,8 @@ import functools
 from six import string_types, with_metaclass
 from collections import defaultdict
 
+from fuzzywuzzy import process
+
 from . import filesystem
 from .collections import Bundle
 from . import _TREELIMBS, _LIMBS
@@ -128,7 +130,7 @@ class Tags(Limb):
             if isinstance(value, set):
                 # a set of tags gives only members WITHOUT ALL the tags
                 # can be used for `not`, basically
-                fits = all([not self[item] for item in value])
+                fits = not all([self[item] for item in value])
             elif isinstance(value, string_types):
                 fits = value in self
 
@@ -260,6 +262,35 @@ class Tags(Limb):
         with self._treant._write:
             self._treant._state['tags'] = list()
 
+    def fuzzy(self, tag, threshold=80):
+        """Get a tuple of existing tags that fuzzily match a given one.
+
+        Parameters
+        ----------
+        tags : str or list
+            Tag or tags to get fuzzy matches for.
+        threshold : int
+            Lowest match score to return. Setting to 0 will return every tag,
+            while setting to 100 will return only exact matches.
+
+        Returns
+        -------
+        matches : tuple
+            Tuple of tags that match.
+        """
+        if isinstance(tag, string_types):
+            tags = [tag]
+        else:
+            tags = tag
+
+        matches = []
+
+        for tag in tags:
+            matches += [i[0] for i in process.extract(tag, self, limit=None)
+                        if i[1] > threshold]
+
+        return tuple(matches)
+
 
 class Categories(Limb):
     """Interface to categories.
@@ -356,20 +387,24 @@ class Categories(Limb):
     def add(self, *categorydicts, **categories):
         """Add any number of categories to the Treant.
 
-        Categories are key-value pairs of strings that serve to differentiate
-        Treants from one another. Sometimes preferable to tags.
+        Categories are key-value pairs that serve to differentiate Treants from
+        one another. Sometimes preferable to tags.
 
         If a given category already exists (same key), the value given will
         replace the value for that category.
 
-        :Keywords:
-            *categorydict*
-                dict of categories to add; keys used as keys, values used as
-                values. Both keys and values must be convertible to strings
-                using the str() builtin.
-            *categories*
-                Categories to add. Keyword used as key, value used as value.
-                Both must be convertible to strings using the str() builtin.
+        Keys must be strings.
+
+        Values may be ints, floats, strings, or bools. ``None`` as a value
+        will not the existing value for the key, if present.
+
+        Parameters
+        ----------
+        categorydict : dict
+            Dict of categories to add; keys used as keys, values used as
+            values.
+        categories : dict
+            Categories to add. Keyword used as key, value used as value.
 
         """
         outcats = dict()
@@ -377,16 +412,21 @@ class Categories(Limb):
             if isinstance(categorydict, dict):
                 outcats.update(categorydict)
             else:
-                raise TypeError("Invalid arguments; non-keyword" +
+                raise TypeError("Invalid arguments; non-keyword"
                                 " arguments must be dicts")
 
         outcats.update(categories)
 
         with self._treant._write:
             for key, value in outcats.items():
-                if (isinstance(value, (int, float, string_types, bool)) or
-                        value is None):
+                if not isinstance(key, string_types):
+                    raise TypeError("Keys must be strings.")
+
+                if (isinstance(value, (int, float, string_types, bool))):
                     self._treant._state['categories'][key] = value
+                elif value is not None:
+                    raise TypeError("Values must be ints, floats,"
+                                    " strings, or bools.")
 
     def remove(self, *categories):
         """Remove categories from Treant.
@@ -433,7 +473,7 @@ class Categories(Limb):
 
 
 class MemberBundle(Limb, Bundle):
-    """Member manager for Groups.
+    """Persistent Bundle for Groups.
 
     """
     _name = 'members'

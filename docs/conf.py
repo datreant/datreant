@@ -278,8 +278,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
 
-# get docstrings for init methods, too
-autoclass_content = 'both'
+autoclass_content = 'class'
 
 # Napoleon settings
 napoleon_google_docstring = False

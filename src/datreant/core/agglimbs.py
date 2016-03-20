@@ -6,6 +6,8 @@ limbs but serve as aggregators over collections of them.
 """
 from six import string_types, with_metaclass
 
+from fuzzywuzzy import process
+
 from . import filesystem
 from . import _AGGTREELIMBS, _AGGLIMBS
 from .collections import Bundle
@@ -57,10 +59,10 @@ class AggTags(AggLimb):
         super(AggTags, self).__init__(collection)
 
     def __repr__(self):
-        return "<AggTags({})>".format(self.all)
+        return "<AggTags({})>".format(list(self.all))
 
     def __str__(self):
-        tags = self.all
+        tags = list(self.all)
         agg = "Tags"
         majsep = "="
         seplength = len(agg)
@@ -85,27 +87,21 @@ class AggTags(AggLimb):
 
     @property
     def any(self):
-        """List tags present among at least one Treant in collection.
+        """Set of tags present among at least one Treant in collection.
 
         """
         tags = [set(member.tags) for member in self._collection]
         out = set.union(*tags)
 
-        out = list(out)
-        out.sort()
-
         return out
 
     @property
     def all(self):
-        """List tags present among all Treants in collection.
+        """Set of tags present among all Treants in collection.
 
         """
         tags = [set(member.tags) for member in self._collection]
         out = set.intersection(*tags)
-
-        out = list(out)
-        out.sort()
 
         return out
 
@@ -139,6 +135,46 @@ class AggTags(AggLimb):
         """
         for member in self._collection:
             member.tags.clear()
+
+    def fuzzy(self, tag, threshold=80, scope='all'):
+        """Get a tuple of existing tags that fuzzily match a given one.
+
+        Parameters
+        ----------
+        tags : str or list
+            Tag or tags to get fuzzy matches for.
+        threshold : int
+            Lowest match score to return. Setting to 0 will return every tag,
+            while setting to 100 will return only exact matches.
+        scope : {'all', 'any'}
+            Tags to use. 'all' will use only tags found within all Treants in
+            collection, while 'any' will use tags found within at least one
+            Treant in collection.
+
+        Returns
+        -------
+        matches : tuple
+            Tuple of tags that match.
+        """
+        if isinstance(tag, string_types):
+            tags = [tag]
+        else:
+            tags = tag
+
+        if scope == 'all':
+            choices = self.all
+        elif scope == 'any':
+            choices = self.any
+        else:
+            raise ValueError("Scope can only be 'any' or 'all'")
+
+        matches = []
+
+        for tag in tags:
+            matches += [i[0] for i in process.extract(tag, choices, limit=None)
+                        if i[1] > threshold]
+
+        return tuple(matches)
 
 
 class AggCategories(AggLimb):

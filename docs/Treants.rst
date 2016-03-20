@@ -71,10 +71,10 @@ The state file of a Treant contains the core pieces of information that define
 it. A few of these things are defined in the filesystem itself, including ::
 
     /home/bob/research/arborea/sprout/Treant.2b4b5800-48a7-4814-ba6d-1e631a09a199.json
-    |_________________________|______|______|____________________________________|____|
-              location          name     ^                 uuid                    ^
-    |________________________________|   |                                         |
-                abspath               treanttype                         statefiletype
+    |_________________________|______|______|____________________________________|
+              location          name     ^                 uuid 
+    |________________________________|   |
+                abspath               treanttype
     |_________________________________________________________________________________|
                                       filepath
 
