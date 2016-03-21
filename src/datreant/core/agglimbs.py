@@ -323,7 +323,7 @@ class AggCategories(AggLimb):
 
     @property
     def any(self):
-        """Get Categories present among at least one Treant in collection.
+        """Get categories present among at least one Treant in collection.
 
         Returns
         -------
@@ -339,7 +339,7 @@ class AggCategories(AggLimb):
 
     @property
     def all(self):
-        """Get Categories common to all Treants in collection.
+        """Get categories common to all Treants in collection.
 
         Returns
         -------
