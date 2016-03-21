@@ -44,11 +44,11 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
 
     A Tree object may also be used in the same way as a directory string.
 
-    If multiple Treant state files are in the given directory,
-    :exception:`MultipleTreantsError` will be raised; specify the full path
-    to the desired state file to regenerate the desired Treant in this
-    case. It is generally better to avoid having multiple state files in
-    the same directory.
+    If multiple Treant state files are in the given directory, a
+    ``MultipleTreantsError`` will be raised; specify the full path to the
+    desired state file to regenerate the desired Treant in this case. It is
+    generally better to avoid having multiple state files in the same
+    directory.
 
     Use the `new` keyword to force generation of a new Treant at the given
     path.
@@ -350,10 +350,10 @@ class Group(Treant):
 
     A Tree object may also be used in the same way as a directory string.
 
-    If multiple Treant/Group state files are in the given directory,
-    :exception:`MultipleTreantsError` will be raised; specify the full path
-    to the desired state file to regenerate the desired Group in this case. It
-    is generally better to avoid having multiple state files in the same
+    If multiple Treant/Group state files are in the given directory, a
+    ``MultipleTreantsError`` will be raised; specify the full path to the
+    desired state file to regenerate the desired Group in this case. It is
+    generally better to avoid having multiple state files in the same
     directory.
 
     Use the `new` keyword to force generation of a new Group at the given

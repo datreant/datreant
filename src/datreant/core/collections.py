@@ -384,7 +384,7 @@ class View(CollectionMixin):
         """Apply a function to each member, perhaps in parallel.
 
         A pool of processes is created for `processes` > 1; for example,
-        with 40 members and ``processes=4'`, 4 processes will be created,
+        with 40 members and ``processes=4``, 4 processes will be created,
         each working on a single member at any given time. When each process
         completes work on a member, it grabs another, until no members remain.
 
