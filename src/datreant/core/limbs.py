@@ -374,26 +374,50 @@ class Categories(Limb):
                 out = out + "'{}': '{}'\n".format(key, categories[key])
         return out
 
-    def __getitem__(self, key):
-        """Get value at given key.
+    def __getitem__(self, keys):
+        """Get values for given `keys`.
 
-        :Arguments:
-            *key*
-                key of value to return
+        If `keys` is a string, the single value for that string is returned.
 
-        :Returns:
-            *value*
-                value corresponding to given key
+        If `keys` is a list of keys, the values for each key are returned in a
+        list, in order by the given keys.
+
+        if `keys` is a set of keys, a dict with the keys as keys and values as
+        values is returned.
+
+        Parameters
+        ----------
+        keys : str, list, set
+            Key(s) of value to return.
+
+        Returns
+        -------
+        values : str, int, float, bool, list, or dict
+            Value(s) corresponding to given key(s).
+
         """
         categories = self._dict()
-        return categories[key]
+
+        if isinstance(keys, (int, float, string_types, bool)):
+            return categories[keys]
+        elif isinstance(keys, list):
+            return [categories[key] for key in keys]
+        elif isinstance(keys, set):
+            return {key: categories[key] for key in keys}
+        else:
+            raise TypeError("Key must be a string, list of strings, or set"
+                            " of strings.")
 
     def __setitem__(self, key, value):
         """Set value at given key.
 
-        :Arguments:
-            *key*
-                key of value to set
+        Parameters
+        ----------
+        key : str
+            Key of value to set.
+        value : str, int, float, bool
+            Value to set for given key.
+
         """
         outdict = {key: value}
         self.add(outdict)

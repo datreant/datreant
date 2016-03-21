@@ -297,40 +297,31 @@ class AggCategories(AggLimb):
     def __getitem__(self, keys):
         """Get values for a given key, list of keys, or set of keys.
 
-        If *keys* is a string specifying one key (for a single category),
-        return a list of the values among all Treants (in this collection) that
-        have that category.
+        If `keys` is a string specifying one key (for a single category),
+        return a list of the values among all Treants (in this collection) for
+        that category.
 
-        If *keys* is a list of keys, return a list of lists whose order
-        corresponds to the order of the elements in *keys*. Each element in
-        *keys* is a key specifying a category; each element in the output is
-        a list of the values among all Treants (in this collection) that have
-        the category specified by the respective key in *keys*.
+        If `keys` is a list of keys, return a list of lists whose order
+        corresponds to the order of the elements in `keys`. Each element in
+        `keys` is a key specifying a category; each element in the output is
+        a list of the values among all Treants (in this collection) for  the
+        category specified by the respective key in `keys`.
 
-        If *keys* is a set of keys, return a dict of lists whose keys are the
-        same as those provided in *keys*; the value corresponding to each key
+        If `keys` is a set of keys, return a dict of lists whose keys are the
+        same as those provided in `keys`; the value corresponding to each key
         in the output is a list of values among all Treants (in this
-        collection) that have the category corresponding to that key.
+        collection) for the category corresponding to that key.
 
         Parameters
         ----------
-        keys
+        keys : str, list, set
             Valid key(s) of Categories in this collection.
 
         Returns
         -------
-        list, list of list, dict of list
-            Values for the (single) specified category when *keys* is str.
+        list, list of lists, dict of lists
+            Values for the (single) specified category when `keys` is str.
 
-            Groupings of values, each grouping a list, where the first grouping
-            contains the values for all members of the collection corresponding
-            to the first value in *keys*, the second grouping contains values
-            for all members of the collection corresponding the second value in
-            *keys*, etc. when *keys* is a list of str.
-
-            Values in the dict corresponding to each of the provided *keys*
-            is a grouping (list) of Treants that have the Category specified by
-            that key when *keys* is a set of str.
         """
         if keys is None:
             return None
@@ -349,47 +340,42 @@ class AggCategories(AggLimb):
                     for m in members]
                     for k in keys}
         else:
-            raise TypeError("Invalid argument; argument must be" +
-                            " a string, list of strings, or set" +
+            raise TypeError("Key must be a string, list of strings, or set"
                             " of strings.")
 
     def __setitem__(self, key, values):
-        """Set the value of Categories for each Treant in the collection.
+        """Set the value of categories for each Treant in the collection.
 
-        If *values* is not a sequence and is a valid category type (int,
+        If `values` is not a sequence and is a valid category type (int,
         string_types, bool, float), then it is broadcasted over all members of
-        the collection for the category specified by *key*.
+        the collection for the category specified by `key`.
 
-        If *values* is a sequence, it must have the same length as the number
+        If `values` is a sequence, it must have the same length as the number
         of members in the collection so that, for each member, the value
-        assigned to its category (specified by *key*) is the element in
-        *values* whose index matches the index of that member in the
+        assigned to its category (specified by `key`) is the element in
+        `values` whose index matches the index of that member in the
         collection.
 
         Parameters
         ----------
-        key
+        key : str
             Valid key for the category whose value should be set to *values*.
-        values
-            Value(s) for the category specified by *key*.
+        values : str, int, float, bool, list, tuple
+            Value(s) for the category specified by `key`.
         """
         if values is None:
             return
 
         members = self._collection
-        if isinstance(key, (int, float, string_types, bool)):
-            v = values
+        if isinstance(values, (int, float, string_types, bool)):
             for m in members:
-                m.categories.add({key: v})
+                m.categories.add({key: values})
         elif isinstance(values, (list, tuple)):
             if len(values) != len(members):
-                raise ValueError("Invalid argument; values must be a list of" +
-                                 " the same length as the number of members" +
-                                 " in the collection.")
-            for m in members:
-                gen = (v for v in values if v is not None)
-                for v in gen:
-                    m.categories.add({key: v})
+                raise ValueError("Values must be a list of the same length as"
+                                 " the number of members in the collection.")
+            for m, v in zip(members, values):
+                m.categories[key] = v
 
     def __delitem__(self, category):
         """Remove *category* from each Treant in collection.

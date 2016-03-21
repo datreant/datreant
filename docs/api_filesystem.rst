@@ -13,7 +13,6 @@ filesystem.
 .. autoclass:: datreant.core.Tree
     :members:
     :inherited-members:
-    :noindex:
 
 .. _Leaf_api:
 
@@ -25,7 +24,6 @@ filesystem.
 .. autoclass:: datreant.core.Leaf
     :members:
     :inherited-members:
-    :noindex:
 
 .. _View_api:
 
@@ -38,4 +36,3 @@ as providing mechanisms for filtering and subselection.
 .. autoclass:: datreant.core.View
     :members:
     :inherited-members:
-    :noindex:

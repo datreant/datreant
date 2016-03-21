@@ -10,6 +10,8 @@ that tailors its approach according to the Treant it encounters, we can use
 tags and categories.
 
 
+.. _Tags_guide:
+
 Using tags
 ==========
 Tags are individual strings that describe a Treant. Using our Treant

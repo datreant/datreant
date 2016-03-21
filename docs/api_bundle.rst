@@ -23,7 +23,6 @@ They can also be created directly from any number of Treants:
 .. autoclass:: datreant.core.Bundle
     :members:
     :inherited-members:
-    :noindex:
 
 AggTags
 ```````
@@ -33,7 +32,6 @@ Bundles to access their members' tags.
 .. autoclass:: datreant.core.agglimbs.AggTags
     :members:
     :inherited-members:
-    :noindex:
 
 AggCategories
 `````````````
@@ -43,4 +41,3 @@ by Bundles to access their members' categories.
 .. autoclass:: datreant.core.agglimbs.AggCategories
     :members:
     :inherited-members:
-    :noindex:

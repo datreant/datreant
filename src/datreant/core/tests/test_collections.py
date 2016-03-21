@@ -433,6 +433,17 @@ class TestBundle:
                 for value in collection.categories['nickname']:
                     assert value in ['friend', 'friend', 'friend', 'friend']
 
+                # test setting values for individual members
+                assert 'favorite ice cream' not in collection.categories
+                ice_creams = ['rocky road',
+                              'americone dream',
+                              'moose tracks',
+                              'vanilla']
+                collection.categories['favorite ice cream'] = ice_creams
+
+                for member, ice_cream in zip(collection, ice_creams):
+                    assert member.categories['favorite ice cream'] == ice_cream
+
         def test_categories_all(self, collection, testtreant, testgroup,
                                 tmpdir):
             with tmpdir.as_cwd():

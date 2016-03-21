@@ -15,7 +15,6 @@ The class :class:`datreant.core.Treant` is the central object of ``datreant.core
 .. autoclass:: datreant.core.Treant
     :members:
     :inherited-members:
-    :noindex:
 
 .. _Tags_api:
 
@@ -27,7 +26,6 @@ access their tags.
 .. autoclass:: datreant.core.limbs.Tags
     :members:
     :inherited-members:
-    :noindex:
 
 .. _Categories_api:
 
@@ -39,7 +37,6 @@ Treants to access their categories.
 .. autoclass:: datreant.core.limbs.Categories
     :members:
     :inherited-members:
-    :noindex:
 
 .. _Group_api:
 
@@ -51,7 +48,6 @@ member locations as a persistent Bundle within its state file.
 .. autoclass:: datreant.core.Group
     :members:
     :inherited-members:
-    :noindex:
 
 Members
 ```````

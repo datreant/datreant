@@ -1,7 +1,6 @@
 ====================================
 Leveraging Groups for aggregate data
 ====================================
-
 A **Group** is a special type of Treant that can keep track of any number of
 Treants it counts as members. Just as a normal Treant can be used to manage
 data obtained from a single study, a Group is useful for managing data obtained

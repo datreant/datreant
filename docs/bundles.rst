@@ -85,6 +85,10 @@ characteristics beyond just their path in the filesystem. Tags are one of these
 distinguishing features, and Bundles can use them directly to filter their
 members.
 
+.. note:: For a refresher on using tags with individual Treants, see 
+          :ref:`Tags_guide`. Everything that applies to using tags with
+          individual Treants applies to using them in aggregate with Bundles.
+
 The aggregated tags for all members in a Bundle are accessible via
 :attr:`datreant.core.Bundle.tags`. Just calling this property gives a view of
 the tags present in every member Treant::
@@ -169,11 +173,106 @@ these tags earlier.
 
 Fuzzy matching for tags
 -----------------------
+Over the course of a project spanning years, you might add several variations
+of essentially the same tag to different Treants. For example, it looks like we
+might have two different tags that mean the same thing among the Treants in our
+Bundle::
 
+    >>> b.tags
+    {'building',
+     'firewood',
+     'for building',
+     'furniture',
+     'huge',
+     'paper',
+     'plant',
+     'shady',
+     'syrup'}
 
+Chances are good we meant the same thing when we added 'building' and 
+'for building' to these Treants. How can we filter on these without explicitly
+including each one in a tag expression?
+
+We can use fuzzy matching::
+
+    >>> b.tags.fuzzy('building', scope='any')
+    ('building', 'for building')
+
+which we can use directly as an "or"-ing in a tag expression::
+
+    >>> b[b.tags[b.tags.fuzzy('building', scope='any')]]
+    <Bundle([<Treant: 'oak'>, <Treant: 'elm'>])>
+
+The threshold for fuzzy matching can be set with the ``threshold`` parameter.
+See the API reference for :meth:`datreant.core.agglimbs.AggTags.fuzzy` for more
+details on how to use this method.
 
 Grouping with Treant categories
 ===============================
+Besides tags, categories are another mechanism for distinguishing Treants from
+each other. We can access these in aggregate with a Bundle, but we can also use
+them to build groupings of members by category value.
+
+.. note:: For a refresher on using categories with individual Treants, see 
+          :ref:`Categories_guide`. Much of what applies to using categories
+          with individual Treants applies to using them in aggregate with
+          Bundles.
+
+The aggregated categories for all members in a Bundle are accessible via
+:attr:`datreant.core.Bundle.categories`. Just calling this property gives a
+view of the categories with keys present in every member Treant::
+
+    >>> b.categories
+    <AggCategories({'age': ['adult', 'young', 'young', 'old'], 
+                    'type': ['evergreen', 'deciduous', 'deciduous', 'deciduous'], 
+                    'bark': ['fibrous', 'smooth', 'mossy', 'mossy']})>
+
+We see that here, the values are lists, which each member of the list giving
+the value for each member, in member order. This is how categories behave when
+accessing from Bundles, since each member may have a different value for a
+given key.
+
+But just as with tags, our Treants probably have more than just the keys 'age',
+'type', and 'bark' among their categories. We can get a dictionary of the
+categories with each key present among at least one member with ::
+
+    >>> b.categories.any
+    {'age': ['adult', 'young', 'young', 'old'],
+     'bark': ['fibrous', 'smooth', 'mossy', 'mossy'],
+     'health': [None, None, 'good', 'poor'],
+     'nickname': ['redwood', None, None, None],
+     'type': ['evergreen', 'deciduous', 'deciduous', 'deciduous']}
+
+Note that for members that lack a given key, the value returned in the
+corresponding list is ``None``. Since ``None`` is not a valid value for a
+category, this unambibuously marks the key as being absent for these members.
+
+Likewise we have ::
+
+    >>> b.categories.all
+    {'age': ['adult', 'young', 'young', 'old'],
+     'bark': ['fibrous', 'smooth', 'mossy', 'mossy'],
+     'type': ['evergreen', 'deciduous', 'deciduous', 'deciduous']}
+
+which we've already seen.
+
+Accessing and setting values with keys
+--------------------------------------
+Consistent with the behavior shown above, when accessing category values in
+aggregate with keys, what is returned is a list of values for each member, in
+member order::
+
+    >>> b.categories['age']
+    ['adult', 'young', 'young', 'old']
+
+And if we access a category with a key that isn't present among all members,
+``None`` is given for those members in which it's missing::
+
+    >>> b.categories['health']
+    [None, None, 'good', 'poor']
+
+
+
 
 API Reference: Bundle
 =====================
