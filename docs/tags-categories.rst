@@ -34,9 +34,16 @@ Or checked for membership ::
     >>> 'mirky' in s.tags
     True
 
-Since the tags of a Treant behave as a set, we can do set operations directly ::
+Since the tags of a Treant behave as a set, we can do set operations directly,
+such as subset comparisons::
 
-    >>> 
+    >>> {'elm', 'misty'} < s.tags
+    True
+
+Or unions::
+
+    >>> {'elm', 'misty'} | s.tags
+    
 
 API Reference: Tags
 -------------------

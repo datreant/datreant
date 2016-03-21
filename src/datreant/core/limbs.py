@@ -113,9 +113,9 @@ class Tags(Limb):
         """Used for constructing the property when attaching this Limb to a class.
 
         """
-        if isinstance(val, (list, set)):
-            self.members.clear()
-            self.members.add(list(val))
+        if isinstance(val, (Tags, list, set)):
+            self.tags.clear()
+            self.tags.add(list(val))
         else:
             raise TypeError("Can only set with a list or set")
 
@@ -143,53 +143,90 @@ class Tags(Limb):
         return len(self._list())
 
     def __eq__(self, other):
-        try:
+        if isinstance(other, (Tags, set, list)):
             return set(self) == set(other)
-        except AttributeError:
-            raise TypeError("Operands must be Tags.")
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
 
     def __lt__(self, other):
-        if isinstance(other, Tags):
+        if isinstance(other, (Tags, set, list)):
             return set(self) < set(other)
         else:
-            raise TypeError("Operands must be Tags.")
+            raise TypeError("Operands must be tags, a set, or list.")
 
     def __sub__(self, other):
         """Return a set giving the Tags in `a` that are not in `b`.
 
         """
-        if isinstance(other, Tags):
+        if isinstance(other, (Tags, set, list)):
             return set(self) - set(other)
         else:
-            raise TypeError("Operands must be Tags.")
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __rsub__(self, other):
+        """Return a set giving the Tags in `a` that are not in `b`.
+
+        """
+        if isinstance(other, (Tags, set, list)):
+            return set(self) - set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
 
     def __or__(self, other):
         """Return a set giving the union of Tags `a` and `b`.
 
         """
-        if isinstance(other, Tags):
+        if isinstance(other, (Tags, set, list)):
             return set(self) | set(other)
         else:
-            raise TypeError("Operands must be Tags.")
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __ror__(self, other):
+        """Return a set giving the union of Tags `a` and `b`.
+
+        """
+        if isinstance(other, (Tags, set, list)):
+            return set(self) | set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
 
     def __and__(self, other):
         """Return a set giving the intersection of Tags `a` and `b`.
 
         """
-        if isinstance(other, Tags):
+        if isinstance(other, (Tags, set, list)):
             return set(self) & set(other)
         else:
-            raise TypeError("Operands must be Tags.")
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __rand__(self, other):
+        """Return a set giving the intersection of Tags `a` and `b`.
+
+        """
+        if isinstance(other, (Tags, set, list)):
+            return set(self) & set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
 
     def __xor__(self, other):
         """Return a set giving the symmetric difference of Tags
         `a` and `b`.
 
         """
-        if isinstance(other, Tags):
+        if isinstance(other, (Tags, set, list)):
             return set(self) ^ set(other)
         else:
-            raise TypeError("Operands must be Tags.")
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __rxor__(self, other):
+        """Return a set giving the symmetric difference of Tags
+        `a` and `b`.
+
+        """
+        if isinstance(other, (Tags, set, list)):
+            return set(self) ^ set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
 
     def _list(self):
         """Get all tags for the Treant as a list.

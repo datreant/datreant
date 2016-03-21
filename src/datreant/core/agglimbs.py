@@ -5,6 +5,7 @@ limbs but serve as aggregators over collections of them.
 
 """
 import itertools
+import functools
 from six import string_types, with_metaclass
 
 from fuzzywuzzy import process
@@ -12,6 +13,7 @@ from fuzzywuzzy import process
 from . import filesystem
 from . import _AGGTREELIMBS, _AGGLIMBS
 from .collections import Bundle
+from .limbs import Tags
 
 
 class _AggTreeLimbmeta(type):
@@ -50,6 +52,7 @@ class AggLimb(with_metaclass(_AggLimbmeta, object)):
         self._collection = collection
 
 
+@functools.total_ordering
 class AggTags(AggLimb):
     """Interface to aggregated tags.
 
@@ -85,6 +88,92 @@ class AggTags(AggLimb):
 
     def __getitem__(self, value):
         return [member.tags[value] for member in self._collection]
+
+    def __eq__(self, other):
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) == set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __lt__(self, other):
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) < set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __sub__(self, other):
+        """Return a set giving the Tags in `a` that are not in `b`.
+
+        """
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) - set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __rsub__(self, other):
+        """Return a set giving the Tags in `a` that are not in `b`.
+
+        """
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) - set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __or__(self, other):
+        """Return a set giving the union of Tags `a` and `b`.
+
+        """
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) | set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __ror__(self, other):
+        """Return a set giving the union of Tags `a` and `b`.
+
+        """
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) | set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __and__(self, other):
+        """Return a set giving the intersection of Tags `a` and `b`.
+
+        """
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) & set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __rand__(self, other):
+        """Return a set giving the intersection of Tags `a` and `b`.
+
+        """
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) & set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __xor__(self, other):
+        """Return a set giving the symmetric difference of Tags
+        `a` and `b`.
+
+        """
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) ^ set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
+
+    def __rxor__(self, other):
+        """Return a set giving the symmetric difference of Tags
+        `a` and `b`.
+
+        """
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(self) ^ set(other)
+        else:
+            raise TypeError("Operands must be tags, a set, or list.")
 
     @property
     def any(self):

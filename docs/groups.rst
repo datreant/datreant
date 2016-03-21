@@ -65,6 +65,11 @@ the same stored information at all times ::
     >>> g2.tags
     <Tags(['oaks'])>
 
+Groups find their members when they go missing
+==============================================
+
+
+
 API Reference: Group
 ====================
 See the :ref:`Group_api` API reference for more details.
