@@ -34,16 +34,39 @@ Or checked for membership ::
     >>> 'mirky' in s.tags
     True
 
+Tags function as sets
+---------------------
 Since the tags of a Treant behave as a set, we can do set operations directly,
 such as subset comparisons::
 
     >>> {'elm', 'misty'} < s.tags
     True
 
-Or unions::
+unions::
 
-    >>> {'elm', 'misty'} | s.tags
-    
+    >>> {'moldy', 'misty'} | s.tags
+    {'elm', 'mirky', 'misty', 'moldy'}
+
+intersections::
+
+    >>> {'elm', 'moldy'} & s.tags
+    {'elm'}
+
+differences::
+
+    >>> s.tags - {'moldy', 'misty'}
+    {'elm', 'mirky'}
+
+or symmetric differences::
+
+    >>> s.tags ^ {'moldy', 'misty'}
+    {u'elm', u'mirky', 'moldy'}
+
+It is also possible to set the tags directly::
+
+    >>> s.tags = s.tags | {'moldy', 'misty'}
+    >>> s.tags
+    <Tags(['elm', 'mirky', 'misty', 'moldy'])>
 
 API Reference: Tags
 -------------------
