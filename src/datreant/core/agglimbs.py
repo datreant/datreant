@@ -400,29 +400,53 @@ class AggCategories(AggLimb):
         for member in self._collection:
             member.categories.clear()
 
-    def keys(self):
-        """Get the unique Categories (keys) of all Treants in collection.
+    def keys(self, scope='all'):
+        """Get the keys present among Treants in collection.
+
+        Parameters
+        ----------
+        scope : {'all', 'any'}
+            Keys to return. 'all' will return only keys found within all
+            Treants in the collection, while 'any' will return keys found
+            within at least one Treant in the collection.
 
         Returns
         -------
-        list of list
-            Keys for each member are returned as a list, where the list of the
-            lists for each member has the same order as the members in the
-            collection.
-        """
-        return [member.categories.keys() for member in self._collection]
+        keys : list
+            Present keys.
 
-    def values(self):
-        """Get the unique category values of all Treants in collection.
+        """
+        keys = [set(member.categories.keys()) for member in self._collection]
+
+        if scope == 'all':
+            out = set.intersection(*keys)
+        elif scope == 'any':
+            out = set.union(*keys)
+        else:
+            raise ValueError("Scope must be either 'all' or 'any'")
+
+        return list(out)
+
+    def values(self, scope='all'):
+        """Get the category values for all Treants in collection.
+
+        Parameters
+        ----------
+        scope : {'all', 'any'}
+            Keys to return. 'all' will return only keys found within all
+            Treants in the collection, while 'any' will return keys found
+            within at least one Treant in the collection.
 
         Returns
         -------
-        list of list
-            Values for each member are returned as a list, where the list of
-            the lists for each member has the same order as the members in the
-            collection.
+        values : list
+            A list of values for each Treant in the collection is returned for
+            each key within the given `scope`. The value lists are given in
+            the same order as the keys from ``AggCategories.keys``.
+
         """
-        return [member.categories.values() for member in self._collection]
+        keys = self.keys(scope=scope)
+        return self[keys]
 
     def groupby(self, keys):
         """Return groupings of Treants based on values of Categories.

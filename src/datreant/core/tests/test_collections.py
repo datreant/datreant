@@ -578,16 +578,24 @@ class TestBundle:
                                    'type': 'evergreen', 'nickname': 'redwood'})
                 collection.add(t1, t2)
 
-                keys_list = []
-                for k in collection.categories.keys():
-                    out = list(k)
-                    out.sort()
-                    keys_list.append(out)
+                for k in collection.categories.keys(scope='all'):
+                    for member in collection:
+                        assert k in member.categories
 
-                assert keys_list[0] == ['age', 'bark']
-                assert keys_list[1] == ['age', 'bark']
-                assert keys_list[2] == ['age', 'bark', 'type']
-                assert keys_list[3] == ['age', 'bark', 'nickname', 'type']
+                for k in collection.categories.keys(scope='any'):
+                    for member in collection:
+                        if k == 'nickname':
+                            if member.name == 'maple':
+                                assert k not in member.categories
+                            elif member.name == 'sequoia':
+                                assert k in member.categories
+                        elif k == 'type':
+                            if (member.name != 'maple' and
+                                    member.name != 'sequoia'):
+                                assert k not in member.categories
+
+                        else:
+                            assert k in member.categories
 
         def test_categories_values(self, collection, testtreant, testgroup,
                                    tmpdir):
@@ -603,17 +611,11 @@ class TestBundle:
                                    'type': 'evergreen', 'nickname': 'redwood'})
                 collection.add(t1, t2)
 
-                values_list = []
-                for k in collection.categories.values():
-                    out = list(k)
-                    out.sort()
-                    values_list.append(out)
-
-                assert values_list[0] == ['smooth', 'young']
-                assert values_list[1] == ['smooth', 'young']
-                assert values_list[2] == ['deciduous', 'rough', 'seedling']
-                assert values_list[3] == ['adult', 'evergreen', 'redwood',
-                                          'rough']
+                for scope in ('all', 'any'):
+                    for i, v in enumerate(
+                            collection.categories.values(scope=scope)):
+                        assert v == collection.categories[
+                                collection.categories.keys(scope=scope)[i]]
 
         def test_categories_groupby(self, collection, testtreant, testgroup,
                                     tmpdir):
