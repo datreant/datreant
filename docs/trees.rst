@@ -102,9 +102,31 @@ how to introspect Trees with Views can be found in :ref:`Views_from_Tree`.
 
 File operations with Leaves
 ===========================
+**Leaf** objects are interfaces to files. At the moment they are most useful
+as pointers to particular paths in the filesystem, making it easy to save
+things like plots or datasets within the Tree they need to go::
 
+    >>> import numpy as np
+    >>> random_array = np.random.randn(1000, 3)
+    >>> np.save(t['random/array.npy'].makedirs().abspath, random_array)
+
+Or getting things back later::
+
+    >>> np.load(t['random/array.npy'].abspath)
+    array([[ 1.28609187, -0.08739047,  1.23335427],
+           [ 1.85979027,  0.37250825,  0.89576077],
+           [-0.77038908, -0.02746453, -0.13723022],
+           ..., 
+           [-0.76445797,  0.94284523,  0.29052753],
+           [-0.44437005, -0.91921603, -0.4978258 ],
+           [-0.70563139, -0.62811205,  0.60291534]])
+
+But they can also be used for introspection, such as reading the bytes from
+a file::
+
+    >>> t['about_moe.txt'].read()
+    'Moe is not a nice person.\n'
 
 API Reference: Leaf 
 -------------------
 See the :ref:`Leaf_api` API reference for more details.
-
