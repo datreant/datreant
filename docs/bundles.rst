@@ -9,20 +9,20 @@ variety of ways, but often with a collection of Treants. If our working director
 has a few Treants in it::
 
     > ls
-    acorns/   beans/   sprout/
+    elm/  maple/  oak/  sequoia/
 
 We can make a Bundle with ::
     
     >>> import datreant.core as dtr
-    >>> b = dtr.Bundle('sprout', 'beans', 'acorns')
+    >>> b = dtr.Bundle('elm', 'maple', 'oak', 'sequoia')
     >>> b
-    <Bundle([<Treant: 'sprout'>, <Treant: 'beans'>, <Treant: 'acorns'>])>
+    <Bundle([<Treant: 'elm'>, <Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'sequoia'>])>
 
 Bundles can also be initialized from existing Treant instances, in addition to
 their paths in the filesystem, so ::
 
-    >>> t = dtr.Treant('sprout')
-    >>> b = dtr.Bundle(t, 'beans', 'acorns')
+    >>> t = dtr.Treant('elm')
+    >>> b = dtr.Bundle(t, 'maple', 'oak', 'sequoia')
 
 would work equally well.
 
@@ -35,13 +35,13 @@ can do this work for us::
 
     >>> b = dtr.discover('.')
     >>> b
-    <Bundle([<Treant: 'beans'>, <Treant: 'sprout'>, <Treant: 'acorns'>])>
+    <Bundle([<Treant: 'sequoia'>, <Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
 
 For this simple example all our Treants were in this directory, so it's not
-quite as useful. But for a directory structure that is deep and convoluted perhaps
-from a project spanning years, ``discover`` lets you get a Bundle of all Treants
-in the tree with little effort. You can then filter on tags and categories to
-get Bundles of the Treants you actually want to work with.
+quite as useful. But for a directory structure that is deep and convoluted
+perhaps from a project spanning years, ``discover`` lets you get a Bundle of
+all Treants in the tree with little effort. You can then filter on tags and
+categories to get Bundles of the Treants you actually want to work with.
 
 See the :func:`datreant.core.discover` API reference for more details.
 
@@ -52,27 +52,27 @@ This includes indexing with integers::
 
     >>> b = dtr.discover()
     >>> b[1]
-    <Treant: 'sprout'>
+    <Treant: 'maple'>
 
 slicing::
 
     >>> b[1:]
-    <Bundle([<Treant: 'sprout'>, <Treant: 'acorns'>])>
+    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
 
 fancy indexing:: 
 
     >>> b[[1, 2, 0]]
-    <Bundle([<Treant: 'sprout'>, <Treant: 'acorns'>, <Treant: 'beans'>])>
+    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'sequoia'>])>
 
 boolean indexing::
 
-    >>> b[[False, False, True]]
-    <Bundle([<Treant: 'acorns'>])>
+    >>> b[[False, False, True, False]]
+    <Bundle([<Treant: 'oak'>])>
 
 and indexing by Treant name::
 
-    >>> b['sprout']
-    <Bundle([<Treant: 'sprout'>])>
+    >>> b['oak']
+    <Bundle([<Treant: 'oak'>])>
 
 Note that since Treant names need not be unique, indexing by name always yields
 a Bundle.
@@ -96,13 +96,15 @@ But our Treants probably have more than just this one tag. We can get at the
 tags represented by at least one Treant in the Bundle with ::
 
     >>> b.tags.any
-    {'for eating',
-     'for squirrels',
-     'fruitless',
-     'not for humans',
+    {'building',
+     'firewood',
+     'for building',
+     'furniture',
+     'huge',
+     'paper',
      'plant',
-     'plentiful',
-     'tiny'}
+     'shady',
+     'syrup'}
 
 Since tags function as a set, we get back a set. Likewise we have ::
 
@@ -114,28 +116,27 @@ which we've already seen.
 
 Using tag expressions to select members
 ---------------------------------------
-
 We can use getitem syntax to query the members of Bundle. For example, giving a
 single tag like ::
 
-    >>> b.tags['for eating']
-    [True, False, False]
+    >>> b.tags['building']
+    [False, False, True, True]
 
 gives us back a list of booleans. This can be used directly on the Bundle as
 a boolean index to get back a subselection of its members::
 
-    >>> b[b.tags['for eating']]
-    <Bundle([<Treant: 'beans'>])>
+    >>> b[b.tags['building']]
+    <Bundle([<Treant: 'oak'>, <Treant: 'elm'>])>
 
 We can also provide multiple tags to match more Treants::
 
-    >>> b[b.tags['for eating', 'not for humans']]
-    <Bundle([<Treant: 'beans'>, <Treant: 'acorns'>])>
+    >>> b[b.tags['building', 'furniture']]
+    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
 
 The above is equivalent to giving a tuple of tags to match, as below::
 
-    >>> b[b.tags[('for eating', 'not for humans')]]
-    <Bundle([<Treant: 'beans'>, <Treant: 'acorns'>])>
+    >>> b[b.tags[('building', 'furniture')]]
+    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
 
 Using a tuple functions as an "or"-ing of the tags given, in which case
 the resulting members are those that have at least one of the tags inside
@@ -143,26 +144,28 @@ the tuple.
 
 But if we give a list instead, we get::
 
-    >>> b[b.tags[['for eating', 'not for humans']]]
+    >>> b[b.tags[['building', 'furniture']]]
     <Bundle([])>
 
 ...something else, in this case nothing. Giving a list functions as an
 "and"-ing of the tags given inside, so the above query will only give members
-that have both 'for eating' and 'not for humans' as tags. There were none in
-this case. 
+that have both 'building' and 'furniture' as tags. There were none in this
+case. 
 
 Lists and tuples can be nested to build complex and/or selections. In addition,
 sets can be used to indicate negation ("not")::
 
-    >>> b[b.tags[{'for eating'}]]
-    <Bundle([<Treant: 'sprout'>, <Treant: 'acorns'>])>
+    >>> b[b.tags[{'furniture'}]]
+    <Bundle([<Treant: 'sequoia'>, <Treant: 'oak'>, <Treant: 'elm'>])>
 
 Putting multiple tags inside a set functions as a negated "and"-ing of the
 contents::
 
-    >>> b[b.tags[{'for eating', 'not for humans'}]]
-    <Bundle([<Treant: 'beans'>, <Treant: 'sprout'>, <Treant: 'acorns'>])>
+    >>> b[b.tags[{'building', 'furniture'}]]
+    <Bundle([<Treant: 'sequoia'>, <Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
 
+which is the opposite of the empty Bundle we got when we did the "and"-ing of
+these tags earlier.
 
 Fuzzy matching for tags
 -----------------------
