@@ -329,6 +329,21 @@ class TestTreant(TestTree):
             with pytest.raises(KeyError):
                 treant.categories['hello?']
 
+        def test_get_categories(self, treant):
+            treant.categories['bark'] = 'dark'
+            treant.categories['leaves'] = 'many'
+            treant.categories['roots'] = 'shallow'
+
+            # get a single category
+            assert treant.categories['leaves'] == 'many'
+
+            # get multiple categories with list
+            assert treant.categories[['leaves', 'bark']] == ['many', 'dark']
+
+            # get multiple categories with set
+            assert treant.categories[{'leaves', 'bark'}] == {'leaves': 'many',
+                                                             'bark': 'dark'}
+
 
 class TestGroup(TestTreant):
     """Test Group-specific features.

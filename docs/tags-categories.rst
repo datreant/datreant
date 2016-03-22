@@ -74,6 +74,9 @@ API Reference: Tags
 -------------------
 See the :ref:`Tags_api` API reference for more details.
 
+
+.. _Categories_guide:
+
 Using categories
 ================
 Categories are key-value pairs. They are particularly useful as switches for

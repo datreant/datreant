@@ -80,6 +80,18 @@ class AggTags(AggLimb):
                 out = out + "'{}'\n".format(tags[i])
         return out
 
+    @staticmethod
+    def _setter(self, val):
+        """Used for constructing the property when attaching this Limb to a class.
+
+        """
+        if isinstance(val, (Tags, list, set)):
+            val = list(val)
+            self.tags.clear()
+            self.tags.add(val)
+        else:
+            raise TypeError("Can only set with tags, a list, or set")
+
     def __iter__(self):
         return self.all.__iter__()
 
@@ -293,6 +305,18 @@ class AggCategories(AggLimb):
             for key, value in categories.items():
                 out = out + "'{}': '{}'\n".format(key, value)
         return out
+
+    @staticmethod
+    def _setter(self, val):
+        """Used for constructing the property when attaching this Limb to a class.
+
+        """
+        if isinstance(val, (Categories, dict)):
+            val = dict(val)
+            self.categories.clear()
+            self.categories.add(val)
+        else:
+            raise TypeError("Can only set with categories or dict")
 
     def __getitem__(self, keys):
         """Get values for a given key, list of keys, or set of keys.

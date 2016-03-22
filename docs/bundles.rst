@@ -271,8 +271,14 @@ And if we access a category with a key that isn't present among all members,
     >>> b.categories['health']
     [None, None, 'good', 'poor']
 
+If we're interested in the values corresponding 
 
 
+Grouping by value
+-----------------
+
+Operating on members in parallel
+================================
 
 API Reference: Bundle
 =====================

@@ -114,10 +114,11 @@ class Tags(Limb):
 
         """
         if isinstance(val, (Tags, list, set)):
+            val = list(val)
             self.tags.clear()
-            self.tags.add(list(val))
+            self.tags.add(val)
         else:
-            raise TypeError("Can only set with a list or set")
+            raise TypeError("Can only set with tags, a list, or set")
 
     def __getitem__(self, value):
         with self._treant._read:
@@ -373,6 +374,18 @@ class Categories(Limb):
             for key in categories.keys():
                 out = out + "'{}': '{}'\n".format(key, categories[key])
         return out
+
+    @staticmethod
+    def _setter(self, val):
+        """Used for constructing the property when attaching this Limb to a class.
+
+        """
+        if isinstance(val, (Categories, dict)):
+            val = dict(val)
+            self.categories.clear()
+            self.categories.add(val)
+        else:
+            raise TypeError("Can only set with categories or dict")
 
     def __getitem__(self, keys):
         """Get values for given `keys`.
