@@ -333,8 +333,42 @@ for more details on how to use this method.
 
 Operating on members in parallel
 ================================
+Although it's common to iterate through the members of a Bundle to perform
+operations on them individually, this approach can often be put in terms
+of mapping a function to each member independently. A Bundle has a ``map``
+method for exactly this purpose::
 
+    >>> b.map(lambda x: (x.name, set(x.tags)))
+    [('sequoia', {'huge', 'plant'}),
+     ('maple', {'furniture', 'plant', 'syrup'}),
+     ('oak', {'building', 'for building', 'plant'}),
+     ('elm', {'building', 'firewood', 'paper', 'plant', 'shady'})]
 
+This example isn't the most useful, but the point is that we can apply any
+function across all members without much fanfare, with the results returned
+in a list and in member order.
+
+The ``map`` method also features a ``processes`` parameter, and setting this
+to an integer greater than 1 will use the :mod:`multiprocessing` module
+internally to map the function across all members using multiple processes.
+For this to work, we have to give our function an actual name so it can
+be serialized (pickled) by ``multiprocessing``::
+
+    >>> def get_tags(treant):
+    ...     return (treant.name, set(treant.tags))
+    >>> b.map(get_tags, processes=2)
+    [('sequoia', {'huge', 'plant'}),
+     ('maple', {'furniture', 'plant', 'syrup'}),
+     ('oak', {'building', 'for building', 'plant'}),
+     ('elm', {'building', 'firewood', 'paper', 'plant', 'shady'})]
+
+For such a simple function and only four Treants in our Bundle, it's unlikely
+that the parallelism gave any advantage here. But functions that need to do
+more complicated work with each Treant and the data stored within its tree can 
+gain much from process parallelism when applied to a Bundle of many Treants.
+
+See the API reference for :meth:`datreant.core.Bundle.map` for more details on
+how to use this method.
 
 API Reference: Bundle
 =====================
