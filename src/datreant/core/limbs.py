@@ -441,6 +441,18 @@ class Categories(Limb):
         """
         self.remove(category)
 
+    def __eq__(self, other):
+        if isinstance(other, (Categories, dict)):
+            return dict(self) == dict(other)
+        else:
+            raise TypeError("Operands must be categories or dicts.")
+
+    def __req__(self, other):
+        if isinstance(other, (Categories, dict)):
+            return dict(self) == dict(other)
+        else:
+            raise TypeError("Operands must be categories or dicts.")
+
     def __iter__(self):
         return self._dict().__iter__()
 

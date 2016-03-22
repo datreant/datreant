@@ -344,6 +344,29 @@ class TestTreant(TestTree):
             assert treant.categories[{'leaves', 'bark'}] == {'leaves': 'many',
                                                              'bark': 'dark'}
 
+        def test_set_categories(self, treant, tmpdir):
+            a_dict = {'leaves': 'many', 'bark': 'dark'}
+
+            treant.categories = a_dict
+            assert treant.categories == a_dict
+
+            a_dict.update({'roots': 'shallow'})
+
+            assert treant.categories != a_dict
+            treant.categories = a_dict
+            assert a_dict == treant.categories
+
+            # test setting from other Treant's categories
+            with tmpdir.as_cwd():
+                s = dtr.Treant('sprout')
+
+            s.categories = {'shoes': False, 'shirt': False}
+
+            assert treant.categories != s.categories
+
+            treant.categories = s.categories
+            assert treant.categories == s.categories
+
 
 class TestGroup(TestTreant):
     """Test Group-specific features.
