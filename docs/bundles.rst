@@ -117,7 +117,6 @@ Since tags function as a set, we get back a set. Likewise we have ::
 
 which we've already seen.
 
-
 Using tag expressions to select members
 ---------------------------------------
 We can use getitem syntax to query the members of Bundle. For example, giving a
@@ -271,14 +270,71 @@ And if we access a category with a key that isn't present among all members,
     >>> b.categories['health']
     [None, None, 'good', 'poor']
 
-If we're interested in the values corresponding 
+If we're interested in the values corresponding to a number of keys, we
+can access these all at once with either a list::
 
+    >>> b.categories[['health', 'bark']]
+    [[None, None, 'good', 'poor'], ['fibrous', 'smooth', 'mossy', 'mossy']]
+
+which will give a list with the values for each given key, in order by key. Or
+with a set::
+
+    >>> b.categories[{'health', 'bark'}]
+    {'bark': ['fibrous', 'smooth', 'mossy', 'mossy'],
+     'health': [None, None, 'good', 'poor']}
+
+which will give a dictionary, with keys as keys and values as values.
+
+We can also set category values for all members as if we were working
+with a single member::
+
+    >>> b.categories['height'] = 'tall'
+    >>> b.categories['height']
+    ['tall', 'tall', 'tall', 'tall']
+
+or we could set the value for each member::
+
+    >>> b.categories['height'] = ['really tall', 'middling', 'meh', 'tall']
+    >>> b.categories['height']
+    ['really tall', 'middling', 'meh', 'tall']
 
 Grouping by value
 -----------------
+Since for a given key a Bundle may have members with a variety of values,
+it can be useful to get subsets of the Bundle as a function of value for a
+given key. We can do this using the ``groupby`` method::
+
+    >>> b.categories.groupby('type')
+    {'deciduous': <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>,
+     'evergreen': <Bundle([<Treant: 'sequoia'>])>}
+
+In grouping by the 'type' key, we get back a dictionary with the values present
+for this key as keys and Bundles giving the corresponding members as values. We
+could iterate through this dictionary and apply different operations to each
+Bundle based on the value. Or we could extract out only the subset we want,
+perhaps just the 'deciduous' Treants::
+
+    >>> b.categories.groupby('type')['deciduous']
+    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
+
+We can also group by more than one key at once::
+
+    >>> b.categories.groupby(['type', 'health'])
+    {('good', 'deciduous'): <Bundle([<Treant: 'oak'>])>,
+     ('poor', 'deciduous'): <Bundle([<Treant: 'elm'>])>}
+
+Now the keys of the resulting dictionary are tuples of value combinations for
+which there are members. The resulting Bundles don't include some members since
+not every member has both the keys 'type' and 'health'.
+
+See the API reference for :meth:`datreant.core.agglimbs.AggCategories.groupby`
+for more details on how to use this method.
+
 
 Operating on members in parallel
 ================================
+
+
 
 API Reference: Bundle
 =====================
