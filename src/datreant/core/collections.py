@@ -441,7 +441,7 @@ class View(CollectionMixin):
         return View([member.glob(pattern) for member in self
                      if isinstance(member, Tree)])
 
-    def filter(self, pattern):
+    def globfilter(self, pattern):
         """Return a View of members that match by name the given globbing
         pattern.
 
@@ -1021,7 +1021,7 @@ class Bundle(CollectionMixin):
         """
         return View([member.tree for member in self])
 
-    def filter(self, pattern):
+    def globfilter(self, pattern):
         """Return a Bundle of members that match by name the given globbing
         pattern.
 
