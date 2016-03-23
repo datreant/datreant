@@ -12,14 +12,7 @@ The rules for this file:
   * release numbers follow "Semantic Versioning" http://semver.org
 
 ------------------------------------------------------------------------------
-??/??/16 dotsdl, andreabedini, richardjgowers, orbeckst, sseyler
+03/23/16 dotsdl, andreabedini, richardjgowers, orbeckst, sseyler
 
     * 0.6.0
-
-API Changes
-
-Enhancement
-
-Changes
-
-Fixes
+    first release

@@ -27,4 +27,4 @@ from .collections import View, Bundle
 from . import attach
 
 __all__ = ['Treant', 'Group', 'Tree', 'Leaf', 'Bundle']
-__version__ = "0.6.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
+__version__ = "0.6.0"  # NOTE: keep in sync with RELEASE in setup.py

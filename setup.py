@@ -10,9 +10,21 @@ For a basic installation just type the command::
 from setuptools import setup, find_packages
 
 setup(name='datreant.core',
-      version='0.6.0-dev',
+      version='0.6.0',
+      description='persistent, pythonic trees for heterogeneous data',
       author='David Dotson',
       author_email='dotsdl@gmail.com',
+      url = 'http://datreant.org/',
+      classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: POSIX',
+        'Programming Language :: Python',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        ],
       packages=find_packages('src'),
       namespace_packages=['datreant'],
       package_dir={'': 'src'},
