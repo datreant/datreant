@@ -47,8 +47,8 @@ See the :func:`datreant.core.discover` API reference for more details.
 
 Basic member selection
 ======================
-All the same selection patterns that work for Views (see :ref:`Views_selecting`).
-This includes indexing with integers::
+All the same selection patterns that work for Views (see :ref:`Views_selecting`)
+work for Bundles. This includes indexing with integers::
 
     >>> b = dtr.discover()
     >>> b[1]
@@ -226,7 +226,7 @@ view of the categories with keys present in every member Treant::
                     'type': ['evergreen', 'deciduous', 'deciduous', 'deciduous'], 
                     'bark': ['fibrous', 'smooth', 'mossy', 'mossy']})>
 
-We see that here, the values are lists, which each member of the list giving
+We see that here, the values are lists, with each element of the list giving
 the value for each member, in member order. This is how categories behave when
 accessing from Bundles, since each member may have a different value for a
 given key.
@@ -244,7 +244,7 @@ categories with each key present among at least one member with ::
 
 Note that for members that lack a given key, the value returned in the
 corresponding list is ``None``. Since ``None`` is not a valid value for a
-category, this unambibuously marks the key as being absent for these members.
+category, this unambiguously marks the key as being absent for these members.
 
 Likewise we have ::
 

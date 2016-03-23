@@ -1,8 +1,9 @@
 Treants
 =======
 Treants are the core units of functionality of ``datreant``. They function as
-specially marked directories with distinguishing characteristics. They designed
-to be subclassed, with their functionality extendable with attachable Limbs.
+specially marked directories with distinguishing characteristics. They are
+designed to be subclassed, with their functionality extendable with attachable
+Limbs.
 
 The components documented here are those included within ``datreant.core``.
 
@@ -51,8 +52,9 @@ member locations as a persistent Bundle within its state file.
 
 Members
 ```````
-The class :class:`datreant.core.limbs.MemberBundle` is the interface used
-by a Group to manage its members. 
+The class :class:`datreant.core.limbs.MemberBundle` is the interface used by a
+Group to manage its members. Its API matches that of
+:class:`datreant.core.Bundle`.
 
 .. autoclass:: datreant.core.limbs.MemberBundle
     :members:

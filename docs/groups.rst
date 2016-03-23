@@ -37,7 +37,7 @@ are stored within the Group's state file. Obtaining subsets of the
 MemberBundle, such as by slicing, indexing, filtering on tags, etc., will
 always yield a Bundle::
 
-    >>>> g.members[2:]
+    >>> g.members[2:]
     <Bundle([<Treant: 'oak'>, <Treant: 'elm'>])>
 
 .. note:: Members are generated from their state files on disk upon access.
