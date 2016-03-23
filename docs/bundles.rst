@@ -30,7 +30,7 @@ would work equally well.
 Gathering Treants from the filesystem
 =====================================
 It can be tedious manually hunting for existing Treants throughout the
-filesystem. For this reason the :func:`datreant.core.discover` function
+filesystem. For this reason the :func:`~datreant.core.discover` function
 can do this work for us::
 
     >>> b = dtr.discover('.')
@@ -39,9 +39,10 @@ can do this work for us::
 
 For this simple example all our Treants were in this directory, so it's not
 quite as useful. But for a directory structure that is deep and convoluted
-perhaps from a project spanning years, ``discover`` lets you get a Bundle of
-all Treants in the tree with little effort. You can then filter on tags and
-categories to get Bundles of the Treants you actually want to work with.
+perhaps from a project spanning years, :func:`~datreant.core.discover` lets
+you get a Bundle of all Treants in the tree with little effort. You can then
+filter on tags and categories to get Bundles of the Treants you actually want
+to work with.
 
 See the :func:`datreant.core.discover` API reference for more details.
 
@@ -203,7 +204,7 @@ which we can use directly as an "or"-ing in a tag expression::
     <Bundle([<Treant: 'oak'>, <Treant: 'elm'>])>
 
 The threshold for fuzzy matching can be set with the ``threshold`` parameter.
-See the API reference for :meth:`datreant.core.agglimbs.AggTags.fuzzy` for more
+See the API reference for :meth:`~datreant.core.agglimbs.AggTags.fuzzy` for more
 details on how to use this method.
 
 Grouping with Treant categories
@@ -302,7 +303,8 @@ Grouping by value
 -----------------
 Since for a given key a Bundle may have members with a variety of values,
 it can be useful to get subsets of the Bundle as a function of value for a
-given key. We can do this using the ``groupby`` method::
+given key. We can do this using the
+:meth:`~datreant.core.agglimbs.AggCategories.groupby` method::
 
     >>> b.categories.groupby('type')
     {'deciduous': <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>,
@@ -327,7 +329,7 @@ Now the keys of the resulting dictionary are tuples of value combinations for
 which there are members. The resulting Bundles don't include some members since
 not every member has both the keys 'type' and 'health'.
 
-See the API reference for :meth:`datreant.core.agglimbs.AggCategories.groupby`
+See the API reference for :meth:`~datreant.core.agglimbs.AggCategories.groupby`
 for more details on how to use this method.
 
 
@@ -348,11 +350,11 @@ This example isn't the most useful, but the point is that we can apply any
 function across all members without much fanfare, with the results returned
 in a list and in member order.
 
-The ``map`` method also features a ``processes`` parameter, and setting this
-to an integer greater than 1 will use the :mod:`multiprocessing` module
-internally to map the function across all members using multiple processes.
-For this to work, we have to give our function an actual name so it can
-be serialized (pickled) by ``multiprocessing``::
+The :meth:`~datreant.core.Bundle.map` method also features a ``processes``
+parameter, and setting this to an integer greater than 1 will use the
+:mod:`multiprocessing` module internally to map the function across all members
+using multiple processes.  For this to work, we have to give our function an
+actual name so it can be serialized (pickled) by :mod:`multiprocessing`::
 
     >>> def get_tags(treant):
     ...     return (treant.name, set(treant.tags))
@@ -367,7 +369,7 @@ that the parallelism gave any advantage here. But functions that need to do
 more complicated work with each Treant and the data stored within its tree can 
 gain much from process parallelism when applied to a Bundle of many Treants.
 
-See the API reference for :meth:`datreant.core.Bundle.map` for more details on
+See the API reference for :meth:`~datreant.core.Bundle.map` for more details on
 how to use this method.
 
 API Reference: Bundle

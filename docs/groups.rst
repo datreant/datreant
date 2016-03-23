@@ -67,7 +67,7 @@ members. It will first check the last known locations for each member, and
 for those it has yet to find it will begin a downward search starting from its
 own tree, then its parent tree, etc. It will continue this process until it
 either finds all its members, hits the root of the filesystem, or its search
-times out.
+times out. If it fails to find a member it will raise an :exc:`IOError`.
 
 If the Group you are using fails to find some of its members before timing out,
 you can set the maximum search time to a longer timeout, in seconds::

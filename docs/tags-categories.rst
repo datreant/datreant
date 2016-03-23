@@ -96,9 +96,10 @@ of **Treant** it is working with using ::
     'dark'
 
 The keys for categories must be strings, but the values may be strings, numbers
-(floats, ints), or booleans (``True``, ``False``). ``None`` may not be used since
-this is used in aggregations (see :ref:`Bundles`) to indicate keys that are
-absent.
+(floats, ints), or booleans (``True``, ``False``). 
+
+.. note:: ``None`` may not be used as a category value since this is used in
+          aggregations (see :ref:`Bundles`) to indicate keys that are absent.
 
 API Reference: Categories
 -------------------------
