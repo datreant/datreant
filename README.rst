@@ -44,11 +44,10 @@ Contributing
 This project is still under heavy development, and there are certainly rough
 edges and bugs. Issues and pull requests welcome! 
 
-Check out our `contributor's guide`_
-if you learn how to get started with contributing back.
+Check out our `contributor's guide`_ to learn how to get started with
+contributing back.
 
-.. _`contributor's guide`: https://github.com/datreant/datreant/wiki/Contributing
-
+.. _`contributor's guide`: http://datreant.readthedocs.org/en/develop/contributing.html
 
 .. |docs| image:: https://readthedocs.org/projects/datreant/badge/?version=develop
     :alt: Documentation Status

@@ -58,16 +58,11 @@ the project, clone the repository to your local machine with::
     git clone https://github.com/datreant/datreant.core.git
 
 
-Dependencies
-============
-The dependencies of ``datreant.core`` are light, with many being pure-Python
-packages themselves. 
-
-
 Contributing
 ============
 This project is still under heavy development, and there are certainly rough
-edges and bugs. Issues and pull requests welcome! 
+edges and bugs. Issues and pull requests welcome! See :ref:`Contributing`
+for more information.
 
 --------------------------------------------------------------------------------
 
@@ -84,11 +79,13 @@ edges and bugs. Issues and pull requests welcome!
     groups
     api 
 
-.. .. toctree::
-..     :maxdepth: 1
+.. toctree::
+    :maxdepth: 1
     :caption: For Developers
-    limbs-treelimbs
-    agglimbs-aggtreelimbs
+
+    contributing
+..    limbs-treelimbs
+..    agglimbs-aggtreelimbs
 
 
 .. toctree::

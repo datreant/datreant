@@ -1,10 +1,38 @@
 ========================
 Installing datreant.core
 ========================
-There are no official releases of datreant yet, but the master branch on GitHub
-gives the most current state of the package. 
+You can install ``datreant.core`` from `PyPI <https://pypi.python.org/>`_ using pip::
 
-.. note:: Python 2.7 or above is required for all datreant packages.
+    pip install datreant.core
+
+It is also possible to use ``--user`` to install into your user Python
+site-packages directory::
+
+    pip install --user datreant.core
+
+All datreant packages currently support the following Python versions::
+
+- 2.7
+- 3.3
+- 3.4
+- 3.5
+
+
+Dependencies
+============
+The dependencies of ``datreant.core`` are light, with many being pure-Python
+packages themselves. The current dependencies are::
+
+- asciitree
+- pathlib
+- scandir
+- six
+- fuzzywuzzy
+
+These are automatically installed when installing ``datreant.core``.
+
+Installing from source
+======================
 
 To install from source, clone the repository and switch to the master branch ::
 
@@ -14,12 +42,14 @@ To install from source, clone the repository and switch to the master branch ::
 
 Installation of the packages is as simple as ::
 
-    python setup.py install
+    pip install .
 
 This installs datreant in the system wide python directory; this may require
-administrative privileges.
+administrative privileges. If you have a virtualenv active, it will install the
+package within your virtualenv. See :ref:`Development_env` for more on setting
+up a proper development environment.
 
-It is also possible to use ``--prefix``, ``--home``, or ``--user`` options for
-setup.py to install in a different (probably your local user) Python
-site-packages directory. ``python setup.py install --help`` should show you
-your options.
+It is also possible to use ``--user`` to install into your user's site-packages
+directory::
+
+    pip install --user -e .
