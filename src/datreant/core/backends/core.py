@@ -234,6 +234,16 @@ class File(object):
         self.fdlock = None
         self._close_fd()
 
+    def delete(self):
+        """Delete this file and its proxy file.
+
+        This file instance will be unusable after this operation.
+
+        """
+        with self.write():
+            os.remove(self.filename)
+            os.remove(self.proxy)
+
 
 class FileSerial(File):
     """File object base class for serialization formats, such as JSON.
