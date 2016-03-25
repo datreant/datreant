@@ -5,8 +5,8 @@ You can install ``datreant.core`` from `PyPI <https://pypi.python.org/>`_ using 
 
     pip install datreant.core
 
-It is also possible to use ``--user`` to install into your user Python
-site-packages directory::
+It is also possible to use ``--user`` to install into your user's site-packages
+directory::
 
     pip install --user datreant.core
 
@@ -44,12 +44,12 @@ Installation of the packages is as simple as ::
 
     pip install .
 
-This installs datreant in the system wide python directory; this may require
-administrative privileges. If you have a virtualenv active, it will install the
-package within your virtualenv. See :ref:`Development_env` for more on setting
-up a proper development environment.
+This installs ``datreant.core`` in the system wide python directory; this may
+require administrative privileges. If you have a virtualenv active, it will
+install the package within your virtualenv. See :ref:`Development_env` for more
+on setting up a proper development environment.
 
 It is also possible to use ``--user`` to install into your user's site-packages
 directory::
 
-    pip install --user -e .
+    pip install --user .
