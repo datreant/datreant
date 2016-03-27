@@ -366,12 +366,22 @@ class View(CollectionMixin):
         return [member.relpath for member in self]
 
     @property
-    def as_Bundle(self):
+    def bundle(self):
         """A Bundle of all existing Treants among the Trees and Leaves
         in this View.
 
         """
-        return Bundle(self)
+        b = Bundle(self)
+
+        # try and attach all the limbs this Bundle has
+        for agglimb in self.limbs:
+            try:
+                b.attach(agglimb)
+            except KeyError:
+                pass
+
+        return b
+
 
     @property
     def exists(self):
@@ -1015,11 +1025,20 @@ class Bundle(CollectionMixin):
         return flattened
 
     @property
-    def as_View(self):
+    def view(self):
         """Obtain a View giving the Tree for each Treant in this Bundle.
 
         """
-        return View([member.tree for member in self])
+        v = View([member.tree for member in self])
+
+        # try and attach all the limbs this Bundle has
+        for agglimb in self.limbs:
+            try:
+                v.attach(agglimb)
+            except KeyError:
+                pass
+
+        return v
 
     def globfilter(self, pattern):
         """Return a Bundle of members that match by name the given globbing

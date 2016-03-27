@@ -19,8 +19,8 @@ The rules for this file:
 
 API Changes
 
-    * ``Bundle.trees`` -> ``Bundle.as_View`` and ``View.treants`` ->
-      ``View.as_Bundle``; change was made to remove ambiguity of 
+    * ``Bundle.trees`` -> ``Bundle.view`` and ``View.treants`` ->
+      ``View.bundle``; change was made to remove ambiguity of 
       ``Bundle.trees`` in light of ``View.trees``, and to make clear
       that these properties serve as transformations in some way.
 
