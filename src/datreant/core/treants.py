@@ -137,12 +137,13 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         except AttributeError:
             return NotImplemented
 
-    def __add__(a, b):
+    def __add__(self, other):
         """Addition of treants with collections or treants yields Bundle.
 
         """
-        if isinstance(b, (Treant, Bundle)):
-            return Bundle(a, b)
+        if isinstance(other, (Treant, Bundle)):
+            limbs = self.limbs | other.limbs
+            return Bundle(self, other, limbs=limbs)
         else:
             raise TypeError("Operands must be Treants or Bundles.")
 

@@ -18,6 +18,10 @@ from . import _TREELIMBS
 
 @total_ordering
 class Veg(object):
+
+    _classlimbs = set()
+    _limbs = set()
+
     def __init__(self, filepath):
         self._path = Path(os.path.abspath(filepath))
 
@@ -86,6 +90,13 @@ class Veg(object):
         """
         return os.path.basename(os.path.abspath(self.abspath))
 
+    @property
+    def limbs(self):
+        """A set giving the names of this object's attached limbs.
+
+        """
+        return self._classlimbs | self._limbs
+
 
 class Leaf(Veg):
     """A file in the filesystem.
@@ -152,9 +163,6 @@ class Tree(Veg):
     """A directory.
 
     """
-    _classlimbs = set()
-    _limbs = set()
-
     def __init__(self, dirpath, limbs=None):
         if os.path.isfile(dirpath):
             raise ValueError("'{}' is an existing file; "
@@ -216,7 +224,7 @@ class Tree(Veg):
             for item in path:
                 outview.append(filt(item))
 
-            return View(outview)
+            return View(outview, limbs=self.limbs)
         elif isinstance(path, string_types):
             return filt(path)
         else:
@@ -300,7 +308,7 @@ class Tree(Veg):
                 break
 
             out.sort()
-            return View(out)
+            return View(out, limbs=self.limbs)
         else:
             raise OSError("Tree doesn't exist in the filesystem")
 
@@ -323,7 +331,7 @@ class Tree(Veg):
             break
 
         out.sort()
-        return View(out)
+        return View(out, limbs=self.limbs)
 
     @property
     def hidden(self):
@@ -347,7 +355,7 @@ class Tree(Veg):
             out = outdirs + outfiles
             break
 
-        return View(out)
+        return View(out, limbs=self.limbs)
 
     @property
     def children(self):
@@ -357,7 +365,7 @@ class Tree(Veg):
 
         """
         from .collections import View
-        return View(self.trees + self.leaves + self.hidden)
+        return View(self.trees + self.leaves + self.hidden, limbs=self.limbs)
 
     discover = discover
 
@@ -370,7 +378,7 @@ class Tree(Veg):
 
         """
         from .collections import Bundle
-        return Bundle(self.trees + self.hidden.membertrees)
+        return Bundle(self.trees + self.hidden.membertrees, limbs=self.limbs)
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees matching given globbing
@@ -392,7 +400,7 @@ class Tree(Veg):
 
         out.sort()
 
-        return View(out)
+        return View(out, limbs=self.limbs)
 
     def draw(self, depth=None, hidden=False):
         """Print an ASCII-fied visual of the tree.
@@ -459,10 +467,3 @@ class Tree(Veg):
         self.makedirs()
 
         return self
-
-    @property
-    def limbs(self):
-        """A set giving the names of this Tree's attached limbs.
-
-        """
-        return self._classlimbs | self._limbs

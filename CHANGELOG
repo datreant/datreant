@@ -28,6 +28,11 @@ Enhancements
 
 
 Fixes
+    
+    * Bundles and Views obtained from other Bundles, Views, Trees, or Treants
+      automatically get all limbs of the object they were obtained from;
+      set operations between Views/Bundles will give unions of their attached
+      limbs
 
 
 Changes
