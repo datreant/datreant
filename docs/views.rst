@@ -72,13 +72,13 @@ Or only the Leaves? ::
 
 We can get more granular and filter members using glob patterns on their names::
 
-    >>> v.filter('*r*')
+    >>> v.globfilter('*r*')
     <View([<Tree: 'larry/'>, <Leaf: 'curly.txt'>])>
 
 And since all these properties and methods return Views, we can stack
 operations::
 
-    >>> v.filter('*r*').memberleaves
+    >>> v.globfilter('*r*').memberleaves
     <View([<Leaf: 'curly.txt'>])>
 
 
