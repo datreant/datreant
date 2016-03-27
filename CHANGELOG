@@ -1,6 +1,6 @@
-========================
- datreant.core CHANGELOG
-========================
+=======================
+datreant.core CHANGELOG
+=======================
 
 The rules for this file:
   * entries are sorted newest-first.
@@ -16,6 +16,24 @@ The rules for this file:
 ??/??/16 dotsdl
 
     * 0.7.0
+
+API Changes
+
+    * ``Bundle.trees`` -> ``Bundle.as_View`` and ``View.treants`` ->
+      ``View.as_Bundle``; change was made to remove ambiguity of 
+      ``Bundle.trees`` in light of ``View.trees``, and to make clear
+      that these properties serve as transformations in some way.
+
+Enhancements
+
+
+Fixes
+
+
+Changes
+
+
+
 
 
 03/23/16 dotsdl, andreabedini, richardjgowers, orbeckst, sseyler

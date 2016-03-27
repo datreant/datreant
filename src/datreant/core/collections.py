@@ -366,7 +366,7 @@ class View(CollectionMixin):
         return [member.relpath for member in self]
 
     @property
-    def treants(self):
+    def as_Bundle(self):
         """A Bundle of all existing Treants among the Trees and Leaves
         in this View.
 
@@ -1015,7 +1015,7 @@ class Bundle(CollectionMixin):
         return flattened
 
     @property
-    def trees(self):
+    def as_View(self):
         """Obtain a View giving the Tree for each Treant in this Bundle.
 
         """
