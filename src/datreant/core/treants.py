@@ -114,7 +114,7 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         return self._backend.write()
 
     def __repr__(self):
-        return "<Treant: '{}'>".format(self.name)
+        return "<{}: '{}'>".format(self._treanttype, self.name)
 
     def __getstate__(self):
         return self.filepath
