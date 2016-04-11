@@ -33,6 +33,8 @@ Fixes
       automatically get all limbs of the object they were obtained from;
       set operations between Views/Bundles will give unions of their attached
       limbs
+    * ``datreant.core.discover`` no longer traverses directories beyond given
+      depth, or beyond treantdepth. These parameters now work as expected. #45
 
 
 Changes

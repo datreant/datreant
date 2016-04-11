@@ -5,6 +5,7 @@ User-level functions for manipulating Treants.
 import os
 import scandir
 import fnmatch
+from six.moves import range
 
 from . import _TREANTS
 
@@ -45,30 +46,35 @@ def discover(dirpath='.', depth=None, treantdepth=None):
     treantdirs = set()
 
     for root, dirs, files in scandir.walk(dirpath):
-        # depth check; if too deep, next iteration
-        if depth and len(root.split(os.sep)) - startdepth > depth:
+        for treanttype in _TREANTS:
+            outnames = fnmatch.filter(files,
+                                      "{}.*.json".format(treanttype))
+
+            if treantdepth is not None and outnames:
+                treantdirs.add(root)
+
+            paths = [os.path.join(root, file) for file in outnames]
+            found.extend(paths)
+
+        # depth check; if too deep, empty dirs to avoid downward traversal
+        if depth is not None and len(root.split(os.sep)) - startdepth >= depth:
+            for i in range(len(dirs)):
+                dirs.pop()
             continue
 
         # Treant depth checking
-        if treantdepth:
+        if treantdepth is not None:
 
             # remove Treant dirs from our set of them if we've backed out
             for treantdir in list(treantdirs):
                 if treantdir not in root:
                     treantdirs.remove(treantdir)
 
-            # actual depth check
+            # actual depth check; if too deep, empty dirs to avoid downward
+            # traversal
             if len(treantdirs) > treantdepth:
+                for i in range(len(dirs)):
+                    dirs.pop()
                 continue
-
-        for treanttype in _TREANTS:
-            outnames = fnmatch.filter(files,
-                                      "{}.*.json".format(treanttype))
-
-            if treantdepth and outnames:
-                treantdirs.add(root)
-
-            paths = [os.path.join(root, file) for file in outnames]
-            found.extend(paths)
 
     return Bundle(found)
