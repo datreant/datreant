@@ -1,0 +1,85 @@
+package:
+  name: datreant.core
+  version: "0.6.0"
+
+source:
+  # path: ../../../
+  git_url: https://github.com/datreant/datreant.core.git
+  # git_branch: master
+  git_tag: release-0.6.0
+
+build:
+  noarch_python: True
+  # preserve_egg_dir: True
+  # entry_points:
+    # Put any entry points (scripts to be generated automatically) here. The
+    # syntax is module:function.  For example
+    #
+    # - datreant.core = datreant.core:main
+    #
+    # Would create an entry point called datreant.core that calls datreant.core.main()
+
+
+  # If this is a new build for the same version, increment the build
+  # number. If you do not include this key, it defaults to 0.
+  # number: 1
+
+requirements:
+  build:
+    - python
+    - pip
+    - setuptools
+    - asciitree
+    - pathlib
+    - scandir
+    - six
+    - fuzzywuzzy
+    - pytest
+
+  run:
+    - python
+    - asciitree
+    - pathlib
+    - scandir
+    - six
+    - fuzzywuzzy
+    - pytest
+    - python-levenshtein
+
+test:
+  # Python imports
+  imports:
+    - datreant
+    - datreant.core
+    - datreant.core.backends
+    - datreant.core.tests
+
+  requires:
+    # Put any additional test requirements here.  For example
+    - pytest
+    - python
+    - asciitree
+    - pathlib
+    - scandir
+    - six
+    - fuzzywuzzy
+    - python-levenshtein
+
+  commands:
+    # You can put test commands to be run here.  Use this to test that the
+    # entry points work.
+    # - py.test src/datreant
+
+
+  # You can also put a file called run_test.py in the recipe that will be run
+  # at test time.
+
+
+about:
+  home: http://datreant.org/
+  license: BSD License
+  summary: 'persistent, pythonic trees for heterogeneous data'
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
