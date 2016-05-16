@@ -523,10 +523,11 @@ class Bundle(CollectionMixin):
 
         # attach any limbs given
         for agglimb in kwargs.pop('limbs', []):
-            try:
-                self.attach(agglimb)
-            except KeyError:
-                pass
+            if agglimb not in self.limbs:
+                try:
+                    self.attach(agglimb)
+                except KeyError:
+                    pass
 
     def __repr__(self):
         return "<Bundle({})>".format(self._list())
@@ -670,7 +671,7 @@ class Bundle(CollectionMixin):
 
         # set the property
         setattr(cls, limb._name,
-                property(getter, None, None, limb.__doc__))
+                property(getter, setter, None, limb.__doc__))
 
         if limb._name in _AGGTREELIMBS or limb._name in _AGGLIMBS:
             cls._classagglimbs.add(limb._name)

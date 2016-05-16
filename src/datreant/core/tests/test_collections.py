@@ -305,19 +305,71 @@ class TestBundle:
                     assert tag in collection.tags
 
         def test_tags_setting(self, collection, testtreant, testgroup, tmpdir):
-            pass
+            with tmpdir.as_cwd():
+                collection.add(testtreant, testgroup)
 
-        def test_tags_all(self, collection, testtreant, testgroup, tmpdir):
-            pass
+                assert len(collection.tags) == 0
+
+                # add as list
+                collection.tags = ['broiled', 'not baked']
+
+                assert len(collection.tags) == 2
+                for tag in ('broiled', 'not baked'):
+                    assert tag in collection.tags
+
+                collection.tags.clear()
+
+                # add as set
+                collection.tags = {'broiled', 'not baked'}
+
+                assert len(collection.tags) == 2
+                for tag in ('broiled', 'not baked'):
+                    assert tag in collection.tags
+
+                collection.tags.clear()
+
+                # add as Tags
+                t = dtr.Treant('mark twain')
+                t.tags.add('literature', 'quotables')
+                collection.tags = t.tags
+
+                assert len(collection.tags) == 2
+                for tag in ('literature', 'quotables'):
+                    assert tag in collection.tags
+
+        def test_tags_all(self, collection, tmpdir):
+            with tmpdir.as_cwd():
+
+                moe = dtr.Treant('moe',
+                                 tags=['smartest', 'mean', 'stooge'])
+                larry = dtr.Treant('larry',
+                                   tags=['weird', 'means well', 'stooge'])
+                curly = dtr.Treant('curly',
+                                   tags=['dumb', 'nyuk-nyuk', 'stooge'])
+
+                collection.add(moe, larry, curly)
+
+                assert len(collection.tags.all) == 1
+                assert 'stooge' in collection.tags.all
 
         def test_tags_any(self, collection, testtreant, testgroup, tmpdir):
-            pass
+            with tmpdir.as_cwd():
 
-        def test_tags_any(self, collection, testtreant, testgroup, tmpdir):
-            pass
+                moe = dtr.Treant('moe',
+                                 tags=['smartest', 'mean', 'stooge'])
+                larry = dtr.Treant('larry',
+                                   tags=['weird', 'means well', 'stooge'])
+                curly = dtr.Treant('curly',
+                                   tags=['dumb', 'nyuk-nyuk', 'stooge'])
 
-        def test_tags_set_behavior(self, collection, testtreant, testgroup,
-                                   tmpdir):
+                collection.add(moe, larry, curly)
+
+                assert len(collection.tags.any) == 7
+                for tag in ('smartest', 'mean', 'weird', 'means well',
+                            'dumb', 'nyuk-nyuk', 'stooge'):
+                    assert tag in collection.tags.any
+
+        def test_tags_set_behavior(self, collection, tmpdir):
             pass
 
         def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):

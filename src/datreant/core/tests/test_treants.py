@@ -243,10 +243,64 @@ class TestTreant(TestTree):
                 assert t1.tags > t3.tags
 
         def test_tags_setting(self, tmpdir, treantclass):
-            pass
+            """Test that we can set tags with lists or sets, or with Tags
+            objects.
+
+            """
+            with tmpdir.as_cwd():
+
+                # set with a list
+                t1 = treantclass('maple')
+                t1.tags = ['sprout', 'deciduous']
+
+                assert t1.tags == {'sprout', 'deciduous'}
+
+                # set with a set
+                t2 = treantclass('elm')
+                t2.tags = {'sprout', 'deciduous'}
+
+                assert t2.tags == {'sprout', 'deciduous'}
+
+                # set with a Tags object
+                t3 = treantclass('sequoia')
+                t3.tags = t2.tags
+
+                assert t3.tags == {'sprout', 'deciduous'}
 
         def test_tags_fuzzy(self, tmpdir, treant):
-            pass
+            """Test that fuzzy matching for tags works as expected.
+            """
+            treant.tags.add('bark', 'leafy', 'green', 'Leafy')
+
+            for tag in ('leafy', 'Leafy'):
+                assert tag in treant.tags.fuzzy('leafy')
+
+        def test_tags_getitem(self, treant):
+            """Test the queryability of tags via its __getitem__ method."""
+            treant.tags.add('marklar', 'lark', 'bark')
+
+            t = treant
+
+            # single presence
+            assert t.tags['lark']
+            assert not t.tags['mark']
+
+            # single not present
+            assert t.tags[{'mark'}]
+
+            # anding
+            assert t.tags[['marklar', 'bark']]
+
+            # oring
+            assert t.tags['marklar', 'bark']
+            assert t.tags['mark', 'bark']
+            assert not t.tags['mark', 'dark']
+
+            # not anding
+            assert t.tags[{'dark', 'marklar'}]
+
+            # complex logic
+            assert t.tags[[('marklar', 'bark'), {'dark'}]]
 
     class TestCategories:
         """Test treant categories"""

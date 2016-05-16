@@ -65,10 +65,13 @@ test:
     - fuzzywuzzy
     - python-levenshtein
 
+  files:
+    - ../../../src/datreant/core/tests
+
   commands:
     # You can put test commands to be run here.  Use this to test that the
     # entry points work.
-    # - py.test src/datreant
+    - py.test src
 
 
   # You can also put a file called run_test.py in the recipe that will be run

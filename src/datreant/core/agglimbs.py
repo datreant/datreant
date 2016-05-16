@@ -13,7 +13,7 @@ from fuzzywuzzy import process
 from . import filesystem
 from . import _AGGTREELIMBS, _AGGLIMBS
 from .collections import Bundle
-from .limbs import Tags
+from .limbs import Tags, Categories
 
 
 class _AggTreeLimbmeta(type):
