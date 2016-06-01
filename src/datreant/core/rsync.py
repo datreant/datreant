@@ -16,7 +16,14 @@ def rsync(source, dest, compress=True, backup=False, dry=False, include=None, ex
         opts.append('--dry-run')
     
     if include:
-        opts.extend(['--include ', include])
+        opts.extend(['--include=*/'])
+        
+        if isinstance(include, list):
+            opts.extend(["--include={}".format(inc) for inc in include])
+        elif isinstance(include, str):
+            opts.append("--include={}".format(include))
+        
+        opts.extend(['--exclude=*'])
     
     if exclude:
         if isinstance(exclude, list):
@@ -26,6 +33,7 @@ def rsync(source, dest, compress=True, backup=False, dry=False, include=None, ex
             
     source = os.path.join(source, '') # Add trailing slash
     cmd = [rsync_path] + opts + [source, dest]
+    print(cmd)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     if p.returncode != 0:

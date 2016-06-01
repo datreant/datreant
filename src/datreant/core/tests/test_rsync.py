@@ -34,7 +34,7 @@ def test_excludes(tmpdir):
         sequoia = _create_tree('sequoia', ['hello.txt', 'data/hello.txt', 
                                            'data/world.dat', 'world.dat'])    
         sequoia2 = dtr.Tree("sequoia2").makedirs()
-        sequoia3 = dtr.Tree("sequoia2").makedirs()
+        sequoia3 = dtr.Tree("sequoia3").makedirs()
         
         sequoia.sync(sequoia2, exclude='*.txt')
         
@@ -48,9 +48,44 @@ def test_excludes(tmpdir):
         assert not os.path.exists('sequoia3/hello.txt')
         assert not os.path.exists('sequoia3/world.dat')
         
-        assert not os.path.exists('sequoia3/data/')        
+        assert os.path.exists('sequoia3/data/')        
     
     
+def test_includes(tmpdir):
+    with tmpdir.as_cwd():
+        sequoia = _create_tree('sequoia', ['hello.txt', 'data/hello.txt', 
+                                           'data/world.dat', 'world.dat'])    
+        sequoia2 = dtr.Tree("sequoia2").makedirs()
+        sequoia3 = dtr.Tree("sequoia3").makedirs()
+        sequoia4 = dtr.Tree("sequoia4").makedirs()
+        
+        # Only txt
+        sequoia.sync(sequoia2, include='*.txt')
+        
+        assert os.path.exists('sequoia2/data/hello.txt')
+        assert os.path.exists('sequoia2/hello.txt')
+        
+        assert not os.path.exists('sequoia2/world.dat')
+        assert not os.path.exists('sequoia2/data/world.dat')
+        
+        # Only txt and dat
+        sequoia.sync(sequoia3, include=['*.txt', '*.dat'])
+        
+        assert os.path.exists('sequoia3/data/hello.txt')
+        assert os.path.exists('sequoia3/hello.txt')
+        
+        assert os.path.exists('sequoia3/world.dat')
+        assert os.path.exists('sequoia3/data/world.dat')
+        
+        # We can also test include/excludes at the same time
+        sequoia.sync(sequoia4, exclude='*.txt', include=['data/*'])
+        
+        assert os.path.exists('sequoia4/data/world.dat')
+        assert not os.path.exists('sequoia4/hello.txt')
+        assert not os.path.exists('sequoia4/world.dat')
+        
+        
+        
 # def test_sync_remote(tmpdir):
 #     remote_path = 'user@host:/tmp/sequoia'
 #     with tmpdir.as_cwd():
