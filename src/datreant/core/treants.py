@@ -6,7 +6,7 @@ import os
 import functools
 import six
 from uuid import uuid4
-from pathlib import Path
+from pathlib2 import Path
 
 from . import limbs
 from . import filesystem
@@ -316,7 +316,7 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
 
     @property
     def path(self):
-        """Treant directory as a :class:`pathlib.Path`.
+        """Treant directory as a :class:`pathlib2.Path`.
 
         """
         return Path(self._backend.get_location())

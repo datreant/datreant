@@ -39,6 +39,8 @@ Fixes
 
 Changes
 
+    * Switched from ``pathlib`` to ``pathlib2`` as a dependency for backwards
+      compatibility with python < 3.4.
 
 
 
