@@ -493,6 +493,20 @@ class Tree(Veg):
 
         return self
 
+    def walk(self, topdown=True, onerror=None, followlinks=False):
+    """Generate the filenames in the tree by walking the tree either
+       top-down or bottom-up.  For each directory in the tree rooted at
+       directory top (including top itself), it yields a 3-tuple
+       (dirpath, dirnames, filenames).
+
+       (Documentation taken from os.walk)
+    """
+    if not self.exists:
+        raise OSError("Tree doesn't exist in the filesystem")
+    else:
+        return scandir.walk(self.abspath, topdown=topdown, onerror=onerror,
+                            followlinks=False)
+
     def sync(self, other, mode='upload', compress=True, checksum=True,
              backup=False, dry=False, include=None, exclude=None,
              overwrite=False, rsync_path='/usr/bin/rsync'):
