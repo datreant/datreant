@@ -509,10 +509,23 @@ class Tree(Veg):
            directory top (including top itself), it yields a 3-tuple
            (dirpath, dirnames, filenames).
 
-           (Documentation taken from os.walk)
+        Parameters
+        ----------
+        topdown : Boolean, optional
+            If false, searches directories recursively to return the structure
+            from the bottom-up.
+        onerror : function, optional
+            Optional function to be called on error.
+        followlinks : Boolean, optional
+            Excludes symbolic file links if false.
+
+        Returns
+        -------
+        Generator
+            Scandir.walk() generator
         """
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
         else:
-            return scandir.walk(self.abspath, topdown=topdown, onerror=onerror,
-                                followlinks=False)
+            return os.walk(self.abspath, topdown=topdown, onerror=onerror,
+                                followlinks=followlinks)
