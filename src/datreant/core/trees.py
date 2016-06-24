@@ -13,6 +13,7 @@ from asciitree import LeftAligned
 
 from .util import makedirs
 from .manipulators import discover
+from .rsync import rsync
 from . import _TREELIMBS
 
 
@@ -467,3 +468,26 @@ class Tree(Veg):
         self.makedirs()
 
         return self
+
+    def sync(self, dest, mode='upload', compress=True, backup=False, dry=False,
+             include=None, exclude=None, rsync_path='/usr/bin/rsync'):
+        """Syncronize directories using rsync.
+
+        Parameters
+        ----------
+        dest: destination
+        """
+        if isinstance(dest, Veg):
+            dest = dest.abspath
+
+        if mode == 'download':
+            source = dest
+            dest = self.abspath
+        elif mode == 'upload':
+            source = self.abspath
+        else:
+            raise ValueError("Sync mode can be only 'upload' or 'download'.")
+        # Here we do some massaging before passing to the rsync function
+        return rsync(source, dest, compress=compress, backup=backup,
+                     dry=dry, include=include,
+                     exclude=exclude, rsync_path=rsync_path)
