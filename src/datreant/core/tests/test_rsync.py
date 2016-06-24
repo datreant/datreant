@@ -82,6 +82,7 @@ def test_includes(tmpdir):
         sequoia.sync(sequoia4, exclude='*.txt', include=['data/*'])
 
         assert os.path.exists('sequoia4/data/world.dat')
+        assert os.path.exists('sequoia4/data/hello.txt')
         assert not os.path.exists('sequoia4/hello.txt')
         assert not os.path.exists('sequoia4/world.dat')
 
