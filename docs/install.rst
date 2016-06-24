@@ -10,6 +10,10 @@ directory::
 
     pip install --user datreant.core
 
+Alternatively we also provide conda package. ::
+
+    conda install -c datreant.core
+
 All datreant packages currently support the following Python versions::
 
 - 2.7
