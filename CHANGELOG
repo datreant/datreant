@@ -13,7 +13,7 @@ The rules for this file:
 
 ------------------------------------------------------------------------------
 
-??/??/16 dotsdl
+??/??/16 dotsdl, gabrielelanaro
 
     * 0.7.0
 
@@ -25,6 +25,9 @@ API Changes
       that these properties serve as transformations in some way.
 
 Enhancements
+    
+    * ``Tree.rsync`` method added that allows syncing of Trees
+      and Treants to and from remote locations and filesystems
 
 
 Fixes
