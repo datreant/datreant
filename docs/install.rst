@@ -12,7 +12,7 @@ directory::
 
 Alternatively we also provide conda package. ::
 
-    conda install -c datreant.core
+    conda install -c datreant datreant.core
 
 All datreant packages currently support the following Python versions::
 

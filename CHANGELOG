@@ -13,7 +13,7 @@ The rules for this file:
 
 ------------------------------------------------------------------------------
 
-??/??/16 dotsdl, gabrielelanaro
+??/??/16 dotsdl, gabrielelanaro, kain88-de
 
     * 0.7.0
 
@@ -45,6 +45,9 @@ Changes
     * Switched from ``pathlib`` to ``pathlib2`` as a dependency for backwards
       compatibility with python < 3.4.
 
+Doc Updates
+
+    * Added conda package installation instructions.
 
 
 
