@@ -35,7 +35,6 @@ def rsync(source, dest, compress=True, backup=False, dry=False,
 
     source = os.path.join(source, '')  # Add trailing slash
     cmd = [rsync_path] + opts + [source, dest]
-    print(cmd)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     if p.returncode != 0:
@@ -44,3 +43,5 @@ def rsync(source, dest, compress=True, backup=False, dry=False,
             'Standard error: {}'
             'Standard output: {}']).format(
             p.returncode, err, out))
+
+    return cmd
