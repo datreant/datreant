@@ -483,8 +483,8 @@ class Tree(Veg):
             downloading from *other*
 
 
-        The other options are described in the :py:func:`datreant.core.rsync.rsync`
-        documentation.
+        The other options are described in the
+        :py:func:`datreant.core.rsync.rsync` documentation.
 
         """
         if isinstance(other, Tree):
