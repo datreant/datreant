@@ -469,25 +469,36 @@ class Tree(Veg):
 
         return self
 
-    def sync(self, dest, mode='upload', compress=True, backup=False, dry=False,
-             include=None, exclude=None, rsync_path='/usr/bin/rsync'):
+    def sync(self, other, mode='upload', compress=True, checksum=True,
+             backup=False, dry=False, include=None, exclude=None,
+             rsync_path='/usr/bin/rsync'):
         """Syncronize directories using rsync.
 
         Parameters
         ----------
-        dest: destination
+        other: str or Tree
+            Other end of the sync, can be either a path or another Tree.
+        mode: str
+            Either ``"upload"`` if uploading to  *other*, or ``"download"`` if
+            downloading from *other*
+
+
+        The other options are described in the :py:func:`datreant.core.rsync.rsync`
+        documentation.
+
         """
-        if isinstance(dest, Veg):
-            dest = dest.abspath
+        if isinstance(other, Tree):
+            other = other.abspath
 
         if mode == 'download':
-            source = dest
+            source = other
             dest = self.abspath
         elif mode == 'upload':
             source = self.abspath
+            dest = other
         else:
             raise ValueError("Sync mode can be only 'upload' or 'download'.")
         # Here we do some massaging before passing to the rsync function
         return rsync(source, dest, compress=compress, backup=backup,
-                     dry=dry, include=include,
+                     dry=dry, include=include, checksum=checksum,
                      exclude=exclude, rsync_path=rsync_path)

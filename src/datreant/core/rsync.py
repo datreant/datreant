@@ -4,11 +4,44 @@ import subprocess
 import os
 
 
-def rsync(source, dest, compress=True, backup=False, dry=False,
+def rsync(source, dest, compress=True, backup=False, dry=False, checksum=True,
           include=None, exclude=None, rsync_path='/usr/bin/rsync'):
+    """Wrapper function for rsync. There are some minor differences with the
+    standard rsync behaviour:
+
+    - The include option will exclude every other path.
+    - The exclude statements will take place after the include statements
+
+    Parameters
+    ----------
+    source : str
+        Source directory for the sync
+    dest : str
+        Dest directory for the sync
+    compress : bool
+        If True, use gzip compression to reduce the data transfered over
+        the network
+    backup : bool
+        If True, pre-existing files are renamed with a ~ extension before they
+        are replaced
+    dry: bool
+        If True, do a dry-run. Useful for debugging purposes
+    checksum: bool
+        Perform a checksum to determine if file content has changed.
+    include: str or list
+        Paths (wildcards are allowed) to be included. If this option is used,
+        every other path is excluded
+    exclude: str or list
+        Paths to be excluded from the copy
+    rsync_path: str
+        Path where to find the rsync executable
+    """
     opts = ['-r']  # Recursive
 
     if compress:
+        opts.append('-z')
+
+    if checksum:
         opts.append('-c')
 
     if backup:
@@ -37,6 +70,7 @@ def rsync(source, dest, compress=True, backup=False, dry=False,
     cmd = [rsync_path] + opts + [source, dest]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
+
     if p.returncode != 0:
         raise Exception('\n'.join([
             'Syncing error: rsync returned status code {}',
