@@ -67,10 +67,9 @@ in which case whether a Tree or Leaf is returned is dependent on an ending
           Tree or a Leaf.
 
 Synchronizing Trees
-==================
-
-Synchronization of tree contents can be performed through the
-:py:meth:`datreant.core.Tree.sync` method. Synchronization can be performed
+-------------------
+Synchronization of Tree contents can be performed through the
+:py:meth:`~datreant.core.Tree.sync` method. Synchronization can be performed
 both locally and remotely, and is done through the rsync command::
 
     >>> sequoia = dtr.Tree('sequoia')
