@@ -472,15 +472,15 @@ class Tree(Veg):
     def sync(self, other, mode='upload', compress=True, checksum=True,
              backup=False, dry=False, include=None, exclude=None,
              rsync_path='/usr/bin/rsync'):
-        """Syncronize directories using rsync.
+        """Synchronize directories using rsync.
 
         Parameters
         ----------
         other: str or Tree
             Other end of the sync, can be either a path or another Tree.
         mode: str
-            Either ``"upload"`` if uploading to  *other*, or ``"download"`` if
-            downloading from *other*
+            Either ``"upload"`` if uploading to  `other`, or ``"download"`` if
+            downloading from `other`
 
 
         The other options are described in the
