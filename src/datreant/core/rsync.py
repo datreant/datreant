@@ -22,8 +22,8 @@ def rsync(source, dest, compress=True, backup=False, dry=False, checksum=True,
         If True, use gzip compression to reduce the data transfered over
         the network
     backup : bool
-        If True, pre-existing files are renamed with a "~" extension before they
-        are replaced
+        If True, pre-existing files are renamed with a "~" extension before
+        they are replaced
     dry: bool
         If True, do a dry-run. Useful for debugging purposes
     checksum: bool
