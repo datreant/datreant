@@ -18,7 +18,7 @@ We can use Trees and Leaves directly to manipulate them ::
     >>> t = dtr.Tree('moe')
     >>> t
     <Tree: 'moe'>
-    
+
     >>> l = dtr.Leaf('curly.txt')
     >>> l
     <Leaf: 'curly.txt'>
@@ -28,7 +28,7 @@ necessarily have to exist. Just as with Treants, more than one instance
 of a Tree or Leaf can point to the same place.
 
 
-Working with Trees 
+Working with Trees
 ==================
 **Tree** objects can be used to introspect downward into their directory
 structure. Since a Tree is essentially a container for its own child Trees and
@@ -65,6 +65,22 @@ in which case whether a Tree or Leaf is returned is dependent on an ending
 .. note:: For accessing directories and files that exist, getitem syntax isn't
           sensitive to ending ``/`` separators to determine whether to give a
           Tree or a Leaf.
+
+Synchronizing Trees
+==================
+
+Synchronization of tree contents can be performed through the
+:py:meth:`datreant.core.Tree.sync` method. Synchronization can be performed
+both locally and remotely, and is done through the rsync command::
+
+    >>> sequoia = dtr.Tree('sequoia')
+    >>> oak = dtr.Tree('oak')
+    >>> sequoia.sync(oak, mode="download")  # Sync contents from oak to sequoia
+    >>> sequoia.sync("/tmp/sequoia", mode="upload")  # Sync to a local directory
+    >>> sequoia.sync("user@host:/directory")  # Sync remotely
+
+.. note:: To be able to sync remotely, it is necessary to have passwordless
+          ssh access (through key file) to the server.
 
 API Reference: Tree
 -------------------
@@ -116,7 +132,7 @@ Or getting things back later::
     array([[ 1.28609187, -0.08739047,  1.23335427],
            [ 1.85979027,  0.37250825,  0.89576077],
            [-0.77038908, -0.02746453, -0.13723022],
-           ..., 
+           ...,
            [-0.76445797,  0.94284523,  0.29052753],
            [-0.44437005, -0.91921603, -0.4978258 ],
            [-0.70563139, -0.62811205,  0.60291534]])
@@ -127,6 +143,6 @@ a file::
     >>> t['about_moe.txt'].read()
     'Moe is not a nice person.\n'
 
-API Reference: Leaf 
+API Reference: Leaf
 -------------------
 See the :ref:`Leaf_api` API reference for more details.
