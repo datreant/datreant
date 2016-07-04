@@ -66,11 +66,11 @@ in which case whether a Tree or Leaf is returned is dependent on an ending
           sensitive to ending ``/`` separators to determine whether to give a
           Tree or a Leaf.
 
-Syncronizing Trees
+Synchronizing Trees
 ==================
 
-Syncronization of tree contents can be performed through the
-:py:meth:`datreant.core.Tree.sync` method. Syncronization can be performed
+Synchronization of tree contents can be performed through the
+:py:meth:`datreant.core.Tree.sync` method. Synchronization can be performed
 both locally and remotely, and is done through the rsync command::
 
     >>> sequoia = dtr.Tree('sequoia')
