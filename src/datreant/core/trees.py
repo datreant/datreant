@@ -546,12 +546,21 @@ class Tree(Veg):
         Generator
             Scandir.walk() generator
         """
+        from .collections import View
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
-        else:
-            return os.walk(self.abspath, topdown=topdown, onerror=onerror,
-                                followlinks=followlinks)
 
+        for root, dirs, files in os.walk(self.abspath, topdown=topdown,
+                                         onerror=onerror,
+                                         followlinks=followlinks):
+            view =  View(root)
+            trees = []
+            leaves = []
+            for directory in dirs:
+                trees.append(Tree(directory))
+            for f in files:
+                leaves.append(Leaf(f))
+            yield view, trees, leaves
 
 class _Loc(object):
     """Subtree accessor for Trees."""
