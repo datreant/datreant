@@ -5,7 +5,8 @@ import os
 
 
 def rsync(source, dest, compress=True, backup=False, dry=False, checksum=True,
-          include=None, exclude=None, rsync_path='/usr/bin/rsync'):
+          include=None, exclude=None, overwrite=False,
+          rsync_path='/usr/bin/rsync'):
     """Wrapper function for rsync. There are some minor differences with the
     standard rsync behaviour:
 
@@ -33,10 +34,15 @@ def rsync(source, dest, compress=True, backup=False, dry=False, checksum=True,
         every other path is excluded
     exclude: str or list
         Paths to be excluded from the copy
+    overwrite: bool
+        If True, replace the files in `dest` regardless of timestamp
     rsync_path: str
         Path where to find the rsync executable
     """
     opts = ['-r']  # Recursive
+
+    if not overwrite:
+        opts.append('--ignore-existing')
 
     if compress:
         opts.append('-z')
