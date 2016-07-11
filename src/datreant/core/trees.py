@@ -471,7 +471,7 @@ class Tree(Veg):
 
     def sync(self, other, mode='upload', compress=True, checksum=True,
              backup=False, dry=False, include=None, exclude=None,
-             rsync_path='/usr/bin/rsync'):
+             overwrite=False, rsync_path='/usr/bin/rsync'):
         """Synchronize directories using rsync.
 
         Parameters
@@ -501,4 +501,5 @@ class Tree(Veg):
         # Here we do some massaging before passing to the rsync function
         return rsync(source, dest, compress=compress, backup=backup,
                      dry=dry, include=include, checksum=checksum,
-                     exclude=exclude, rsync_path=rsync_path)
+                     overwrite=overwrite, exclude=exclude, 
+                     rsync_path=rsync_path)
