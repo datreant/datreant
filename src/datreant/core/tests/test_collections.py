@@ -412,6 +412,8 @@ class TestBundle:
                             == ('tree')
                 assert tags.fuzzy(['new','tree'], threshold=80, scope='any')
                             == ('new york', 'new jersey', 'tree')
+                assert tags.fuzzy(['new jersey', 'decid'], threshold=80, scope='any')
+                            == ('new jersey', 'deciduous')
 
         def test_tags_filter(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
@@ -430,10 +432,6 @@ class TestBundle:
                 assert tags.filter('evergreen')[0] == maple
                 assert tags.filter('new jersey')[0] == maple
                 assert tags.filter('new york')[0] == pine
-                assert tags.filter('new york', fuzzy=True,
-                                   threshold=80, scope='any') == dtr.Bundle('pine')
-                assert tags.filter('new york', fuzzy=True,
-                                   threshold=50, scope='any') == collection
 
 
     class TestAggCategories:
