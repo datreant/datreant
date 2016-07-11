@@ -35,7 +35,8 @@ def rsync(source, dest, compress=True, backup=False, dry=False, checksum=True,
     exclude: str or list
         Paths to be excluded from the copy
     overwrite: bool
-        If True, replace the files in `dest` regardless of timestamp
+        If False, files in `dest` that are newer than files in `source`
+        will not be overwritten
     rsync_path: str
         Path where to find the rsync executable
     """
