@@ -398,18 +398,25 @@ class TestBundle:
         def test_tags_filter(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
 
-                t1 = dtr.Treant('maple')
-                t2 = dtr.Treant('pine')
-                t1.tags.add({'tree', 'new jersey', 'deciduous'})
-                t2.tags.add({'tree', 'new york', 'evergreen'})
-                collection.add(t1, t2)
+                maple = dtr.Treant('maple')
+                pine = dtr.Treant('pine')
+                maple.tags.add({'tree', 'new jersey', 'deciduous'})
+                pine.tags.add({'tree', 'new york', 'evergreen'})
+                collection.add(maple, pine)
                 tags = collection.tags
 
                 assert len(tags.any) == 5
 
                 assert tags.filter('tree') == collection
-                assert tags.filter('new york') == t1
-                assert tags.filter('adult') == t2
+                assert tags.filter('deciduous')[0] == pine
+                assert tags.filter('evergreen')[0] == maple
+                assert tags.filter('new jersey')[0] == maple
+                assert tags.filter('new york')[0] == pine
+                assert tags.filter('new york', fuzzy=True,
+                                   threshold=80, scope='any') == dtr.Bundle('pine')
+                assert tags.filter('new york', fuzzy=True,
+                                   threshold=50, scope='any') == collection
+
 
     class TestAggCategories:
         """Test behavior of manipulating categories collectively.
