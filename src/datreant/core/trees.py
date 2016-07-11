@@ -279,6 +279,30 @@ class Tree(Veg):
                 self._attach_limb(limb)
 
     @property
+    def loc(self):
+        """Get Tree/Leaf at `path` relative to Tree.
+
+        Use with getitem syntax, e.g. ``.loc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If directory/file does not exist at the given path, then whether a Tree
+        or Leaf is given is determined by the path semantics, i.e. a trailing
+        separator ("/").
+
+        Using e.g. ``Tree.loc['some name']`` is equivalent to doing
+        ``Tree['some name']``. ``.loc`` is included for parity with ``View``
+        and ``Bundle`` API semantics.
+
+        """
+        if not hasattr(self, "_loc"):
+            self._loc = _Loc(self)
+
+        return self._loc
+
+    @property
     def abspath(self):
         """Absolute path of ``self.path``.
 
@@ -503,3 +527,16 @@ class Tree(Veg):
                      dry=dry, include=include, checksum=checksum,
                      overwrite=overwrite, exclude=exclude,
                      rsync_path=rsync_path)
+
+
+class _Loc(object):
+    """Subtree accessor for Trees."""
+
+    def __init__(self, tree):
+        self._tree = tree
+
+    def __getitem__(self, path):
+        """Get Tree/Leaf at `path` relative to attached Tree.
+
+        """
+        return self._tree[path]

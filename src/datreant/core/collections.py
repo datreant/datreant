@@ -49,6 +49,56 @@ class CollectionMixin(object):
         except AttributeError:
             return NotImplemented
 
+    def glob(self, pattern):
+        """Return a View of all child Leaves and Trees of members matching
+        given globbing pattern.
+
+        Parameters
+        ----------
+        pattern : string
+            globbing pattern to match files and directories with
+
+        """
+        return View([member.glob(pattern) for member in self
+                     if isinstance(member, Tree)], limbs=self.limbs)
+
+    def draw(self, depth=None, hidden=False):
+        """Print an ASCII-fied visual of all member Trees.
+
+        Parameters
+        ----------
+        depth : int
+            Maximum directory depth to display. ``None`` indicates no limit.
+        hidden : bool
+            If False, do not show hidden files; hidden directories are still
+            shown if they contain non-hidden files or directories.
+
+        """
+        for member in self:
+            if isinstance(member, Tree):
+                member.draw(depth=depth, hidden=hidden)
+
+    @property
+    def loc(self):
+        """Get a View giving Tree/Leaf at `path` relative to each Tree in
+        collection.
+
+        Use with getitem syntax, e.g. ``.loc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If directory/file does not exist at the given path, then whether a Tree
+        or Leaf is given is determined by the path semantics, i.e. a trailing
+        separator ("/").
+
+        """
+        if not hasattr(self, "_loc"):
+            self._loc = _Loc(self)
+
+        return self._loc
+
     @property
     def limbs(self):
         """A set giving the names of this collection's attached limbs.
@@ -391,7 +441,7 @@ class View(CollectionMixin):
 
     @property
     def bundle(self):
-        """A Bundle of all existing Treants among the Trees and Leaves
+        """Obtain a Bundle of all existing Treants among the Trees and Leaves
         in this View.
 
         """
@@ -451,19 +501,6 @@ class View(CollectionMixin):
             results = None
 
         return results
-
-    def glob(self, pattern):
-        """Return a View of all child Leaves and Trees of members matching
-        given globbing pattern.
-
-        Parameters
-        ----------
-        pattern : string
-            globbing pattern to match files and directories with
-
-        """
-        return View([member.glob(pattern) for member in self
-                     if isinstance(member, Tree)], limbs=self.limbs)
 
     def globfilter(self, pattern):
         """Return a View of members that match by name the given globbing
@@ -1221,3 +1258,17 @@ class Bundle(CollectionMixin):
                 list giving treanttype of each member, in order
         """
         return [member['treanttype'] for member in self._state]
+
+
+class _Loc(object):
+    """Subtree accessor for collections."""
+
+    def __init__(self, collection):
+        self._collection = collection
+
+    def __getitem__(self, path):
+        """Get Tree/Leaf at `path` relative to each Tree in collection.
+
+        """
+        return View([t[path] for t in self._collection
+                     if isinstance(t, Tree)], limbs=self._collection.limbs)
