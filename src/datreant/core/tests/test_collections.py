@@ -376,7 +376,40 @@ class TestBundle:
             pass
 
         def test_tags_fuzzy(self, collection, testtreant, testgroup, tmpdir):
-            pass
+            with tmpdir.as_cwd():
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('pine')
+                t1.tags.add({'tree', 'new jersey', 'deciduous'})
+                t2.tags.add({'tree', 'new york', 'evergreen'})
+                collection.add(t1, t2)
+                tags = collection.tags
+
+                assert len(tags.any) == 5
+
+                assert tags.fuzzy('tree')[0] == 'tree'
+                assert tags.fuzzy('deciduous', scope='any')[0] == 'deciduous'
+                assert tags.fuzzy('evergreen')[0] == ()
+                assert tags.fuzzy('tree', threshold=99, scope='all')[0] == 'tree'
+                assert tags.fuzzy('tree', threshold=1, scope='all')[0] == 'tree'
+                assert tags.fuzzy('new york', threshold=80)[0] == 'new york'
+                assert tags.fuzzy('new york', threshold=50) == ('new york', 'new jersey')
+
+        def test_tags_filter(self, collection, testtreant, testgroup, tmpdir):
+            with tmpdir.as_cwd():
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('pine')
+                t1.tags.add({'tree', 'new jersey', 'deciduous'})
+                t2.tags.add({'tree', 'new york', 'evergreen'})
+                collection.add(t1, t2)
+                tags = collection.tags
+
+                assert len(tags.any) == 5
+
+                assert tags.filter('tree') == collection
+                assert tags.filter('new york') == t1
+                assert tags.filter('adult') == t2
 
     class TestAggCategories:
         """Test behavior of manipulating categories collectively.

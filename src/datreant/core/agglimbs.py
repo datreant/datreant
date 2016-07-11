@@ -243,7 +243,7 @@ class AggTags(AggLimb):
 
         Parameters
         ----------
-        tags : str or list
+        tag : str or list
             Tag or tags to get fuzzy matches for.
         threshold : int
             Lowest match score to return. Setting to 0 will return every tag,
@@ -277,6 +277,36 @@ class AggTags(AggLimb):
                         if i[1] > threshold]
 
         return tuple(matches)
+
+    def filter(self, tag, fuzzy=False, threshold=80, scope='all'):
+        """Given tag(s), get a Bundle of Treants whose tags (fuzzily) match it.
+
+        Parameters
+        ----------
+        tag : str or list
+            Tag or tags to get fuzzy matches for.
+        fuzzy : bool
+            Use fuzzy matching [``False``]
+        threshold : int
+            Lowest match score to return. Setting to 0 will return every tag,
+            while setting to 100 will return only exact matches. Only applies
+            when *fuzzy* is ``True``.
+        scope : {'all', 'any'}
+            Tags to use. 'all' will use only tags found within all Treants in
+            collection, while 'any' will use tags found within at least one
+            Treant in collection. Only applies when *fuzzy* is ``True``.
+
+        Returns
+        -------
+        Bundle
+            Bundle of Treants with matching tag(s).
+        """
+        if fuzzy:
+            tags = self.fuzzy(tag, threshold=threshold, scope=scope)
+        else:
+            tags = tag
+        matches = self._collection.tags[tags]
+        return self._collection[matches]
 
 
 class AggCategories(AggLimb):
