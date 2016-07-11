@@ -387,13 +387,31 @@ class TestBundle:
 
                 assert len(tags.any) == 5
 
+                assert tags.fuzzy('tree', threshold=80, scope='all') == tags.fuzzy('tree')
                 assert tags.fuzzy('tree')[0] == 'tree'
                 assert tags.fuzzy('deciduous', scope='any')[0] == 'deciduous'
                 assert tags.fuzzy('evergreen')[0] == ()
+
+                # check that fuzzy matching is independent of threshold when
+                # exact tag is present in all members
                 assert tags.fuzzy('tree', threshold=99, scope='all')[0] == 'tree'
-                assert tags.fuzzy('tree', threshold=1, scope='all')[0] == 'tree'
-                assert tags.fuzzy('new york', threshold=80)[0] == 'new york'
-                assert tags.fuzzy('new york', threshold=50) == ('new york', 'new jersey')
+                assert tags.fuzzy('tree', threshold=0, scope='all')[0] == 'tree'
+
+                # check that fuzzy matching will give differing tags when
+                # members have similar tag names ('new') and the threshold is
+                # varied
+                assert tags.fuzzy('new york') == ('new york',)
+                assert tags.fuzzy('new york', threshold=50, scope='any') == ('new york', 'new jersey')
+
+                # check fuzzy matching for multiple tags (scope='all')
+                assert tags.fuzzy(['new','evergreen'], threshold=80) == ()
+                assert tags.fuzzy(['new','evergreen'], threshold=30) == ('tree')
+
+                # check fuzzy matching for multiple tags (scope='any')
+                assert tags.fuzzy(['new','tree'], threshold=90, scope='any')
+                            == ('tree')
+                assert tags.fuzzy(['new','tree'], threshold=80, scope='any')
+                            == ('new york', 'new jersey', 'tree')
 
         def test_tags_filter(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
