@@ -501,5 +501,5 @@ class Tree(Veg):
         # Here we do some massaging before passing to the rsync function
         return rsync(source, dest, compress=compress, backup=backup,
                      dry=dry, include=include, checksum=checksum,
-                     overwrite=overwrite, exclude=exclude, 
+                     overwrite=overwrite, exclude=exclude,
                      rsync_path=rsync_path)
