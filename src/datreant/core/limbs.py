@@ -169,7 +169,7 @@ class Tags(Limb):
         """Return a set giving the Tags in `a` that are not in `b`.
 
         """
-        from .agglimbs import AggTags # may not be necessary
+        from .agglimbs import AggTags  # may not be necessary
         if isinstance(other, (AggTags, Tags, set, list)):
             return set(other) - set(self)
         else:
