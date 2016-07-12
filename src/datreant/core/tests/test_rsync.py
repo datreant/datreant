@@ -30,6 +30,25 @@ def _create_tree(name, files=[]):
     return tree
 
 
+def test_overwrite(tmpdir):
+    with tmpdir.as_cwd():
+        sequoia = _create_tree('sequoia', ['hello.txt', 'data/hello.txt',
+                                           'data/world.dat', 'world.dat'])
+        sequoia2 = dtr.Tree("sequoia2").makedirs()
+
+        # Upload contents
+        sequoia.sync(sequoia2, mode='upload')
+
+        # Change contents
+        open(sequoia2['hello.txt'].abspath, 'w').write('newcontent')
+
+        # Upload contents again
+        sequoia.sync(sequoia2, mode='upload')
+
+        # Verify that the hello.txt is not overwritten
+        assert sequoia2['hello.txt'].read() == 'newcontent'
+
+
 def test_excludes(tmpdir):
     with tmpdir.as_cwd():
         sequoia = _create_tree('sequoia', ['hello.txt', 'data/hello.txt',

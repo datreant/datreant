@@ -28,6 +28,8 @@ Enhancements
     
     * ``Tree.rsync`` method added that allows syncing of Trees
       and Treants to and from remote locations and filesystems
+    * ``View.loc``, ``Bundle.loc``, ``Tree.loc`` pandas-like semantics
+      added for accessing subtrees.
 
 
 Fixes
