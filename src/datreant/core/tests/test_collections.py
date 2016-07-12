@@ -436,17 +436,37 @@ class TestBundle:
                 assert {'new york'} ^ evergreens.tags == {'evergreen'}
                 assert {'shrub'} ^ trees.tags == t2.tags ^ t3.tags
 
-                with pytest.raises(TypeError):
-                    assert ['tree'] == trees.tags
-                    assert ['tree'] < {'tree', 'new jersey'}
-                    assert ['tree'] - {'tree'} == set()
-                    assert {'tree'} - ['tree'] == set()
-                    assert ['tree'] | t3.tags == t3.tags
-                    assert t3.tags | ['tree'] == t3.tags
-                    assert ['tree'] & t3.tags == {'tree'}
-                    assert t3.tags & ['tree'] == {'tree'}
-                    assert ['tree'] ^ t3.tags == evergreen_ny
-                    assert t3.tags ^ ['tree'] == evergreen_ny
+                type_error_msg = "Operands must be AggTags, Tags, or a set."
+                with pytest.raises(TypeError) as e:
+                    ['tree'] == trees.tags
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] < {'tree', 'new jersey'}
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] - {'tree'} == set()
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    {'tree'} - ['tree'] == set()
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] | t3.tags == t3.tags
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    t3.tags | ['tree'] == t3.tags
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] & t3.tags == {'tree'}
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    t3.tags & ['tree'] == {'tree'}
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] ^ t3.tags == evergreen_ny
+                assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    t3.tags ^ ['tree'] == evergreen_ny
+                assert e.value.message == type_error_msg
 
         def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
