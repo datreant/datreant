@@ -446,11 +446,14 @@ class TestBundle:
                 # filter using single tags
                 assert tags.filter('tree') == collection
                 assert tags.filter({'tree'}) == dtr.Bundle()
-                assert tags.filter('new jersey')[0] == maple
-                assert tags.filter('new york')[0] == pine
-                assert tags.filter({'new york'})[0] == maple
                 assert tags.filter('deciduous')[0] == maple
                 assert tags.filter('evergreen')[0] == pine
+                assert tags.filter('new jersey')[0] == maple
+                assert tags.filter('new york')[0] == pine
+
+                # filter Treants that DON'T have a given tag
+                assert tags.filter({'new york'})[0] == maple
+                assert tags.filter({'deciduous'})[0] == pine
 
                 # filter Treants containing all of the tags
                 assert tags.filter(['deciduous', 'tree'])[0] == maple
@@ -462,7 +465,7 @@ class TestBundle:
                 assert tags.filter(('deciduous', 'new york')) == collection
                 assert tags.filter(('evergreen', 'new york'))[0] == pine
 
-                # filter Treants not containing any of the tags (XOR)
+                # filter Treants that exclude any of the provided tags
                 assert tags.filter({'deciduous', 'new york'}) == collection
                 assert tags.filter({'deciduous', 'new jersey'})[0] == pine
                 assert tags.filter({'evergreen', 'tree'})[0] == maple
