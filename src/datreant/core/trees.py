@@ -528,25 +528,28 @@ class Tree(Veg):
                      overwrite=overwrite, exclude=exclude,
                      rsync_path=rsync_path)
 
-
     def walk(self, topdown=True, onerror=None, followlinks=False):
-        """
+        """Walk through the contents of the tree.
+
+        For each directory in the tree (including the root itself), yields a
+        3-tuple (dirpath, dirnames, filenames).
         Parameters
         ----------
         topdown : Boolean, optional
-            If false, searches directories recursively to return the structure
-            from the bottom-up.
+            If False, walks directories from the bottom-up.
         onerror : function, optional
             Optional function to be called on error.
         followlinks : Boolean, optional
-            Excludes symbolic file links if false.
+            If False, excludes symbolic file links.
 
         Returns
         -------
-        Generator
-            Scandir.walk() generator
+        generator
+            Wrapped `scandir.walk()` generator yielding `datreant` objects
+
         """
         from .collections import View
+
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
 
