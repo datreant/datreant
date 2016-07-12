@@ -423,10 +423,10 @@ class TestBundle:
 
                 # complex logic tests
 
-                # give me if its evergreen or in NY AND also not deciduous
+                # give those that are evergreen or in NY AND also not deciduous
                 selection = [('evergreen', 'new york'), {'deciduous'}]
                 assert tags[selection] == [False, True]
-                # give me if its evergreen or in NY AND also not a tree
+                # give those that are evergreen or in NY AND also not a tree
                 selection = [('evergreen', 'new york'), {'tree'}]
                 assert tags[selection] == [False, False]
                 # give a tree that's in NJ OR anything that's not evergreen
@@ -503,34 +503,53 @@ class TestBundle:
                 collection.add(maple, pine)
                 tags = collection.tags
 
+                maple_bund = dtr.Bundle(maple)
+                pine_bund = dtr.Bundle(pine)
+
                 assert len(tags.any) == 5
 
                 # filter using single tags
                 assert tags.filter('tree') == collection
                 assert tags.filter({'tree'}) == dtr.Bundle()
-                assert tags.filter('deciduous')[0] == maple
-                assert tags.filter('evergreen')[0] == pine
-                assert tags.filter('new jersey')[0] == maple
-                assert tags.filter('new york')[0] == pine
+                assert tags.filter('deciduous') == maple_bund
+                assert tags.filter('evergreen') == pine_bund
+                assert tags.filter('new jersey') == maple_bund
+                assert tags.filter('new york') == pine_bund
 
                 # filter Treants that DON'T have a given tag
-                assert tags.filter({'new york'})[0] == maple
-                assert tags.filter({'deciduous'})[0] == pine
+                assert tags.filter({'new york'}) == maple_bund
+                assert tags.filter({'deciduous'}) == pine_bund
 
                 # filter Treants containing all of the tags
-                assert tags.filter(['deciduous', 'tree'])[0] == maple
-                assert tags.filter(['evergreen', 'tree'])[0] == pine
+                assert tags.filter(['deciduous', 'tree']) == maple_bund
+                assert tags.filter(['evergreen', 'tree']) == pine_bund
                 assert tags.filter(['deciduous', 'new york']) == dtr.Bundle()
 
                 # filter Treants containing any of the tags tags
                 assert tags.filter(('evergreen', 'tree')) == collection
                 assert tags.filter(('deciduous', 'new york')) == collection
-                assert tags.filter(('evergreen', 'new york'))[0] == pine
+                assert tags.filter(('evergreen', 'new york')) == pine_bund
 
                 # filter Treants that exclude any of the provided tags
                 assert tags.filter({'deciduous', 'new york'}) == collection
-                assert tags.filter({'deciduous', 'new jersey'})[0] == pine
-                assert tags.filter({'evergreen', 'tree'})[0] == maple
+                assert tags.filter({'deciduous', 'new jersey'}) == pine_bund
+                assert tags.filter({'evergreen', 'tree'}) == maple_bund
+
+                # complex logic tests
+
+                # give those that are evergreen or in NY AND also not deciduous
+                selection = [('evergreen', 'new york'), {'deciduous'}]
+                assert tags.filter(selection) == pine_bund
+                # give those that are evergreen or in NY AND also not a tree
+                selection = [('evergreen', 'new york'), {'tree'}]
+                assert tags.filter(selection) == dtr.Bundle()
+                # give a tree that's in NJ OR anything that's not evergreen
+                selection = (['tree', 'new jersey'], {'evergreen'})
+                assert tags.filter(selection) == maple_bund
+                # cannot be a tree in NJ, AND must also be deciduous
+                # I.e., give all deciduous things that aren't trees in NJ
+                selection = [{'tree', 'new jersey'}, 'deciduous']
+                assert tags.filter(selection) == dtr.Bundle()
 
     class TestAggCategories:
         """Test behavior of manipulating categories collectively.
