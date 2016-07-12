@@ -159,7 +159,8 @@ class Tags(Limb):
         """Return a set giving the Tags in `a` that are not in `b`.
 
         """
-        if isinstance(other, (Tags, set, list)):
+        from .agglimbs import AggTags
+        if isinstance(other, (AggTags, Tags, set, list)):
             return set(self) - set(other)
         else:
             raise TypeError("Operands must be tags, a set, or list.")
@@ -168,8 +169,9 @@ class Tags(Limb):
         """Return a set giving the Tags in `a` that are not in `b`.
 
         """
-        if isinstance(other, (Tags, set, list)):
-            return set(self) - set(other)
+        from .agglimbs import AggTags # may not be necessary
+        if isinstance(other, (AggTags, Tags, set, list)):
+            return set(other) - set(self)
         else:
             raise TypeError("Operands must be tags, a set, or list.")
 

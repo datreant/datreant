@@ -420,7 +420,7 @@ class TestBundle:
                 # test intersection: __and__ (&)
                 evergreen_ny = {'evergreen', 'new york'}
                 assert evergreens.tags & t3.tags == evergreen_ny
-                assert t1.tags & t2.tags & t3.tags == tags.any
+                assert t1.tags & t2.tags & t3.tags == tags.all
 
                 # test right intersection: __rand__ (&)
                 assert evergreen_ny_shrub & evergreens.tags == evergreen_ny
