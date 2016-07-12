@@ -438,60 +438,7 @@ class TestBundle:
                 assert tags[selection] == [False, False]
 
         def test_tags_fuzzy(self, collection, testtreant, testgroup, tmpdir):
-            with tmpdir.as_cwd():
-
-                t1 = dtr.Treant('maple')
-                t2 = dtr.Treant('pine')
-                t1.tags.add({'tree', 'new jersey', 'deciduous'})
-                t2.tags.add({'tree', 'new york', 'evergreen'})
-                collection.add(t1, t2)
-                tags = collection.tags
-
-                assert len(tags.any) == 5
-
-                all_tree1 = tags.fuzzy('tree', threshold=80, scope='all')
-                all_tree2 = tags.fuzzy('tree')
-                assert all_tree1 == all_tree2
-                assert all_tree2 == ('tree',)
-
-                any_deciduous = tags.fuzzy('deciduous', scope='any')
-                assert any_deciduous == ('deciduous',)
-                all_evergreen = tags.fuzzy('evergreen')
-                assert all_evergreen == ()
-
-                # check that fuzzy matching is independent of threshold when
-                # exact tag is present in all members
-                all_tree_strict = tags.fuzzy('tree', threshold=99)
-                assert all_tree_strict == ('tree',)
-                all_tree_tolerant = tags.fuzzy('tree', threshold=0)
-                assert all_tree_tolerant == ('tree',)
-
-                # check that fuzzy matching will give differing tags when
-                # members have similar tag names ('new') and the threshold is
-                # varied
-                all_ny = tags.fuzzy('new york')
-                assert all_ny == ()
-                any_ny_strict = tags.fuzzy('new york', scope='any')
-                assert any_ny_strict == ('new york',)
-                any_ny_tol = tags.fuzzy('new york', threshold=50, scope='any')
-                assert set(any_ny_tol) == {'new york', 'new jersey'}
-
-                # check fuzzy matching for multiple tags (scope='all')
-                new_ever = ['new', 'evergreen']
-                all_mul_strict = tags.fuzzy(new_ever, threshold=80)
-                assert all_mul_strict == ()
-                all_mul_tol = tags.fuzzy(new_ever, threshold=30)
-                assert all_mul_tol == ('tree',)
-
-                # check fuzzy matching for multiple tags (scope='any')
-                new_tree = ['new', 'tree']
-                any_mul_stric = tags.fuzzy(new_tree, threshold=90, scope='any')
-                assert any_mul_stric == ('tree',)
-                any_mul_tol = tags.fuzzy(new_tree, threshold=80, scope='any')
-                assert set(any_mul_tol) == {'new york', 'new jersey', 'tree'}
-                nj_decid = ['new jersey', 'decid']
-                any_mul_njdec = tags.fuzzy(nj_decid, threshold=80, scope='any')
-                assert set(any_mul_njdec) == {'new jersey', 'deciduous'}
+            pass
 
         def test_tags_filter(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
