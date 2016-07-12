@@ -373,69 +373,7 @@ class TestBundle:
             pass
 
         def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):
-            with tmpdir.as_cwd():
-
-                t1 = dtr.Treant('maple')
-                t2 = dtr.Treant('pine')
-                t1.tags.add({'tree', 'new jersey', 'deciduous'})
-                t2.tags.add({'tree', 'new york', 'evergreen'})
-                collection.add(t1, t2)
-                tags = collection.tags
-
-                assert len(tags.any) == 5
-
-                # test single tags
-                assert tags['tree'] == [True, True]
-                assert tags['deciduous'] == [True, False]
-                assert tags['evergreen'] == [False, True]
-                assert tags['new jersey'] == [True, False]
-                assert tags['new york'] == [False, True]
-
-                assert tags[{'tree'}] == [False, False]
-                assert tags[{'deciduous'}] == [False, True]
-                assert tags[{'evergreen'}] == [True, False]
-                assert tags[{'new jersey'}] == [False, True]
-                assert tags[{'new york'}] == [True, False]
-
-                # test for Treants with ALL the given tags
-                assert tags[['tree', 'deciduous']] == [True, False]
-                assert tags[['tree', 'evergreen']] == [False, True]
-                assert tags[['new jersey', 'evergreen']] == [False, False]
-                assert tags[['new jersey', 'deciduous']] == [True, False]
-
-                # test for Treants with ANY the given tags
-                assert tags[('tree', 'deciduous')] == [True, True]
-                assert tags[('tree', 'evergreen')] == [True, True]
-                assert tags[('new jersey', 'evergreen')] == [True, True]
-                assert tags[('new jersey', 'deciduous')] == [True, False]
-
-                assert tags['tree', 'deciduous'] == [True, True]
-                assert tags['tree', 'evergreen'] == [True, True]
-                assert tags['new jersey', 'evergreen'] == [True, True]
-                assert tags['new jersey', 'deciduous'] == [True, False]
-
-                # test for Treants not having ANY of the given tags
-                assert tags[{'tree'}] == [False, False]
-                assert tags[{'tree', 'deciduous'}] == [False, True]
-                assert tags[{'tree', 'new york'}] == [True, False]
-                assert tags[{'tree', 'new york', 'deciduous'}] == [True, True]
-                assert tags[{'tree', 'new york', 'evergreen'}] == [True, False]
-
-                # complex logic tests
-
-                # give those that are evergreen or in NY AND also not deciduous
-                selection = [('evergreen', 'new york'), {'deciduous'}]
-                assert tags[selection] == [False, True]
-                # give those that are evergreen or in NY AND also not a tree
-                selection = [('evergreen', 'new york'), {'tree'}]
-                assert tags[selection] == [False, False]
-                # give a tree that's in NJ OR anything that's not evergreen
-                selection = (['tree', 'new jersey'], {'evergreen'})
-                assert tags[selection] == [True, False]
-                # cannot be a tree in NJ, AND must also be deciduous
-                # I.e., give all deciduous things that aren't trees in NJ
-                selection = [{'tree', 'new jersey'}, 'deciduous']
-                assert tags[selection] == [False, False]
+            pass
 
         def test_tags_fuzzy(self, collection, testtreant, testgroup, tmpdir):
             pass
