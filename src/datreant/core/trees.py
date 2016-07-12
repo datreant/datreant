@@ -504,37 +504,38 @@ class Tree(Veg):
                      exclude=exclude, rsync_path=rsync_path)
 
     def walk(self, topdown=True, onerror=None, followlinks=False):
-        """Generate the filenames in the tree by walking the tree either
-           top-down or bottom-up.  For each directory in the tree rooted at
-           directory top (including top itself), it yields a 3-tuple
-           (dirpath, dirnames, filenames).
+        """Walk through the contents of the tree. 
+           
+        For each directory in the tree (including the root itself), yields a
+        3-tuple (dirpath, dirnames, filenames).
 
         Parameters
         ----------
         topdown : Boolean, optional
-            If false, searches directories recursively to return the structure
-            from the bottom-up.
+            If False, walks directories from the bottom-up.
         onerror : function, optional
             Optional function to be called on error.
         followlinks : Boolean, optional
-            Excludes symbolic file links if false.
+            If False, excludes symbolic file links.
 
         Returns
         -------
-        Generator
-            Scandir.walk() generator
+        generator
+            Wrapped `scandir.walk()` generator yielding `datreant` objects
+
         """
         from .collections import View
+
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
-        for root, dirs, files in os.walk(self.abspath, topdown=topdown,
+
+        for root, dirs, files in scandir.walk(self.abspath, topdown=topdown,
                                          onerror=onerror,
                                          followlinks=followlinks):
-            view =  View(root)
-            trees = []
-            leaves = []
-            for directory in dirs:
-                trees.append(Tree(directory))
-            for f in files:
-                leaves.append(Leaf(f))
-            yield view, trees, leaves
+
+            # wrap results in datreant objects
+            r_tree = Tree(root)
+            trees = r_tree[dirs]
+            leaves = r_tree[files]
+
+            yield r_tree, trees, leaves
