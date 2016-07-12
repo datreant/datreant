@@ -370,7 +370,71 @@ class TestBundle:
                     assert tag in collection.tags.any
 
         def test_tags_set_behavior(self, collection, tmpdir):
-            pass
+            with tmpdir.as_cwd():
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('pine')
+                t3 = dtr.Treant('juniper')
+                t1.tags.add({'tree', 'new jersey', 'deciduous'})
+                t2.tags.add({'tree', 'new york', 'evergreen'})
+                t3.tags.add({'shrub', 'new york', 'evergreen'})
+                collection.add(t1, t2, t3)
+                trees = dtr.Bundle('maple', 'pine')
+                evergreens = dtr.Bundle('pine', 'juniper')
+                tags = collection.tags
+
+                assert len(tags.any) == 6
+
+                # test equality: __eq__ (==)
+                assert t1.tags == {'tree', 'new jersey', 'deciduous'}
+                assert t2.tags == {'tree', 'new york', 'evergreen'}
+                assert t3.tags == {'shrub', 'new york', 'evergreen'}
+
+                # test subset: __lt__ (<)
+                assert not t1.tags < {'tree', 'new jersey', 'deciduous'}
+                assert tags < {'tree', 'new jersey', 'deciduous'}
+                assert t1.tags < tags.any
+                assert t2.tags < tags.any
+                assert t3.tags < tags.any
+
+                # test difference: __sub__ (-)
+                assert t1.tags - {'tree'} == {'new jersey', 'deciduous'}
+                assert trees.tags - {'tree'} == set()
+
+                # test right difference: __rsub__ (-)
+                evergreen_ny_shrub = {'evergreen', 'new york', 'shrub'}
+                dec_nj_sh = {'deciduous', 'new jersey', 'shrub'}
+                assert tags.any - t1.tags == evergreen_ny_shrub
+                assert tags.any - evergreens.tags - trees.tags == dec_nj_sh
+                assert {'tree'} - trees.tags == set()
+
+                # test union: __or__ (|)
+                evergreen_ny_shrub = {'evergreen', 'new york', 'shrub'}
+                assert evergreens.tags | t3.tags == evergreen_ny_shrub
+                assert t1.tags | t2.tags | t3.tags == tags.any
+
+                # test right union: __ror__ (|)
+                assert {'shrub'} | evergreens.tags == evergreen_ny_shrub
+                assert t3.tags | {'tree'} == {'tree'} | t3.tags
+
+                # test intersection: __and__ (&)
+                evergreen_ny = {'evergreen', 'new york'}
+                assert evergreens.tags & t3.tags == evergreen_ny
+                assert t1.tags & t2.tags & t3.tags == tags.any
+
+                # test right intersection: __rand__ (&)
+                assert evergreen_ny_shrub & evergreens.tags == evergreen_ny
+                assert t3.tags & {'shrub'} == {'shrub'} & t3.tags
+
+                # test symmetric difference: __xor__ (^)
+                evergreen_ny_tree = {'evergreen', 'new york', 'tree'}
+                assert trees.tags ^ evergreens.tags == evergreen_ny_tree
+                assert evergreens.tags ^ t3.tags == {'shrub'}
+                assert t1.tags ^ t2.tags ^ t3.tags == dec_nj_sh
+
+                # test right symmetric difference: __rxor__ (^)
+                assert {'new york'} ^ evergreens.tags == {'evergreen'}
+                assert {'shrub'} ^ trees.tags == t2.tags ^ t3.tags
 
         def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
