@@ -436,6 +436,18 @@ class TestBundle:
                 assert {'new york'} ^ evergreens.tags == {'evergreen'}
                 assert {'shrub'} ^ trees.tags == t2.tags ^ t3.tags
 
+                with pytest.raises(TypeError) as e:
+                    assert ['tree'] == trees.tags
+                    assert ['tree'] < {'tree', 'new jersey'}
+                    assert ['tree'] - {'tree'} == set()
+                    assert {'tree'} - ['tree'] == set()
+                    assert ['tree'] | t3.tags == t3.tags
+                    assert t3.tags | ['tree'] == t3.tags
+                    assert ['tree'] & t3.tags == {'tree'}
+                    assert t3.tags & ['tree'] == {'tree'}
+                    assert ['tree'] ^ t3.tags == evergreen_ny
+                    assert t3.tags ^ ['tree'] == evergreen_ny
+
         def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
 
