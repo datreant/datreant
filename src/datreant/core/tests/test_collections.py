@@ -436,7 +436,7 @@ class TestBundle:
                 assert {'new york'} ^ evergreens.tags == {'evergreen'}
                 assert {'shrub'} ^ trees.tags == t2.tags ^ t3.tags
 
-                with pytest.raises(TypeError) as e:
+                with pytest.raises(TypeError):
                     assert ['tree'] == trees.tags
                     assert ['tree'] < {'tree', 'new jersey'}
                     assert ['tree'] - {'tree'} == set()
