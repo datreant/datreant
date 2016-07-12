@@ -441,31 +441,31 @@ class TestBundle:
                     ['tree'] == trees.tags
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    ['tree'] < {'tree', 'new jersey'}
+                    trees.tags < ['tree']
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    ['tree'] - {'tree'}
+                    ['tree'] - trees.tags
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    {'tree'} - ['tree']
+                    trees.tags - ['tree']
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    ['tree'] | t3.tags
+                    ['tree'] | trees.tags
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    t3.tags | ['tree']
+                    trees.tags | ['tree']
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    ['tree'] & t3.tags
+                    ['tree'] & trees.tags
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    t3.tags & ['tree']
+                    trees.tags & ['tree']
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    ['tree'] ^ t3.tags
+                    ['tree'] ^ trees.tags
                 assert e.value.message == type_error_msg
                 with pytest.raises(TypeError) as e:
-                    t3.tags ^ ['tree']
+                    trees.tags ^ ['tree']
                 assert e.value.message == type_error_msg
 
         def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):
