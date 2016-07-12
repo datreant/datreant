@@ -387,33 +387,49 @@ class TestBundle:
 
                 assert len(tags.any) == 5
 
-                assert tags.fuzzy('tree', threshold=80, scope='all') == tags.fuzzy('tree')
-                assert tags.fuzzy('tree')[0] == 'tree'
-                assert tags.fuzzy('deciduous', scope='any')[0] == 'deciduous'
-                assert tags.fuzzy('evergreen')[0] == ()
+                all_tree1 = tags.fuzzy('tree', threshold=80, scope='all')
+                all_tree2 = tags.fuzzy('tree')
+                assert all_tree1 == all_tree2
+                assert all_tree2 == ('tree',)
+
+                any_deciduous = tags.fuzzy('deciduous', scope='any')
+                assert any_deciduous == ('deciduous',)
+                all_evergreen = tags.fuzzy('evergreen')
+                assert all_evergreen == ()
 
                 # check that fuzzy matching is independent of threshold when
                 # exact tag is present in all members
-                assert tags.fuzzy('tree', threshold=99, scope='all')[0] == 'tree'
-                assert tags.fuzzy('tree', threshold=0, scope='all')[0] == 'tree'
+                all_tree_strict = tags.fuzzy('tree', threshold=99)
+                assert all_tree_strict == ('tree',)
+                all_tree_tolerant = tags.fuzzy('tree', threshold=0)
+                assert all_tree_tolerant == ('tree',)
 
                 # check that fuzzy matching will give differing tags when
                 # members have similar tag names ('new') and the threshold is
                 # varied
-                assert tags.fuzzy('new york') == ('new york',)
-                assert tags.fuzzy('new york', threshold=50, scope='any') == ('new york', 'new jersey')
+                all_ny = tags.fuzzy('new york')
+                assert all_ny == ()
+                any_ny_strict = tags.fuzzy('new york', scope='any')
+                assert any_ny_strict == ('new york',)
+                any_ny_tol = tags.fuzzy('new york', threshold=50, scope='any')
+                assert any_ny_tol == ('new york', 'new jersey')
 
                 # check fuzzy matching for multiple tags (scope='all')
-                assert tags.fuzzy(['new','evergreen'], threshold=80) == ()
-                assert tags.fuzzy(['new','evergreen'], threshold=30) == ('tree')
+                new_ever = ['new', 'evergreen']
+                all_mul_strict = tags.fuzzy(new_ever, threshold=80)
+                assert all_mul_strict == ()
+                all_mul_tol = tags.fuzzy(new_ever, threshold=30)
+                assert all_mul_tol == ('tree',)
 
                 # check fuzzy matching for multiple tags (scope='any')
-                assert tags.fuzzy(['new','tree'], threshold=90, scope='any')
-                            == ('tree')
-                assert tags.fuzzy(['new','tree'], threshold=80, scope='any')
-                            == ('new york', 'new jersey', 'tree')
-                assert tags.fuzzy(['new jersey', 'decid'], threshold=80, scope='any')
-                            == ('new jersey', 'deciduous')
+                new_tree = ['new', 'tree']
+                any_mul_stric = tags.fuzzy(new_tree, threshold=90, scope='any')
+                assert any_mul_stric == ('tree',)
+                any_mul_tol = tags.fuzzy(new_tree, threshold=80, scope='any')
+                assert any_mul_tol == ('new york', 'new jersey', 'tree')
+                nj_decid = ['new jersey', 'decid']
+                any_mul_njdec = tags.fuzzy(nj_decid, threshold=80, scope='any')
+                assert any_mul_njdec == ('new jersey', 'deciduous')
 
         def test_tags_filter(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
@@ -428,11 +444,10 @@ class TestBundle:
                 assert len(tags.any) == 5
 
                 assert tags.filter('tree') == collection
-                assert tags.filter('deciduous')[0] == pine
-                assert tags.filter('evergreen')[0] == maple
+                assert tags.filter('deciduous')[0] == maple
+                assert tags.filter('evergreen')[0] == pine
                 assert tags.filter('new jersey')[0] == maple
                 assert tags.filter('new york')[0] == pine
-
 
     class TestAggCategories:
         """Test behavior of manipulating categories collectively.
