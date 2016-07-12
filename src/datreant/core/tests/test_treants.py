@@ -242,6 +242,39 @@ class TestTreant(TestTree):
                 assert not t1.tags < t3.tags
                 assert t1.tags > t3.tags
 
+                # test TypeErrors in Tags
+                # type_error_msg = "Operands must be AggTags, Tags, or a set."
+                with pytest.raises(TypeError) as e:
+                    ('tree') == t1.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    t1.tags < ('tree')
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ('tree') - t1.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    t1.tags - ('tree')
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ('tree') | t1.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    t1.tags | ('tree')
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ('tree') & t1.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    t1.tags & ('tree')
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ('tree') ^ t1.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    t1.tags ^ ('tree')
+                # assert e.value.message == type_error_msg
+
         def test_tags_setting(self, tmpdir, treantclass):
             """Test that we can set tags with lists or sets, or with Tags
             objects.

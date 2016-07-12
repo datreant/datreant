@@ -163,7 +163,7 @@ class Tags(Limb):
         if isinstance(other, (AggTags, Tags, set, list)):
             return set(self) - set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, tags, a set, or list.")
 
     def __rsub__(self, other):
         """Return a set giving the Tags in `a` that are not in `b`.
@@ -173,7 +173,7 @@ class Tags(Limb):
         if isinstance(other, (AggTags, Tags, set, list)):
             return set(other) - set(self)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, tags, a set, or list.")
 
     def __or__(self, other):
         """Return a set giving the union of Tags `a` and `b`.

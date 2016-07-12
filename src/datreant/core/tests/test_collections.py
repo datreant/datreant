@@ -436,7 +436,7 @@ class TestBundle:
                 assert {'new york'} ^ evergreens.tags == {'evergreen'}
                 assert {'shrub'} ^ trees.tags == t2.tags ^ t3.tags
 
-                type_error_msg = "Operands must be AggTags, Tags, or a set."
+                # type_error_msg = "Operands must be AggTags, Tags, or a set."
                 with pytest.raises(TypeError) as e:
                     ['tree'] == trees.tags
                 # assert e.value.message == type_error_msg
