@@ -412,7 +412,7 @@ class TestBundle:
                 any_ny_strict = tags.fuzzy('new york', scope='any')
                 assert any_ny_strict == ('new york',)
                 any_ny_tol = tags.fuzzy('new york', threshold=50, scope='any')
-                assert any_ny_tol == ('new york', 'new jersey')
+                assert set(any_ny_tol) == {'new york', 'new jersey'}
 
                 # check fuzzy matching for multiple tags (scope='all')
                 new_ever = ['new', 'evergreen']
@@ -426,10 +426,10 @@ class TestBundle:
                 any_mul_stric = tags.fuzzy(new_tree, threshold=90, scope='any')
                 assert any_mul_stric == ('tree',)
                 any_mul_tol = tags.fuzzy(new_tree, threshold=80, scope='any')
-                assert any_mul_tol == ('new york', 'new jersey', 'tree')
+                assert set(any_mul_tol) == {'new york', 'new jersey', 'tree'}
                 nj_decid = ['new jersey', 'decid']
                 any_mul_njdec = tags.fuzzy(nj_decid, threshold=80, scope='any')
-                assert any_mul_njdec == ('new jersey', 'deciduous')
+                assert set(any_mul_njdec) == {'new jersey', 'deciduous'}
 
         def test_tags_filter(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
