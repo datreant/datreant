@@ -279,17 +279,17 @@ class AggTags(AggLimb):
         return tuple(matches)
 
     def filter(self, tag):
-        """Given tag(s), get a Bundle of Treants whose tags match it.
+        """Filter Treants matching the given tag expression from a Bundle.
 
         Parameters
         ----------
         tag : str or list
-            Tag or tags to get fuzzy matches for.
+            Tag or tags to filter Treants.
 
         Returns
         -------
         Bundle
-            Bundle of Treants with matching tag(s).
+            Bundle of Treants matching the given tag expression.
         """
         matches = self._collection.tags[tag]
         return self._collection[matches]
