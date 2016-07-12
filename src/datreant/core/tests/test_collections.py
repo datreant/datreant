@@ -419,6 +419,23 @@ class TestBundle:
                 assert tags[{'tree', 'deciduous'}] == [False, True]
                 assert tags[{'tree', 'new york'}] == [True, False]
                 assert tags[{'tree', 'new york', 'deciduous'}] == [True, True]
+                assert tags[{'tree', 'new york', 'evergreen'}] == [True, False]
+
+                # complex logic tests
+
+                # give me if its evergreen or in NY AND also not deciduous
+                selection = [('evergreen', 'new york'), {'deciduous'}]
+                assert tags[selection] == [False, True]
+                # give me if its evergreen or in NY AND also not a tree
+                selection = [('evergreen', 'new york'), {'tree'}]
+                assert tags[selection] == [False, False]
+                # give a tree that's in NJ OR anything that's not evergreen
+                selection = (['tree', 'new jersey'], {'evergreen'})
+                assert tags[selection] == [True, False]
+                # cannot be a tree in NJ, AND must also be deciduous
+                # I.e., give all deciduous things that aren't trees in NJ
+                selection = [{'tree', 'new jersey'}, 'deciduous']
+                assert tags[selection] == [False, False]
 
         def test_tags_fuzzy(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
