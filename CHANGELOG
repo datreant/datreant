@@ -13,7 +13,7 @@ The rules for this file:
 
 ------------------------------------------------------------------------------
 
-??/??/16 dotsdl, gabrielelanaro, kain88-de
+07/13/16 dotsdl, gabrielelanaro, kain88-de, sseyler
 
     * 0.7.0
 
@@ -30,6 +30,7 @@ Enhancements
       and Treants to and from remote locations and filesystems
     * ``View.loc``, ``Bundle.loc``, ``Tree.loc`` pandas-like semantics
       added for accessing subtrees.
+    * More complete tests for ``AggTags``
 
 
 Fixes
@@ -40,6 +41,7 @@ Fixes
       limbs
     * ``datreant.core.discover`` no longer traverses directories beyond given
       depth, or beyond treantdepth. These parameters now work as expected. #45
+    * ``AggCategories.groupby`` preserves key order
 
 
 Changes
