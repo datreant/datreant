@@ -616,6 +616,6 @@ class AggCategories(AggLimb):
                 groups[catvals[i]].add(m)
 
         else:
-            raise TypeError("Keys must be a string or a list or set of"
+            raise TypeError("Keys must be a string or a list of"
                             " strings")
         return groups
