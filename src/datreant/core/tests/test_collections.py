@@ -788,17 +788,10 @@ class TestBundle:
                 assert {t3} == set(age_bark[('old', 'mossy')])
                 assert {t4} == set(age_bark[('young', 'mossy')])
 
-                age_bark = collection.categories.groupby({'age', 'bark'})
-                assert len(age_bark) == 4
-                assert {t1} == set(age_bark[('young', 'smooth')])
-                assert {t2} == set(age_bark[('adult', 'fibrous')])
-                assert {t3} == set(age_bark[('old', 'mossy')])
-                assert {t4} == set(age_bark[('young', 'mossy')])
-
                 type_health = collection.categories.groupby(['type', 'health'])
                 assert len(type_health) == 2
-                assert {t3} == set(type_health[('poor', 'deciduous')])
-                assert {t4} == set(type_health[('good', 'deciduous')])
+                assert {t3} == set(type_health[('deciduous', 'poor')])
+                assert {t4} == set(type_health[('deciduous', 'good')])
                 for bundle in type_health.values():
                     assert {t1, t2}.isdisjoint(set(bundle))
 
@@ -826,25 +819,17 @@ class TestBundle:
                 keys = ['age', 'bark', 'type', 'nickname']
                 abtn = collection.categories.groupby(keys)
                 assert len(abtn) == 1
-                assert {t2} == set(abtn[('adult', 'fibrous', 'redwood',
-                                         'evergreen')])
+                assert {t2} == set(abtn[('adult', 'fibrous', 'evergreen',
+                                         'redwood')])
                 for bundle in abtn.values():
                     assert {t1, t3, t4}.isdisjoint(set(bundle))
 
                 keys = ['bark', 'nickname', 'type', 'age']
                 abtn2 = collection.categories.groupby(keys)
                 assert len(abtn2) == 1
-                assert {t2} == set(abtn2[('adult', 'fibrous', 'redwood',
-                                          'evergreen')])
+                assert {t2} == set(abtn2[('fibrous', 'redwood', 'evergreen',
+                                          'adult')])
                 for bundle in abtn2.values():
-                    assert {t1, t3, t4}.isdisjoint(set(bundle))
-
-                keys = {'age', 'bark', 'type', 'nickname'}
-                abtn_set = collection.categories.groupby(keys)
-                assert len(abtn_set) == 1
-                assert {t2} == set(abtn_set[('adult', 'fibrous', 'redwood',
-                                             'evergreen')])
-                for bundle in abtn_set.values():
                     assert {t1, t3, t4}.isdisjoint(set(bundle))
 
                 keys = ['health', 'nickname']
@@ -852,3 +837,7 @@ class TestBundle:
                 assert len(health_nick) == 0
                 for bundle in health_nick.values():
                     assert {t1, t2, t3, t4}.isdisjoint(set(bundle))
+
+                # Test key TypeError in groupby
+                with pytest.raises(TypeError) as e:
+                    collection.categories.groupby({'health', 'nickname'})

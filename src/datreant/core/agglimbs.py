@@ -572,7 +572,7 @@ class AggCategories(AggLimb):
         corresponding Bundles are groupings of members in the collection having
         the same category values (for the category specied by `keys`).
 
-        If `keys` is a list or set of keys, returns a dict of Bundles whose
+        If `keys` is a list of keys, returns a dict of Bundles whose
         (new) keys are tuples of category values. The corresponding Bundles
         contain the members in the collection that have the same set of
         category values (for the categories specified by `keys`); members in
@@ -581,7 +581,7 @@ class AggCategories(AggLimb):
 
         Parameters
         ----------
-        keys : str, list, set
+        keys : str, list
             Valid key(s) of categories in this collection.
 
         Returns
@@ -603,9 +603,8 @@ class AggCategories(AggLimb):
                    k in m.categories and m.categories[k] in groupkeys)
             for m, catval in gen:
                 groups[catval].add(m)
-
-        elif isinstance(keys, (list, set)):
-            keys = sorted(keys)
+        # Note: redundant code in if/elif block can be consolidated in future
+        elif isinstance(keys, list):
             catvals = list(zip(*members.categories[keys]))
             groupkeys = [v for v in catvals if None not in v]
             groups = {k: Bundle() for k in groupkeys}
@@ -617,6 +616,6 @@ class AggCategories(AggLimb):
                 groups[catvals[i]].add(m)
 
         else:
-            raise TypeError("Keys must be a string or a list or set of"
+            raise TypeError("Keys must be a string or a list of"
                             " strings")
         return groups
