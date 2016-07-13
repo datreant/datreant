@@ -102,90 +102,90 @@ class AggTags(AggLimb):
         return [member.tags[value] for member in self._collection]
 
     def __eq__(self, other):
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) == set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __lt__(self, other):
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) < set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __sub__(self, other):
         """Return a set giving the Tags in `a` that are not in `b`.
 
         """
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) - set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __rsub__(self, other):
         """Return a set giving the Tags in `a` that are not in `b`.
 
         """
-        if isinstance(other, (AggTags, Tags, set, list)):
-            return set(self) - set(other)
+        if isinstance(other, (AggTags, Tags, set)):
+            return set(other) - set(self)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __or__(self, other):
         """Return a set giving the union of Tags `a` and `b`.
 
         """
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) | set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __ror__(self, other):
         """Return a set giving the union of Tags `a` and `b`.
 
         """
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) | set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __and__(self, other):
         """Return a set giving the intersection of Tags `a` and `b`.
 
         """
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) & set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __rand__(self, other):
         """Return a set giving the intersection of Tags `a` and `b`.
 
         """
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) & set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __xor__(self, other):
         """Return a set giving the symmetric difference of Tags
         `a` and `b`.
 
         """
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) ^ set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     def __rxor__(self, other):
         """Return a set giving the symmetric difference of Tags
         `a` and `b`.
 
         """
-        if isinstance(other, (AggTags, Tags, set, list)):
+        if isinstance(other, (AggTags, Tags, set)):
             return set(self) ^ set(other)
         else:
-            raise TypeError("Operands must be tags, a set, or list.")
+            raise TypeError("Operands must be AggTags, Tags, or a set.")
 
     @property
     def any(self):

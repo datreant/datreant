@@ -370,13 +370,213 @@ class TestBundle:
                     assert tag in collection.tags.any
 
         def test_tags_set_behavior(self, collection, tmpdir):
-            pass
+            with tmpdir.as_cwd():
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('pine')
+                t3 = dtr.Treant('juniper')
+                t1.tags.add({'tree', 'new jersey', 'deciduous'})
+                t2.tags.add({'tree', 'new york', 'evergreen'})
+                t3.tags.add({'shrub', 'new york', 'evergreen'})
+                collection.add(t1, t2, t3)
+                trees = dtr.Bundle('maple', 'pine')
+                evergreens = dtr.Bundle('pine', 'juniper')
+                tags = collection.tags
+
+                assert len(tags.any) == 6
+
+                # test equality: __eq__ (==)
+                assert t1.tags == {'tree', 'new jersey', 'deciduous'}
+                assert t2.tags == {'tree', 'new york', 'evergreen'}
+                assert t3.tags == {'shrub', 'new york', 'evergreen'}
+
+                # test subset: __lt__ (<)
+                assert not t1.tags < {'tree', 'new jersey', 'deciduous'}
+                assert tags < {'tree', 'new jersey', 'deciduous'}
+                assert t1.tags < tags.any
+                assert t2.tags < tags.any
+                assert t3.tags < tags.any
+
+                # test difference: __sub__ (-)
+                assert t1.tags - {'tree'} == {'new jersey', 'deciduous'}
+                assert trees.tags - {'tree'} == set()
+
+                # test right difference: __rsub__ (-)
+                evergreen_ny_shrub = {'evergreen', 'new york', 'shrub'}
+                dec_nj_sh = {'deciduous', 'new jersey', 'shrub'}
+                assert tags.any - t1.tags == evergreen_ny_shrub
+                assert tags.any - evergreens.tags - trees.tags == dec_nj_sh
+                assert {'tree'} - trees.tags == set()
+
+                # test union: __or__ (|)
+                evergreen_ny_shrub = {'evergreen', 'new york', 'shrub'}
+                assert evergreens.tags | t3.tags == evergreen_ny_shrub
+                assert t1.tags | t2.tags | t3.tags == tags.any
+
+                # test right union: __ror__ (|)
+                assert {'shrub'} | evergreens.tags == evergreen_ny_shrub
+                assert t3.tags | {'tree'} == {'tree'} | t3.tags
+
+                # test intersection: __and__ (&)
+                evergreen_ny = {'evergreen', 'new york'}
+                assert evergreens.tags & t3.tags == evergreen_ny
+                assert t1.tags & t2.tags & t3.tags == tags.all
+
+                # test right intersection: __rand__ (&)
+                assert evergreen_ny_shrub & evergreens.tags == evergreen_ny
+                assert t3.tags & {'shrub'} == {'shrub'} & t3.tags
+
+                # test symmetric difference: __xor__ (^)
+                evergreen_ny_tree = {'evergreen', 'new york', 'tree'}
+                assert trees.tags ^ evergreens.tags == evergreen_ny_tree
+                assert evergreens.tags ^ t3.tags == {'shrub'}
+                assert t1.tags ^ t2.tags ^ t3.tags == dec_nj_sh
+
+                # test right symmetric difference: __rxor__ (^)
+                assert {'new york'} ^ evergreens.tags == {'evergreen'}
+                assert {'shrub'} ^ trees.tags == t2.tags ^ t3.tags
+
+                # type_error_msg = "Operands must be AggTags, Tags, or a set."
+                with pytest.raises(TypeError) as e:
+                    ['tree'] == trees.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    trees.tags < ['tree']
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] - trees.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    trees.tags - ['tree']
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] | trees.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    trees.tags | ['tree']
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] & trees.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    trees.tags & ['tree']
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    ['tree'] ^ trees.tags
+                # assert e.value.message == type_error_msg
+                with pytest.raises(TypeError) as e:
+                    trees.tags ^ ['tree']
+                # assert e.value.message == type_error_msg
 
         def test_tags_getitem(self, collection, testtreant, testgroup, tmpdir):
-            pass
+            with tmpdir.as_cwd():
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('pine')
+                t1.tags.add({'tree', 'new jersey', 'deciduous'})
+                t2.tags.add({'tree', 'new york', 'evergreen'})
+                collection.add(t1, t2)
+                tags = collection.tags
+
+                assert len(tags.any) == 5
+                # test single tags
+                assert tags['tree'] == [True, True]
+                assert tags['deciduous'] == [True, False]
+                assert tags['evergreen'] == [False, True]
+                assert tags['new jersey'] == [True, False]
+                assert tags['new york'] == [False, True]
+                assert tags[{'tree'}] == [False, False]
+                assert tags[{'deciduous'}] == [False, True]
+                assert tags[{'evergreen'}] == [True, False]
+                assert tags[{'new jersey'}] == [False, True]
+                assert tags[{'new york'}] == [True, False]
+
+                # test for Treants with ALL the given tags
+                assert tags[['tree', 'deciduous']] == [True, False]
+                assert tags[['tree', 'evergreen']] == [False, True]
+                assert tags[['new jersey', 'evergreen']] == [False, False]
+
+                # test for Treants with ANY of the given tags
+                assert tags[('tree', 'deciduous')] == [True, True]
+                assert tags[('deciduous', 'evergreen')] == [True, True]
+                assert tags[('new york', 'evergreen')] == [False, True]
+
+                # test for Treants without at least one of the given tags
+                assert tags[{'deciduous', 'evergreen'}] == [True, True]
+                assert tags[{'tree', 'deciduous'}] == [False, True]
+                assert tags[{'tree', 'new york', 'evergreen'}] == [True, False]
+
+                # complex logic tests
+
+                # give those that are evergreen or in NY AND also not deciduous
+                selection = [('evergreen', 'new york'), {'deciduous'}]
+                assert tags[selection] == [False, True]
+                # give those that are evergreen or in NY AND also not a tree
+                selection = [('evergreen', 'new york'), {'tree'}]
+                assert tags[selection] == [False, False]
+                # give a tree that's in NJ OR anything that's not evergreen
+                selection = (['tree', 'new jersey'], {'evergreen'})
+                assert tags[selection] == [True, False]
+                # cannot be a tree in NJ, AND must also be deciduous
+                # I.e., give all deciduous things that aren't trees in NJ
+                selection = [{'tree', 'new jersey'}, 'deciduous']
+                assert tags[selection] == [False, False]
 
         def test_tags_fuzzy(self, collection, testtreant, testgroup, tmpdir):
-            pass
+            with tmpdir.as_cwd():
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('pine')
+                t1.tags.add({'tree', 'new jersey', 'deciduous'})
+                t2.tags.add({'tree', 'new york', 'evergreen'})
+                collection.add(t1, t2)
+                tags = collection.tags
+
+                assert len(tags.any) == 5
+
+                all_tree1 = tags.fuzzy('tree', threshold=80, scope='all')
+                all_tree2 = tags.fuzzy('tree')
+                assert all_tree1 == all_tree2
+                assert all_tree2 == ('tree',)
+
+                any_deciduous = tags.fuzzy('deciduous', scope='any')
+                assert any_deciduous == ('deciduous',)
+                all_evergreen = tags.fuzzy('evergreen')
+                assert all_evergreen == ()
+
+                # check that fuzzy matching is independent of threshold when
+                # exact tag is present in all members
+                all_tree_strict = tags.fuzzy('tree', threshold=99)
+                assert all_tree_strict == ('tree',)
+                all_tree_tolerant = tags.fuzzy('tree', threshold=0)
+                assert all_tree_tolerant == ('tree',)
+
+                # check that fuzzy matching will give differing tags when
+                # members have similar tag names ('new') and the threshold is
+                # varied
+                all_ny = tags.fuzzy('new york')
+                assert all_ny == ()
+                any_ny_strict = tags.fuzzy('new york', scope='any')
+                assert any_ny_strict == ('new york',)
+                any_ny_tol = tags.fuzzy('new york', threshold=50, scope='any')
+                assert set(any_ny_tol) == {'new york', 'new jersey'}
+
+                # check fuzzy matching for multiple tags (scope='all')
+                new_ever = ['new', 'evergreen']
+                all_mul_strict = tags.fuzzy(new_ever, threshold=80)
+                assert all_mul_strict == ()
+                all_mul_tol = tags.fuzzy(new_ever, threshold=30)
+                assert all_mul_tol == ('tree',)
+
+                # check fuzzy matching for multiple tags (scope='any')
+                new_tree = ['new', 'tree']
+                any_mul_stric = tags.fuzzy(new_tree, threshold=90, scope='any')
+                assert any_mul_stric == ('tree',)
+                any_mul_tol = tags.fuzzy(new_tree, threshold=80, scope='any')
+                assert set(any_mul_tol) == {'new york', 'new jersey', 'tree'}
+                nj_decid = ['new jersey', 'decid']
+                any_mul_njdec = tags.fuzzy(nj_decid, threshold=80, scope='any')
+                assert set(any_mul_njdec) == {'new jersey', 'deciduous'}
 
         def test_tags_filter(self, collection, testtreant, testgroup, tmpdir):
             with tmpdir.as_cwd():
