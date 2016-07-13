@@ -837,3 +837,7 @@ class TestBundle:
                 assert len(health_nick) == 0
                 for bundle in health_nick.values():
                     assert {t1, t2, t3, t4}.isdisjoint(set(bundle))
+
+                # Test key TypeError in groupby
+                with pytest.raises(TypeError) as e:
+                    collection.categories.groupby({'health', 'nickname'})
