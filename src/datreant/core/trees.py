@@ -427,6 +427,43 @@ class Tree(Veg):
 
         return View(out, limbs=self.limbs)
 
+    def walk(self, topdown=True, onerror=None, followlinks=False):
+        """Walk through the contents of the tree.
+
+        For each directory in the tree (including the root itself), yields a
+        3-tuple (dirpath, dirnames, filenames).
+
+        Parameters
+        ----------
+        topdown : Boolean, optional
+            If False, walks directories from the bottom-up.
+        onerror : function, optional
+            Optional function to be called on error.
+        followlinks : Boolean, optional
+            If False, excludes symbolic file links.
+
+        Returns
+        -------
+        generator
+            Wrapped `scandir.walk()` generator yielding `datreant` objects
+
+        """
+        from .collections import View
+
+        if not self.exists:
+            raise OSError("Tree doesn't exist in the filesystem")
+
+        for root, dirs, files in os.walk(self.abspath, topdown=topdown,
+                                         onerror=onerror,
+                                         followlinks=followlinks):
+            # wrap results in datreant objects
+            r_tree = Tree(root)
+            trees = r_tree[dirs]
+            leaves = r_tree[files]
+
+            yield r_tree, trees, leaves
+
+
     def draw(self, depth=None, hidden=False):
         """Print an ASCII-fied visual of the tree.
 
