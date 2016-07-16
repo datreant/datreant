@@ -224,6 +224,7 @@ class TestTree(TestVeg):
 
     def test_walk(self, tree, tmpdir):
         with tmpdir.as_cwd():
+
             tree['scipy'].make()
             tree['2016'].make()
             tree['sprint'].make()
@@ -246,10 +247,10 @@ class TestTree(TestVeg):
                 for tree in trees:
                     all_trees.append(tree.abspath)
                 for leaf in leaves:
-                    all_leaves.append(leaf.abspath)
+                    all_leaves.append(leaf.name)
 
             assert roots_scandir == all_roots
-            assert roots_scandir == all_trees
+            assert dirs_scandir == all_trees
             assert files_scandir == all_leaves
 
 

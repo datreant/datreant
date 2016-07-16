@@ -525,6 +525,7 @@ class Tree(Veg):
         # Here we do some massaging before passing to the rsync function
         return rsync(source, dest, compress=compress, backup=backup,
                      dry=dry, include=include, checksum=checksum,
+<<<<<<< HEAD
                      overwrite=overwrite, exclude=exclude,
                      rsync_path=rsync_path)
 
@@ -534,6 +535,15 @@ class Tree(Veg):
         For each directory in the tree (including the root itself), yields a
         3-tuple (dirpath (Tree), dirnames (View of trees), filenames (View of
         leaves)).
+=======
+                     exclude=exclude, rsync_path=rsync_path)
+
+    def walk(self, topdown=True, onerror=None, followlinks=False):
+        """Walk through the contents of the tree. 
+           
+        For each directory in the tree (including the root itself), yields a
+        3-tuple (dirpath, dirnames, filenames).
+>>>>>>> david_walk
 
         Parameters
         ----------
@@ -555,6 +565,7 @@ class Tree(Veg):
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
 
+<<<<<<< HEAD
         for root, dirs, files in os.walk(self.abspath, topdown=topdown,
                                          onerror=onerror,
                                          followlinks=followlinks):
@@ -578,3 +589,15 @@ class _Loc(object):
 
         """
         return self._tree[path]
+=======
+        for root, dirs, files in scandir.walk(self.abspath, topdown=topdown,
+                                         onerror=onerror,
+                                         followlinks=followlinks):
+
+            # wrap results in datreant objects
+            r_tree = Tree(root)
+            trees = r_tree[dirs]
+            leaves = r_tree[files]
+
+            yield r_tree, trees, leaves
+>>>>>>> david_walk
