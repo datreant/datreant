@@ -1,5 +1,5 @@
 """Trees and Leaves: filesystem manipulation interfaces for directories and
-file.
+files.
 
 """
 
@@ -456,6 +456,7 @@ class Tree(Veg):
 	for root, dirs, files in os.walk(self.abspath, topdown=topdown,
                                          onerror=onerror,
                                          followlinks=followlinks):
+
             # wrap results in datreant objects
             r_tree = Tree(root)
             trees = r_tree[dirs]
