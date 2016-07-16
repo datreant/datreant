@@ -532,7 +532,9 @@ class Tree(Veg):
         """Walk through the contents of the tree.
 
         For each directory in the tree (including the root itself), yields a
-        3-tuple (dirpath, dirnames, filenames).
+        3-tuple (dirpath (Tree), dirnames (View of trees), filenames (View of
+        leaves)).
+
         Parameters
         ----------
         topdown : Boolean, optional

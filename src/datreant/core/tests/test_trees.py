@@ -224,30 +224,33 @@ class TestTree(TestVeg):
 
     def test_walk(self, tree, tmpdir):
         with tmpdir.as_cwd():
-            t = tree[os.getcwd()]
-            tm = tree['moe'].make()
-            tl = tree['larry'].make()
-            tc = tree['curly'].make()
+            tree['scipy'].make()
+            tree['2016'].make()
+            tree['sprint'].make()
             roots_scandir = []
             dirs_scandir = []
             files_scandir = []
-            roots_tree = []
-            dirs_tree = []
-            files_tree = []
+            all_roots = []
+            all_trees = []
+            all_leaves = []
 
-            for roots, dirs, files in scandir.walk(os.getcwd()):
-                roots_scandir.append(roots)
-                dirs_scandir.append(dirs)
-                files_scandir.append(files)
+            for root, dirs, files in scandir.walk(tree.abspath):
+                roots_scandir.append(root)
+                for directory in dirs:
+                    dirs_scandir.append(directory)
+                for f in files:
+                    files_scandir.append(f)
 
-            for roots, dirs, files in t.walk():
-                roots_tree.append(roots)
-                dirs_tree.append(dirs)
-                files_tree.append(files)
+            for root, trees, leaves in tree.walk():
+                all_roots.append(root.abspath)
+                for tree in trees:
+                    all_trees.append(tree.abspath)
+                for leaf in leaves:
+                    all_leaves.append(leaf.abspath)
 
-            assert roots_scandir == roots_tree
-            assert roots_scandir == dirs_tree
-            assert files_scandir == files_tree
+            assert roots_scandir == all_roots
+            assert roots_scandir == all_trees
+            assert files_scandir == all_leaves
 
 
 class TestLeaf(TestVeg):
