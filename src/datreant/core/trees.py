@@ -449,11 +449,11 @@ class Tree(Veg):
 
         """
         from .collections import View
-        
-	if not self.exists:
+
+        if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
-        
-	for root, dirs, files in os.walk(self.abspath, topdown=topdown,
+
+        for root, dirs, files in os.walk(self.abspath, topdown=topdown,
                                          onerror=onerror,
                                          followlinks=followlinks):
 
