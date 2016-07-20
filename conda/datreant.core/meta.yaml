@@ -10,8 +10,8 @@ source:
 
 build:
   # noarch_python: True
-  script: $PYTHON setup.py install --old-and-unmanageable
-  number: 0
+  script: $PYTHON setup.py install --single-version-externally-managed --record record.txt
+  number: 2
 
 requirements:
   build:
@@ -32,19 +32,19 @@ requirements:
     - scandir
     - six
     - fuzzywuzzy
-    - pytest
     - python-levenshtein
 
 test:
-  # Python imports
+  # Python imports should always be done
   imports:
     - datreant
     - datreant.core
     - datreant.core.backends
     - datreant.core.tests
 
+  # please uncomment when building from outside the git repository
   requires:
-    # Put any additional test requirements here.  For example
+    - pytest
     - python
     - asciitree
     - pathlib2
@@ -52,18 +52,10 @@ test:
     - six
     - fuzzywuzzy
     - python-levenshtein
-
-  #  files:
-  #    - src/datreant/core/tests
-  #
-  #  commands:
-  #    # You can put test commands to be run here.  Use this to test that the
-  #    # entry points work.
-  #    - py.test src
-
-
-  # You can also put a file called run_test.py in the recipe that will be run
-  # at test time.
+  files:
+    - src/datreant/core/tests
+  commands:
+    - py.test src
 
 
 about:
