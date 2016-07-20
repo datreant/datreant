@@ -1,17 +1,17 @@
 package:
   name: datreant.core
-  version: "0.6.0"
+  version: "0.7.0"
 
 source:
   # path: ../../../
   git_url: https://github.com/datreant/datreant.core.git
   # git_branch: master
-  git_tag: release-0.6.0
+  git_tag: release-0.7.0
 
 build:
-  noarch_python: True
-  script: $PYTHON setup.py install
-  number: 3
+  # noarch_python: True
+  script: $PYTHON setup.py install --old-and-unmanageable
+  number: 0
 
 requirements:
   build:
@@ -19,7 +19,7 @@ requirements:
     - pip
     - setuptools
     - asciitree
-    - pathlib
+    - pathlib2
     - scandir
     - six
     - fuzzywuzzy
@@ -28,7 +28,7 @@ requirements:
   run:
     - python
     - asciitree
-    - pathlib
+    - pathlib2
     - scandir
     - six
     - fuzzywuzzy
@@ -45,22 +45,21 @@ test:
 
   requires:
     # Put any additional test requirements here.  For example
-    - pytest
     - python
     - asciitree
-    - pathlib
+    - pathlib2
     - scandir
     - six
     - fuzzywuzzy
     - python-levenshtein
 
-  files:
-    - src/datreant/core/tests
-
-  commands:
-    # You can put test commands to be run here.  Use this to test that the
-    # entry points work.
-    - py.test src
+  #  files:
+  #    - src/datreant/core/tests
+  #
+  #  commands:
+  #    # You can put test commands to be run here.  Use this to test that the
+  #    # entry points work.
+  #    - py.test src
 
 
   # You can also put a file called run_test.py in the recipe that will be run
