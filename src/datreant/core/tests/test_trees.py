@@ -5,6 +5,7 @@
 import pytest
 import os
 import py
+import scandir
 
 from datreant.core import Veg, Leaf, Tree, Treant
 
@@ -220,6 +221,37 @@ class TestTree(TestVeg):
 
         assert tl in tree.glob('*r*y')
         assert tc in tree.glob('*r*y')
+
+    def test_walk(self, tree, tmpdir):
+        with tmpdir.as_cwd():
+
+            tree['scipy'].make()
+            tree['2016'].make()
+            tree['sprint'].make()
+            roots_scandir = []
+            dirs_scandir = []
+            files_scandir = []
+            all_roots = []
+            all_trees = []
+            all_leaves = []
+
+            for root, dirs, files in scandir.walk(tree.abspath):
+                roots_scandir.append(root)
+                for directory in dirs:
+                    dirs_scandir.append(directory)
+                for f in files:
+                    files_scandir.append(f)
+
+            for root, trees, leaves in tree.walk():
+                all_roots.append(root.abspath)
+                for tree in trees:
+                    all_trees.append(tree.abspath)
+                for leaf in leaves:
+                    all_leaves.append(leaf.name)
+
+            assert roots_scandir == all_roots
+            assert dirs_scandir == all_trees
+            assert files_scandir == all_leaves
 
 
 class TestLeaf(TestVeg):
