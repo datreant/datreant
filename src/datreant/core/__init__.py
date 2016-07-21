@@ -11,7 +11,8 @@ datreant.core --- persistent, pythonic trees for heterogeneous data
              :class:`datreant.core.treants.Group`
 
 """
-# global registries of classes
+# global registries of classes. Must be imported first! Other modules will try
+# to import them and file if they don't exit already.
 _TREANTS = dict()
 
 _TREELIMBS = dict()
@@ -26,5 +27,6 @@ from .trees import Veg, Leaf, Tree
 from .collections import View, Bundle
 from . import attach
 
-__all__ = ['Treant', 'Group', 'Tree', 'Leaf', 'Bundle']
+__all__ = ['Treant', 'Group', 'Tree', 'Leaf', 'Bundle', 'discover', 'Veg',
+           'attach', 'View']
 __version__ = "0.8.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
