@@ -244,13 +244,15 @@ class TestTree(TestVeg):
             all_leaves = []
 
             for root, dirs, files in os.walk(tree.abspath):
-                # walk normally doesn't add slash to path, hacky fix
+                # os.walk normally doesn't add slash to path, in order to
+                # replicate the path given by tree.walk() we use os.path.join
                 if root != tree.abspath:
-                    root = root + '/'
+                    root = os.path.join(root, '')
                 roots_scandir.append(root)
                 for directory in dirs:
-                    # this is the abspath of the directory, hacky fix for slash
-                    dirs_scandir.append(root+directory+'/')
+                    # this is the abspath of the directory,
+                    # same reason as above for use of os.path.join
+                    dirs_scandir.append(os.path.join(root, directory, ''))
                 for f in files:
                     files_scandir.append(f)
 
