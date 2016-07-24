@@ -1,0 +1,30 @@
+package:
+  name: asciitree
+  version: "0.3.1"
+
+source:
+  fn: asciitree-0.3.1.tar.gz
+  url: https://pypi.python.org/packages/source/a/asciitree/asciitree-0.3.1.tar.gz
+  md5: c0fdd1583971b63b4aa36b7425cbe3c5
+
+build:
+  # If this is a new build for the same version, increment the build
+  # number. If you do not include this key, it defaults to 0.
+  number: 2
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+test:
+  imports:
+    - asciitree
+
+about:
+  home: http://github.com/mbr/asciitree
+  license: MIT
+  summary: 'Draws ASCII trees.'
