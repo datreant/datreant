@@ -1,0 +1,16 @@
+package:
+  name: datreant
+  version: 1.0
+
+requirements:
+  build:
+    - python
+  run:
+    - python
+
+test:
+  imports:
+    - datreant
+
+about:
+  license: BSD 3-Clause
