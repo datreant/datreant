@@ -5,7 +5,6 @@
 import pytest
 import os
 import py
-import re
 
 from datreant.core import Veg, Leaf, Tree, Treant
 
