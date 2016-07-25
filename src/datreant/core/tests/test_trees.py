@@ -221,6 +221,52 @@ class TestTree(TestVeg):
         assert tl in tree.glob('*r*y')
         assert tc in tree.glob('*r*y')
 
+    def test_walk(self, tree, tmpdir):
+
+        with tmpdir.as_cwd():
+            # files
+            tree['scipy'].make()
+            tree['2016'].make()
+            tree['sprint'].make()
+
+            # directories with files
+            t1 = tree['a_dir/has_no_name']
+            t2 = tree['another_dir/bites_the_dust']
+            t1.make()
+            t2.make()
+
+            roots_scandir = []
+            dirs_scandir = []
+            files_scandir = []
+            all_roots = []
+            all_trees = []
+            all_leaves = []
+
+            for root, dirs, files in os.walk(tree.abspath):
+                # os.walk normally doesn't add slash to path, in order to
+                # replicate the path given by tree.walk() we use os.path.join
+                if root != tree.abspath:
+                    root = os.path.join(root, '')
+                roots_scandir.append(root)
+                for directory in dirs:
+                    # this is the abspath of the directory,
+                    # same reason as above for use of os.path.join
+                    dirs_scandir.append(os.path.join(root, directory, ''))
+                for f in files:
+                    files_scandir.append(f)
+
+            for root, trees, leaves in tree.walk():
+                all_roots.append(root.abspath)
+                for tree in trees:
+                    # this is the abspath of the directory
+                    all_trees.append(tree.abspath)
+                for leaf in leaves:
+                    all_leaves.append(leaf.name)
+
+            assert roots_scandir == all_roots
+            assert dirs_scandir == all_trees
+            assert files_scandir == all_leaves
+
 
 class TestLeaf(TestVeg):
     """Test Leaf-specific features.
