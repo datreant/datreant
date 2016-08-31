@@ -495,7 +495,7 @@ class Categories(Limb):
 
         """
         outcats = dict()
-        if isinstance(categorydict, dict):
+        if isinstance(categorydict, (dict, Categories)):
             outcats.update(categorydict)
         elif categorydict is None:
             pass
