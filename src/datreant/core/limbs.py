@@ -10,7 +10,6 @@ from collections import defaultdict
 
 from fuzzywuzzy import process
 
-from . import filesystem
 from .collections import Bundle
 from . import _TREELIMBS, _LIMBS
 
