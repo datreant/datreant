@@ -454,6 +454,10 @@ class TestTreant(TestTree):
             treant.categories = s.categories
             assert treant.categories == s.categories
 
+        def test_from_treant(self, treant, tmpdir):
+            with tmpdir.as_cwd():
+                dtr.Treant('sprout', categories=treant.categories)
+
 
 class TestGroup(TestTreant):
     """Test Group-specific features.
