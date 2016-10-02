@@ -10,7 +10,6 @@ from collections import defaultdict
 
 from fuzzywuzzy import process
 
-from . import filesystem
 from .collections import Bundle
 from . import _TREELIMBS, _LIMBS
 
@@ -496,7 +495,7 @@ class Categories(Limb):
 
         """
         outcats = dict()
-        if isinstance(categorydict, dict):
+        if isinstance(categorydict, (dict, Categories)):
             outcats.update(categorydict)
         elif categorydict is None:
             pass
