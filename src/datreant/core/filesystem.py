@@ -3,13 +3,10 @@ Functions and classes for finding Treants in the filesystem.
 
 """
 import os
-import sys
 import glob
 import time
 
 import scandir
-
-from . import backends
 
 
 def statefilename(treanttype, uuid):

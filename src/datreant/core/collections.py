@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import os
 import functools
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 
 import multiprocessing as mp
 import glob
@@ -22,7 +22,6 @@ from six.moves import zip
 from . import filesystem
 from . import _AGGLIMBS, _AGGTREELIMBS
 from .trees import Tree, Leaf
-from .manipulators import discover
 
 
 @functools.total_ordering
