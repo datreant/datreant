@@ -69,4 +69,4 @@ This will run all the tests for that subpackage (often inside
 Note that to run the tests you will need to install ``py.test`` and the
 coverage and PEP8 plugins into your virtualenv::
 
-    pip install py.test pytest pytest-cov pytest-pep8
+    pip install pytest pytest-cov pytest-pep8
