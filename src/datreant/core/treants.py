@@ -8,7 +8,6 @@ import six
 from uuid import uuid4
 from pathlib2 import Path
 
-from . import limbs
 from . import filesystem
 from .collections import Bundle
 from .trees import Tree
