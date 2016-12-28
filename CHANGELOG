@@ -24,7 +24,7 @@ Enhancements
     
 
 Fixes
-    
+    * Raise exception if wrong tag type is added (Issue #123)
 
 Changes
 
