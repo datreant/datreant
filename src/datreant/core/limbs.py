@@ -257,7 +257,7 @@ class Tags(Limb):
         """
         outtags = list()
         for tag in tags:
-            if isinstance(tag, (list, set)):
+            if isinstance(tag, (list, set, tuple)):
                 outtags.extend(tag)
             else:
                 outtags.append(tag)

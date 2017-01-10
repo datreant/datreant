@@ -166,6 +166,13 @@ class TestTreant(TestTree):
     class TestTags:
         """Test treant tags"""
 
+        @pytest.mark.parametrize("tags", (("1", "2", "3"),   # tuple
+                                          ["1", "2", "3"],   # list
+                                          {"1", "2", "3"}))  # set
+        def test_adding_array_like_tags(self, treant, tags):
+            treant.tags.add(tags)
+            assert sorted(list(tags)) == sorted(list(treant.tags))
+
         def test_add_tags(self, treant):
             treant.tags.add('marklar')
             assert 'marklar' in treant.tags

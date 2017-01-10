@@ -24,7 +24,8 @@ Enhancements
     
 
 Fixes
-    
+    * allow addings tags from tuples (Issue #122)
+
 
 Changes
 
