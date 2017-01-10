@@ -265,8 +265,14 @@ class Tags(Limb):
         with self._treant._write:
             # ensure tags are unique (we don't care about order)
             # also they must be strings
-            outtags = set([tag for tag in outtags if
-                           isinstance(tag, string_types)])
+            _outtags = []
+            for tag in outtags:
+                if not isinstance(tag, string_types):
+                    raise ValueError("Only string can be added as tags. Tried "
+                                     "to add '{}' which is '{}'".format(
+                                         tag, type(tag)))
+                _outtags.append(tag)
+            outtags = set(_outtags)
 
             # remove tags already present in metadata from list
             outtags = outtags.difference(set(self._treant._state['tags']))
