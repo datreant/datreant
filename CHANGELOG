@@ -15,7 +15,7 @@ The rules for this file:
 
 ??/??/16 
 
-    * 0.8.0
+    * 0.8.0 kain88-de, dotsdl
 
 API Changes
 
@@ -25,6 +25,7 @@ Enhancements
 
 Fixes
     * Raise exception if wrong tag type is added (Issue #123)
+    * allow addings tags from tuples (Issue #122)
 
 Changes
 
