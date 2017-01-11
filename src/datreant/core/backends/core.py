@@ -4,7 +4,12 @@
 
 import os
 import sys
-import fcntl
+
+if os.name=='nt':
+    import msvcrt
+else:
+    import fcntl
+
 import warnings
 import json
 from functools import wraps
@@ -36,7 +41,8 @@ class File(object):
 
         # we apply locks to a proxy file to avoid creating an HDF5 file
         # without an exclusive lock on something; important for multiprocessing
-        proxy = "." + os.path.basename(self.filename) + ".proxy"
+        #proxy = "." + os.path.basename(self.filename) + ".proxy"
+        proxy = os.path.basename(self.filename) + ".proxy"
         self.proxy = os.path.join(os.path.dirname(self.filename), proxy)
 
         # we create the file if it doesn't exist; if it does, an exception is
@@ -77,7 +83,10 @@ class File(object):
             *success*
                 True if shared lock successfully obtained
         """
-        fcntl.lockf(fd, fcntl.LOCK_SH)
+        if os.name=='nt':
+            msvcrt.locking(fd,msvcrt.LK_LOCK,2147483647L)
+        else:
+            fcntl.lockf(fd, fcntl.LOCK_SH)
 
         return True
 
@@ -96,7 +105,11 @@ class File(object):
             *success*
                 True if exclusive lock successfully obtained
         """
-        fcntl.lockf(fd, fcntl.LOCK_EX)
+
+        if os.name=='nt':
+            msvcrt.locking(fd,msvcrt.LK_LOCK,2147483647L)
+        else:
+            fcntl.lockf(fd, fcntl.LOCK_SH)
 
         return True
 
@@ -116,7 +129,11 @@ class File(object):
             *success*
                 True if lock removed
         """
-        fcntl.lockf(fd, fcntl.LOCK_UN)
+
+        if os.name=='nt':
+            msvcrt.locking(fd,msvcrt.LK_UNLCK,2147483647L)
+        else:
+            fcntl.lockf(fd, fcntl.LOCK_UN)
 
         return True
 
