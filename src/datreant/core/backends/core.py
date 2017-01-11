@@ -4,17 +4,15 @@
 
 import os
 import sys
-
-if os.name == 'nt':
-    import msvcrt
-else:
-    import fcntl
-
 import warnings
 import json
 from functools import wraps
 from contextlib import contextmanager
 
+if os.name == 'nt':
+    import msvcrt
+else:
+    import fcntl
 
 class File(object):
     """Generic File object base class. Implements file locking and reloading
@@ -84,7 +82,7 @@ class File(object):
                 True if shared lock successfully obtained
         """
         if os.name == 'nt':
-            msvcrt.locking(fd,msvcrt.LK_LOCK,sys.maxint)
+            msvcrt.locking(fd, msvcrt.LK_LOCK, sys.maxint)
         else:
             fcntl.lockf(fd, fcntl.LOCK_SH)
 
@@ -107,7 +105,7 @@ class File(object):
         """
 
         if os.name == 'nt':
-            msvcrt.locking(fd,msvcrt.LK_LOCK,sys.maxint)
+            msvcrt.locking(fd, msvcrt.LK_LOCK, sys.maxint)
         else:
             fcntl.lockf(fd, fcntl.LOCK_EX)
 
@@ -131,7 +129,7 @@ class File(object):
         """
 
         if os.name == 'nt':
-            msvcrt.locking(fd,msvcrt.LK_UNLCK,sys.maxint)
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, sys.maxint)
         else:
             fcntl.lockf(fd, fcntl.LOCK_UN)
 
