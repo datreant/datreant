@@ -84,7 +84,7 @@ class File(object):
                 True if shared lock successfully obtained
         """
         if os.name=='nt':
-            msvcrt.locking(fd,msvcrt.LK_LOCK,2147483647L)
+            msvcrt.locking(fd,msvcrt.LK_LOCK,sys.maxint)
         else:
             fcntl.lockf(fd, fcntl.LOCK_SH)
 
@@ -107,7 +107,7 @@ class File(object):
         """
 
         if os.name=='nt':
-            msvcrt.locking(fd,msvcrt.LK_LOCK,2147483647L)
+            msvcrt.locking(fd,msvcrt.LK_LOCK,sys.maxint)
         else:
             fcntl.lockf(fd, fcntl.LOCK_SH)
 
@@ -131,7 +131,7 @@ class File(object):
         """
 
         if os.name=='nt':
-            msvcrt.locking(fd,msvcrt.LK_UNLCK,2147483647L)
+            msvcrt.locking(fd,msvcrt.LK_UNLCK,sys.maxint)
         else:
             fcntl.lockf(fd, fcntl.LOCK_UN)
 
