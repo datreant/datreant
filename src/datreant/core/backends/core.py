@@ -14,6 +14,7 @@ if os.name == 'nt':
 else:
     import fcntl
 
+    
 class File(object):
     """Generic File object base class. Implements file locking and reloading
     methods.
