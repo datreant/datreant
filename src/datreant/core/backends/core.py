@@ -5,7 +5,7 @@
 import os
 import sys
 
-if os.name=='nt':
+if os.name == 'nt':
     import msvcrt
 else:
     import fcntl
@@ -83,7 +83,7 @@ class File(object):
             *success*
                 True if shared lock successfully obtained
         """
-        if os.name=='nt':
+        if os.name == 'nt':
             msvcrt.locking(fd,msvcrt.LK_LOCK,sys.maxint)
         else:
             fcntl.lockf(fd, fcntl.LOCK_SH)
@@ -106,10 +106,10 @@ class File(object):
                 True if exclusive lock successfully obtained
         """
 
-        if os.name=='nt':
+        if os.name == 'nt':
             msvcrt.locking(fd,msvcrt.LK_LOCK,sys.maxint)
         else:
-            fcntl.lockf(fd, fcntl.LOCK_SH)
+            fcntl.lockf(fd, fcntl.LOCK_EX)
 
         return True
 
@@ -130,7 +130,7 @@ class File(object):
                 True if lock removed
         """
 
-        if os.name=='nt':
+        if os.name == 'nt':
             msvcrt.locking(fd,msvcrt.LK_UNLCK,sys.maxint)
         else:
             fcntl.lockf(fd, fcntl.LOCK_UN)
