@@ -1,3 +1,10 @@
 *.pyc
 *.swp
 *.swo
+/.idea/*
+.idea/datreant.core.iml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+src/datreant/core/__pycache__/
