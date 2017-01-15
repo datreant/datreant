@@ -6,8 +6,6 @@ import json
 import os
 from contextlib import contextmanager
 
-import portalocker
-
 
 class File(object):
     """Generic File object base class. Implements file locking and reloading
@@ -34,7 +32,8 @@ class File(object):
 
         # we apply locks to a proxy file to avoid creating an HDF5 file
         # without an exclusive lock on something; important for multiprocessing
-        proxy = "." + os.path.basename(self.filename) + ".proxy"
+        # proxy = "." + os.path.basename(self.filename) + ".proxy"
+        proxy = os.path.basename(self.filename) + ".proxy"
         self.proxy = os.path.join(os.path.dirname(self.filename), proxy)
 
         # we create the file if it doesn't exist; if it does, an exception is
@@ -76,7 +75,7 @@ class File(object):
                 True if shared lock successfully obtained
         """
         # fcntl.lockf(fd, fcntl.LOCK_SH)
-        portalocker.lock(fd, portalocker.LOCK_SH)
+        # portalocker.lock(fd, portalocker.LOCK_SH)
 
         return True
 
@@ -96,7 +95,7 @@ class File(object):
                 True if exclusive lock successfully obtained
         """
         # fcntl.lockf(fd, fcntl.LOCK_EX)
-        portalocker.lock(fd, portalocker.LOCK_EX)
+        # portalocker.lock(fd, portalocker.LOCK_EX)
 
         return True
 
@@ -117,7 +116,7 @@ class File(object):
                 True if lock removed
         """
         # fcntl.lockf(fd, fcntl.LOCK_UN)
-        portalocker.lock(fd, portalocker.LOCK_UN)
+        # portalocker.lock(fd, portalocker.LOCK_UN)
 
         return True
 
