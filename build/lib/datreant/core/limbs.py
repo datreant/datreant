@@ -86,8 +86,8 @@ class Tags(Limb):
                     self._treant._state['tags']
                 except KeyError:
                     raise KeyError(
-                            ("Missing 'tags' data, and cannot write to "
-                             "Treant '{}'".format(self._treant.filepath)))
+                        ("Missing 'tags' data, and cannot write to "
+                         "Treant '{}'".format(self._treant.filepath)))
 
     def __repr__(self):
         return "<Tags({})>".format(self._list())
@@ -355,8 +355,8 @@ class Categories(Limb):
                     self._treant._state['categories']
                 except KeyError:
                     raise KeyError(
-                            ("Missing 'categories' data, and cannot write to "
-                             "Treant '{}'".format(self._treant.filepath)))
+                        ("Missing 'categories' data, and cannot write to "
+                         "Treant '{}'".format(self._treant.filepath)))
 
     def __repr__(self):
         return "<Categories({})>".format(self._dict())
@@ -590,8 +590,8 @@ class MemberBundle(Limb, Bundle):
                     self._treant._state['members']
                 except KeyError:
                     raise KeyError(
-                            ("Missing 'members' data, and cannot write to "
-                             "Treant '{}'".format(self._treant.filepath)))
+                        ("Missing 'members' data, and cannot write to "
+                         "Treant '{}'".format(self._treant.filepath)))
 
         # member Treant cache
         self._cache = dict()

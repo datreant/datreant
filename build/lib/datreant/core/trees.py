@@ -19,7 +19,6 @@ from .util import makedirs
 
 @total_ordering
 class Veg(object):
-
     _classlimbs = set()
     _limbs = set()
 
@@ -165,6 +164,7 @@ class Tree(Veg):
     """A directory.
 
     """
+
     def __init__(self, dirpath, limbs=None):
         if os.path.isfile(dirpath):
             raise ValueError("'{}' is an existing file; "
@@ -237,11 +237,12 @@ class Tree(Veg):
         """Attach a limb to the class.
 
         """
+
         # property definition
         def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
+            if not hasattr(self, "_" + limb._name):
+                setattr(self, "_" + limb._name, limb(self))
+            return getattr(self, "_" + limb._name)
 
         try:
             setter = limb._setter
@@ -457,7 +458,6 @@ class Tree(Veg):
         for root, dirs, files in os.walk(self.abspath, topdown=topdown,
                                          onerror=onerror,
                                          followlinks=followlinks):
-
             # wrap results in datreant objects
             r_tree = Tree(root)
             trees = r_tree[dirs]
@@ -488,10 +488,10 @@ class Tree(Veg):
 
             parent = reduce(dict.get, folders[:-1], tree)
 
-            if depth and len(folders) == depth+1:
+            if depth and len(folders) == depth + 1:
                 parent[folders[-1]] = {}
                 continue
-            elif depth and len(folders) > depth+1:
+            elif depth and len(folders) > depth + 1:
                 continue
 
             # filter out hidden files, if desired

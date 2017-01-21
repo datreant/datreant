@@ -100,6 +100,7 @@ class Foxhound(object):
     TreantFiles use this class to find their file on disk when it moves.
 
     """
+
     def __init__(self, caller, uuids, paths, timeout=10):
         """Generate a Foxhound to track down Treants.
 
@@ -175,7 +176,7 @@ class Foxhound(object):
             for path in self.paths['abspath']:
                 found = []
                 candidates = glob.glob(
-                        os.path.join(path, '*.*.json'))
+                    os.path.join(path, '*.*.json'))
 
                 for candidate in candidates:
                     for uuid in uuids:
@@ -192,7 +193,7 @@ class Foxhound(object):
             for path in self.paths['relpath']:
                 found = []
                 candidates = glob.glob(
-                        os.path.join(path, '*.*.json'))
+                    os.path.join(path, '*.*.json'))
 
                 for candidate in candidates:
                     for uuid in uuids:
@@ -255,12 +256,11 @@ class Foxhound(object):
             for root, dirs, files in scandir.walk(path):
                 # if search runs over timeout, call it off
                 if ((time.time() - currtime) > self.timeout and
-                        self.timeout is not None):
-
+                            self.timeout is not None):
                     self.caller._logger.info(
-                            "Search for missing members timed" +
-                            " out at {}".format(self.timeout) +
-                            " seconds.")
+                        "Search for missing members timed" +
+                        " out at {}".format(self.timeout) +
+                        " seconds.")
                     timedout = True
                     break
 
@@ -327,7 +327,7 @@ class Foxhound(object):
 
             # if search runs over timeout, call it off
             if ((time.time() - currtime) > self.timeout and
-                    self.timeout is not None):
+                        self.timeout is not None):
                 self.caller._logger.info("Search for missing members timed" +
                                          " out at {}".format(self.timeout) +
                                          " seconds.")

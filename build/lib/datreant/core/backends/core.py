@@ -251,6 +251,7 @@ class FileSerial(File):
     """File object base class for serialization formats, such as JSON.
 
     """
+
     @property
     def _writebuffer(self):
         wbuffer = ".{}.buffer".format(os.path.basename(self.filename))

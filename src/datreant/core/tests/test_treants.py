@@ -2,13 +2,14 @@
 
 """
 
-import datreant.core as dtr
-import pytest
 import os
-import py
 
-from . import test_collections
-from .test_trees import TestTree
+import py
+import pytest
+import test_collections
+from test_trees import TestTree
+
+import datreant.core as dtr
 
 
 class TestTreant(TestTree):
