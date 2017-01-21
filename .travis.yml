@@ -14,8 +14,9 @@ branches:
         - develop
 
 # install python dependencies
+# load my portallocker.git version
 install:
-  - pip install portalocker
+  - pip install git+https://github.com/rddaz2013/portalocker.git
   - pip install codecov
   - pip install pytest-cov
   - pip install pytest-pep8
