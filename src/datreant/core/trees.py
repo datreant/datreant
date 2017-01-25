@@ -123,7 +123,7 @@ class Leaf(Veg):
                 this leaf
 
         """
-        makedirs(str(self.path)))
+        makedirs(str(self.path))
 
         return self
 
