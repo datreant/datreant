@@ -250,8 +250,14 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         statefile = os.path.join(newdir,
                                  filesystem.statefilename(
                                      self._treanttype, self.uuid))
-
-        os.rename(olddir, newdir)
+        
+        if os.name == 'nt':
+            if os.path.exists(newdir):
+                os.remove(newdir)
+                os.rename(olddir, newdir)
+            else:
+                os.rename(olddir, newdir)
+ 
         self._regenerate(statefile)
 
     @property
