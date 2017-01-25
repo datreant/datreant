@@ -34,8 +34,8 @@ class File(object):
 
         # we apply locks to a proxy file to avoid creating an HDF5 file
         # without an exclusive lock on something; important for multiprocessing
-        # proxy = "." + os.path.basename(self.filename) + ".proxy"
-        proxy = os.path.basename(self.filename) + ".proxy"
+        proxy = "." + os.path.basename(self.filename) + ".proxy"
+        #proxy = os.path.basename(self.filename) + ".proxy"
         self.proxy = os.path.join(os.path.dirname(self.filename), proxy)
 
         # we create the file if it doesn't exist; if it does, an exception is
