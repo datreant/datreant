@@ -131,8 +131,17 @@ class Leaf(Veg):
         """Make file if it doesn't exist.
 
         """
-        self.makedirs()
-        self.path.touch()
+        if os.name == 'nt':
+            self.makedirs()
+            now = time.time()
+            try:
+                bse = str(self.path)+'.info'
+                with open(bse,'a'):
+                    os.utime(bse,None)
+            except Exception as e: print str(e)
+        else:
+            self.makedirs()
+            self.path.touch()
 
     def make(self):
         """Make the file if it doesn't exit. Equivalent to :meth:`touch`.
