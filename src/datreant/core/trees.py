@@ -7,6 +7,8 @@ import os
 from functools import reduce, total_ordering
 
 import scandir
+import time
+
 from asciitree import LeftAligned
 from pathlib2 import Path
 from six import string_types
