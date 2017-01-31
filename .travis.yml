@@ -24,7 +24,7 @@ install:
 
 # run tests
 script: 
-  - py.test --basetemp=mydir --cov src/datreant --pep8 src/datreant
+  - py.test --basetemp=mydir
 
 after_success:
   - codecov
