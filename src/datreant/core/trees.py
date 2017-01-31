@@ -125,7 +125,7 @@ class Leaf(Veg):
                 this leaf
 
         """
-        makedirs(str(self.path))
+        makedirs(os.path.dirname(str(self.path)))
 
         return self
 
