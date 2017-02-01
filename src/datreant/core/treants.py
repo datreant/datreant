@@ -255,8 +255,8 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
             if os.path.exists(newdir):
                 os.remove(newdir)
                 os.rename(olddir, newdir)
-            else:
-                os.rename(olddir, newdir)
+        else:
+            os.rename(olddir, newdir)
  
         self._regenerate(statefile)
 
