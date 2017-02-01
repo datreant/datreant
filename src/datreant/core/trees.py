@@ -4,11 +4,10 @@ files.
 """
 
 import os
+import time
 from functools import reduce, total_ordering
 
 import scandir
-import time
-
 from asciitree import LeftAligned
 from pathlib2 import Path
 from six import string_types
@@ -140,7 +139,8 @@ class Leaf(Veg):
                 bse = str(self.path)+'.info'
                 with open(bse,'a'):
                     os.utime(bse,None)
-            except Exception as e: print (str(e))
+            except Exception as e:
+                print (str(e))
         else:
             self.makedirs()
             self.path.touch()
