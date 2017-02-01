@@ -327,8 +327,8 @@ class FileSerial(File):
             if os.path.exists(self.filename):
                 os.remove(self.filename)
                 os.rename(self._writebuffer, self.filename)
-            else:
-                os.rename(self._writebuffer, self.filename)
+        else:
+            os.rename(self._writebuffer, self.filename)
 
     def _serialize(self, state, handle):
         """Serialize full state to open file handle.
