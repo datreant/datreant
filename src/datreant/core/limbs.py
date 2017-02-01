@@ -5,11 +5,11 @@ the state of an object.
 """
 import functools
 import os
-from collections import defaultdict
 
 from fuzzywuzzy import process
 from six import string_types, with_metaclass
 
+from collections import defaultdict
 from . import _TREELIMBS, _LIMBS
 from .collections import Bundle
 
@@ -679,7 +679,8 @@ class MemberBundle(Limb, Bundle):
         member_rec = {'uuid': uuid,
                       'treanttype': treanttype,
                       'abspath': os.path.abspath(basedir),
-                      'relpath': os.path.abspath(basedir)}
+                      'relpath': os.path.relpath(
+                          basedir, self._treant.location)}
 
         with self._treant._write:
             # check if uuid already present
