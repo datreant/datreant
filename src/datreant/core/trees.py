@@ -140,7 +140,7 @@ class Leaf(Veg):
                 with open(bse, 'a'):
                     os.utime(bse, None)
             except Exception as e:
-                print (str(e))
+                print(str(e))
         else:
             self.makedirs()
             self.path.touch()
