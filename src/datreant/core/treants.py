@@ -2,19 +2,19 @@
 Treants: the organizational units for :mod:`datreant`.
 
 """
-import os
 import functools
-import six
+import os
 from uuid import uuid4
+
+import six
 from pathlib2 import Path
 
+from . import _TREANTS, _TREELIMBS, _LIMBS
 from . import filesystem
+from .backends.statefiles import treantfile, TreantFile
 from .collections import Bundle
 from .trees import Tree
 from .util import makedirs
-
-from .backends.statefiles import treantfile, TreantFile
-from . import _TREANTS, _TREELIMBS, _LIMBS
 
 
 class MultipleTreantsError(Exception):
@@ -250,14 +250,12 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         statefile = os.path.join(newdir,
                                  filesystem.statefilename(
                                      self._treanttype, self.uuid))
-        
         if os.name == 'nt':
             if os.path.exists(newdir):
                 os.remove(newdir)
                 os.rename(olddir, newdir)
         else:
             os.rename(olddir, newdir)
- 
         self._regenerate(statefile)
 
     @property

@@ -137,8 +137,8 @@ class Leaf(Veg):
             now = time.time()
             try:
                 bse = str(self.path)+'.info'
-                with open(bse,'a'):
-                    os.utime(bse,None)
+                with open(bse, 'a'):
+                    os.utime(bse, None)
             except Exception as e:
                 print (str(e))
         else:
