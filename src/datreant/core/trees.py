@@ -4,7 +4,6 @@ files.
 """
 
 import os
-import time
 from functools import reduce, total_ordering
 
 import scandir
@@ -71,8 +70,7 @@ class Veg(object):
         """Relative path from current working directory.
 
         """
-        # return os.path.relpath(str(self.path))
-        return str(self.path.absolute())
+        return os.path.relpath(str(self.path))
 
     @property
     def parent(self):
@@ -133,14 +131,7 @@ class Leaf(Veg):
 
         """
         if os.name == 'nt':
-            self.makedirs()
-            now = time.time()
-            try:
-                bse = str(self.path)+'.info'
-                with open(bse, 'a'):
-                    os.utime(bse, None)
-            except Exception as e:
-                print(str(e))
+            touch_me(str(self.path))
         else:
             self.makedirs()
             self.path.touch()

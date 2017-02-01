@@ -1,5 +1,5 @@
 import os
-
+import time
 
 def makedirs(path):
     """Make directories and all parents necessary.
@@ -17,3 +17,17 @@ def makedirs(path):
             pass
         else:
             raise
+
+
+def touch_me(path):
+    if os.name == 'nt':
+        now = time.time()
+        try:
+            # assume it's there
+            os.utime(path, (now, now))
+        except os.error:
+            # if it isn't, try creating the directory,
+            # a file with that name
+            os.makedirs(os.path.dirname(path))
+            open(path, "w").close()
+            os.utime(path, (now, now))
