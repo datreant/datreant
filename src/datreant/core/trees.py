@@ -14,7 +14,7 @@ from six import string_types
 from . import _TREELIMBS
 from .manipulators import discover
 from .rsync import rsync
-from .util import makedirs
+from .util import makedirs, touch_me
 
 
 @total_ordering
@@ -317,8 +317,7 @@ class Tree(Veg):
         """Relative path of ``self.path`` from current working directory.
 
         """
-        # return os.path.relpath(str(self.path)) + os.sep
-        return str(self.path.absolute()) + os.sep
+        return os.path.relpath(str(self.path)) + os.sep
 
     @property
     def leaves(self):

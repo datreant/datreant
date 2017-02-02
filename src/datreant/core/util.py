@@ -1,5 +1,7 @@
 import os
 
+import six
+
 
 def makedirs(path):
     """Make directories and all parents necessary.
@@ -37,3 +39,18 @@ def touch_me(path):
         os.utime(path, None)
     except Exception:
         open(path, 'a').close()
+
+
+def fullpath(path):
+    if not path:
+        return None
+    if not isinstance(path, six.string_types):
+        path = str(path)
+    path = os.path.expanduser(path)
+    if not os.path.isabs(path):
+        path = os.path.abspath(path)
+    return path
+
+
+def isfullpath(path):
+    return path == fullpath(path)
