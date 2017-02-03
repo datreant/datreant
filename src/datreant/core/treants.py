@@ -116,7 +116,7 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         return "<{}: '{}'>".format(self._treanttype, self.name)
 
     def __getstate__(self):
-        return self.filepath
+        return os.path.normpath(self.filepath)
 
     def __setstate__(self, state):
         self.__init__(state)
@@ -314,7 +314,13 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         statefile = os.path.join(newpath,
                                  filesystem.statefilename(
                                      self._treanttype, self.uuid))
-        os.rename(oldpath, newpath)
+        if os.name == 'nt':
+            if os.path.exists(newpath):
+                os.remove(newpath)
+                os.rename(oldpath, newpath)
+        else:
+            os.rename(oldpath, newpath)
+
         self._regenerate(statefile)
 
     @property

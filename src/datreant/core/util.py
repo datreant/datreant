@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import six
 
@@ -20,26 +21,8 @@ def makedirs(path):
         else:
             raise
 
-
-def touch_me2(fname, mode=0o666, dir_fd=None, **kwargs):
-    if os.name == 'nt':
-        flags = os.O_CREAT | os.O_APPEND
-        with os.fdopen(os.open(fname, flags=flags, mode=mode, dir_fd=dir_fd)) as filename:
-            os.utime(filename.fileno() if os.utime in os.supports_fd else fname,
-                     dir_fd=None if os.supports_fd else dir_fd, **kwargs)
-
-
 def touch_me(path):
-    if not path:
-        return
-    path = fullpath(path)
-    if path.find("/") > 0 and not os.path.exists(os.path.dirname(path)):
-        os.makedirs(os.path.dirname(path))
-    try:
-        os.utime(path, None)
-    except Exception:
-        open(path, 'a').close()
-
+    Path(path).touch()
 
 def fullpath(path):
     if not path:
@@ -51,6 +34,9 @@ def fullpath(path):
         path = os.path.abspath(path)
     return path
 
-
 def isfullpath(path):
     return path == fullpath(path)
+
+
+def path_leaf(path):
+    return os.path.basename(os.path.normpath(path))

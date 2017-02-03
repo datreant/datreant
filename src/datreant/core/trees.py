@@ -131,6 +131,7 @@ class Leaf(Veg):
 
         """
         if os.name == 'nt':
+            self.makedirs()
             touch_me(str(self.path))
         else:
             self.makedirs()
@@ -333,6 +334,7 @@ class Tree(Veg):
                 # remove hidden files
                 out = [Leaf(os.path.join(root, f)) for f in files
                        if f[0] != os.extsep]
+                print(out)
                 break
 
             out.sort()
@@ -515,8 +517,7 @@ class Tree(Veg):
                 this tree
 
         """
-        makedirs(str(self.path))
-
+        makedirs(os.path.normpath(str(self.path)))
         return self
 
     def make(self):
@@ -529,7 +530,6 @@ class Tree(Veg):
 
         """
         self.makedirs()
-
         return self
 
     def sync(self, other, mode='upload', compress=True, checksum=True,
