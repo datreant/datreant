@@ -21,8 +21,10 @@ def makedirs(path):
         else:
             raise
 
+
 def touch_me(path):
     Path(path).touch()
+
 
 def fullpath(path):
     if not path:
@@ -33,6 +35,7 @@ def fullpath(path):
     if not os.path.isabs(path):
         path = os.path.abspath(path)
     return path
+
 
 def isfullpath(path):
     return path == fullpath(path)
