@@ -321,9 +321,9 @@ class FileSerial(File):
         self.handle.close()
 
         if os.name == 'nt':
-            if os.path.exists(self.filename):
+            if os.path.isfile(self.filename):
                 os.remove(self.filename)
-                os.rename(self._writebuffer, self.filename)
+            os.rename(self._writebuffer, self.filename)
         else:
             os.rename(self._writebuffer, self.filename)
 

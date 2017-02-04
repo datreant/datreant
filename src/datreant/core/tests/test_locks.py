@@ -2,9 +2,8 @@
 
 """
 
-import string
 import multiprocessing as mp
-import time
+
 import pytest
 
 from datreant.core import Treant
@@ -13,7 +12,7 @@ from datreant.core import Treant
 def pokefile(treantfilepath, string):
     """Add a number of tags to a Treant."""
     treant = Treant(treantfilepath)
-    treant.tags.add(*["{}_{}".format(string, i) for i in range(100)])
+    treant.tags.add(*["{}_{}".format(string, i) for i in range(10)])
 
 
 def init_treant(tmpdir, tags):
@@ -38,7 +37,7 @@ class TestTreantFile:
         pool.close()
         pool.join()
 
-        assert len(treant.tags) == 1000
+        assert len(treant.tags) == 100
 
     def test_init_treant(self, tmpdir):
         pool = mp.Pool(processes=4)

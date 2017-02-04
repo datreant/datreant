@@ -14,7 +14,7 @@ from six import string_types
 from . import _TREELIMBS
 from .manipulators import discover
 from .rsync import rsync
-from .util import makedirs, touch_me
+from .util import makedirs, touch_me, relpath
 
 
 @total_ordering
@@ -70,7 +70,7 @@ class Veg(object):
         """Relative path from current working directory.
 
         """
-        return os.path.relpath(str(self.path))
+        return relpath(str(self.path))
 
     @property
     def parent(self):
@@ -217,7 +217,7 @@ class Tree(Veg):
         def filt(path):
             fullpath = os.path.abspath(os.path.join(self.abspath, path))
 
-            if (os.path.isdir(fullpath) or path.endswith(os.sep) or
+            if (os.path.isdir(fullpath) or path.endswith("/") or
                     (fullpath in self.abspath)):
                 limbs = self._classlimbs | self._limbs
                 return Tree(fullpath, limbs=limbs)
@@ -318,7 +318,7 @@ class Tree(Veg):
         """Relative path of ``self.path`` from current working directory.
 
         """
-        return os.path.relpath(str(self.path)) + os.sep
+        return relpath(str(self.path)) + os.sep
 
     @property
     def leaves(self):
@@ -334,7 +334,6 @@ class Tree(Veg):
                 # remove hidden files
                 out = [Leaf(os.path.join(root, f)) for f in files
                        if f[0] != os.extsep]
-                print(out)
                 break
 
             out.sort()
@@ -517,7 +516,7 @@ class Tree(Veg):
                 this tree
 
         """
-        makedirs(os.path.normpath(str(self.path)))
+        makedirs((str(self.path)))
         return self
 
     def make(self):

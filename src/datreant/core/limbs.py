@@ -5,11 +5,11 @@ the state of an object.
 """
 import functools
 import os
+from collections import defaultdict
 
 from fuzzywuzzy import process
 from six import string_types, with_metaclass
 
-from collections import defaultdict
 from . import _TREELIMBS, _LIMBS
 from .collections import Bundle
 
@@ -615,7 +615,7 @@ class MemberBundle(Limb, Bundle):
     def __str__(self):
         names = self.names
         treanttypes = self.treanttypes
-        agg = "Members"
+        agg = "members"
         majsep = "="
         seplength = len(agg)
 

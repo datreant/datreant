@@ -40,3 +40,12 @@ def isfullpath(path):
 
 def path_leaf(path):
     return os.path.basename(os.path.normpath(path))
+
+
+def relpath(path):
+    """Returns *path* on Windows, and relative path elsewhere."""
+
+    if os.name == 'nt':
+        return path
+    else:
+        return os.path.relpath(path)

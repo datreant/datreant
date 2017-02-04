@@ -2,12 +2,17 @@
 
 """
 
-import datreant.core as dtr
-import pytest
 import os
+import sys
+
 import py.path
+import pytest
+
+import datreant.core as dtr
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="does not run on windows")
 def test_sync_local(tmpdir):
     '''Test that syncronization works locally'''
     with tmpdir.as_cwd():
@@ -21,6 +26,8 @@ def test_sync_local(tmpdir):
         assert os.path.exists('sequoia2/hello.txt')
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="does not run on windows")
 def _create_tree(name, files=[]):
     tree = dtr.Tree(name).makedirs()
     for file_ in files:
@@ -30,6 +37,8 @@ def _create_tree(name, files=[]):
     return tree
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="does not run on windows")
 def test_overwrite(tmpdir):
     with tmpdir.as_cwd():
         sequoia = _create_tree('sequoia', ['hello.txt', 'data/hello.txt',
@@ -49,6 +58,8 @@ def test_overwrite(tmpdir):
         assert sequoia2['hello.txt'].read() == 'newcontent'
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="does not run on windows")
 def test_excludes(tmpdir):
     with tmpdir.as_cwd():
         sequoia = _create_tree('sequoia', ['hello.txt', 'data/hello.txt',
@@ -71,6 +82,8 @@ def test_excludes(tmpdir):
         assert os.path.exists('sequoia3/data/')
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="does not run on windows")
 def test_includes(tmpdir):
     with tmpdir.as_cwd():
         sequoia = _create_tree('sequoia', ['hello.txt', 'data/hello.txt',
