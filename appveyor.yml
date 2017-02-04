@@ -7,14 +7,14 @@ environment:
     # The list here is complete (excluding Python 2.6, which
     # isn't covered by this document) at the time of writing.
 
-    - PYTHON: "C:\\Python27"
+    #- PYTHON: "C:\\Python27"
     #- PYTHON: "C:\\Python33"
     - PYTHON: "C:\\Python34"
     #- PYTHON: "C:\\Python35"
     #- PYTHON: "C:\\Python27-x64"
     #- PYTHON: "C:\\Python33-x64"
     #  DISTUTILS_USE_SDK: "1"
-    #- PYTHON: "C:\\Python34-x64"
+    - PYTHON: "C:\\Python34-x64"
     #  DISTUTILS_USE_SDK: "1"
     #- PYTHON: "C:\\Python35-x64"
 
@@ -22,6 +22,7 @@ install:
   # We need wheel installed to build wheels
   - "%PYTHON%\\python.exe -m pip install git+https://github.com/rddaz2013/portalocker.git"
   - "%PYTHON%\\python.exe -m pip install codecov"
+  - "%PYTHON%\\python.exe -m pip install pytest"
   - "%PYTHON%\\python.exe -m pip install pytest-cov"
   - "%PYTHON%\\python.exe -m pip install pytest-pep8"
   - "%PYTHON%\\python.exe -m pip install -e ."
@@ -36,7 +37,7 @@ test_script:
   # Note that you must use the environment variable %PYTHON% to refer to
   # the interpreter you're using - Appveyor does not do anything special
   # to put the Python evrsion you want to use on PATH.
-  - "py.test --basetemp=mydir --cov src/datreant --pep8 src/datreant"
+  - "pytest --basetemp=mydir --cov src/datreant --pep8 src/datreant"
 
 
 after_test:
@@ -48,7 +49,7 @@ after_test:
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
-  - path: dist\*
+  #- path: dist\*
 
 #on_success:
 #  You can use this step to upload your artifacts to a public website.
