@@ -1,6 +1,6 @@
 *.pyc
 *.swp
 *.swo
-idea/*
 .cache/*
 build/*
+.idea/
