@@ -26,7 +26,7 @@ def touch_me(path):
 
     
 def relpath(path):
-    """Returns *path* on Windows, and relative path elsewhere."""
+    """Returns *path* on Windows, and relative path elsewhere. """
 
     if os.name == 'nt':
         return path
