@@ -1,5 +1,5 @@
 import os
-from pathlib import Path
+from pathlib2 import Path
 import six
 
 
