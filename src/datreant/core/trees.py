@@ -179,7 +179,7 @@ class Tree(Veg):
             self.attach(*limbs)
 
     def __repr__(self):
-        return "<Tree: '{}'>".format(self.abspath)
+        return "<Tree: '{}'>".format(self.relpath)
 
     def __contains__(self, item):
         """Returns True if given Tree, Leaf, or plain path resolves as being
@@ -516,7 +516,7 @@ class Tree(Veg):
                 this tree
 
         """
-        makedirs((str(self.path)))
+        makedirs(str(self.path))
         return self
 
     def make(self):
