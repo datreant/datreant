@@ -3,4 +3,4 @@
 *.swo
 .cache/*
 build/*
-.idea/
+.idea/*
