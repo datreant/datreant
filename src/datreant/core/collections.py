@@ -1,6 +1,6 @@
 """
 The Bundle object is the primary manipulator for Treants in aggregate. They are
-returned as queries to Groups and other Bundles. They offer convenience methods
+returned as queries to Bundles. They offer convenience methods
 for dealing with many Treants at once. Views give the same kind of aggregation
 conveniences for Trees and Leaves.
 
@@ -1059,40 +1059,6 @@ class Bundle(CollectionMixin):
             self._searchtime = value
         else:
             raise TypeError("Must give a number or `None` for searchtime")
-
-    def flatten(self, exclude=None):
-        """Return a flattened version of this Bundle.
-
-        The resulting Bundle will have all members of any member Groups,
-        without the Groups.
-
-        Parameters
-        ----------
-        exclude : list
-            uuids of Groups to leave out of flattening; these will not in the
-            resulting Bundle.
-
-        Returns
-        -------
-        flattened : Bundle
-            the flattened Bundle with no Groups
-
-        """
-        if not exclude:
-            exclude = list()
-
-        guuids = list(exclude)
-        memberlist = self._list()
-        flattened = Bundle(limbs=self.limbs)
-
-        for member in memberlist:
-            if hasattr(member, 'members') and member.uuid not in exclude:
-                guuids.append(member.uuid)
-                flattened += member.members.flatten(guuids)
-            elif not hasattr(member, 'members'):
-                flattened.add(member)
-
-        return flattened
 
     @property
     def view(self):
