@@ -29,4 +29,4 @@ from . import attach
 
 __all__ = ['Treant', 'Group', 'Tree', 'Leaf', 'Bundle', 'discover', 'Veg',
            'attach', 'View']
-__version__ = "0.8.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
+__version__ = "0.7.1"  # NOTE: keep in sync with RELEASE in setup.py
