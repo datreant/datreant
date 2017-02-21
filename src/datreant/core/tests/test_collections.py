@@ -251,7 +251,8 @@ class TestBundle:
                 for tag in ('broiled', 'not baked'):
                     assert tag in collection.tags
 
-        def test_tags_setting(self, collection, testtreant, testtreant2, tmpdir):
+        def test_tags_setting(self, collection, testtreant,
+                              testtreant2, tmpdir):
             with tmpdir.as_cwd():
                 collection.add(testtreant, testtreant2)
 
@@ -415,7 +416,8 @@ class TestBundle:
                     trees.tags ^ ['tree']
                 # assert e.value.message == type_error_msg
 
-        def test_tags_getitem(self, collection, testtreant, testtreant2, tmpdir):
+        def test_tags_getitem(self, collection, testtreant,
+                              testtreant2, tmpdir):
             with tmpdir.as_cwd():
 
                 t1 = dtr.Treant('maple')
@@ -525,7 +527,8 @@ class TestBundle:
                 any_mul_njdec = tags.fuzzy(nj_decid, threshold=80, scope='any')
                 assert set(any_mul_njdec) == {'new jersey', 'deciduous'}
 
-        def test_tags_filter(self, collection, testtreant, testtreant2, tmpdir):
+        def test_tags_filter(self, collection, testtreant,
+                             testtreant2, tmpdir):
             with tmpdir.as_cwd():
 
                 maple = dtr.Treant('maple')
