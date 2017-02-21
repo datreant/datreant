@@ -20,11 +20,6 @@ Frequently Asked Questions
         whole database somehow, or slurp the pieces of data out that you want.
         Most database solutions can be rather slow to do this.
 
-    *Treants are independent.*
-        Although Groups are aware of their members, Treants work independently
-        from one another. If you want to use only basic Treants, that works
-        just fine. If you want to use Groups, that works, too.
-
     *Treants have a structure in the filesystem.* 
         This means that all the shell tools we know and love are available to
         work with their contents, which might include plaintext files, figures,
@@ -33,21 +28,12 @@ Frequently Asked Questions
         filesystem is, at least when it comes to storage.
 
 2. What are some disadvantages of datreant's design?
-    
-    *Treants could be anywhere in the filesystem.*
-        This is mostly a problem for Groups, which allow aggregation of other
-        Treants. If a member is moved, the Group has no way of knowing where it
-        went; we've built machinery to help it find its members, but these will
-        always be limited to filesystem search methods (some quite good, but
-        still). If these objects lived in a single database, this wouldn't be
-        an issue.
 
     *Queries on object metadata will be slower than a central database.*
-        We want Groups and Bundles (in-memory Groups, basically) to be able to
-        run queries against their members' characteristics, returning subsets
-        matching the query.  Since these queries have to be applied against
-        these objects and not against a single table somewhere, it will be
-        relatively slow. 
+        We Bundles to be able to run queries against their members'
+        characteristics, returning subsets matching the query.  Since these
+        queries have to be applied against these objects and not against a
+        single table somewhere, it will be relatively slow. 
 
     *File locking is less efficient for multiple-read/write under load than a smart daemon process/scheduler.* 
         The assumption we make is that Treants are primarily read, and only

@@ -76,7 +76,6 @@ for more information.
     trees
     views
     bundles
-    groups
     api 
 
 .. toctree::
