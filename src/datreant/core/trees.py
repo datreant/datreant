@@ -392,19 +392,6 @@ class Tree(Veg):
         from .collections import View
         return View(self.trees + self.leaves + self.hidden, limbs=self.limbs)
 
-    discover = discover
-
-    @property
-    def treants(self):
-        """Bundle of all Treants found within this Tree.
-
-        This does not return a Treant for a bare state file found within this
-        Tree. In effect this gives the same result as ``Bundle(self.trees)``.
-
-        """
-        from .collections import Bundle
-        return Bundle(self.trees + self.hidden.membertrees, limbs=self.limbs)
-
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees matching given globbing
         pattern.
