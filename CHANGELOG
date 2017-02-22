@@ -13,6 +13,27 @@ The rules for this file:
 
 ------------------------------------------------------------------------------
 
+??/??/??
+
+    * 0.8.0 kain88-de, dotsdl, orbeckst
+
+API Changes
+    * Group object no longer supported; removed (#130)
+
+
+Enhancements
+    
+
+Fixes
+
+
+
+Changes
+
+
+Doc Updates
+
+
 02/21/17
 
     * 0.7.1 kain88-de, dotsdl
