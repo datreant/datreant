@@ -31,5 +31,6 @@ setup(name='datreant.core',
       scripts=[],
       license='BSD',
       long_description=open('README.rst').read(),
+      tests_require = ['numpy', 'pytest'],
       install_requires=['asciitree', 'pathlib2', 'scandir', 'six', 'fuzzywuzzy']
       )
