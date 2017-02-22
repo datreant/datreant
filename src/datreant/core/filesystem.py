@@ -96,7 +96,7 @@ class Foxhound(object):
     This object is used by Treants to find Treants, even when they are no
     longer in their last known location.
 
-    Groups and Bundles uses this class to find members that have moved. All
+    Bundles uses this class to find members that have moved. All
     TreantFiles use this class to find their file on disk when it moves.
 
     """
@@ -144,13 +144,9 @@ class Foxhound(object):
                 instead of paths for *as_treants* == True.
 
         """
-        from .limbs import MemberBundle
         from .collections import Bundle
 
-        if isinstance(self.caller, MemberBundle):
-            results = self._find_Group_members()
-        elif isinstance(self.caller, Bundle):
-            results = self._find_Bundle_members()
+        results = self._find_Bundle_members()
 
         if as_treants:
             conts = path2treant(*results.values())
@@ -219,81 +215,6 @@ class Foxhound(object):
 
         """
         pass
-
-    def _find_Group_members(self):
-        """Find Treants that are members of a Group.
-
-        For finding Group members, the Foxhound begins by looking for
-        Treants among the paths it was given. Treants that can't be found
-        are then searched for starting downward from the Group's location, with
-        subsequent downward searches proceeding from the parent directory.
-        This process continues until either all members are found, the
-        filesystem is exhaustively searched, or the Foxhound times out.
-
-        :Returns:
-            *outpaths*
-                dictionary giving Treant uuids as keys and absolute paths to
-                their state files as values; ``None`` as a value indicates
-                that no state file could be found.
-
-        """
-        # search last-known locations
-        outpaths = self._check_paths()
-
-        # get current time
-        currtime = time.time()
-
-        # walk downwards on an upward path through filesystem from the Group's
-        # basedir
-        uuids = [str(x) for x in outpaths if not outpaths[x]]
-        path = self.caller._treant.location
-        prev = None
-        timedout = False
-        while prev != path and uuids and not timedout:
-
-            top = True
-            for root, dirs, files in scandir.walk(path):
-                # if search runs over timeout, call it off
-                if ((time.time() - currtime) > self.timeout and
-                        self.timeout is not None):
-
-                    self.caller._logger.info(
-                            "Search for missing members timed" +
-                            " out at {}".format(self.timeout) +
-                            " seconds.")
-                    timedout = True
-                    break
-
-                # if we've found everything, finish
-                if not uuids:
-                    break
-
-                found = []
-                # no need to visit already-visited tree
-                if top and prev:
-                    dirs.remove(os.path.basename(prev))
-                    top = False
-
-                for uuid in uuids:
-                    candidate = [os.path.join(root, x) for x in files
-                                 if ((uuid in x) and
-                                     ('.json' in x) and
-                                     (x[0] != '.'))]
-
-                    if candidate:
-                        outpaths[uuid] = os.path.abspath(candidate[0])
-                        found.append(uuid)
-
-                for item in found:
-                    uuids.remove(item)
-
-            prev = path
-            path = os.path.split(path)[0]
-
-        # TODO: post-check? Since Groups know the treanttypes of their
-        # members, should we compare these to what is in outpaths?
-
-        return outpaths
 
     def _find_Bundle_members(self):
         """Find Treants that are members of a Bundle.

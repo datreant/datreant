@@ -61,10 +61,6 @@ class TestTreant(TestTree):
         5. ``Treant('somedir/treant', new=True)``, where 'treant' is an
            existing directory in 'somedir' with an existing Treant statefile
 
-        6. ``Treant('/somedir/treant')``, where 'treant' is an existing
-           directory in 'somedir' with other types of Treant files inside (such
-           as Group)
-
         """
         with tmpdir.as_cwd():
             # 1
@@ -90,13 +86,6 @@ class TestTreant(TestTree):
             assert os.path.exists(t5.filepath)
             assert t5.abspath == t4.abspath
             assert t5.filepath != t4.filepath
-
-            # 6
-            compare = t1.uuid
-            os.rename(t1.filepath,
-                      t1.filepath.replace(t1.treanttype, 'Another'))
-            t6 = treantclass('newone')
-            assert t6.uuid != compare
 
     def test_regen(self, tmpdir, treantclass):
         """Test regenerating Treant.
@@ -471,34 +460,6 @@ class TestTreant(TestTree):
                 dtr.Treant('sprout', categories=treant.categories)
 
 
-class TestGroup(TestTreant):
-    """Test Group-specific features.
-
-    """
-    treantname = 'testgroup'
-    treanttype = 'Group'
-
-    @pytest.fixture
-    def treant(self, tmpdir):
-        with tmpdir.as_cwd():
-            g = dtr.Group(TestGroup.treantname)
-        return g
-
-    @pytest.fixture
-    def treantclass(self):
-        return dtr.treants.Group
-
-    def test_repr(self, treant):
-        pass
-
-    class TestMembers(test_collections.TestBundle):
-        """Test member functionality"""
-
-        @pytest.fixture
-        def collection(self, treant):
-            return treant.members
-
-
 class TestReadOnly:
     """Test Treant functionality when read-only"""
 
@@ -507,20 +468,6 @@ class TestReadOnly:
         with tmpdir.as_cwd():
             c = dtr.treants.Treant('testtreant')
             c.tags.add('72')
-            py.path.local(c.abspath).chmod(0o0550, rec=True)
-
-        def fin():
-            py.path.local(c.abspath).chmod(0o0770, rec=True)
-
-        request.addfinalizer(fin)
-
-        return c
-
-    @pytest.fixture
-    def group(self, tmpdir, request):
-        with tmpdir.as_cwd():
-            c = dtr.Group('testgroup')
-            c.members.add(dtr.Treant('lark'), dtr.Group('bark'))
             py.path.local(c.abspath).chmod(0o0550, rec=True)
 
         def fin():
@@ -539,19 +486,3 @@ class TestReadOnly:
 
         with pytest.raises(OSError):
             c.tags.add('yet another')
-
-    def test_group_member_access(self, group):
-        """Test that Group can access members when the Group is read-only.
-        """
-        assert len(group.members) == 2
-
-    def test_group_moved_member_access(self, group, tmpdir):
-        """Test that Group can access members when the Group is read-only,
-        and when a member has been moved since the Group was last used with
-        write-permissions.
-        """
-        with tmpdir.as_cwd():
-            t = dtr.Treant('lark')
-            t.location = 'somewhere/else'
-
-        assert len(group.members) == 2

@@ -16,9 +16,3 @@ class TestFoxhound:
         with tmpdir.as_cwd():
             t = dtr.Treant('testtreant')
         return t
-
-    @pytest.fixture
-    def group(self, tmpdir):
-        with tmpdir.as_cwd():
-            g = dtr.Group('testgroup')
-        return g

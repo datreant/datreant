@@ -8,7 +8,6 @@ datreant.core --- persistent, pythonic trees for heterogeneous data
 ===================================================================
 
 .. SeeAlso:: :class:`datreant.core.treants.Treant`
-             :class:`datreant.core.treants.Group`
 
 """
 # global registries of classes. Must be imported first! Other modules will try
@@ -22,11 +21,11 @@ _AGGLIMBS = dict()
 
 # Bring some often used objects into the current namespace
 from .manipulators import discover
-from .treants import Treant, Group
+from .treants import Treant
 from .trees import Veg, Leaf, Tree
 from .collections import View, Bundle
 from . import attach
 
-__all__ = ['Treant', 'Group', 'Tree', 'Leaf', 'Bundle', 'discover', 'Veg',
+__all__ = ['Treant', 'Tree', 'Leaf', 'Bundle', 'discover', 'Veg',
            'attach', 'View']
 __version__ = "0.8.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
