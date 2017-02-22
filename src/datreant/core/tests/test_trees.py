@@ -173,31 +173,6 @@ class TestTree(TestVeg):
 
         assert len(tree.hidden) == 2
 
-    def test_treants(self, tree):
-        with pytest.raises(OSError):
-            tree.treants
-
-        # actually make the directory now
-        tree.makedirs()
-
-        assert len(tree.treants) == 0
-
-        # should only give treants immediately present in tree
-        Treant(tree['a/sprout/'])
-        Treant(tree['hide/here/'])
-
-        assert len(tree.treants) == 0
-
-        # should give treants immediately present in tree, including hidden
-        # ones
-        for name in ('thing1/', '.thing2/', 'thing3/'):
-            Treant(tree[name])
-
-        assert len(tree.treants) == 3
-
-    def test_discover(self, tree):
-        pass
-
     def test_equal(self, tree):
         t1 = tree['a dir/']
         t2 = tree['another dir/']

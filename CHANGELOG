@@ -19,13 +19,15 @@ The rules for this file:
 
 API Changes
     * Group object no longer supported; removed (#130)
+    * Removed Tree.treants, Treant.treants, View.bundle, Bundle.view,
+      Tree.discover, Treant.discover; favor use of classes and functions
+      directly for finer control (#114)
 
 
 Enhancements
     
 
 Fixes
-
 
 
 Changes
