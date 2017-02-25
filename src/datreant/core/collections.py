@@ -48,6 +48,31 @@ class CollectionMixin(object):
         except AttributeError:
             return NotImplemented
 
+    def __getitem__(self, index):
+        memberlist = self._list()
+
+        # if (is a list of bools) OR (a numpy array of bool dtype)
+        if ((isinstance(index, list) and
+             all(isinstance(item, bool) for item in index)) or
+                (hasattr(index, 'dtype') and index.dtype == 'bool')):
+            # boolean indexing, either with list or np array
+            out = self.__class__([memberlist[i]
+                                  for i, val in enumerate(index) if val],
+                                 limbs=self.limbs)
+        # if is list or array of ints
+        elif (isinstance(index, list) or
+              (hasattr(index, 'dtype') and index.dtype == 'int')):
+            # fancy indexing, either with list or np array
+            out = self.__class__([memberlist[item] for item in index],
+                                 limbs=self.limbs)
+        elif isinstance(index, int):
+            # an index gets the member at that position
+            out = memberlist[index]
+        else:
+            raise IndexError("Cannot index {} with given values"
+                             "".format(self.__class__.__name__))
+        return out
+
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees of members matching
         given globbing pattern.
@@ -148,35 +173,21 @@ class View(CollectionMixin):
         select out members.
 
         """
+        memberlist = self._list()
         # we can take lists of indices, names, or uuids; these return a
         # View; repeats already not respected since View functions as a
         # set
-        if ((isinstance(index, list) or hasattr(index, 'dtype')) and
-                all([isinstance(item, bool) for item in index])):
-            # boolean indexing
-            memberlist = self._list()
-            out = View([memberlist[i] for i, val in enumerate(index) if val],
-                       limbs=self.limbs)
-        elif isinstance(index, list):
-            memberlist = self._list()
-            out = View([memberlist[item] for item in index],
-                       limbs=self.limbs)
-        elif isinstance(index, int):
-            # an index gets the member at that position
-            out = self._list()[index]
-        elif isinstance(index, string_types):
+        if isinstance(index, string_types):
             # a name can be used for indexing
             # always returns a View
-            out = View([self._list()[i] for i, name
+            out = View([memberlist[i] for i, name
                         in enumerate(self.names) if name == index],
                        limbs=self.limbs)
-
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = View(*self._list()[index], limbs=self.limbs)
+            out = View(*memberlist[index], limbs=self.limbs)
         else:
-            raise IndexError("Cannot index View with given values")
-
+            out = super(View, self).__getitem__(index)
         return out
 
     def __str__(self):
@@ -584,26 +595,15 @@ class Bundle(CollectionMixin):
         # we can take lists of indices, names, or uuids; these return a
         # Bundle; repeats already not respected since Bundle functions as a
         # set
-        if ((isinstance(index, list) or hasattr(index, 'dtype')) and
-                all([isinstance(item, bool) for item in index])):
-            # boolean indexing
-            memberlist = self._list()
-            out = Bundle([memberlist[i] for i, val in enumerate(index) if val],
-                         limbs=self.limbs)
-        elif isinstance(index, list):
-            memberlist = self._list()
-            out = Bundle([memberlist[item] for item in index],
-                         limbs=self.limbs)
-        elif isinstance(index, int):
-            # an index gets the member at that position
-            out = self._list()[index]
-        elif isinstance(index, string_types):
+        memberlist = self._list()
+
+        if isinstance(index, string_types):
             # a name or uuid can be used for indexing
             # a name always returns a Bundle
-            out = Bundle([self.filepaths[i] for i, name
-                          in enumerate(self.names) if name == index],
+            out = Bundle([self.filepaths[i]
+                          for i, name in enumerate(self.names)
+                          if name == index],
                          limbs=self.limbs)
-
             # if no names match, we try uuids
             if not len(out):
                 out = [member for member in self if member.uuid == index]
@@ -617,8 +617,7 @@ class Bundle(CollectionMixin):
             out = Bundle(*self.filepaths[index], limbs=self.limbs)
             out._cache.update(self._cache)
         else:
-            raise IndexError("Cannot index Bundle with given values")
-
+            out = super(Bundle, self).__getitem__(index)
         return out
 
     def __add__(self, other):

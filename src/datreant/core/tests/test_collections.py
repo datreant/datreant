@@ -2,6 +2,7 @@
 
 """
 
+import numpy as np
 import pytest
 
 import datreant.core as dtr
@@ -37,6 +38,17 @@ class TestBundle:
     @pytest.fixture
     def collection(self):
         return dtr.Bundle()
+
+    @pytest.fixture
+    def filled_collection(self, tmpdir):
+        # returns (a bundle of [t1, t2, t3], then individal references to each)
+        with tmpdir.as_cwd():
+            b = dtr.Bundle()
+            t1 = dtr.Treant('larry')
+            t2 = dtr.Treant('curly')
+            t3 = dtr.Treant('moe')
+            b.add(t1, t2, t3)
+            return b, (t1, t2, t3)
 
     @pytest.fixture
     def testtreant(self, tmpdir, request):
@@ -138,8 +150,28 @@ class TestBundle:
             assert t4 not in collection[:3]
             assert t4 == collection[-1]
 
-    def test_fancy_index(self, collection):
-        pass
+    @pytest.mark.parametrize('slx', (
+        [1, 2],
+        np.array([1, 2]),
+    ))
+    def test_fancy_index(self, filled_collection, slx):
+        b, (t1, t2, t3) = filled_collection
+
+        sl = b[slx]
+        assert len(sl) == 2
+        assert t2 == sl[0]
+        assert t3 == sl[1]
+
+    @pytest.mark.parametrize('slx', (
+        [False, False, True],
+        np.array([False, False, True]),
+    ))
+    def test_boolean_index(self, filled_collection, slx):
+        b, (t1, t2, t3) = filled_collection
+
+        sl = b[slx]
+        assert len(sl) == 1
+        assert t3 == sl[0]
 
     def test_name_index(self, collection):
         pass
