@@ -615,7 +615,7 @@ class MemberBundle(Limb, Bundle):
     def __str__(self):
         names = self.names
         treanttypes = self.treanttypes
-        agg = "members"
+        agg = "Members"
         majsep = "="
         seplength = len(agg)
 
