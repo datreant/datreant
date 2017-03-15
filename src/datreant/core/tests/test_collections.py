@@ -124,6 +124,32 @@ class CollectionsTests(object):
             with pytest.raises(TypeError):
                 b ^ ['this']
 
+    class TestAddition(object):
+        def test_add_many(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b2 = b[[1, 2]]
+            b3 = b1 + b2
+            assert len(b3) == 3
+            assert t1 in b3
+            assert t2 in b3
+            assert t3 in b3
+
+        def test_add_singular(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b2 = b[2]
+            b3 = b1 + b2
+            assert len(b3) == 3
+            assert t1 in b3
+            assert t2 in b3
+            assert t3 in b3
+
+        def test_add(self, filled_collection):
+            b = filled_collection[0]
+            with pytest.raises(TypeError):
+                b + 25
+
 class TestView(CollectionsTests):
     """Tests for Views"""
 
@@ -150,6 +176,31 @@ class TestView(CollectionsTests):
             b_new = b[n]
             assert isinstance(b_new, dtr.View)
             assert b_new[0] == t1
+
+    class TestAddition(CollectionsTests.TestAddition):
+        def test_tree_addition(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[1, 2]]
+            b3 = b1 + t1
+            assert len(b3) == 3
+            assert isinstance(b3, dtr.View)
+            assert t1 in b3
+
+        def test_leaf_addition(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 2]]
+            b3 = b1 + t2
+            assert len(b3) == 3
+            assert isinstance(b3, dtr.View)
+            assert t2 in b3
+        
+        def test_treant_addition(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b3 = b1 + t3
+            assert len(b3) == 3
+            assert isinstance(b3, dtr.View)
+            assert t2 in b3
 
     def test_exists(self, collection, tmpdir):
         pass
@@ -218,27 +269,6 @@ class TestBundle(CollectionsTests):
             with pytest.raises(KeyError):
                 b['not there']
 
-    def test_subset(self, collection):
-        pass
-
-    def test_superset(self, collection):
-        pass
-
-    def test_difference(self, collection):
-        pass
-
-    def test_symmetric_difference(self, collection):
-        pass
-
-    def test_union(self, collection):
-        pass
-
-    def test_intersection(self, collection):
-        pass
-
-    def test_intersection(self, collection):
-        pass
-
     def test_add_members(self, collection, tmpdir):
         """Try adding members in a number of ways"""
         with tmpdir.as_cwd():
@@ -292,12 +322,6 @@ class TestBundle(CollectionsTests):
 
             assert t4 not in collection[:3]
             assert t4 == collection[-1]
-
-    def test_name_index(self, collection):
-        pass
-
-    def test_uuid_index(self, collection):
-        pass
 
     def test_remove_members(self, collection, tmpdir):
         """Try removing members"""
