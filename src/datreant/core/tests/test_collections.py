@@ -16,23 +16,198 @@ def return_nothing(cont):
     b = cont.name + cont.uuid
 
 
-class CollectionsTests:
+class CollectionsTests(object):
     """Mixin tests for collections"""
-    pass
+    class TestGetitem(object):
+        @pytest.mark.parametrize('slx', (
+            [1, 2],
+            np.array([1, 2]),
+        ))
+        def test_fancy_index(self, filled_collection, slx):
+            b, (t1, t2, t3) = filled_collection
+            sl = b[slx]
+            assert len(sl) == 2
+            assert t2 == sl[0]
+            assert t3 == sl[1]
+
+        @pytest.mark.parametrize('slx', (
+            [False, False, True],
+            np.array([False, False, True]),
+        ))
+        def test_boolean_index(self, filled_collection, slx):
+            b, (t1, t2, t3) = filled_collection
+            sl = b[slx]
+            assert len(sl) == 1
+            assert t3 == sl[0]
+
+        @pytest.mark.parametrize('slx', (
+            slice(0, 1, None),
+            slice(1, None, None),
+            slice(None, None, -1),
+            slice(None, None, 2),
+        ))
+        def test_slice_index(self, filled_collection, slx):
+            b, ts = filled_collection
+            sl = b[slx]
+            ref = ts[slx]
+            for x, y in zip(sl, ref):
+                assert x == y
+
+        def test_getitem_IE(self, filled_collection):
+            bundle = filled_collection[0]
+            with pytest.raises(IndexError):
+                bundle[4.0]
+
+    class TestSetOperations(object):
+        def test_sub_single(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1, 2]]
+            b2 = b[1]
+            b3 = b1 - b2
+            assert len(b3) == 2
+            assert t1 in b3
+            assert t2 not in b3
+            assert t3 in b3
+
+        def test_sub_many(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b2 = b[[1, 2]]
+            b3 = b1 - b2
+            assert len(b3) == 1
+            assert t1 in b3
+            assert t2 not in b3
+
+        def test_or(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b2 = b[[1, 2]]
+            b3 = b1 | b2
+            assert t1 in b3
+            assert t2 in b3
+            assert t3 in b3
+
+        def test_and(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b2 = b[[1, 2]]
+            b3 = b1 & b2
+            assert t1 not in b3
+
+        def test_xor(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b2 = b[[1, 2]]
+            b3 = b1 ^ b2
+            assert len(b3) == 2
+            assert t1 in b3
+            assert t2 not in b3
+            assert t3 in b3
+
+        def test_sub_TypeError(self, filled_collection):
+            b = filled_collection[0]
+            with pytest.raises(TypeError):
+                b - ['this']
+
+        def test_or_TypeError(self, filled_collection):
+            b = filled_collection[0]
+            with pytest.raises(TypeError):
+                b | ['this']
+
+        def test_and_TypeError(self, filled_collection):
+            b = filled_collection[0]
+            with pytest.raises(TypeError):
+                b & ['this']
+
+        def test_xor_TypeError(self, filled_collection):
+            b = filled_collection[0]
+            with pytest.raises(TypeError):
+                b ^ ['this']
+
+    class TestAddition(object):
+        def test_add_many(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b2 = b[[1, 2]]
+            b3 = b1 + b2
+            assert len(b3) == 3
+            assert t1 in b3
+            assert t2 in b3
+            assert t3 in b3
+
+        def test_add_singular(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b2 = b[2]
+            b3 = b1 + b2
+            assert len(b3) == 3
+            assert t1 in b3
+            assert t2 in b3
+            assert t3 in b3
+
+        def test_add(self, filled_collection):
+            b = filled_collection[0]
+            with pytest.raises(TypeError):
+                b + 25
 
 
-class TestView:
+class TestView(CollectionsTests):
     """Tests for Views"""
 
     @pytest.fixture
     def collection(self):
         return dtr.View()
 
+    @pytest.fixture
+    def filled_collection(self, tmpdir):
+        # returns (a bundle of [t1, t2, t3], then individal references to each)
+        with tmpdir.as_cwd():
+            b = dtr.View()
+            t1 = dtr.Tree('larry')
+            t2 = dtr.Leaf('curly')
+            t3 = dtr.Treant('moe')
+            b.add(t1, t2, t3)
+            return b, (t1, t2, t3)
+
+    class TestGetitem(CollectionsTests.TestGetitem):
+        def test_getitem_name_string(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            n = t1.name
+
+            b_new = b[n]
+            assert isinstance(b_new, dtr.View)
+            assert b_new[0] == t1
+
+    class TestAddition(CollectionsTests.TestAddition):
+        def test_tree_addition(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[1, 2]]
+            b3 = b1 + t1
+            assert len(b3) == 3
+            assert isinstance(b3, dtr.View)
+            assert t1 in b3
+
+        def test_leaf_addition(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 2]]
+            b3 = b1 + t2
+            assert len(b3) == 3
+            assert isinstance(b3, dtr.View)
+            assert t2 in b3
+
+        def test_treant_addition(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            b1 = b[[0, 1]]
+            b3 = b1 + t3
+            assert len(b3) == 3
+            assert isinstance(b3, dtr.View)
+            assert t2 in b3
+
     def test_exists(self, collection, tmpdir):
         pass
 
 
-class TestBundle:
+class TestBundle(CollectionsTests):
     """Tests for elements of Bundle"""
 
     @pytest.fixture
@@ -75,26 +250,25 @@ class TestBundle:
             # beating a dead horse
             assert len(b) == 2
 
-    def test_subset(self, collection):
-        pass
+    class TestGetitem(CollectionsTests.TestGetitem):
+        def test_getitem_name_string(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            n = t1.name
 
-    def test_superset(self, collection):
-        pass
+            b_new = b[n]
+            assert isinstance(b_new, dtr.Bundle)
+            assert b_new[0] == t1
 
-    def test_difference(self, collection):
-        pass
+        def test_getitem_uuid_string(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            n = t2.uuid
+            t_new = b[n]
+            assert t_new == t2
 
-    def test_symmetric_difference(self, collection):
-        pass
-
-    def test_union(self, collection):
-        pass
-
-    def test_intersection(self, collection):
-        pass
-
-    def test_intersection(self, collection):
-        pass
+        def test_getitem_string_KeyError(self, filled_collection):
+            b = filled_collection[0]
+            with pytest.raises(KeyError):
+                b['not there']
 
     def test_add_members(self, collection, tmpdir):
         """Try adding members in a number of ways"""
@@ -149,35 +323,6 @@ class TestBundle:
 
             assert t4 not in collection[:3]
             assert t4 == collection[-1]
-
-    @pytest.mark.parametrize('slx', (
-        [1, 2],
-        np.array([1, 2]),
-    ))
-    def test_fancy_index(self, filled_collection, slx):
-        b, (t1, t2, t3) = filled_collection
-
-        sl = b[slx]
-        assert len(sl) == 2
-        assert t2 == sl[0]
-        assert t3 == sl[1]
-
-    @pytest.mark.parametrize('slx', (
-        [False, False, True],
-        np.array([False, False, True]),
-    ))
-    def test_boolean_index(self, filled_collection, slx):
-        b, (t1, t2, t3) = filled_collection
-
-        sl = b[slx]
-        assert len(sl) == 1
-        assert t3 == sl[0]
-
-    def test_name_index(self, collection):
-        pass
-
-    def test_uuid_index(self, collection):
-        pass
 
     def test_remove_members(self, collection, tmpdir):
         """Try removing members"""
