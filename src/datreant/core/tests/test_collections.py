@@ -59,14 +59,14 @@ class CollectionsTests(object):
                 bundle[4.0]
 
     class TestSetOperations(object):
-        def test_sub_single(self, filled_collection):            
+        def test_sub_single(self, filled_collection):
             b, (t1, t2, t3) = filled_collection
             b1 = b[[0, 1, 2]]
             b2 = b[1]
             b3 = b1 - b2
             assert len(b3) == 2
             assert t1 in b3
-            assert not t2 in b3
+            assert t2 not in b3
             assert t3 in b3
 
         def test_sub_many(self, filled_collection):
@@ -76,7 +76,7 @@ class CollectionsTests(object):
             b3 = b1 - b2
             assert len(b3) == 1
             assert t1 in b3
-            assert not t2 in b3
+            assert t2 not in b3
 
         def test_or(self, filled_collection):
             b, (t1, t2, t3) = filled_collection
@@ -92,7 +92,7 @@ class CollectionsTests(object):
             b1 = b[[0, 1]]
             b2 = b[[1, 2]]
             b3 = b1 & b2
-            assert not t1 in b3
+            assert t1 not in b3
 
         def test_xor(self, filled_collection):
             b, (t1, t2, t3) = filled_collection
@@ -101,7 +101,7 @@ class CollectionsTests(object):
             b3 = b1 ^ b2
             assert len(b3) == 2
             assert t1 in b3
-            assert not t2 in b3
+            assert t2 not in b3
             assert t3 in b3
 
         def test_sub_TypeError(self, filled_collection):
@@ -150,6 +150,7 @@ class CollectionsTests(object):
             with pytest.raises(TypeError):
                 b + 25
 
+
 class TestView(CollectionsTests):
     """Tests for Views"""
 
@@ -193,7 +194,7 @@ class TestView(CollectionsTests):
             assert len(b3) == 3
             assert isinstance(b3, dtr.View)
             assert t2 in b3
-        
+
         def test_treant_addition(self, filled_collection):
             b, (t1, t2, t3) = filled_collection
             b1 = b[[0, 1]]
