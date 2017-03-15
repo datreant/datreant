@@ -16,23 +16,81 @@ def return_nothing(cont):
     b = cont.name + cont.uuid
 
 
-class CollectionsTests:
+class CollectionsTests(object):
     """Mixin tests for collections"""
-    pass
+    class TestGetitem(object):
+        @pytest.mark.parametrize('slx', (
+            [1, 2],
+            np.array([1, 2]),
+        ))
+        def test_fancy_index(self, filled_collection, slx):
+            b, (t1, t2, t3) = filled_collection
+            sl = b[slx]
+            assert len(sl) == 2
+            assert t2 == sl[0]
+            assert t3 == sl[1]
+
+        @pytest.mark.parametrize('slx', (
+            [False, False, True],
+            np.array([False, False, True]),
+        ))
+        def test_boolean_index(self, filled_collection, slx):
+            b, (t1, t2, t3) = filled_collection
+            sl = b[slx]
+            assert len(sl) == 1
+            assert t3 == sl[0]
+
+        @pytest.mark.parametrize('slx', (
+            slice(0, 1, None),
+            slice(1, None, None),
+            slice(None, None, -1),
+            slice(None, None, 2),
+        ))
+        def test_slice_index(self, filled_collection, slx):
+            b, ts = filled_collection
+            sl = b[slx]
+            ref = ts[slx]
+            for x, y in zip(sl, ref):
+                assert x == y
+
+        def test_getitem_IE(self, filled_collection):
+            bundle = filled_collection[0]
+            with pytest.raises(IndexError):
+                bundle[4.0]
 
 
-class TestView:
+class TestView(CollectionsTests):
     """Tests for Views"""
 
     @pytest.fixture
     def collection(self):
         return dtr.View()
 
+    @pytest.fixture
+    def filled_collection(self, tmpdir):
+        # returns (a bundle of [t1, t2, t3], then individal references to each)
+        with tmpdir.as_cwd():
+            b = dtr.View()
+            t1 = dtr.Tree('larry')
+            t2 = dtr.Leaf('curly')
+            t3 = dtr.Treant('moe')
+            b.add(t1, t2, t3)
+            return b, (t1, t2, t3)
+
+    class TestGetitem(CollectionsTests.TestGetitem):
+        def test_getitem_name_string(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            n = t1.name
+
+            b_new = b[n]
+            assert isinstance(b_new, dtr.View)
+            assert b_new[0] == t1
+
     def test_exists(self, collection, tmpdir):
         pass
 
 
-class TestBundle:
+class TestBundle(CollectionsTests):
     """Tests for elements of Bundle"""
 
     @pytest.fixture
@@ -74,6 +132,26 @@ class TestBundle:
 
             # beating a dead horse
             assert len(b) == 2
+
+    class TestGetitem(CollectionsTests.TestGetitem):
+        def test_getitem_name_string(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            n = t1.name
+
+            b_new = b[n]
+            assert isinstance(b_new, dtr.Bundle)
+            assert b_new[0] == t1
+
+        def test_getitem_uuid_string(self, filled_collection):
+            b, (t1, t2, t3) = filled_collection
+            n = t2.uuid
+            t_new = b[n]
+            assert t_new == t2
+
+        def test_getitem_string_KeyError(self, filled_collection):
+            b = filled_collection[0]
+            with pytest.raises(KeyError):
+                b['not there']
 
     def test_subset(self, collection):
         pass
@@ -149,29 +227,6 @@ class TestBundle:
 
             assert t4 not in collection[:3]
             assert t4 == collection[-1]
-
-    @pytest.mark.parametrize('slx', (
-        [1, 2],
-        np.array([1, 2]),
-    ))
-    def test_fancy_index(self, filled_collection, slx):
-        b, (t1, t2, t3) = filled_collection
-
-        sl = b[slx]
-        assert len(sl) == 2
-        assert t2 == sl[0]
-        assert t3 == sl[1]
-
-    @pytest.mark.parametrize('slx', (
-        [False, False, True],
-        np.array([False, False, True]),
-    ))
-    def test_boolean_index(self, filled_collection, slx):
-        b, (t1, t2, t3) = filled_collection
-
-        sl = b[slx]
-        assert len(sl) == 1
-        assert t3 == sl[0]
 
     def test_name_index(self, collection):
         pass
