@@ -26,11 +26,8 @@ class TestMakedirs(object):
         with tmpdir.as_cwd():
             with mock.patch('os.makedirs') as mp:
                 mp.side_effect = OSError(os.errno.ENOSPC, 'Mock - disk full')
-                with pytest.raises(OSError):
-                    dtr.util.makedirs('this/should/fail')
                 # check the specific error code
                 # ie check we don't mangle it enroute
-                try:
+                with pytest.raises(OSError) as error:
                     dtr.util.makedirs('this/should/fail')
-                except OSError as e:
-                    assert e.errno == os.errno.ENOSPC
+                    assert error.errno == os.errno.ENOSPC
