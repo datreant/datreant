@@ -203,7 +203,7 @@ class View(CollectionMixin):
         """Addition of View with a View or Tree/Leaf View.
 
         """
-        if isinstance(other, (Tree, Leaf, View, list)):
+        if isinstance(other, (Tree, Leaf, View)):
             limbs = self.limbs | other.limbs
             return View(self, other, limbs=limbs)
         else:
@@ -626,7 +626,7 @@ class Bundle(CollectionMixin):
         """
         from .treants import Treant
 
-        if isinstance(other, (Treant, Bundle, list)):
+        if isinstance(other, (Treant, Bundle)):
             limbs = self.limbs | other.limbs
             return Bundle(self, other, limbs=limbs)
         else:
