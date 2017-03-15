@@ -16,6 +16,7 @@ branches:
 # install python dependencies
 install:
   - pip install codecov
+  - pip install mock
   - pip install pytest-cov
   - pip install pytest-pep8
   - pip install numpy
