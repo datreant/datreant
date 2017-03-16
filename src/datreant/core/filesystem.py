@@ -2,8 +2,8 @@
 Functions and classes for finding Treants in the filesystem.
 
 """
-import os
 import glob
+import os
 import time
 
 import scandir

@@ -2,13 +2,11 @@
 
 """
 
-import os
-import sys
-import fcntl
-import warnings
 import json
-from functools import wraps
+import os
 from contextlib import contextmanager
+
+import portalocker
 
 
 class File(object):
@@ -77,7 +75,8 @@ class File(object):
             *success*
                 True if shared lock successfully obtained
         """
-        fcntl.lockf(fd, fcntl.LOCK_SH)
+        # fcntl.lockf(fd, fcntl.LOCK_SH)
+        portalocker.lock(fd, portalocker.LOCK_SH)
 
         return True
 
@@ -96,7 +95,8 @@ class File(object):
             *success*
                 True if exclusive lock successfully obtained
         """
-        fcntl.lockf(fd, fcntl.LOCK_EX)
+        # fcntl.lockf(fd, fcntl.LOCK_EX)
+        portalocker.lock(fd, portalocker.LOCK_EX)
 
         return True
 
@@ -116,7 +116,8 @@ class File(object):
             *success*
                 True if lock removed
         """
-        fcntl.lockf(fd, fcntl.LOCK_UN)
+        # fcntl.lockf(fd, fcntl.LOCK_UN)
+        portalocker.unlock(fd)
 
         return True
 
@@ -247,7 +248,6 @@ class File(object):
 
 class FileSerial(File):
     """File object base class for serialization formats, such as JSON.
-
     """
     @property
     def _writebuffer(self):
@@ -262,7 +262,6 @@ class FileSerial(File):
 
     def read_file(self):
         """Return deserialized representation of file.
-
         """
         self._apply_shared_lock()
 
@@ -320,7 +319,13 @@ class FileSerial(File):
         self.handle = self._open_file_w()
         self._serialize(self._state, self.handle)
         self.handle.close()
-        os.rename(self._writebuffer, self.filename)
+
+        if os.name == 'nt':
+            if os.path.isfile(self.filename):
+                os.remove(self.filename)
+            os.rename(self._writebuffer, self.filename)
+        else:
+            os.rename(self._writebuffer, self.filename)
 
     def _serialize(self, state, handle):
         """Serialize full state to open file handle.

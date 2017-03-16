@@ -3,15 +3,15 @@ Limbs are interfaces for accessing stored data, as well as querying
 the state of an object.
 
 """
-import os
 import functools
-from six import string_types, with_metaclass
+import os
 from collections import defaultdict
 
 from fuzzywuzzy import process
+from six import string_types, with_metaclass
 
-from .collections import Bundle
 from . import _TREELIMBS, _LIMBS
+from .collections import Bundle
 
 
 class _TreeLimbmeta(type):

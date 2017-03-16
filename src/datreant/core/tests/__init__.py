@@ -6,7 +6,6 @@
 """
 datreant.tests --- unit tests for datreant
 =============================================================
-
 """
 # Bring some often used objects into the current namespace
 from . import test_collections

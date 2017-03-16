@@ -14,7 +14,9 @@ branches:
         - develop
 
 # install python dependencies
+# load my portallocker.git version
 install:
+  - pip install git+https://github.com/rddaz2013/portalocker.git
   - pip install codecov
   - pip install mock
   - pip install --upgrade pytest
@@ -25,7 +27,7 @@ install:
 
 # run tests
 script: 
-  - py.test --cov src/datreant --pep8 src/datreant
+  - py.test --basetemp=mydir --cov src/datreant --pep8 src/datreant
 
 after_success:
   - codecov

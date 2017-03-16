@@ -5,16 +5,16 @@ files.
 
 import os
 from functools import reduce, total_ordering
-from six import string_types
 
 import scandir
-from pathlib2 import Path
 from asciitree import LeftAligned
+from pathlib2 import Path
+from six import string_types
 
-from .util import makedirs
+from . import _TREELIMBS
 from .manipulators import discover
 from .rsync import rsync
-from . import _TREELIMBS
+from .util import makedirs, touch_me, relpath
 
 
 @total_ordering
@@ -70,7 +70,7 @@ class Veg(object):
         """Relative path from current working directory.
 
         """
-        return os.path.relpath(str(self.path))
+        return relpath(str(self.path))
 
     @property
     def parent(self):
@@ -130,8 +130,12 @@ class Leaf(Veg):
         """Make file if it doesn't exist.
 
         """
-        self.makedirs()
-        self.path.touch()
+        if os.name == 'nt':
+            self.makedirs()
+            touch_me(str(self.path))
+        else:
+            self.makedirs()
+            self.path.touch()
 
     def make(self):
         """Make the file if it doesn't exit. Equivalent to :meth:`touch`.
@@ -213,7 +217,7 @@ class Tree(Veg):
         def filt(path):
             fullpath = os.path.abspath(os.path.join(self.abspath, path))
 
-            if (os.path.isdir(fullpath) or path.endswith(os.sep) or
+            if (os.path.isdir(fullpath) or path.endswith("/") or
                     (fullpath in self.abspath)):
                 limbs = self._classlimbs | self._limbs
                 return Tree(fullpath, limbs=limbs)
@@ -314,7 +318,7 @@ class Tree(Veg):
         """Relative path of ``self.path`` from current working directory.
 
         """
-        return os.path.relpath(str(self.path)) + os.sep
+        return relpath(str(self.path)) + os.sep
 
     @property
     def leaves(self):
@@ -435,7 +439,6 @@ class Tree(Veg):
             Wrapped `scandir.walk()` generator yielding `datreant` objects
 
         """
-        from .collections import View
 
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
@@ -501,7 +504,6 @@ class Tree(Veg):
 
         """
         makedirs(str(self.path))
-
         return self
 
     def make(self):
@@ -514,7 +516,6 @@ class Tree(Veg):
 
         """
         self.makedirs()
-
         return self
 
     def sync(self, other, mode='upload', compress=True, checksum=True,

@@ -1,4 +1,6 @@
 import os
+from pathlib2 import Path
+import six
 
 
 def makedirs(path):
@@ -17,3 +19,16 @@ def makedirs(path):
             pass
         else:
             raise
+
+
+def touch_me(path):
+    Path(path).touch()
+
+
+def relpath(path):
+    """Returns *path* on Windows, and relative path elsewhere."""
+
+    if os.name == 'nt':
+        return path
+    else:
+        return os.path.relpath(path)
