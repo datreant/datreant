@@ -4,6 +4,7 @@
 
 import datreant.core as dtr
 import pytest
+import mock
 import os
 import py
 
@@ -26,6 +27,15 @@ class TestTreant(TestTree):
             c = dtr.treants.Treant(TestTreant.treantname)
         return c
 
+    @pytest.fixture
+    def basic_treant(self, tmpdir, treantclass):
+        # treant with tags and cats, in tmpdir
+        with tmpdir.as_cwd():
+            t1 = treantclass('Rincewind')
+            t1.tags.add('magical')
+            t1.categories.add({'colour': 'octarine'})
+            yield t1
+
     def test_init(self, treant, tmpdir):
         """Test basic Treant init"""
         assert treant.name == self.treantname
@@ -34,14 +44,77 @@ class TestTreant(TestTree):
         assert treant.abspath == (os.path.join(tmpdir.strpath,
                                                self.treantname) + os.sep)
 
-        # check initing with tags, categories
-        tags = ['lurch', 'snotty']
-        categories = {'variety': 'elm'}
+    def test_init_from_Tree(self, tmpdir, treantclass):
+        with tmpdir.as_cwd():
+            tree = dtr.Tree('this')
+            t = treantclass(tree)
 
+            assert t.path == tree.path
+
+    @pytest.mark.parametrize("tags", (None, [], ['small', 'spiky']))
+    @pytest.mark.parametrize("categories", (None, {}, {'colour': 'red'}))
+    def test_init_generate(self, tags, categories, tmpdir):
+        # test combinations of tags and categories
+        # when generating from scratch
         with tmpdir.as_cwd():
             t = dtr.Treant('babs', tags=tags, categories=categories)
 
-        assert t.tags == tags
+            if tags is not None:
+                for tag in tags:
+                    assert tag in t.tags
+            if categories is not None:
+                for cat, val in categories.items():
+                    assert cat in t.categories
+                    assert t.categories[cat] == val
+
+    @pytest.mark.parametrize("tags", (None, [], ['small', 'spiky']))
+    @pytest.mark.parametrize("categories", (None, {}, {'colour': 'red'}))
+    def test_init_regenerate_via_name(self, tags, categories, tmpdir):
+        # test regenerating a Treant from its directory
+        with tmpdir.as_cwd():
+            t = dtr.Treant('this')
+
+            t2 = dtr.Treant('this', tags=tags, categories=categories)
+            if tags is not None:
+                for tag in tags:
+                    assert tag in t2.tags
+            if categories is not None:
+                for cat, val in categories.items():
+                    assert cat in t2.categories
+                    assert t2.categories[cat] == val
+
+    @pytest.mark.parametrize("tags", (None, [], ['small', 'spiky']))
+    @pytest.mark.parametrize("categories", (None, {}, {'colour': 'red'}))
+    def test_init_regenerate_via_statefile(self, tags, categories, tmpdir):
+        # test regenerating a Treant from the path of the statefile
+        with tmpdir.as_cwd():
+            t = dtr.Treant('this')
+            t2 = dtr.Treant(t.filepath, tags=tags, categories=categories)
+            if tags is not None:
+                for tag in tags:
+                    assert tag in t2.tags
+            if categories is not None:
+                for cat, val in categories.items():
+                    assert cat in t2.categories
+                    assert t2.categories[cat] == val
+
+    def test_gen_OSError(self, tmpdir, treantclass):
+        with tmpdir.as_cwd():
+            with mock.patch('os.makedirs') as mp:
+                mp.sideeffect = OSError(os.errno.ENOSPC, 'Mock - disk full')
+                with pytest.raises(OSError) as error:
+                    t = treantclass('new')
+                    assert error.errno == os.errno.ENOSPC
+
+    def test_gen_OSError13(self, tmpdir, treantclass):
+        with tmpdir.as_cwd():
+            with mock.patch('os.makedirs') as mp:
+                mp.sideeffect = OSError(os.errno.EACCES, 'Mock - disk full')
+                with pytest.raises(OSError) as error:
+                    t = treantclass('new')
+                    assert error.errno == os.errno.EACCES
+                    assert ("Permission denied; cannot create 'new'"
+                            in str(error))
 
     def test_gen_methods(self, tmpdir, treantclass):
         """Test the variety of ways we can generate a new Treant
@@ -87,7 +160,9 @@ class TestTreant(TestTree):
             assert t5.abspath == t4.abspath
             assert t5.filepath != t4.filepath
 
-    def test_regen(self, tmpdir, treantclass):
+    @pytest.mark.parametrize("tags", (None, [], ['small', 'spiky']))
+    @pytest.mark.parametrize("categories", (None, {}, {'colour': 'red'}))
+    def test_regen(self, tags, categories, tmpdir, treantclass):
         """Test regenerating Treant.
 
         - create Treant
@@ -96,10 +171,17 @@ class TestTreant(TestTree):
         - check that modifications were saved
         """
         with tmpdir.as_cwd():
-            C1 = treantclass('regen')
-            C1.tags.add('fantastic')
+            C1 = treantclass('regen', tags=tags, categories=categories)
+
             C2 = treantclass('regen')  # should be regen of C1
-            assert 'fantastic' in C2.tags
+
+            if tags is not None:
+                for tag in tags:
+                    assert tag in C2.tags
+            if categories is not None:
+                for cat, val in categories.items():
+                    assert cat in C2.categories
+                    assert C2.categories[cat] == val
 
             # they point to the same file, but they are not the same object
             assert C1 is not C2
@@ -140,6 +222,44 @@ class TestTreant(TestTree):
 
             with pytest.raises(dtr.treants.MultipleTreantsError):
                 t3 = treantclass('newone')
+
+    def test_rename(self, basic_treant, treantclass):
+        t1 = basic_treant
+        assert os.path.exists('Rincewind')
+        assert os.path.isdir('Rincewind')
+
+        t1.name = 'newplace'
+        assert not os.path.exists('Rincewind')
+        assert 'magical' in t1.tags
+        assert 'colour' in t1.categories
+
+        # make another Treant pointing to the new dir
+        t2 = treantclass('newplace')
+        assert 'magical' in t2.tags
+        assert 'colour' in t2.categories
+
+    class TestChangeLocation(object):
+        # locate can take either empty dir, or new dir
+        def test_relocate_empty_dir(self, basic_treant, treantclass):
+            t1 = basic_treant
+            os.mkdir('newplace')
+            t1.location = 'newplace'
+
+            assert t1.location.endswith('newplace')
+            assert os.path.isdir('newplace/Rincewind')
+            t2 = treantclass('newplace/Rincewind')
+            assert 'magical' in t2.tags
+            assert 'colour' in t2.categories
+
+        def test_relocate_new_dir(self, basic_treant, treantclass):
+            t1 = basic_treant
+            t1.location = 'newplace'
+
+            assert t1.location.endswith('newplace')
+            assert os.path.isdir('newplace/Rincewind')
+            t2 = treantclass('newplace/Rincewind')
+            assert 'magical' in t2.tags
+            assert 'colour' in t2.categories
 
     def test_cmp(self, tmpdir, treantclass):
         """Test the comparison of Treants when sorting"""

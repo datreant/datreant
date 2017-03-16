@@ -17,6 +17,7 @@ branches:
 install:
   - pip install codecov
   - pip install mock
+  - pip install --upgrade pytest
   - pip install pytest-cov
   - pip install pytest-pep8
   - pip install numpy
