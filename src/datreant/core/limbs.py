@@ -489,7 +489,8 @@ class Categories(Limb):
         Keys must be strings.
 
         Values may be ints, floats, strings, or bools. ``None`` as a value
-        will not the existing value for the key, if present.
+        will delete the existing value for the key, if present and is otherwise
+        not allowed.
 
         Parameters
         ----------
@@ -516,9 +517,15 @@ class Categories(Limb):
                 if not isinstance(key, string_types):
                     raise TypeError("Keys must be strings.")
 
-                if (isinstance(value, (int, float, string_types, bool))):
+                if isinstance(value, (int, float, string_types, bool)):
                     self._treant._state['categories'][key] = value
-                elif value is not None:
+                elif value is None:
+                    # delete if present
+                    if key in self._treant._state['categories']:
+                        del self._treant._state['categories'][key]
+                    else:
+                        raise ValueError("Cannot set to 'None'")
+                else:
                     raise TypeError("Values must be ints, floats,"
                                     " strings, or bools.")
 
