@@ -2,11 +2,13 @@
 files.
 
 """
+from __future__ import absolute_import
 
 import os
 from functools import reduce, total_ordering
 from six import string_types
 
+from collections import OrderedDict
 import scandir
 from pathlib2 import Path
 from asciitree import LeftAligned
@@ -446,9 +448,9 @@ class Tree(Veg):
 
         Parameters
         ----------
-        depth : int
+        depth : int, optional
             Maximum directory depth to display. ``None`` indicates no limit.
-        hidden : bool
+        hidden : bool, optional
             If False, do not show hidden files; hidden directories are still
             shown if they contain non-hidden files or directories.
 
@@ -456,7 +458,7 @@ class Tree(Veg):
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
 
-        tree = {}
+        tree = OrderedDict()
         rootdir = self.abspath.rstrip(os.sep)
         start = rootdir.rfind(os.sep) + 1
         for path, dirs, files in scandir.walk(rootdir):
@@ -472,11 +474,11 @@ class Tree(Veg):
 
             # filter out hidden files, if desired
             if not hidden:
-                outfiles = [file for file in files if file[0] != os.extsep]
+                outfiles = sorted(fn for fn in files if fn[0] != os.extsep)
             else:
-                outfiles = files
+                outfiles = sorted(files)
 
-            subdir = dict.fromkeys(outfiles, {})
+            subdir = OrderedDict.fromkeys(outfiles, {})
             parent[folders[-1]] = subdir
 
         tr = LeftAligned()

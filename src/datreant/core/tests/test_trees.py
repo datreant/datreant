@@ -420,54 +420,54 @@ def draw_tree(tmpdir):
 
 DRAWREF_d0_T = """\
 here/
- +-- dir_one/
- |   +-- .file_one_hidden
- |   +-- file_one
- |   +-- dir_two/
- |       +-- file_two
- |       +-- .file_two_hidden
  +-- .file_zero_hidden
  +-- file_zero
+ +-- dir_one/
+     +-- .file_one_hidden
+     +-- file_one
+     +-- dir_two/
+         +-- .file_two_hidden
+         +-- file_two
 """
 
 DRAWREF_d0_F = """\
 here/
- +-- dir_one/
- |   +-- file_one
- |   +-- dir_two/
- |       +-- file_two
  +-- file_zero
+ +-- dir_one/
+     +-- file_one
+     +-- dir_two/
+         +-- file_two
 """
 
 DRAWREF_d1_T = """\
 here/
- +-- dir_one/
  +-- .file_zero_hidden
  +-- file_zero
+ +-- dir_one/
 """
 
 DRAWREF_d1_F = """\
 here/
- +-- dir_one/
  +-- file_zero
+ +-- dir_one/
 """
 
 DRAWREF_d2_T = """\
 here/
- +-- dir_one/
- |   +-- .file_one_hidden
- |   +-- file_one
- |   +-- dir_two/
  +-- .file_zero_hidden
  +-- file_zero
+ +-- dir_one/
+     +-- .file_one_hidden
+     +-- file_one
+     +-- dir_two/
 """
 
 DRAWREF_d2_F = """\
 here/
- +-- dir_one/
- |   +-- file_one
- |   +-- dir_two/
  +-- file_zero
+ +-- dir_one/
+     +-- file_one
+     +-- dir_two/
 """
 
 
