@@ -19,9 +19,9 @@ import fnmatch
 from six import string_types
 from six.moves import zip
 
-from . import filesystem
 from . import _AGGLIMBS, _AGGTREELIMBS
 from .trees import Tree, Leaf
+from .names import treantdir_name, treantfile_name
 
 
 @functools.total_ordering
@@ -174,7 +174,7 @@ class View(CollectionMixin):
 
         """
         memberlist = self._list()
-        # we can take lists of indices, names, or uuids; these return a
+        # we can take lists of indices or names; these return a
         # View; repeats already not respected since View functions as a
         # set
         if isinstance(index, string_types):
@@ -546,17 +546,12 @@ class Bundle(CollectionMixin):
         Names of limbs to immediately attach.
 
     """
-    _memberpaths = ['abspath']
-    _fields = ['uuid', 'treanttype']
-    _fields.extend(_memberpaths)
-
     _classagglimbs = set()
     _agglimbs = set()
 
     def __init__(self, *treants, **kwargs):
         self._cache = dict()
         self._state = list()
-        self._searchtime = 10
 
         self.add(*treants)
 
@@ -583,7 +578,7 @@ class Bundle(CollectionMixin):
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
 
-        A single integer or uuid will yield a single Treant. Lists of
+        A single integer will yield a single Treant. Lists of
         either will yield a Bundle with members in order by the given items.
         Giving a name will always yield a Bundle, since names are not
         guaranteed to be unique.
@@ -592,26 +587,18 @@ class Bundle(CollectionMixin):
         select out members.
 
         """
-        # we can take lists of indices, names, or uuids; these return a
+        # we can take lists of indices or names; these return a
         # Bundle; repeats already not respected since Bundle functions as a
         # set
         memberlist = self._list()
 
         if isinstance(index, string_types):
-            # a name or uuid can be used for indexing
+            # a name can be used for indexing
             # a name always returns a Bundle
             out = Bundle([self.filepaths[i]
                           for i, name in enumerate(self.names)
                           if name == index],
                          limbs=self.limbs)
-            # if no names match, we try uuids
-            if not len(out):
-                out = [member for member in self if member.uuid == index]
-                if not len(out):
-                    raise KeyError("No name or uuid matching string selection")
-                else:
-                    # we want to return a Treant, not a list for uuid matches
-                    out = out[0]
         elif isinstance(index, slice):
             # we also take slices, obviously
             out = Bundle(*self.filepaths[index], limbs=self.limbs)
@@ -748,12 +735,11 @@ class Bundle(CollectionMixin):
             *treants*
                 treants to be added, which may be nested lists of treants;
                 treants can be given as either objects or paths to directories
-                that contain treant statefiles; glob patterns are also allowed,
-                and all found treants will be added to the collection
+                that contain treant statefiles
         """
         from .treants import Treant
 
-        outconts = list()
+        abspaths = list()
         for treant in treants:
             if treant is None:
                 pass
@@ -763,26 +749,21 @@ class Bundle(CollectionMixin):
                 self.add(*treant.filepaths)
                 self._cache.update(treant._cache)
             elif isinstance(treant, Treant):
-                outconts.append(treant)
-                self._cache[treant.uuid] = treant
-            elif isinstance(treant, (Leaf, Tree)):
-                tre = filesystem.path2treant(treant.abspath)
-                outconts.extend(tre)
+                abspaths.append(treant)
+                self._cache[treant.abspath] = treant
+            elif isinstance(treant, Tree):
+                treantdir = os.path.join(treant.abspath, treantdir_name)
+                if os.path.exists(treantdir):
+                    abspaths.extend(treant.abspath)
             elif os.path.exists(treant):
-                tre = filesystem.path2treant(treant)
-                outconts.extend(tre)
-            elif isinstance(treant, string_types):
-                tre = filesystem.path2treant(*glob.glob(treant))
-                outconts.extend(tre)
+                treantdir = os.path.join(treant, treantdir_name)
+                if os.path.exists(treantdir):
+                    abspaths.extend(os.path.abspath(treant))
             else:
                 raise TypeError("'{}' not a valid input "
                                 "for Bundle".format(treant))
 
-        attrs = []
-        for attr in ('uuid', 'treanttype', 'abspath'):
-            attrs.append([getattr(treant, attr) for treant in outconts])
-
-        self._add_members(*attrs)
+        self._add_members(*abspaths)
 
     def remove(self, *members):
         """Remove any number of members from the collection.
@@ -794,18 +775,19 @@ class Bundle(CollectionMixin):
         """
         from .treants import Treant
 
-        uuids = self._get_members_uuid()
+        abspaths = self._state
         remove = list()
+
         for member in members:
             if isinstance(member, int):
-                remove.append(uuids[member])
+                remove.append(abspaths[member])
             elif isinstance(member, Treant):
-                remove.append(member.uuid)
+                remove.append(member.abspath)
             elif isinstance(member, string_types):
                 names = fnmatch.filter(self.names, member)
-                uuids = [member.uuid for member in self
-                         if member.name in names]
-                remove.extend(uuids)
+                paths = [member.abspath for member in self
+                            if member.name in names]
+                remove.extend(paths)
 
             else:
                 raise TypeError('Only an integer or treant acceptable')
@@ -813,21 +795,14 @@ class Bundle(CollectionMixin):
         self._del_members(remove)
 
         # remove from cache
-        for uuid in remove:
-            self._cache.pop(uuid, None)
+        for abspath in remove:
+            self._cache.pop(abspath, None)
 
     def clear(self):
         """Remove all members.
 
         """
         self._del_members(all=True)
-
-    @property
-    def treanttypes(self):
-        """Return a list of member treanttypes.
-
-        """
-        return self._get_members_treanttype()
 
     @property
     def names(self):
@@ -878,59 +853,6 @@ class Bundle(CollectionMixin):
         """
         return [member.relpath if member else None for member in self._list()]
 
-    @property
-    def filepaths(self):
-        """Return a list of member filepaths.
-
-        Members that can't be found will have filepath ``None``.
-
-        :Returns:
-            *names*
-                list giving the filepath of each member, in order;
-                members that are missing will have filepath ``None``
-
-        """
-        filepaths = list()
-        for member in self._list():
-            if member:
-                filepaths.append(member.filepath)
-            else:
-                filepaths.append(None)
-
-        return filepaths
-
-    @property
-    def uuids(self):
-        """Return a list of member uuids.
-
-        :Returns:
-            *uuids*
-                list giving the uuid of each member, in order
-
-        """
-        return self._get_members_uuid()
-
-    def _check(self):
-        """Check that all member paths resolve properly.
-
-        """
-        members = self._get_members()
-
-        paths = {path: members[path] for path in self._memberpaths}
-
-        foxhound = filesystem.Foxhound(self, members['uuid'], paths,
-                                       timeout=self.searchtime)
-        found = foxhound.fetch(as_treants=False)
-
-        if None not in found.values():
-            treanttypes = [os.path.basename(path).split(os.extsep)[0]
-                           for path in found.values()]
-
-            self._add_members(found.keys(), treanttypes, found.values())
-            return True
-        else:
-            return False
-
     def _list(self):
         """Return a list of members.
 
@@ -941,45 +863,19 @@ class Bundle(CollectionMixin):
         not intended for user-level use.
 
         """
-        members = self._get_members()
-        uuids = members['uuid']
+        abspaths = self._state
 
         findlist = list()
         memberlist = list()
 
-        for uuid in uuids:
-            if uuid in self._cache and self._cache[uuid]:
-                memberlist.append(self._cache[uuid])
+        for abspath in abspaths:
+            if abspath in self._cache:
+                memberlist.append(self._cache[abspath])
+            elif os.path.exists(os.path.join(abspath, treantdir_name)):
+                self._cache[abspath] = Treant(abspath)
+                memberlist.append(self._cache[abspath])
             else:
                 memberlist.append(None)
-                findlist.append(uuid)
-
-        # track down our non-cached treants
-        if findlist:
-            paths = {path: members[path]
-                     for path in self._memberpaths}
-            foxhound = filesystem.Foxhound(self, findlist, paths,
-                                           timeout=self.searchtime)
-            foundconts = foxhound.fetch(as_treants=True)
-
-            # add to cache, and ensure we get updated paths with a re-add in
-            # case of an IOError, skip (probably due to permissions, but will
-            # need something more robust later
-            self._cache.update(foundconts)
-            try:
-                self.add(*foundconts.values())
-            except OSError:
-                pass
-
-            # insert found treants into output list
-            for uuid in findlist:
-                result = foundconts[uuid]
-                if not result:
-                    ind = list(members['uuid']).index(uuid)
-                    raise IOError("Could not find member {} (uuid: {});"
-                                  " re-add or remove it.".format(ind, uuid))
-
-                memberlist[list(uuids).index(uuid)] = result
 
         return memberlist
 
@@ -1013,7 +909,7 @@ class Bundle(CollectionMixin):
         if processes > 1:
             pool = mp.Pool(processes=processes)
             results = dict()
-            results = {member.uuid: pool.apply_async(
+            results = {member.abspath: pool.apply_async(
                     function, args=(member,), kwds=kwargs) for member in self}
 
             output = {key: results[key].get() for key in results}
@@ -1022,7 +918,7 @@ class Bundle(CollectionMixin):
             pool.join()
 
             # sort by member order
-            results = [output[uuid] for uuid in self.uuids]
+            results = [output[abspath] for abspath in self.abspaths]
         else:
             results = [function(member, **kwargs) for member in self]
 
@@ -1031,25 +927,6 @@ class Bundle(CollectionMixin):
             results = None
 
         return results
-
-    @property
-    def searchtime(self):
-        """Max time to spend searching for missing members, in seconds.
-
-        Setting a larger value allows more time for the collection to look for
-        members elsewhere in the filesystem.
-
-        If `None`, there will be no time limit. Use with care.
-
-        """
-        return self._searchtime
-
-    @searchtime.setter
-    def searchtime(self, value):
-        if isinstance(value, (float, int)) or value is None:
-            self._searchtime = value
-        else:
-            raise TypeError("Must give a number or `None` for searchtime")
 
     def globfilter(self, pattern):
         """Return a Bundle of members that match by name the given globbing
@@ -1064,57 +941,35 @@ class Bundle(CollectionMixin):
         return Bundle([self[name] for name in
                       fnmatch.filter(self.names, pattern)], limbs=self.limbs)
 
-    def _add_members(self, uuids, treanttypes, abspaths):
+    def _add_members(self, abspaths):
         """Add many members at once.
 
-        Given lists must be in the same order with respect to the members they
-        describe.
-
         :Arguments:
-            *uuids*
-                list of uuids
-            *treanttypes*
-                list of treanttypes
             *abspaths*
                 list of abspaths
 
         """
-        for uuid, treanttype, abspath in zip(uuids, treanttypes, abspaths):
-            self._add_member(uuid, treanttype, abspath)
+        for abspath in abspaths:
+            self._add_member(abspath)
 
-    def _add_member(self, uuid, treanttype, abspath):
+    def _add_member(self, abspath):
         """Add a member to the Bundle.
 
-        If the member is already present, its location will be updated with
-        the given location.
-
         :Arguments:
-            *uuid*
-                the uuid of the new member
-            *treanttype*
-                the treant type of the new member
             *abspath*
                 absolute path to directory of new member in the filesystem
 
         """
-        member_rec = {'uuid': uuid,
-                      'treanttype': treanttype,
-                      'abspath': os.path.abspath(abspath)}
 
-        # check if uuid already present
-        uuids = [member['uuid'] for member in self._state]
+        if not (abspath in self._state):
+            self._state.append(abspath)
 
-        if uuid in uuids:
-            self._state[uuids.index(uuid)] = member_rec
-        else:
-            self._state.append(member_rec)
-
-    def _del_members(self, uuids=None, all=False):
+    def _del_members(self, abspaths=None, all=False):
         """Remove members from the Bundle.
 
         :Arguments:
-            *uuids*
-                An iterable of uuids of the members to remove
+            *abspaths*
+                An iterable of abspaths of the members to remove
             *all*
                 When True, remove all members [``False``]
 
@@ -1122,91 +977,12 @@ class Bundle(CollectionMixin):
         if all:
             self._state = list()
         else:
-            # remove redundant uuids from given list if present
-            uuids = set([str(uuid) for uuid in uuids])
-
-            # get matching rows
-            memberlist = list()
-            for i, member in enumerate(self._state):
-                for uuid in uuids:
-                    if (member['uuid'] == uuid):
-                        memberlist.append(i)
-
-            memberlist.sort()
-            j = 0
-            # delete matching entries; have to use j to shift the register as
-            # we remove entries
-            for i in memberlist:
-                self._state.pop(i - j)
-                j = j + 1
-
-    def _get_member(self, uuid):
-        """Get all stored information on the specified member.
-
-        Returns a dictionary whose keys are column names and values the
-        corresponding values for the member.
-
-        :Arguments:
-            *uuid*
-                uuid of the member to retrieve information for
-
-        :Returns:
-            *memberinfo*
-                a dictionary containing all information stored for the
-                specified member
-        """
-        memberinfo = None
-        for member in self._state:
-            if member['uuid'] == uuid:
-                memberinfo = member
-
-        return memberinfo
-
-    def _get_members(self):
-        """Get full member table.
-
-        Sometimes it is useful to read the whole member table in one go instead
-        of doing multiple reads.
-
-        :Returns:
-            *memberdata*
-                dict giving full member data, with fields as keys and in member
-                order
-        """
-        out = defaultdict(list)
-
-        for member in self._state:
-            for key in self._fields:
-                out[key].append(member[key])
-
-        return out
-
-    def _get_members_uuid(self):
-        """List uuid for each member.
-
-        :Returns:
-            *uuids*
-                list giving treanttype of each member, in order
-        """
-        return [member['uuid'] for member in self._state]
-
-    def _get_members_names(self):
-        """List uuid for each member.
-
-        :Returns:
-            *uuids*
-                list giving treanttype of each member, in order
-        """
-        return [os.path.basename(member['abspath']) for member in self._state]
-
-    def _get_members_treanttype(self):
-        """List treanttype for each member.
-
-        :Returns:
-            *treanttypes*
-                list giving treanttype of each member, in order
-        """
-        return [member['treanttype'] for member in self._state]
+            for abspath in abspaths:
+                try:
+                    self._state.remove(abspath)
+                    self._cache.pop(abspath, None)
+                except ValueError:
+                    pass
 
 
 class _Loc(object):

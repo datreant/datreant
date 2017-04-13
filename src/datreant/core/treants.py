@@ -5,36 +5,23 @@ Treants: the organizational units for :mod:`datreant`.
 import os
 import functools
 import six
-from uuid import uuid4
 from pathlib2 import Path
 
-from . import filesystem
 from .collections import Bundle
 from .trees import Tree
+from .names import treantdir_name, treantfile_name
 from .util import makedirs
 
-from .backends.statefiles import treantfile, TreantFile
+from .backends.statefiles import TreantFile
 from . import _TREANTS, _TREELIMBS, _LIMBS
-
-
-class MultipleTreantsError(Exception):
-    pass
 
 
 class NoTreantsError(Exception):
     pass
 
 
-class _Treantmeta(type):
-    def __init__(cls, name, bases, classdict):
-        type.__init__(type, name, bases, classdict)
-
-        treanttype = classdict['_treanttype']
-        _TREANTS[treanttype] = cls
-
-
 @functools.total_ordering
-class Treant(six.with_metaclass(_Treantmeta, Tree)):
+class Treant(Tree):
     """The Treant: a Tree with a state file.
 
     `treant` should be a base directory of a new or existing Treant. An
@@ -49,18 +36,12 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
     generally better to avoid having multiple state files in the same
     directory.
 
-    Use the `new` keyword to force generation of a new Treant at the given
-    path.
-
     Parameters
     ----------
     treant : str or Tree
         Base directory of a new or existing Treant; will regenerate
         a Treant if a state file is found, but will genereate a new
         one otherwise; may also be a Tree object
-    new : bool
-        Generate a new Treant even if one already exists at the given
-        location
     categories : dict
         dictionary with user-defined keys and values; used to give
         Treants distinguishing characteristics
@@ -68,22 +49,16 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         list with user-defined values; like categories, but useful for
         adding many distinguishing descriptors
     """
-    # required components
-    _treanttype = 'Treant'
-    _backendclass = TreantFile
 
-    def __init__(self, treant, new=False, categories=None, tags=None):
+    def __init__(self, treant, categories=None, tags=None):
         # if given a Tree, get path out of it
         if isinstance(treant, Tree):
             treant = treant.abspath
 
-        if new:
+        try:
+            self._regenerate(treant, categories=categories, tags=tags)
+        except NoTreantsError:
             self._generate(treant, categories=categories, tags=tags)
-        else:
-            try:
-                self._regenerate(treant, categories=categories, tags=tags)
-            except NoTreantsError:
-                self._generate(treant, categories=categories, tags=tags)
 
     def attach(self, *limbname):
         """Attach limbs by name to this Treant.
@@ -113,26 +88,23 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         return self._backend.write()
 
     def __repr__(self):
-        return "<{}: '{}'>".format(self._treanttype, self.name)
-
-    def __getstate__(self):
-        return self.filepath
+        return "<Treant: '{}'>".format(self.name)
 
     def __setstate__(self, state):
         self.__init__(state)
 
     def __hash__(self):
-        return hash(self.uuid)
+        return hash(self.abspath)
 
     def __eq__(self, other):
         try:
-            return (self.name + self.uuid) == (other.name + other.uuid)
+            return self.abspath == other.abspath
         except AttributeError:
             return NotImplemented
 
     def __lt__(self, other):
         try:
-            return (self.name + self.uuid) < (other.name + other.uuid)
+            return self.name < other.name
         except AttributeError:
             return NotImplemented
 
@@ -160,12 +132,13 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
             else:
                 raise
 
-        filename = filesystem.statefilename(self._treanttype, str(uuid4()))
-
-        statefile = os.path.join(treant, filename)
-
+        # build datreant dir
+        treantdir = os.path.join(treant, treantdir_name)
+        makedirs(treantdir)
+        
         # generate state file
-        self._backend = treantfile(statefile)
+        statefile = os.path.join(treantdir, treantfile_name)
+        self._backend = TreantFile(statefile)
 
         # add categories, tags in one go; doubles as file init so there's
         # something there
@@ -183,13 +156,13 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
 
         """
 
-        # convenient to give only name of object (its directory name)
+        # we give only name of object (its directory name)
         if os.path.isdir(treant):
-            statefile = filesystem.glob_treant(treant)
+            statefile = os.path.join(treant, treantdir_name, treantfile_name)
 
             # if only one state file, load it; otherwise, complain loudly
-            if len(statefile) == 1:
-                self._backend = treantfile(statefile[0])
+            if os.path.exists(statefile):
+                self._backend = TreantFile(statefile)
                 # try to add categories, tags in one go
                 if categories or tags:
                     try:
@@ -201,29 +174,8 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
                     except (OSError, IOError):
                         pass
 
-            elif len(statefile) == 0:
-                raise NoTreantsError('No Treants found in directory.')
             else:
-                raise MultipleTreantsError('Multiple Treants found in '
-                                           'directory. Give path to a '
-                                           'specific state file.')
-
-        # if a state file is given, try loading it
-        elif os.path.exists(treant):
-            self._backend = treantfile(treant)
-            # try to add categories, tags
-            if categories or tags:
-                # try to add categories, tags in one go
-                try:
-                    with self._write:
-                        if categories:
-                            self.categories.add(categories)
-                        if tags:
-                            self.tags.add(tags)
-                except (OSError, IOError):
-                    pass
-        else:
-            raise NoTreantsError('No Treants found in path.')
+                raise NoTreantsError('No Treants found in directory.')
 
     @property
     def name(self):
@@ -236,54 +188,6 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         """
         return os.path.basename(self._backend.get_location())
 
-    @name.setter
-    def name(self, name):
-        """The name of the Treant.
-
-        The name of a Treant need not be unique with respect to other
-        Treants, but is used as part of Treant's displayed
-        representation.
-
-        """
-        olddir = os.path.dirname(self._backend.filename)
-        newdir = os.path.join(os.path.dirname(olddir), name)
-        statefile = os.path.join(newdir,
-                                 filesystem.statefilename(
-                                     self._treanttype, self.uuid))
-
-        os.rename(olddir, newdir)
-        self._regenerate(statefile)
-
-    @property
-    def uuid(self):
-        """Get Treant uuid.
-
-        A Treant's uuid is used by other Treants to identify it. The uuid
-        is given in the Treant's state file name for fast filesystem
-        searching. For example, a Treant with state file::
-
-            'Treant.7dd9305a-d7d9-4a7b-b513-adf5f4205e09.h5'
-
-        has uuid::
-
-            '7dd9305a-d7d9-4a7b-b513-adf5f4205e09'
-
-        Changing this string will alter the Treant's uuid. This is not
-        generally recommended.
-
-        :Returns:
-            *uuid*
-                unique identifier string for this Treant
-        """
-        return os.path.basename(self._backend.filename).split('.')[1]
-
-    @property
-    def treanttype(self):
-        """The type of the Treant.
-
-        """
-        return os.path.basename(self._backend.filename).split('.')[0]
-
     @property
     def location(self):
         """The location of the Treant.
@@ -295,37 +199,12 @@ class Treant(six.with_metaclass(_Treantmeta, Tree)):
         """
         return os.path.dirname(self._backend.get_location())
 
-    @location.setter
-    def location(self, value):
-        """Set location of Treant.
-
-        Physically moves the Treant to the given location.
-        Only works if the new location is an empty or nonexistent
-        directory.
-
-        """
-        makedirs(value)
-        oldpath = self._backend.get_location()
-        newpath = os.path.join(value, self.name)
-        statefile = os.path.join(newpath,
-                                 filesystem.statefilename(
-                                     self._treanttype, self.uuid))
-        os.rename(oldpath, newpath)
-        self._regenerate(statefile)
-
     @property
     def path(self):
         """Treant directory as a :class:`pathlib2.Path`.
 
         """
         return Path(self._backend.get_location())
-
-    @property
-    def filepath(self):
-        """Absolute path to the Treant's state file.
-
-        """
-        return self._backend.filename
 
     @property
     def tree(self):

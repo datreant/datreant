@@ -10,7 +10,6 @@ from six import string_types, with_metaclass
 
 from fuzzywuzzy import process
 
-from . import filesystem
 from . import _AGGTREELIMBS, _AGGLIMBS
 from .collections import Bundle
 from .limbs import Tags, Categories
