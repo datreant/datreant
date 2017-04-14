@@ -577,6 +577,59 @@ class Bundle(CollectionMixin):
             out = super(Bundle, self).__getitem__(index)
         return out
 
+    def get(self, *tags, **categories):
+        """Retrieve all Treants which match the defined tags and categories
+
+        :Arguments:
+             *tags*
+                tuple of tags to match
+             *categories*
+                  key: value pairs
+
+        :Returns:
+             *bundle*
+                 A bundle containing all matches from within this bundle
+
+
+        :Examples:
+
+          bundle.get(length=5.0, colour='green')
+
+        is equivalent to::
+
+          bundle.categories.groupby(['length', 'colour'])[5.0, 'green']
+
+
+          bundle.get('this')
+
+        is equivalent to
+
+          bundle.tags.filter('this')
+
+
+          bundle.get('this', length=5)
+
+        is equivalent to::
+
+          bundle.tags.filter('this').categories.groupby('length')[5.0]
+        """
+        if not (tags or categories):
+            # if nothing given, return an empty version of this bundle
+            return self[[]]
+
+        output = self  # initially return self
+        for c, v in categories.items():
+            try:
+                output &= output.categories.groupby(c)[v]
+            except KeyError:
+                # the key wasn't present, so the return value is now empty
+                output = self[[]]
+                break  # don't need to loop any further
+        for t in tags:
+            output &= output.tags.filter(t)
+
+        return output
+
     def __add__(self, other):
         """Addition of collections with collections or treants yields Bundle.
 
