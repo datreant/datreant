@@ -789,7 +789,7 @@ class Bundle(CollectionMixin):
             elif isinstance(member, string_types):
                 names = fnmatch.filter(self.names, member)
                 paths = [member.abspath for member in self
-                            if member.name in names]
+                         if member.name in names]
                 remove.extend(paths)
 
             else:

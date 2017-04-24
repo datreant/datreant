@@ -13,7 +13,7 @@ from .names import treantdir_name, treantfile_name
 from .util import makedirs
 
 from .backends.statefiles import TreantFile
-from . import _TREANTS, _TREELIMBS, _LIMBS
+from . import _TREELIMBS, _LIMBS
 
 
 class NoTreantsError(Exception):
@@ -90,6 +90,9 @@ class Treant(Tree):
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
 
+    def __getstate__(self):
+        return self.abspath
+
     def __setstate__(self, state):
         self.__init__(state)
 
@@ -135,7 +138,7 @@ class Treant(Tree):
         # build datreant dir
         treantdir = os.path.join(treant, treantdir_name)
         makedirs(treantdir)
-        
+
         # generate state file
         statefile = os.path.join(treantdir, treantfile_name)
         self._backend = TreantFile(statefile)

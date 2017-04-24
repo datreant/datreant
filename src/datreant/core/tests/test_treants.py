@@ -130,7 +130,6 @@ class TestTreant(TestTree):
             t4 = Treant('yet/more')
             assert os.path.exists(t4._treantfile)
 
-
     @pytest.mark.parametrize("tags", (None, [], ['small', 'spiky']))
     @pytest.mark.parametrize("categories", (None, {}, {'colour': 'red'}))
     def test_regen(self, tags, categories, tmpdir):
