@@ -8,16 +8,17 @@ import pytest
 import datreant.core as dtr
 
 
-def do_stuff(cont):
-    return cont.name + cont.uuid
+def do_stuff(treant):
+    return treant.name
 
 
-def return_nothing(cont):
-    b = cont.name + cont.uuid
+def return_nothing(treant):
+    b = treant.name
 
 
 class CollectionsTests(object):
     """Mixin tests for collections"""
+
     class TestGetitem(object):
         @pytest.mark.parametrize('slx', (
             [1, 2],
@@ -259,12 +260,6 @@ class TestBundle(CollectionsTests):
             assert isinstance(b_new, dtr.Bundle)
             assert b_new[0] == t1
 
-        def test_getitem_uuid_string(self, filled_collection):
-            b, (t1, t2, t3) = filled_collection
-            n = t2.uuid
-            t_new = b[n]
-            assert t_new == t2
-
         def test_getitem_string_KeyError(self, filled_collection):
             b = filled_collection[0]
             with pytest.raises(KeyError):
@@ -289,20 +284,6 @@ class TestBundle(CollectionsTests):
             # the group won't add members it alrady has
             # (operates as an ordered set)
             assert len(collection) == 4
-
-    def test_add_members_glob(self, collection, tmpdir):
-        """Try adding members with globbing"""
-        with tmpdir.as_cwd():
-            t1 = dtr.Treant('lark')
-            t2 = dtr.Treant('hark')
-            t3 = dtr.Treant('linus')
-
-            collection.add('*ark')
-
-            for treant in (t1, t2):
-                assert treant in collection
-
-            assert t3 not in collection
 
     def test_get_members(self, collection, tmpdir):
         """Access members with indexing and slicing"""
@@ -380,7 +361,7 @@ class TestBundle(CollectionsTests):
                 assert item not in collection
 
     def test_member_attributes(self, collection, tmpdir):
-        """Get member uuids, names, and treanttypes"""
+        """Get member names and abspaths"""
         with tmpdir.as_cwd():
             t1 = dtr.Treant('bigger')
             t2 = dtr.Treant('faster')
@@ -388,14 +369,11 @@ class TestBundle(CollectionsTests):
 
         collection.add(t1, t2, t3)
 
-        uuids = [cont.uuid for cont in [t1, t2, t3]]
-        assert collection.uuids == uuids
-
-        names = [cont.name for cont in [t1, t2, t3]]
+        names = [treant.name for treant in [t1, t2, t3]]
         assert collection.names == names
 
-        treanttypes = [cont.treanttype for cont in [t1, t2, t3]]
-        assert collection.treanttypes == treanttypes
+        abspaths = [treant.abspath for treant in [t1, t2, t3]]
+        assert collection.abspaths == abspaths
 
     def test_map(self, collection, tmpdir):
         with tmpdir.as_cwd():
@@ -405,7 +383,7 @@ class TestBundle(CollectionsTests):
 
         collection.add(t1, t2, t3)
 
-        comp = [cont.name + cont.uuid for cont in collection]
+        comp = [cont.name for cont in collection]
         assert collection.map(do_stuff) == comp
         assert collection.map(do_stuff, processes=2) == comp
 

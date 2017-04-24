@@ -595,13 +595,16 @@ class Bundle(CollectionMixin):
         if isinstance(index, string_types):
             # a name can be used for indexing
             # a name always returns a Bundle
-            out = Bundle([self.filepaths[i]
+            out = Bundle([self.abspaths[i]
                           for i, name in enumerate(self.names)
                           if name == index],
                          limbs=self.limbs)
+
+            if not len(out):
+                raise KeyError("No name matching string selection")
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = Bundle(*self.filepaths[index], limbs=self.limbs)
+            out = Bundle(*self.abspaths[index], limbs=self.limbs)
             out._cache.update(self._cache)
         else:
             out = super(Bundle, self).__getitem__(index)
@@ -746,10 +749,10 @@ class Bundle(CollectionMixin):
             elif isinstance(treant, (list, tuple, View)):
                 self.add(*treant)
             elif isinstance(treant, Bundle):
-                self.add(*treant.filepaths)
+                self.add(*treant.abspaths)
                 self._cache.update(treant._cache)
             elif isinstance(treant, Treant):
-                abspaths.append(treant)
+                abspaths.append(treant.abspath)
                 self._cache[treant.abspath] = treant
             elif isinstance(treant, Tree):
                 treantdir = os.path.join(treant.abspath, treantdir_name)
@@ -758,12 +761,12 @@ class Bundle(CollectionMixin):
             elif os.path.exists(treant):
                 treantdir = os.path.join(treant, treantdir_name)
                 if os.path.exists(treantdir):
-                    abspaths.extend(os.path.abspath(treant))
+                    abspaths.append(os.path.abspath(treant))
             else:
                 raise TypeError("'{}' not a valid input "
                                 "for Bundle".format(treant))
 
-        self._add_members(*abspaths)
+        self._add_members(abspaths)
 
     def remove(self, *members):
         """Remove any number of members from the collection.
@@ -863,6 +866,8 @@ class Bundle(CollectionMixin):
         not intended for user-level use.
 
         """
+        from .treants import Treant
+
         abspaths = self._state
 
         findlist = list()

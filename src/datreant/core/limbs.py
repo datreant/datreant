@@ -87,7 +87,7 @@ class Tags(Limb):
                 except KeyError:
                     raise KeyError(
                             ("Missing 'tags' data, and cannot write to "
-                             "Treant '{}'".format(self._treant.filepath)))
+                             "Treant '{}'".format(self._treant.abspath)))
 
     def __repr__(self):
         return "<Tags({})>".format(self._list())
@@ -362,7 +362,7 @@ class Categories(Limb):
                 except KeyError:
                     raise KeyError(
                             ("Missing 'categories' data, and cannot write to "
-                             "Treant '{}'".format(self._treant.filepath)))
+                             "Treant '{}'".format(self._treant.abspath)))
 
     def __repr__(self):
         return "<Categories({})>".format(self._dict())

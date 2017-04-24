@@ -176,35 +176,22 @@ class Treant(Tree):
 
             else:
                 raise NoTreantsError('No Treants found in directory.')
+        else:
+            raise NoTreantsError('No Treants found in directory.')
 
     @property
     def name(self):
         """The name of the Treant.
 
-        The name of a Treant need not be unique with respect to other
-        Treants, but is used as part of Treant's displayed
-        representation.
-
         """
-        return os.path.basename(self._backend.get_location())
-
-    @property
-    def location(self):
-        """The location of the Treant.
-
-        Setting the location to a new path physically moves the Treant to
-        the given location. This only works if the new location is an empty or
-        nonexistent directory.
-
-        """
-        return os.path.dirname(self._backend.get_location())
+        return super(Treant, self).name
 
     @property
     def path(self):
         """Treant directory as a :class:`pathlib2.Path`.
 
         """
-        return Path(self._backend.get_location())
+        return Path(self._backend.get_location()).absolute().parent
 
     @property
     def tree(self):
@@ -214,7 +201,9 @@ class Treant(Tree):
         return Tree(self.abspath, limbs=self.limbs)
 
     @property
-    def state(self):
-        with self._read:
-            state = self._state
-        return state
+    def _treantdir(self):
+        return os.path.join(self.abspath, treantdir_name)
+
+    @property
+    def _treantfile(self):
+        return os.path.join(self.abspath, treantdir_name, treantfile_name)
