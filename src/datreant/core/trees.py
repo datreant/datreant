@@ -14,7 +14,6 @@ from asciitree import LeftAligned
 from .util import makedirs
 from .manipulators import discover
 from .rsync import rsync
-from . import _TREELIMBS
 
 
 @total_ordering
@@ -250,9 +249,6 @@ class Tree(Veg):
         # set the property
         setattr(cls, limb._name,
                 property(getter, setter, None, limb.__doc__))
-
-        if limb._name in _TREELIMBS:
-            cls._classlimbs.add(limb._name)
 
     def _attach_limb(self, limb):
         """Attach a limb.

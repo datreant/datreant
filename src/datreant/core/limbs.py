@@ -5,89 +5,53 @@ the state of an object.
 """
 import os
 import functools
-from six import string_types, with_metaclass
+from six import string_types
 from collections import defaultdict
 
 from fuzzywuzzy import process
 
 from .collections import Bundle
-from . import _TREELIMBS, _LIMBS
+from .state import JSONFile
 
 
-class _TreeLimbmeta(type):
-    def __init__(cls, name, bases, classdict):
-        type.__init__(type, name, bases, classdict)
-
-        limbname = classdict['_name']
-        _TREELIMBS[limbname] = cls
-
-
-class _Limbmeta(type):
-    def __init__(cls, name, bases, classdict):
-        type.__init__(type, name, bases, classdict)
-
-        limbname = classdict['_name']
-        _LIMBS[limbname] = cls
-
-
-class TreeLimb(with_metaclass(_TreeLimbmeta, object)):
-    """Core functionality for Tree limbs.
-
-    TreeLimbs are meant to attach to Trees, which lack a state file. Since
-    Treants are subclasses of Tree, they will inherit attachments of TreeLimbs
-    to that class. A TreeLimb, unlike a Limb, does not need access to state
-    file data.
-
-    """
-    # name used when attached to a Tree's namespace
-    _name = 'limb'
-
-    def __init__(self, tree):
-        self._tree = tree
-
-
-class Limb(with_metaclass(_Limbmeta, object)):
+class Limb(object):
     """Core functionality for Treant limbs.
 
     """
-    # name used when attached to a Treant's namespace
-    _name = 'limb'
-
     def __init__(self, treant):
         self._treant = treant
 
+
+class MetadataLimb(Limb):
+
     @property
-    def _logger(self):
-        return self._treant._logger
+    def _write(self):
+        self._statefile = JSONFile(os.path.join(self._treant._treantdir,
+                                                self._statefilename),
+                                   init_state=self._init_state)
+
+        return self._statefile.write()
+
+    @property
+    def _read(self):
+        self._statefile = JSONFile(os.path.join(self._treant._treantdir,
+                                                self._statefilename),
+                                   init_state=self._init_state)
+
+        return self._statefile.read()
 
 
 @functools.total_ordering
-class Tags(Limb):
+class Tags(MetadataLimb):
     """Interface to tags.
 
     """
     _name = 'tags'
+    _statefilename = 'tags.json'
 
-    def __init__(self, treant):
-        super(Tags, self).__init__(treant)
-
-        # init state if tags not already there;
-        # if read-only, check that they are there,
-        # and raise exception if they are not
-        try:
-            with self._treant._write:
-                try:
-                    self._treant._state['tags']
-                except KeyError:
-                    self._treant._state['tags'] = list()
-        except (IOError, OSError):
-            with self._treant._read:
-                try:
-                    self._treant._state['tags']
-                except KeyError:
-                    raise KeyError(
-                            ("Missing 'tags' data, and cannot write to "
-                             "Treant '{}'".format(self._treant.abspath)))
+    @staticmethod
+    def _init_state(jsonfile):
+        jsonfile._state = []
 
     def __repr__(self):
         return "<Tags({})>".format(self._list())
@@ -120,7 +84,7 @@ class Tags(Limb):
             raise TypeError("Can only set with tags, a list, or set")
 
     def __getitem__(self, value):
-        with self._treant._read:
+        with self._read:
             if isinstance(value, list):
                 # a list of tags gives only members with ALL the tags
                 fits = all([self[item] for item in value])
@@ -237,8 +201,8 @@ class Tags(Limb):
             *tags*
                 list of all tags
         """
-        with self._treant._read:
-            tags = self._treant._state['tags']
+        with self._read:
+            tags = self._statefile._state
 
         tags.sort()
         return tags
@@ -262,7 +226,7 @@ class Tags(Limb):
             else:
                 outtags.append(tag)
 
-        with self._treant._write:
+        with self._write:
             # ensure tags are unique (we don't care about order)
             # also they must be strings
             _outtags = []
@@ -275,10 +239,10 @@ class Tags(Limb):
             outtags = set(_outtags)
 
             # remove tags already present in metadata from list
-            outtags = outtags.difference(set(self._treant._state['tags']))
+            outtags = outtags.difference(set(self._statefile._state))
 
             # add new tags
-            self._treant._state['tags'].extend(outtags)
+            self._statefile._state.extend(outtags)
 
     def remove(self, *tags):
         """Remove tags from Treant.
@@ -290,13 +254,13 @@ class Tags(Limb):
             *tags*
                 Tags to delete.
         """
-        with self._treant._write:
+        with self._write:
             # remove redundant tags from given list if present
             tags = set([str(tag) for tag in tags])
             for tag in tags:
                 # remove tag; if not present, continue anyway
                 try:
-                    self._treant._state['tags'].remove(tag)
+                    self._statefile._state.remove(tag)
                 except ValueError:
                     pass
 
@@ -304,8 +268,8 @@ class Tags(Limb):
         """Remove all tags from Treant.
 
         """
-        with self._treant._write:
-            self._treant._state['tags'] = list()
+        with self._write:
+            self._statefile._state = list()
 
     def fuzzy(self, tag, threshold=80):
         """Get a tuple of existing tags that fuzzily match a given one.
@@ -337,32 +301,16 @@ class Tags(Limb):
         return tuple(matches)
 
 
-class Categories(Limb):
+class Categories(MetadataLimb):
     """Interface to categories.
 
     """
     _name = 'categories'
+    _statefilename = 'categories.json'
 
-    def __init__(self, treant):
-        super(Categories, self).__init__(treant)
-
-        # init state if categories not already there;
-        # if read-only, check that they are there,
-        # and raise exception if they are not
-        try:
-            with self._treant._write:
-                try:
-                    self._treant._state['categories']
-                except KeyError:
-                    self._treant._state['categories'] = dict()
-        except (IOError, OSError):
-            with self._treant._read:
-                try:
-                    self._treant._state['categories']
-                except KeyError:
-                    raise KeyError(
-                            ("Missing 'categories' data, and cannot write to "
-                             "Treant '{}'".format(self._treant.abspath)))
+    @staticmethod
+    def _init_state(jsonfile):
+        jsonfile._state = {}
 
     def __repr__(self):
         return "<Categories({})>".format(self._dict())
@@ -474,8 +422,8 @@ class Categories(Limb):
                 dictionary of all categories
 
         """
-        with self._treant._read:
-            return self._treant._state['categories']
+        with self._read:
+            return self._statefile._state
 
     def add(self, categorydict=None, **categories):
         """Add any number of categories to the Treant.
@@ -511,13 +459,13 @@ class Categories(Limb):
 
         outcats.update(categories)
 
-        with self._treant._write:
+        with self._write:
             for key, value in outcats.items():
                 if not isinstance(key, string_types):
                     raise TypeError("Keys must be strings.")
 
                 if (isinstance(value, (int, float, string_types, bool))):
-                    self._treant._state['categories'][key] = value
+                    self._statefile._state[key] = value
                 elif value is not None:
                     raise TypeError("Values must be ints, floats,"
                                     " strings, or bools.")
@@ -534,17 +482,17 @@ class Categories(Limb):
                 Categories to delete.
 
         """
-        with self._treant._write:
+        with self._write:
             for key in categories:
                 # continue even if key not already present
-                self._treant._state['categories'].pop(key, None)
+                self._statefile._state.pop(key, None)
 
     def clear(self):
         """Remove all categories from Treant.
 
         """
-        with self._treant._write:
-            self._treant._state['categories'] = dict()
+        with self._write:
+            self._statefile._state = dict()
 
     def keys(self):
         """Get category keys.
@@ -553,8 +501,8 @@ class Categories(Limb):
             *keys*
                 keys present among categories
         """
-        with self._treant._read:
-            return self._treant._state['categories'].keys()
+        with self._read:
+            return self._statefile._state.keys()
 
     def values(self):
         """Get category values.
@@ -563,5 +511,5 @@ class Categories(Limb):
             *values*
                 values present among categories
         """
-        with self._treant._read:
-            return self._treant._state['categories'].values()
+        with self._read:
+            return self._statefile._state.values()

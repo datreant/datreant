@@ -19,7 +19,6 @@ import fnmatch
 from six import string_types
 from six.moves import zip
 
-from . import _AGGLIMBS, _AGGTREELIMBS
 from .trees import Tree, Leaf
 from .names import treantdir_name, treantfile_name
 
@@ -270,9 +269,6 @@ class View(CollectionMixin):
         setattr(cls, limb._name,
                 property(getter, None, None, limb.__doc__))
 
-        if limb._name in _AGGTREELIMBS:
-            cls._classagglimbs.add(limb._name)
-
     def _attach_aggtreelimb(self, limb):
         """Attach an aggtreelimb.
 
@@ -281,9 +277,6 @@ class View(CollectionMixin):
             setattr(self, limb._name, limb(self))
         except AttributeError:
             pass
-
-        if limb._name in _AGGTREELIMBS:
-            self._agglimbs.add(limb._name)
 
     def attach(self, *aggtreelimbname):
         """Attach aggtreelimbs by name to this View. Attaches corresponding limb
@@ -527,7 +520,7 @@ class View(CollectionMixin):
 
         """
         for member in self:
-            self.make()
+            member.make()
 
         return self
 
@@ -690,9 +683,6 @@ class Bundle(CollectionMixin):
         setattr(cls, limb._name,
                 property(getter, setter, None, limb.__doc__))
 
-        if limb._name in _AGGTREELIMBS or limb._name in _AGGLIMBS:
-            cls._classagglimbs.add(limb._name)
-
     def _attach_agglimb(self, limb):
         """Attach an agglimb.
 
@@ -701,9 +691,6 @@ class Bundle(CollectionMixin):
             setattr(self, limb._name, limb(self))
         except AttributeError:
             pass
-
-        if limb._name in _AGGTREELIMBS or limb._name in _AGGLIMBS:
-            self._agglimbs.add(limb._name)
 
     def attach(self, *agglimbname):
         """Attach agglimbs by name to this collection. Attaches corresponding limb

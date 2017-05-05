@@ -284,6 +284,9 @@ class FileSerial(File):
             try:
                 self._pull_state()
                 yield self._state
+            except (FileNotFoundError, IOError):
+                self._init_state(self)
+                yield self._state
             finally:
                 self._release_lock()
 
@@ -297,7 +300,7 @@ class FileSerial(File):
             try:
                 self._pull_state()
             except IOError:
-                self._init_state()
+                self._init_state(self)
             try:
                 yield self._state
                 self._push_state()
@@ -331,6 +334,13 @@ class FileSerial(File):
 
 
 class JSONFile(FileSerial):
+    def __init__(self, filename, init_state, **kwargs):
+
+        super(JSONFile, self).__init__(filename, **kwargs)
+
+        # set _init_state function that given
+        self._init_state = init_state
+
     def _deserialize(self, handle):
         return json.load(handle)
 

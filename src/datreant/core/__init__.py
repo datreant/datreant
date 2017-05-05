@@ -13,11 +13,6 @@ datreant.core --- persistent, pythonic trees for heterogeneous data
 # global registries of classes. Must be imported first! Other modules will try
 # to import them and fail if they don't exist already
 
-_TREELIMBS = dict()
-_LIMBS = dict()
-_AGGTREELIMBS = dict()
-_AGGLIMBS = dict()
-
 # Bring some often used objects into the current namespace
 from .manipulators import discover
 from .treants import Treant

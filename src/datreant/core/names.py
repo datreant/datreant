@@ -1,2 +1,2 @@
 treantdir_name = '.datreant'
-treantfile_name = 'state.json'
+treantfile_name = 'core.json'

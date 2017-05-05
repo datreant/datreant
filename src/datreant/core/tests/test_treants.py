@@ -83,6 +83,7 @@ class TestTreant(TestTree):
                 mp.sideeffect = OSError(os.errno.ENOSPC, 'Mock - disk full')
                 with pytest.raises(OSError) as error:
                     t = Treant('new')
+                    t.tags.add('worthless')
                     assert error.errno == os.errno.ENOSPC
 
     def test_gen_OSError13(self, tmpdir):
@@ -91,6 +92,7 @@ class TestTreant(TestTree):
                 mp.sideeffect = OSError(os.errno.EACCES, 'Mock - disk full')
                 with pytest.raises(OSError) as error:
                     t = Treant('new')
+                    t.tags.add('worthless')
                     assert error.errno == os.errno.EACCES
                     assert ("Permission denied; cannot create 'new'"
                             in str(error))
@@ -114,21 +116,21 @@ class TestTreant(TestTree):
         with tmpdir.as_cwd():
             # 1
             t1 = Treant('newone')
-            assert os.path.exists(t1._treantfile)
+            assert os.path.exists(t1._treantdir)
 
             # 2
             os.mkdir('another')
             t2 = Treant('another')
-            assert os.path.exists(t2._treantfile)
+            assert os.path.exists(t2._treantdir)
 
             # 3
             t3 = Treant('yet/another')
-            assert os.path.exists(t3._treantfile)
+            assert os.path.exists(t3._treantdir)
 
             # 4
             os.mkdir('yet/more')
             t4 = Treant('yet/more')
-            assert os.path.exists(t4._treantfile)
+            assert os.path.exists(t4._treantdir)
 
     @pytest.mark.parametrize("tags", (None, [], ['small', 'spiky']))
     @pytest.mark.parametrize("categories", (None, {}, {'colour': 'red'}))

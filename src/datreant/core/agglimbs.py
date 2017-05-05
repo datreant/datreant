@@ -6,47 +6,18 @@ limbs but serve as aggregators over collections of them.
 """
 import itertools
 import functools
-from six import string_types, with_metaclass
+from six import string_types
 
 from fuzzywuzzy import process
 
-from . import _AGGTREELIMBS, _AGGLIMBS
 from .collections import Bundle
 from .limbs import Tags, Categories
 
 
-class _AggTreeLimbmeta(type):
-    def __init__(cls, name, bases, classdict):
-        type.__init__(type, name, bases, classdict)
-
-        limbname = classdict['_name']
-        _AGGTREELIMBS[limbname] = cls
-
-
-class _AggLimbmeta(type):
-    def __init__(cls, name, bases, classdict):
-        type.__init__(type, name, bases, classdict)
-
-        limbname = classdict['_name']
-        _AGGLIMBS[limbname] = cls
-
-
-class AggTreeLimb(with_metaclass(_AggTreeLimbmeta, object)):
-    """Core functionality for limbs attached to a View.
-
-    """
-    _name = 'aggtreelimb'
-
-    def __init__(self, collection):
-        self._collection = collection
-
-
-class AggLimb(with_metaclass(_AggLimbmeta, object)):
+class AggLimb(object):
     """Core functionality for limbs attached to a collection of Treants.
 
     """
-    _name = 'agglimb'
-
     def __init__(self, collection):
         self._collection = collection
 
@@ -56,6 +27,7 @@ class AggTags(AggLimb):
     """Interface to aggregated tags.
 
     """
+    _single = Tags
     _name = 'tags'
 
     def __init__(self, collection):
@@ -298,6 +270,7 @@ class AggCategories(AggLimb):
     """Interface to categories.
 
     """
+    _single = Categories
     _name = 'categories'
 
     def __init__(self, collection):
