@@ -36,12 +36,12 @@ class Treant(Tree):
     """
 
     def __getattribute__(self, attr):
-
-        super(Treant, self).__getattribute__('_make_treantdir')()
+        if attr != '__setstate__':
+            super(Treant, self).__getattribute__('_make_treantdir')()
 
         return super(Treant, self).__getattribute__(attr)
-        
-    def _make_treantdir(self, ):
+
+    def _make_treantdir(self):
         abspath = super(Treant, self).__getattribute__('_path').absolute()
         treantdir = os.path.join(abspath, treantdir_name)
 
@@ -62,6 +62,9 @@ class Treant(Tree):
             treant = treant.abspath
 
         super(Treant, self).__init__(treant)
+
+        # make treantdir
+        self._make_treantdir()
 
         if tags:
             self.tags.add(tags)
@@ -87,10 +90,11 @@ class Treant(Tree):
         return "<Treant: '{}'>".format(self.name)
 
     def __getstate__(self):
-        return self.abspath
+        return {'path': self._path}
 
     def __setstate__(self, state):
-        self.__init__(state)
+        self._path = state['path']
+        self.__init__(state['path'].absolute())
 
     def __hash__(self):
         return hash(self.abspath)

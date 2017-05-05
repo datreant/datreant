@@ -798,12 +798,9 @@ class Bundle(CollectionMixin):
     def names(self):
         """Return a list of member names.
 
-        Members that can't be found will have name ``None``.
-
         :Returns:
             *names*
-                list giving the name of each member, in order;
-                members that are missing will have name ``None``
+                list giving the name of each member, in order
 
         """
         names = list()
@@ -819,38 +816,32 @@ class Bundle(CollectionMixin):
     def abspaths(self):
         """Return a list of absolute member directory paths.
 
-        Members that can't be found will have path ``None``.
 
         :Returns:
             *names*
                 list giving the absolute directory path of each member, in
-                order; members that are missing will have path ``None``
+                order
 
         """
-        return [member.abspath if member else None for member in self._list()]
+        return [member.abspath for member in self._list()]
 
     @property
     def relpaths(self):
         """Return a list of relative member directory paths.
 
-        Members that can't be found will have path ``None``.
-
         :Returns:
             *names*
                 list giving the relative directory path of each member, in
-                order; members that are missing will have path ``None``
+                order
 
         """
-        return [member.relpath if member else None for member in self._list()]
+        return [member.relpath for member in self._list()]
 
     def _list(self):
         """Return a list of members.
 
         Note: modifications of this list won't modify the members of the
         collection!
-
-        Missing members will be present in the list as ``None``. This method is
-        not intended for user-level use.
 
         """
         from .treants import Treant
@@ -863,11 +854,9 @@ class Bundle(CollectionMixin):
         for abspath in abspaths:
             if abspath in self._cache:
                 memberlist.append(self._cache[abspath])
-            elif os.path.exists(os.path.join(abspath, treantdir_name)):
+            else:
                 self._cache[abspath] = Treant(abspath)
                 memberlist.append(self._cache[abspath])
-            else:
-                memberlist.append(None)
 
         return memberlist
 
