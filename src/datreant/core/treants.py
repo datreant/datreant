@@ -9,7 +9,7 @@ from pathlib2 import Path
 
 from .collections import Bundle
 from .trees import Tree
-from .names import treantdir_name, treantfile_name
+from .names import treantdir_name
 from .util import makedirs
 
 
@@ -34,12 +34,6 @@ class Treant(Tree):
         list with user-defined strings; like categories, but useful for
         adding many distinguishing descriptors
     """
-
-    def __getattribute__(self, attr):
-        if attr != '__setstate__':
-            super(Treant, self).__getattribute__('_make_treantdir')()
-
-        return super(Treant, self).__getattribute__(attr)
 
     def _make_treantdir(self):
         abspath = super(Treant, self).__getattribute__('_path').absolute()
@@ -127,13 +121,6 @@ class Treant(Tree):
 
         """
         return super(Treant, self).name
-
-    @property
-    def tree(self):
-        """This Treant's directory as a Tree.
-
-        """
-        return Tree(self.abspath, limbs=self.limbs)
 
     @property
     def _treantdir(self):

@@ -1,0 +1,3 @@
+class NotATreantError(Exception):
+    pass
+

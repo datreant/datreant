@@ -20,7 +20,8 @@ from six import string_types
 from six.moves import zip
 
 from .trees import Tree, Leaf
-from .names import treantdir_name, treantfile_name
+from .names import treantdir_name
+from .exceptions import NotATreantError
 
 
 @functools.total_ordering
@@ -121,6 +122,46 @@ class CollectionMixin(object):
             self._loc = _Loc(self)
 
         return self._loc
+
+    @property
+    def treeloc(self):
+        """Get a View giving Tree at `path` relative to each Tree in
+        collection.
+
+        Use with getitem syntax, e.g. ``.loc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If the given path resolves to an existing file for any Tree, then a
+        ``ValueError`` will be raised.
+
+        """
+        if not hasattr(self, "_treeloc"):
+            self._treeloc = _TreeLoc(self)
+
+        return self._treeloc
+
+    @property
+    def leafloc(self):
+        """Get a View giving Leaf at `path` relative to each Tree in
+        collection.
+
+        Use with getitem syntax, e.g. ``.loc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If the given path resolves to an existing directory for any Tree, then
+        a ``ValueError`` will be raised.
+
+        """
+        if not hasattr(self, "_leafloc"):
+            self._leafloc = _LeafLoc(self)
+
+        return self._leafloc
 
     @property
     def limbs(self):
@@ -324,7 +365,7 @@ class View(CollectionMixin):
             elif isinstance(veg, (View, Bundle)):
                 self.add(*list(veg))
             elif isinstance(veg, Treant):
-                outconts.append(veg.tree)
+                outconts.append(Tree(veg))
             elif isinstance(veg, Veg):
                 outconts.append(veg)
             elif (isinstance(veg, string_types) and
@@ -723,9 +764,8 @@ class Bundle(CollectionMixin):
 
         :Arguments:
             *treants*
-                treants to be added, which may be nested lists of treants;
-                treants can be given as either objects or paths to directories
-                that contain treant statefiles
+                Treants to be added, which may be nested lists/tuples of Treants,
+                Bundles, individual Treants or paths to existing Treants
         """
         from .treants import Treant
 
@@ -745,10 +785,16 @@ class Bundle(CollectionMixin):
                 treantdir = os.path.join(treant.abspath, treantdir_name)
                 if os.path.exists(treantdir):
                     abspaths.extend(treant.abspath)
+                else:
+                    raise NotATreantError("Directory '{}' is "
+                                          "not a Treant".format(treant))
             elif os.path.exists(treant):
                 treantdir = os.path.join(treant, treantdir_name)
                 if os.path.exists(treantdir):
                     abspaths.append(os.path.abspath(treant))
+                else:
+                    raise NotATreantError("Directory '{}' is "
+                                          "not a Treant".format(treant))
             else:
                 raise TypeError("'{}' not a valid input "
                                 "for Bundle".format(treant))
@@ -760,7 +806,7 @@ class Bundle(CollectionMixin):
 
         :Arguments:
             *members*
-                instances or indices of the members to remove
+                instances, indices, or absolute paths of the members to remove
 
         """
         from .treants import Treant
@@ -774,9 +820,9 @@ class Bundle(CollectionMixin):
             elif isinstance(member, Treant):
                 remove.append(member.abspath)
             elif isinstance(member, string_types):
-                names = fnmatch.filter(self.names, member)
+                abspaths = fnmatch.filter(self.abspaths, member)
                 paths = [member.abspath for member in self
-                         if member.name in names]
+                         if member.abspath in abspaths]
                 remove.extend(paths)
 
             else:
@@ -854,9 +900,12 @@ class Bundle(CollectionMixin):
         for abspath in abspaths:
             if abspath in self._cache:
                 memberlist.append(self._cache[abspath])
-            else:
+            elif os.path.exists(os.path.join(abspath, treantdir_name)):
                 self._cache[abspath] = Treant(abspath)
                 memberlist.append(self._cache[abspath])
+            else:
+                raise NotATreantError("Directory '{}' is "
+                                      "not a Treant.".format(abspath))
 
         return memberlist
 
@@ -967,7 +1016,7 @@ class Bundle(CollectionMixin):
 
 
 class _Loc(object):
-    """Subtree accessor for collections."""
+    """Path accessor for collections."""
 
     def __init__(self, collection):
         self._collection = collection
@@ -978,3 +1027,25 @@ class _Loc(object):
         """
         return View([t[path] for t in self._collection
                      if isinstance(t, Tree)], limbs=self._collection.limbs)
+
+
+class _TreeLoc(_Loc):
+    """Tree accessor for collections."""
+
+    def __getitem__(self, path):
+        """Get Tree at `path` relative to each Tree in collection.
+
+        """
+        return View([t.treeloc[path] for t in self._collection
+                     if isinstance(t, Tree)], limbs=self._collection.limbs)
+
+
+class _LeafLoc(_Loc):
+    """Leaf accessor for collections."""
+
+    def __getitem__(self, path):
+        """Get Leaf at `path` relative to each Tree in collection.
+
+        """
+        return View([t.leafloc[path] for t in self._collection
+                     if isinstance(t, Tree)])

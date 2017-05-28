@@ -46,10 +46,9 @@ def discover(dirpath='.', depth=None, treantdepth=None):
     treantdirs = set()
 
     for root, dirs, files in scandir.walk(dirpath):
-        if (treantdir_name in dirs) and (treantdepth is not None):
+        if (treantdir_name in dirs):
             treantdirs.add(root)
-
-        found.append(root)
+            found.append(root)
 
         # depth check; if too deep, empty dirs to avoid downward traversal
         if depth is not None and len(root.split(os.sep)) - startdepth >= depth:

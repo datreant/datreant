@@ -164,7 +164,13 @@ class Tree(Veg):
 
     """
     def __init__(self, dirpath, limbs=None):
-        if os.path.isfile(dirpath):
+        if isinstance(dirpath, Tree):
+            if limbs is None:
+                limbs = dirpath.limbs
+
+            dirpath = dirpath.abspath
+            
+        elif os.path.isfile(dirpath):
             raise ValueError("'{}' is an existing file; "
                              "a Tree must be a directory".format(dirpath))
 
@@ -276,7 +282,7 @@ class Tree(Veg):
 
     @property
     def loc(self):
-        """Get Tree/Leaf at `path` relative to Tree.
+        """Get Tree/Leaf at relative `path`.
 
         Use with getitem syntax, e.g. ``.loc['some name']``
 
@@ -297,6 +303,44 @@ class Tree(Veg):
             self._loc = _Loc(self)
 
         return self._loc
+
+    @property
+    def treeloc(self):
+        """Get Tree at relative `path`.
+
+        Use with getitem syntax, e.g. ``.treeloc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If the given path resolves to an existing file, then a ``ValueError``
+        will be raised.
+
+        """
+        if not hasattr(self, "_treeloc"):
+            self._treeloc = _TreeLoc(self)
+
+        return self._treeloc
+
+    @property
+    def leafloc(self):
+        """Get Leaf at relative `path`.
+
+        Use with getitem syntax, e.g. ``.treeloc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If the given path resolves to an existing directory, then a ``ValueError``
+        will be raised.
+
+        """
+        if not hasattr(self, "_leafloc"):
+            self._leafloc = _LeafLoc(self)
+
+        return self._leafloc
 
     @property
     def abspath(self):
@@ -550,7 +594,7 @@ class Tree(Veg):
 
 
 class _Loc(object):
-    """Subtree accessor for Trees."""
+    """Path accessor for Trees."""
 
     def __init__(self, tree):
         self._tree = tree
@@ -560,3 +604,23 @@ class _Loc(object):
 
         """
         return self._tree[path]
+
+
+class _TreeLoc(_Loc):
+    """Tree accessor for Trees."""
+
+    def __getitem__(self, path):
+        """Get Tree at `path` relative to attached Tree.
+
+        """
+        return Tree(self._tree[path].abspath)
+
+
+class _LeafLoc(_Loc):
+    """Leaf accessor for Trees."""
+
+    def __getitem__(self, path):
+        """Get Leaf at `path` relative to attached Tree.
+
+        """
+        return Leaf(self._tree[path].abspath)

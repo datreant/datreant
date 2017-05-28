@@ -24,6 +24,9 @@ class Limb(object):
 
 class MetadataLimb(Limb):
 
+    #TODO; raise meaningful exceptions when file can't be read, written, read and nonexistent, missing,
+    # or treantdir missing
+
     @property
     def _write(self):
         self._statefile = JSONFile(os.path.join(self._treant._treantdir,
