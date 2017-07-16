@@ -199,7 +199,8 @@ class View(CollectionMixin):
                 pass
 
     def __repr__(self):
-        return "<View({})>".format(self._list())
+        names = [i.name if isinstance(i, Leaf) else i.name + '/' for i in self._list()]
+        return "<View({})>".format(names)
 
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
@@ -598,7 +599,7 @@ class Bundle(CollectionMixin):
                     pass
 
     def __repr__(self):
-        return "<Bundle({})>".format(self._list())
+        return "<Bundle({})>".format(self.names)
 
     def __str__(self):
         out = "<- Bundle ->\n"
