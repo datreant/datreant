@@ -169,7 +169,7 @@ class Tree(Veg):
                 limbs = dirpath.limbs
 
             dirpath = dirpath.abspath
-            
+
         elif os.path.isfile(dirpath):
             raise ValueError("'{}' is an existing file; "
                              "a Tree must be a directory".format(dirpath))
@@ -333,8 +333,8 @@ class Tree(Veg):
         - A single name
         - A list or array of names
 
-        If the given path resolves to an existing directory, then a ``ValueError``
-        will be raised.
+        If the given path resolves to an existing directory, then a
+        ``ValueError`` will be raised.
 
         """
         if not hasattr(self, "_leafloc"):

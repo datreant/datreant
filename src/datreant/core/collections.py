@@ -199,7 +199,8 @@ class View(CollectionMixin):
                 pass
 
     def __repr__(self):
-        names = [i.name if isinstance(i, Leaf) else i.name + '/' for i in self._list()]
+        names = [i.name if isinstance(i, Leaf) else i.name + '/'
+                 for i in self._list()]
         return "<View({})>".format(names)
 
     def __getitem__(self, index):
@@ -765,8 +766,9 @@ class Bundle(CollectionMixin):
 
         :Arguments:
             *treants*
-                Treants to be added, which may be nested lists/tuples of Treants,
-                Bundles, individual Treants or paths to existing Treants
+                Treants to be added, which may be nested lists/tuples of
+                Treants, Bundles, individual Treants or paths to existing
+                Treants
         """
         from .treants import Treant
 
@@ -807,7 +809,8 @@ class Bundle(CollectionMixin):
 
         :Arguments:
             *members*
-                instances, indices, or absolute paths of the members to remove
+                instances, indices, names, or absolute paths of the members to
+                remove
 
         """
         from .treants import Treant
@@ -821,13 +824,21 @@ class Bundle(CollectionMixin):
             elif isinstance(member, Treant):
                 remove.append(member.abspath)
             elif isinstance(member, string_types):
+
+                # try abspaths
                 abspaths = fnmatch.filter(self.abspaths, member)
                 paths = [member.abspath for member in self
                          if member.abspath in abspaths]
                 remove.extend(paths)
 
+                # try names
+                names = fnmatch.filter(self.names, member)
+                paths = [member.abspath for member in self
+                         if member.name in names]
+                remove.extend(paths)
             else:
-                raise TypeError('Only an integer or treant acceptable')
+                raise TypeError('Only a Treant, index, name, or absolute '
+                                'path acceptable')
 
         self._del_members(remove)
 
