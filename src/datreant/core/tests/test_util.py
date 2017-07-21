@@ -8,7 +8,7 @@ import datreant.core as dtr
 class TestMakedirs(object):
     def test_makedirs(self, tmpdir):
         with tmpdir.as_cwd():
-            dtr.util.makedirs('this/should/exist')
+            dtr.util.makedirs('this/should/exist', exists_ok=True)
             assert os.path.exists('this/should/exist')
             assert os.path.isdir('this/should/exist')
 
@@ -16,7 +16,7 @@ class TestMakedirs(object):
         # try and make a dir twice
         with tmpdir.as_cwd():
             os.mkdir('this/')
-            dtr.util.makedirs('this/')
+            dtr.util.makedirs('this/', exists_ok=True)
             assert os.path.exists('this/')
             assert os.path.isdir('this/')
 
@@ -29,5 +29,5 @@ class TestMakedirs(object):
                 # check the specific error code
                 # ie check we don't mangle it enroute
                 with pytest.raises(OSError) as error:
-                    dtr.util.makedirs('this/should/fail')
+                    dtr.util.makedirs('this/should/fail', exists_ok=True)
                     assert error.errno == os.errno.ENOSPC

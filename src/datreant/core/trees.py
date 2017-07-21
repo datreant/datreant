@@ -121,7 +121,7 @@ class Leaf(Veg):
                 this leaf
 
         """
-        makedirs(os.path.dirname(str(self.path)))
+        makedirs(os.path.dirname(str(self.path)), exists_ok=True)
 
         return self
 
@@ -540,7 +540,7 @@ class Tree(Veg):
                 this tree
 
         """
-        makedirs(str(self.path))
+        makedirs(str(self.path), exists_ok=True)
 
         return self
 
