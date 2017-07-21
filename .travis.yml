@@ -25,7 +25,7 @@ install:
 
 # run tests
 script: 
-  - py.test --cov src/datreant --pep8 src/datreant
+  - py.test --cov src/datreant --pep8 src/datreant -v
 
 after_success:
   - codecov
