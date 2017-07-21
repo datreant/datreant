@@ -2,6 +2,7 @@
 Treants: the organizational units for :mod:`datreant`.
 
 """
+import os
 import functools
 import six
 from pathlib2 import Path
@@ -123,4 +124,4 @@ class Treant(Tree):
 
     @property
     def _treantdir(self):
-        return self.abspath / treantdir_name
+        return os.path.join(self.abspath, treantdir_name)
