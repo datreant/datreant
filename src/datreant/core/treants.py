@@ -2,7 +2,6 @@
 Treants: the organizational units for :mod:`datreant`.
 
 """
-import os
 import functools
 import six
 from pathlib2 import Path
@@ -37,9 +36,9 @@ class Treant(Tree):
 
     def _make_treantdir(self):
         abspath = super(Treant, self).__getattribute__('_path').absolute()
-        treantdir = os.path.join(abspath, treantdir_name)
+        treantdir = abspath / treantdir_name
 
-        if not os.path.exists(treantdir):
+        if not treantdir.exists():
             # build datreant dir; stop if we hit a permissions error
             try:
                 makedirs(treantdir)
@@ -124,4 +123,4 @@ class Treant(Tree):
 
     @property
     def _treantdir(self):
-        return os.path.join(self.abspath, treantdir_name)
+        return self.abspath / treantdir_name
