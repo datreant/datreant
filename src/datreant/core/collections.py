@@ -824,17 +824,15 @@ class Bundle(CollectionMixin):
             elif isinstance(member, Treant):
                 remove.append(member.abspath)
             elif isinstance(member, string_types):
-
                 # try abspaths
                 abspaths = fnmatch.filter(self.abspaths, member)
-                paths = [member.abspath for member in self
-                         if member.abspath in abspaths]
+                paths = [m.abspath for m in self
+                         if m.abspath in abspaths]
                 remove.extend(paths)
-
                 # try names
                 names = fnmatch.filter(self.names, member)
-                paths = [member.abspath for member in self
-                         if member.name in names]
+                paths = [m.abspath for m in self
+                         if m.name in names]
                 remove.extend(paths)
             else:
                 raise TypeError('Only a Treant, index, name, or absolute '
