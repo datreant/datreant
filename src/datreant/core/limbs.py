@@ -99,14 +99,14 @@ class Tags(MetadataLimb):
         with self._read:
             if isinstance(value, list):
                 # a list of tags gives only members with ALL the tags
-                fits = all([self._getselection(item) for item in value])
+                fits = all(self._getselection(item) for item in value)
             elif isinstance(value, tuple):
                 # a tuple of tags gives members with ANY of the tags
-                fits = any([self._getselection(item) for item in value])
+                fits = any(self._getselection(item) for item in value)
             if isinstance(value, set):
                 # a set of tags gives only members WITHOUT ALL the tags
                 # can be used for `not`, basically
-                fits = not all([self._getselection(item) for item in value])
+                fits = not all(self._getselection(item) for item in value)
             elif isinstance(value, string_types):
                 fits = value in self
 
