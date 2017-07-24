@@ -23,10 +23,12 @@ class _py_file(object):
     def fileno(self):
         return self.fh
 
+
 def _open(fname, flag):
     """wrapper of os.open that returns _py_file"""
     fh = os.open(fname, flag)
     return _py_file(fh)
+
 
 def _close(fh):
     """wrapper of os.close that returns _py_file"""
