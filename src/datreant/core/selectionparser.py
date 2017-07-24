@@ -72,6 +72,27 @@ Parser = searchExpr + stringEnd
 
 
 def parse_selection(sel):
+    """
+    Parse a tag selection string and convert it to the default list/tuple/set 
+    tag selections. If the selection can't be parsed the original selection 
+    is returned.
+
+    Parameters
+    ----------
+    sel : str
+        selection string
+
+    Returns
+    -------
+    list/tuple/set representation used to filter tags
+
+    Example
+    -------
+    >>> parse_selection('food and drinks and not poison')
+    ['food', 'drinks', {'poison'}]
+    >>> parse_selection('free beer')
+    'free beer'
+    """
     try:
         return Parser.parseString(sel)[0].generate_tag_expr()
     except ParseException:
