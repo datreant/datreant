@@ -15,31 +15,6 @@ if six.PY2:
     FileNotFoundError = IOError
 
 
-class _py_file(object):
-    """minimal io.File wrapper for portalocker to use os.open"""
-    def __init__(self, fh):
-        self.fh = fh
-
-    def fileno(self):
-        return self.fh
-
-    @staticmethod
-    def tell():
-        """evil hack for windows locking might fail!"""
-        return 0
-
-
-def _open(fname, flag):
-    """wrapper of os.open that returns _py_file"""
-    fh = os.open(fname, flag)
-    return _py_file(fh)
-
-
-def _close(fh):
-    """wrapper of os.close that returns _py_file"""
-    os.close(fh.fileno())
-
-
 class File(object):
     """Generic File object base class. Implements file locking and reloading
     methods.
@@ -71,15 +46,7 @@ class File(object):
         # we create the file if it doesn't exist; if it does, an exception is
         # raised and we catch it; this is necessary to ensure the file exists
         # so we can use it for locks
-        try:
-            fd = _open(self.proxy, os.O_CREAT | os.O_EXCL)
-            _close(fd)
-        except OSError as e:
-            # if we get the error precisely because the file exists, continue
-            if e.errno == 17:
-                pass
-            else:
-                raise
+        open(self.proxy, 'w')
 
     def get_location(self):
         """Get File basedir.
@@ -159,20 +126,20 @@ class File(object):
         to it.
 
         """
-        self.fd = _open(self.proxy, os.O_RDONLY)
+        self.fd = open(self.proxy, 'r')
 
     def _open_fd_rw(self):
         """Open read-write file descriptor for application of advisory locks.
 
         """
-        self.fd = _open(self.proxy, os.O_RDWR)
+        self.fd = open(self.proxy, 'rw')
 
     def _close_fd(self):
         """Close file descriptor used for application of advisory locks.
 
         """
         # close file descriptor for locks
-        _close(self.fd)
+        close(self.fd)
         self.fd = None
 
     def _apply_shared_lock(self):
