@@ -35,4 +35,4 @@ setup(
     tests_require=['numpy', 'pytest>=2.10', 'mock'],
     install_requires=[
         'asciitree', 'pathlib2', 'scandir', 'six', 'fuzzywuzzy',
-        'python-Levenshtein', 'pyparsing'])
+        'python-Levenshtein', 'pyparsing', 'portalocker'])
