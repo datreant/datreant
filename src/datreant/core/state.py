@@ -4,7 +4,7 @@
 
 import os
 import sys
-import fcntl
+import portalocker
 import warnings
 import json
 from functools import wraps
@@ -13,6 +13,24 @@ import six
 
 if six.PY2:
     FileNotFoundError = IOError
+
+
+class _py_file(object):
+    """minimal io.File wrapper for portalocker to use os.open"""
+    def __init__(self, fh):
+        self.fh = fh
+
+    def fileno(self):
+        return self.fh
+
+def _open(fname, flag):
+    """wrapper of os.open that returns _py_file"""
+    fh = os.open(fname, flag)
+    return _py_file(fh)
+
+def _close(fh):
+    """wrapper of os.close that returns _py_file"""
+    os.close(fh.fileno())
 
 
 class File(object):
@@ -47,8 +65,8 @@ class File(object):
         # raised and we catch it; this is necessary to ensure the file exists
         # so we can use it for locks
         try:
-            fd = os.open(self.proxy, os.O_CREAT | os.O_EXCL)
-            os.close(fd)
+            fd = _open(self.proxy, os.O_CREAT | os.O_EXCL)
+            _close(fd)
         except OSError as e:
             # if we get the error precisely because the file exists, continue
             if e.errno == 17:
@@ -69,7 +87,7 @@ class File(object):
     def _shlock(self, fd):
         """Get shared lock on file.
 
-        Using fcntl.lockf, a shared lock on the file is obtained. If an
+        Using portalocker.lock, a shared lock on the file is obtained. If an
         exclusive lock is already held on the file by another process,
         then the method waits until it can obtain the lock.
 
@@ -81,14 +99,14 @@ class File(object):
             *success*
                 True if shared lock successfully obtained
         """
-        fcntl.lockf(fd, fcntl.LOCK_SH)
+        portalocker.lock(fd, portalocker.LOCK_SH)
 
         return True
 
     def _exlock(self, fd):
         """Get exclusive lock on file.
 
-        Using fcntl.lockf, an exclusive lock on the file is obtained. If a
+        Using portalocker.lock, an exclusive lock on the file is obtained. If a
         shared or exclusive lock is already held on the file by another
         process, then the method waits until it can obtain the lock.
 
@@ -100,7 +118,7 @@ class File(object):
             *success*
                 True if exclusive lock successfully obtained
         """
-        fcntl.lockf(fd, fcntl.LOCK_EX)
+        portalocker.lock(fd, portalocker.LOCK_EX)
 
         return True
 
@@ -120,7 +138,7 @@ class File(object):
             *success*
                 True if lock removed
         """
-        fcntl.lockf(fd, fcntl.LOCK_UN)
+        portalocker.lock(fd, portalocker.LOCK_UN)
 
         return True
 
@@ -134,20 +152,20 @@ class File(object):
         to it.
 
         """
-        self.fd = os.open(self.proxy, os.O_RDONLY)
+        self.fd = _open(self.proxy, os.O_RDONLY)
 
     def _open_fd_rw(self):
         """Open read-write file descriptor for application of advisory locks.
 
         """
-        self.fd = os.open(self.proxy, os.O_RDWR)
+        self.fd = _open(self.proxy, os.O_RDWR)
 
     def _close_fd(self):
         """Close file descriptor used for application of advisory locks.
 
         """
         # close file descriptor for locks
-        os.close(self.fd)
+        _close(self.fd)
         self.fd = None
 
     def _apply_shared_lock(self):
