@@ -42,7 +42,7 @@ class Treant(Tree):
         if not treantdir.exists():
             # build datreant dir; stop if we hit a permissions error
             try:
-                makedirs(treantdir, exists_ok=True)
+                makedirs(treantdir, exist_ok=True)
             except OSError as e:
                 if e.errno == 13:
                     raise OSError(13, "Permission denied; " +

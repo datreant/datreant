@@ -1,7 +1,7 @@
 import os
 
 
-def makedirs(path, mode=511, exists_ok=False):
+def makedirs(path, mode=0o777, exist_ok=False):
     """Make directories and all parents necessary.
 
     :Arguments:
@@ -13,7 +13,7 @@ def makedirs(path, mode=511, exists_ok=False):
     except OSError as e:
         # let slide errors that include directories already existing, but
         # catch others
-        if e.errno == 17 and exists_ok:
+        if e.errno == 17 and exist_ok:
             pass
         else:
-            raise
+            raise e
