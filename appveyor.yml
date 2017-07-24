@@ -20,7 +20,7 @@ environment:
 install:
   # We need wheel installed to build wheels
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  - "%PYTHON%\\python.exe -m pip install portalocker"
+  - "%PYTHON%\\python.exe -m pip install git+https://github.com/WoLpH/portalocker.git"
   - "%PYTHON%\\python.exe -m pip install codecov"
   - "%PYTHON%\\python.exe -m pip install pytest-cov"
   - "%PYTHON%\\python.exe -m pip install pytest-pep8"
@@ -50,7 +50,7 @@ after_test:
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
-  # - path: dist\*
+  - path: dist\*
 
 #on_success:
 #  You can use this step to upload your artifacts to a public website.

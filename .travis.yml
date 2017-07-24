@@ -22,7 +22,7 @@ install:
   - pip install pytest-cov
   - pip install pytest-pep8
   - pip install numpy
-  - pip install portalocker
+  - pip install git+https://github.com/WoLpH/portalocker.git
   - pip install -e .
 
 # run tests
