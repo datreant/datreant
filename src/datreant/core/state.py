@@ -23,6 +23,11 @@ class _py_file(object):
     def fileno(self):
         return self.fh
 
+    @staticmethod
+    def tell():
+        """evil hack for windows locking might fail!"""
+        return 0
+
 
 def _open(fname, flag):
     """wrapper of os.open that returns _py_file"""
