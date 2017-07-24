@@ -2,11 +2,13 @@
 files.
 
 """
+from __future__ import absolute_import
 
 import os
 from functools import reduce, total_ordering
 from six import string_types
 
+from collections import OrderedDict
 import scandir
 from pathlib2 import Path
 from asciitree import LeftAligned
@@ -77,12 +79,7 @@ class Veg(object):
         """Parent directory for this path.
 
         """
-        if isinstance(self, Tree):
-            limbs = self._classlimbs | self._limbs
-        else:
-            limbs = None
-
-        return Tree(str(self.path.parent), limbs=limbs)
+        return Tree(str(self.path.parent), limbs=None)
 
     @property
     def name(self):
@@ -100,9 +97,7 @@ class Veg(object):
 
 
 class Leaf(Veg):
-    """A file in the filesystem.
-
-    """
+    """A file in the filesystem."""
 
     def __init__(self, filepath):
         if os.path.isdir(filepath):
@@ -117,9 +112,10 @@ class Leaf(Veg):
     def makedirs(self):
         """Make all directories along path that do not currently exist.
 
-        :Returns:
-            *leaf*
-                this leaf
+        Returns
+        -------
+        leaf : Leaf
+            this leaf
 
         """
         makedirs(os.path.dirname(str(self.path)))
@@ -136,9 +132,10 @@ class Leaf(Veg):
     def make(self):
         """Make the file if it doesn't exit. Equivalent to :meth:`touch`.
 
-        :Returns:
-            *leaf*
-                this leaf
+        Returns
+        -------
+        leaf : Leaf
+            this leaf
 
         """
         self.touch()
@@ -147,9 +144,10 @@ class Leaf(Veg):
     def read(self, size=None):
         """Read file, or up to `size` in bytes.
 
-        :Arguments:
-            *size*
-                extent of the file to read, in bytes
+        Parameters
+        ----------
+        size : int
+            extent of the file to read, in bytes
 
         """
         with open(self.abspath, 'r') as f:
@@ -161,9 +159,7 @@ class Leaf(Veg):
 
 
 class Tree(Veg):
-    """A directory.
-
-    """
+    """A directory."""
     def __init__(self, dirpath, limbs=None):
         if os.path.isfile(dirpath):
             raise ValueError("'{}' is an existing file; "
@@ -233,9 +229,7 @@ class Tree(Veg):
 
     @classmethod
     def _attach_limb_class(cls, limb):
-        """Attach a limb to the class.
-
-        """
+        """Attach a limb to the class."""
         # property definition
         def getter(self):
             if not hasattr(self, "_"+limb._name):
@@ -255,9 +249,7 @@ class Tree(Veg):
             cls._classlimbs.add(limb._name)
 
     def _attach_limb(self, limb):
-        """Attach a limb.
-
-        """
+        """Attach a limb."""
         try:
             setattr(self, limb._name, limb(self))
         except AttributeError:
@@ -267,9 +259,7 @@ class Tree(Veg):
             self._limbs.add(limb._name)
 
     def attach(self, *limbname):
-        """Attach limbs by name to this Tree.
-
-        """
+        """Attach limbs by name to this Tree."""
         for ln in limbname:
             try:
                 limb = _TREELIMBS[ln]
@@ -304,17 +294,20 @@ class Tree(Veg):
 
     @property
     def abspath(self):
-        """Absolute path of ``self.path``.
-
-        """
+        """Absolute path of ``self.path``."""
         return str(self.path.absolute()) + os.sep
 
     @property
     def relpath(self):
-        """Relative path of ``self.path`` from current working directory.
-
-        """
+        """Relative path of ``self.path`` from current working directory."""
         return os.path.relpath(str(self.path)) + os.sep
+
+    @property
+    def parent(self):
+        """Parent directory for this path."""
+        limbs = self._classlimbs | self._limbs
+
+        return Tree(str(self.path.parent), limbs=limbs)
 
     @property
     def leaves(self):
@@ -360,9 +353,7 @@ class Tree(Veg):
 
     @property
     def hidden(self):
-        """A View of the hidden files and directories in this Tree.
-
-        """
+        """A View of the hidden files and directories in this Tree."""
         from .collections import View
 
         if not self.exists:
@@ -396,9 +387,10 @@ class Tree(Veg):
         """Return a View of all child Leaves and Trees matching given globbing
         pattern.
 
-        :Arguments:
-            *pattern*
-               globbing pattern to match files and directories with
+        Parameters
+        ----------
+        pattern
+            globbing pattern to match files and directories with
 
         """
         from .collections import View
@@ -456,9 +448,9 @@ class Tree(Veg):
 
         Parameters
         ----------
-        depth : int
+        depth : int, optional
             Maximum directory depth to display. ``None`` indicates no limit.
-        hidden : bool
+        hidden : bool, optional
             If False, do not show hidden files; hidden directories are still
             shown if they contain non-hidden files or directories.
 
@@ -466,7 +458,7 @@ class Tree(Veg):
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
 
-        tree = {}
+        tree = OrderedDict()
         rootdir = self.abspath.rstrip(os.sep)
         start = rootdir.rfind(os.sep) + 1
         for path, dirs, files in scandir.walk(rootdir):
@@ -482,11 +474,11 @@ class Tree(Veg):
 
             # filter out hidden files, if desired
             if not hidden:
-                outfiles = [file for file in files if file[0] != os.extsep]
+                outfiles = sorted(fn for fn in files if fn[0] != os.extsep)
             else:
-                outfiles = files
+                outfiles = sorted(files)
 
-            subdir = dict.fromkeys(outfiles, {})
+            subdir = OrderedDict.fromkeys(outfiles, {})
             parent[folders[-1]] = subdir
 
         tr = LeftAligned()
@@ -495,9 +487,10 @@ class Tree(Veg):
     def makedirs(self):
         """Make all directories along path that do not currently exist.
 
-        :Returns:
-            *tree*
-                this tree
+        Returns
+        -------
+        Tree
+            This Tree.
 
         """
         makedirs(str(self.path))
