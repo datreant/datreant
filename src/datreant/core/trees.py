@@ -25,6 +25,9 @@ class Veg(object):
     def __init__(self, filepath):
         self._path = Path(os.path.abspath(filepath))
 
+    def __fspath__(self):
+        return str(self._path.absolute())
+
     def __str__(self):
         return str(self.path)
 
