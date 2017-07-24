@@ -521,17 +521,18 @@ class TestTreant(TestTree):
             with pytest.raises(TypeError):
                 treant.categories[key] = val
 
-        def test_None_no_change(self, treant):
-            """Setting a category to ``None`` should not change the value.
+        def test_None_deletes(self, treant):
+            """Setting a category to ``None`` should delete the value.
             """
             treant.categories['bark'] = 'smooth'
             treant.categories['bark'] = None
 
-            assert treant.categories['bark'] == 'smooth'
+            assert 'bark' not in treant.categories
 
+            treant.categories['bark'] = 'smooth'
             treant.categories.add(bark=None)
 
-            assert treant.categories['bark'] == 'smooth'
+            assert 'bark' not in treant.categories
 
         def test_KeyError(self, treant):
             with pytest.raises(KeyError):
