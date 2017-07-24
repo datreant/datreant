@@ -12,6 +12,7 @@ from fuzzywuzzy import process
 
 from .collections import Bundle
 from .state import JSONFile
+from .selectionparser import parse_selection
 
 
 class Limb(object):
@@ -87,17 +88,25 @@ class Tags(MetadataLimb):
             raise TypeError("Can only set with tags, a list, or set")
 
     def __getitem__(self, value):
+        # check if we might have a string to parse into a selection object
+        if isinstance(value, string_types):
+            value = parse_selection(value)
+        return self._getselection(value)
+
+    def _getselection(self, value):
+        """get tags according to a selection
+        """
         with self._read:
             if isinstance(value, list):
                 # a list of tags gives only members with ALL the tags
-                fits = all([self[item] for item in value])
+                fits = all(self._getselection(item) for item in value)
             elif isinstance(value, tuple):
                 # a tuple of tags gives members with ANY of the tags
-                fits = any([self[item] for item in value])
+                fits = any(self._getselection(item) for item in value)
             if isinstance(value, set):
                 # a set of tags gives only members WITHOUT ALL the tags
                 # can be used for `not`, basically
-                fits = not all([self[item] for item in value])
+                fits = not all(self._getselection(item) for item in value)
             elif isinstance(value, string_types):
                 fits = value in self
 
