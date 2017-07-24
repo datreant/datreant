@@ -70,6 +70,7 @@ searchExpr = operatorPrecedence(searchTerm, [
 ])
 Parser = searchExpr + stringEnd
 
+
 def parse_selection(sel):
     try:
         return Parser.parseString(sel)[0].generate_tag_expr()

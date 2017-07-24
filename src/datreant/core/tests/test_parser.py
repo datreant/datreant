@@ -13,8 +13,8 @@ def test_names(expr):
 
 
 @pytest.mark.parametrize("expr, typename", (("foo and bar", list),
-                                           ("foo or bar", tuple),
-                                           ("not foo", set)))
+                                            ("foo or bar", tuple),
+                                            ("not foo", set)))
 def test_type_operation(expr, typename):
     sel = parse_selection(expr)
     assert isinstance(sel, typename)
