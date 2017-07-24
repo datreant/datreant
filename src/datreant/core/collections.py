@@ -524,10 +524,10 @@ class View(CollectionMixin):
             results = {member.abspath: pool.apply_async(
                     function, args=(member,), kwds=kwargs) for member in self}
 
-            output = {key: results[key].get() for key in results}
-
             pool.close()
             pool.join()
+
+            output = {key: results[key].get() for key in results}
 
             # sort by member order
             results = [output[abspath] for abspath in self.abspaths]

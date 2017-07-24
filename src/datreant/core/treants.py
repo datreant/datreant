@@ -84,11 +84,10 @@ class Treant(Tree):
         return "<Treant: '{}'>".format(self.name)
 
     def __getstate__(self):
-        return {'path': self._path}
+        return self.abspath
 
     def __setstate__(self, state):
-        self._path = state['path']
-        self.__init__(state['path'].absolute())
+        self.__init__(state)
 
     def __hash__(self):
         return hash(self.abspath)
