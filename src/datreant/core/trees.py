@@ -502,8 +502,7 @@ class Tree(Veg):
         depth : int
             Maximum directory depth to display. ``None`` indicates no limit.
         hidden : bool
-            If False, do not show hidden files; hidden directories are still
-            shown if they contain non-hidden files or directories.
+            If True, show hidden files and directories.
 
         """
         if not self.exists:
@@ -523,9 +522,12 @@ class Tree(Veg):
             elif depth and len(folders) > depth+1:
                 continue
 
-            # filter out hidden files, if desired
+            # filter out hidden files and directories, if desired
             if not hidden:
                 outfiles = [file for file in files if file[0] != os.extsep]
+                hidden_dirs = [d for d in dirs if d[0] == os.extsep]
+                for d in hidden_dirs:
+                    dirs.remove(d)
             else:
                 outfiles = files
 
