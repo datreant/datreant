@@ -32,7 +32,7 @@ class File(object):
 
     """
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename):
         self.filename = os.path.abspath(filename)
         self.handle = None
         self.fd = None
