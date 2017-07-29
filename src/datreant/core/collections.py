@@ -73,6 +73,57 @@ class CollectionMixin(object):
                              "".format(self.__class__.__name__))
         return out
 
+    def leaves(self, hidden=False):
+        """Return a View of the files within the member Trees.
+
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden files.
+
+        Returns
+        -------
+        View
+            A View giving the files in the member Trees.
+
+        """
+        return View([member.leaves(hidden=hidden)
+                     for member in self.membertrees], limbs=self.limbs)
+
+    def trees(self, hidden=False):
+        """Return a View of the directories within the member Trees.
+
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden directories.
+
+        Returns
+        -------
+        View
+            A View giving the directories in the member Trees.
+
+        """
+        return View([member.trees(hidden=hidden)
+                     for member in self.membertrees], limbs=self.limbs)
+
+    def children(self, hidden=False):
+        """Return a View of all files and directories within the member Trees.
+
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden files and directories.
+
+        Returns
+        -------
+        View
+            A View giving the files and directories in the member Trees.
+
+        """
+        return View([member.children(hidden=hidden)
+                     for member in self.membertrees], limbs=self.limbs)
+
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees of members matching
         given globbing pattern.
@@ -432,42 +483,6 @@ class View(CollectionMixin):
 
         """
         return View([member for member in self if isinstance(member, Leaf)],
-                    limbs=self.limbs)
-
-    @property
-    def children(self):
-        """A View of all children within the member Trees.
-
-        """
-        return View([member.children for member in self.membertrees],
-                    limbs=self.limbs)
-
-    @property
-    def trees(self):
-        """A View of directories within the member Trees.
-
-        Hidden directories are not included.
-
-        """
-        return View([member.trees for member in self.membertrees],
-                    limbs=self.limbs)
-
-    @property
-    def leaves(self):
-        """A View of the files within the member Trees.
-
-        Hidden files are not included.
-
-        """
-        return View([member.leaves for member in self.membertrees],
-                    limbs=self.limbs)
-
-    @property
-    def hidden(self):
-        """A View of the hidden files and directories within the member Trees.
-
-        """
-        return View([member.hidden for member in self.membertrees],
                     limbs=self.limbs)
 
     @property
@@ -872,9 +887,8 @@ class Bundle(CollectionMixin):
     def abspaths(self):
         """Return a list of absolute member directory paths.
 
-
         :Returns:
-            *names*
+            *abspaths*
                 list giving the absolute directory path of each member, in
                 order
 

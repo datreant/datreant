@@ -352,32 +352,18 @@ class Tree(Veg):
 
         return Tree(str(self.path.parent), limbs=limbs)
 
-    @property
-    def leaves(self):
-        """A View of the files in this Tree.
+    def leaves(self, hidden=False):
+        """Return a View of the files in this Tree.
 
-        Hidden files are not included.
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden files.
 
-        """
-        from .collections import View
-
-        if self.exists:
-            for root, dirs, files in scandir.walk(self.abspath):
-                # remove hidden files
-                out = [Leaf(os.path.join(root, f)) for f in files
-                       if f[0] != os.extsep]
-                break
-
-            out.sort()
-            return View(out, limbs=self.limbs)
-        else:
-            raise OSError("Tree doesn't exist in the filesystem")
-
-    @property
-    def trees(self):
-        """A View of the directories in this Tree.
-
-        Hidden directories are not included.
+        Returns
+        -------
+        View
+            A View with files in this Tree as members.
 
         """
         from .collections import View
@@ -386,45 +372,64 @@ class Tree(Veg):
             raise OSError("Tree doesn't exist in the filesystem")
 
         for root, dirs, files in scandir.walk(self.abspath):
-            # remove hidden directories
-            out = [Tree(os.path.join(root, d), limbs=self.limbs) for d in dirs
-                   if d[0] != os.extsep]
+            if hidden:
+                out = [Leaf(os.path.join(root, f)) for f in files]
+            else:
+                out = [Leaf(os.path.join(root, f)) for f in files
+                       if f[0] != os.extsep]
             break
 
         out.sort()
         return View(out, limbs=self.limbs)
 
-    @property
-    def hidden(self):
-        """A View of the hidden files and directories in this Tree."""
+    def trees(self, hidden=False):
+        """Return a View of the directories in this Tree.
+
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden directories.
+
+        Returns
+        -------
+        View
+            A View with directories in this Tree as members.
+
+        """
         from .collections import View
 
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
+
         for root, dirs, files in scandir.walk(self.abspath):
-            outdirs = [Tree(os.path.join(root, d), limbs=self.limbs)
-                       for d in dirs if d[0] == os.extsep]
-            outdirs.sort()
-
-            outfiles = [Leaf(os.path.join(root, f)) for f in files
-                        if f[0] == os.extsep]
-            outfiles.sort()
-
-            # want directories then files
-            out = outdirs + outfiles
+            if hidden:
+                out = [Tree(os.path.join(root, d), limbs=self.limbs)
+                       for d in dirs]
+            else:
+                out = [Tree(os.path.join(root, d), limbs=self.limbs)
+                       for d in dirs if d[0] != os.extsep]
             break
 
+        out.sort()
         return View(out, limbs=self.limbs)
 
-    @property
-    def children(self):
-        """A View of all files and directories in this Tree.
+    def children(self, hidden=False):
+        """Return a View of all files and directories in this Tree.
 
-        Includes hidden files and directories.
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden files and directories.
+
+        Returns
+        -------
+        View
+            A View with files and directories in this Tree as members.
 
         """
         from .collections import View
-        return View(self.trees + self.leaves + self.hidden, limbs=self.limbs)
+        return View((self.trees(hidden=hidden) +
+                     self.leaves(hidden=hidden)), limbs=self.limbs)
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees matching given globbing
