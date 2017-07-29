@@ -9,7 +9,6 @@ import mock
 import os
 import py
 
-from . import test_collections
 from .test_trees import TestTree
 
 

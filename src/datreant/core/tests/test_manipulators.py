@@ -2,8 +2,6 @@
 
 """
 
-import pytest
-
 import datreant.core as dtr
 from datreant.core.manipulators import discover
 

@@ -3,11 +3,8 @@
 """
 
 import os
-import sys
 import fcntl
-import warnings
 import json
-from functools import wraps
 from contextlib import contextmanager
 import six
 

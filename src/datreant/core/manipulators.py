@@ -4,7 +4,6 @@ User-level functions for manipulating Treants.
 """
 import os
 import scandir
-import fnmatch
 from six.moves import range
 
 from .names import treantdir_name

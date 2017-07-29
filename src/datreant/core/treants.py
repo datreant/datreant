@@ -4,8 +4,6 @@ Treants: the organizational units for :mod:`datreant`.
 """
 import os
 import functools
-import six
-from pathlib2 import Path
 
 from .collections import Bundle
 from .trees import Tree

@@ -4,10 +4,8 @@
 
 import pytest
 import os
-import py
 
-import datreant.core as dtr
-from datreant.core import Veg, Leaf, Tree, Treant
+from datreant.core import Veg, Leaf, Tree
 
 
 class TestVeg(object):

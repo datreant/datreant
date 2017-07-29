@@ -14,7 +14,6 @@ from pathlib2 import Path
 from asciitree import LeftAligned
 
 from .util import makedirs
-from .manipulators import discover
 from .rsync import rsync
 
 

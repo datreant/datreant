@@ -4,7 +4,6 @@ AggLimbs are limbs specifically built for collections, in particular
 limbs but serve as aggregators over collections of them.
 
 """
-import itertools
 import functools
 from six import string_types
 

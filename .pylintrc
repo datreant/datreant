@@ -247,6 +247,7 @@ enable=abstract-class-instantiated,
        yield-outside-function,
        zip-builtin-not-iterating,
        unused-argument,
+       unused-import,
 
 # Things we'd like to try.
 # Procedure:
@@ -267,7 +268,6 @@ enable=abstract-class-instantiated,
        # redefined-outer-name,
        # super-init-not-called,
        # too-many-arguments,
-       # unused-import,
        # unused-variable,
        # wrong-import-order,
 

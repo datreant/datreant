@@ -3,7 +3,6 @@
 """
 
 import datreant.core as dtr
-import pytest
 import os
 import py.path
 

@@ -6,11 +6,9 @@ the state of an object.
 import os
 import functools
 from six import string_types
-from collections import defaultdict
 
 from fuzzywuzzy import process
 
-from .collections import Bundle
 from .state import JSONFile
 from .selectionparser import parse_selection
 

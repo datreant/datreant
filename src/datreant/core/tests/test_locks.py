@@ -2,9 +2,7 @@
 
 """
 
-import string
 import multiprocessing as mp
-import time
 import pytest
 
 from datreant.core import Treant
