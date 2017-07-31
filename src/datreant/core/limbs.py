@@ -16,11 +16,11 @@ from .selectionparser import parse_selection
 
 
 class Limb(object):
-    """Core functionality for Treant limbs.
+    """Core functionality for limbs.
 
     """
-    def __init__(self, treant):
-        self._treant = treant
+    def __init__(self, tree):
+        self._tree = tree
 
 
 class MetadataLimb(Limb):
@@ -30,7 +30,7 @@ class MetadataLimb(Limb):
 
     @property
     def _write(self):
-        self._statefile = JSONFile(os.path.join(self._treant._treantdir,
+        self._statefile = JSONFile(os.path.join(self._tree._treantdir,
                                                 self._statefilename),
                                    init_state=self._init_state)
 
@@ -38,7 +38,7 @@ class MetadataLimb(Limb):
 
     @property
     def _read(self):
-        self._statefile = JSONFile(os.path.join(self._treant._treantdir,
+        self._statefile = JSONFile(os.path.join(self._tree._treantdir,
                                                 self._statefilename),
                                    init_state=self._init_state)
 
