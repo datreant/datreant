@@ -21,11 +21,13 @@ install:
   - pip install pytest-cov
   - pip install pytest-pep8
   - pip install numpy
+  - pip install pytest
   - pip install -e .
 
 # run tests
 script: 
   - py.test --cov src/datreant --pep8 src/datreant -v --doctest-modules
+  - pytest src/datreant
 
 after_success:
   - codecov

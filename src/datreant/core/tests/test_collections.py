@@ -227,13 +227,13 @@ class TestBundle(CollectionsTests):
             return b, (t1, t2, t3)
 
     @pytest.fixture
-    def testtreant(self, tmpdir, request):
+    def testtreant(self, tmpdir):
         with tmpdir.as_cwd():
             t = dtr.Treant('dummytreant')
         return t
 
     @pytest.fixture
-    def testtreant2(self, tmpdir, request):
+    def testtreant2(self, tmpdir):
         with tmpdir.as_cwd():
             t = dtr.Treant('dummytreant2')
         return t
@@ -455,7 +455,7 @@ class TestBundle(CollectionsTests):
                 assert len(collection.tags.all) == 1
                 assert 'stooge' in collection.tags.all
 
-        def test_tags_any(self, collection, testtreant, testtreant2, tmpdir):
+        def test_tags_any(self, collection, tmpdir):
             with tmpdir.as_cwd():
 
                 moe = dtr.Treant('moe',
@@ -571,8 +571,7 @@ class TestBundle(CollectionsTests):
                     trees.tags ^ ['tree']
                 # assert e.value.message == type_error_msg
 
-        def test_tags_getitem(self, collection, testtreant,
-                              testtreant2, tmpdir):
+        def test_tags_getitem(self, collection, tmpdir):
             with tmpdir.as_cwd():
 
                 t1 = dtr.Treant('maple')
@@ -626,7 +625,7 @@ class TestBundle(CollectionsTests):
                 selection = [{'tree', 'new jersey'}, 'deciduous']
                 assert tags[selection] == [False, False]
 
-        def test_tags_fuzzy(self, collection, testtreant, testtreant2, tmpdir):
+        def test_tags_fuzzy(self, collection, tmpdir):
             with tmpdir.as_cwd():
 
                 t1 = dtr.Treant('maple')
@@ -682,8 +681,7 @@ class TestBundle(CollectionsTests):
                 any_mul_njdec = tags.fuzzy(nj_decid, threshold=80, scope='any')
                 assert set(any_mul_njdec) == {'new jersey', 'deciduous'}
 
-        def test_tags_filter(self, collection, testtreant,
-                             testtreant2, tmpdir):
+        def test_tags_filter(self, collection, tmpdir):
             with tmpdir.as_cwd():
 
                 maple = dtr.Treant('maple')
@@ -1046,7 +1044,7 @@ class TestBundle(CollectionsTests):
                         assert v == collection.categories[
                                 collection.categories.keys(scope=scope)[i]]
 
-        def test_categories_groupby(self, collection, testtreant, testtreant2,
+        def test_categories_groupby(self, collection,
                                     tmpdir):
             with tmpdir.as_cwd():
                 t1 = dtr.Treant('maple')

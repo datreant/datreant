@@ -4,7 +4,6 @@ AggLimbs are limbs specifically built for collections, in particular
 limbs but serve as aggregators over collections of them.
 
 """
-import itertools
 import functools
 from six import string_types
 
@@ -52,14 +51,14 @@ class AggTags(AggLimb):
         return out
 
     @staticmethod
-    def _setter(self, val):
+    def _setter(other, val):
         """Used for constructing the property when attaching this Limb to a class.
 
         """
         if isinstance(val, (Tags, list, set)):
             val = list(val)
-            self.tags.clear()
-            self.tags.add(val)
+            other.tags.clear()
+            other.tags.add(val)
         else:
             raise TypeError("Can only set with tags, a list, or set")
 
@@ -295,14 +294,14 @@ class AggCategories(AggLimb):
         return out
 
     @staticmethod
-    def _setter(self, val):
+    def _setter(other, val):
         """Used for constructing the property when attaching this Limb to a class.
 
         """
         if isinstance(val, (Categories, dict)):
             val = dict(val)
-            self.categories.clear()
-            self.categories.add(val)
+            other.categories.clear()
+            other.categories.add(val)
         else:
             raise TypeError("Can only set with categories or dict")
 

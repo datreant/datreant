@@ -6,11 +6,9 @@ the state of an object.
 import os
 import functools
 from six import string_types
-from collections import defaultdict
 
 from fuzzywuzzy import process
 
-from .collections import Bundle
 from .state import JSONFile
 from .selectionparser import parse_selection
 
@@ -76,14 +74,14 @@ class Tags(MetadataLimb):
         return out
 
     @staticmethod
-    def _setter(self, val):
+    def _setter(other, val):
         """Used for constructing the property when attaching this Limb to a class.
 
         """
         if isinstance(val, (Tags, list, set)):
             val = list(val)
-            self.tags.clear()
-            self.tags.add(val)
+            other.tags.clear()
+            other.tags.add(val)
         else:
             raise TypeError("Can only set with tags, a list, or set")
 
@@ -343,14 +341,14 @@ class Categories(MetadataLimb):
         return out
 
     @staticmethod
-    def _setter(self, val):
+    def _setter(other, val):
         """Used for constructing the property when attaching this Limb to a class.
 
         """
         if isinstance(val, (Categories, dict)):
             val = dict(val)
-            self.categories.clear()
-            self.categories.add(val)
+            other.categories.clear()
+            other.categories.add(val)
         else:
             raise TypeError("Can only set with categories or dict")
 

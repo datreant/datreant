@@ -3,11 +3,8 @@
 """
 
 import os
-import sys
 import fcntl
-import warnings
 import json
-from functools import wraps
 from contextlib import contextmanager
 import six
 
@@ -32,7 +29,7 @@ class File(object):
 
     """
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename):
         self.filename = os.path.abspath(filename)
         self.handle = None
         self.fd = None

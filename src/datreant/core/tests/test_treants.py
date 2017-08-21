@@ -9,7 +9,6 @@ import mock
 import os
 import py
 
-from . import test_collections
 from .test_trees import TestTree
 
 
@@ -312,7 +311,7 @@ class TestTreant(TestTree):
 
                 assert t3.tags == {'sprout', 'deciduous'}
 
-        def test_tags_fuzzy(self, tmpdir, treant):
+        def test_tags_fuzzy(self, treant):
             """Test that fuzzy matching for tags works as expected.
             """
             treant.tags.add('bark', 'leafy', 'green', 'Leafy')

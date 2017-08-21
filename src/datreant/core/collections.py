@@ -10,14 +10,11 @@ from __future__ import absolute_import
 
 import os
 import functools
-from collections import defaultdict
 
 import multiprocessing as mp
-import glob
 import fnmatch
 
 from six import string_types
-from six.moves import zip
 
 from .trees import Tree, Leaf
 from .names import treantdir_name

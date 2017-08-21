@@ -3,7 +3,6 @@
 """
 
 import datreant.core as dtr
-import pytest
 import os
 import py.path
 
@@ -21,7 +20,9 @@ def test_sync_local(tmpdir):
         assert os.path.exists('sequoia2/hello.txt')
 
 
-def _create_tree(name, files=[]):
+def _create_tree(name, files=None):
+    if files is None:
+        files = []
     tree = dtr.Tree(name).makedirs()
     for file_ in files:
         py.path.local(os.path.join(tree.abspath, file_)
