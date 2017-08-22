@@ -3,6 +3,8 @@ Limbs are interfaces for accessing stored data, as well as querying
 the state of an object.
 
 """
+from six.moves import range
+
 import os
 import functools
 from six import string_types
@@ -71,7 +73,7 @@ class Tags(MetadataLimb):
         else:
             out = agg + '\n'
             out = out + majsep * seplength + '\n'
-            for i in xrange(len(tags)):
+            for i in range(len(tags)):
                 out = out + "'{}'\n".format(tags[i])
         return out
 

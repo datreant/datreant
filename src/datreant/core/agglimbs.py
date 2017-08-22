@@ -4,6 +4,8 @@ AggLimbs are limbs specifically built for collections, in particular
 limbs but serve as aggregators over collections of them.
 
 """
+from six.moves import range
+
 import itertools
 import functools
 from six import string_types
@@ -47,7 +49,7 @@ class AggTags(AggLimb):
         else:
             out = agg + '\n'
             out = out + majsep * seplength + '\n'
-            for i in xrange(len(tags)):
+            for i in range(len(tags)):
                 out = out + "'{}'\n".format(tags[i])
         return out
 
