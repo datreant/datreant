@@ -47,8 +47,8 @@ class File(object):
         # raised and we catch it; this is necessary to ensure the file exists
         # so we can use it for locks
         try:
-            fd = os.open(self.proxy, os.O_CREAT | os.O_EXCL)
-            os.close(fd)
+            with open(self.proxy, 'w') as fh:
+                pass
         except OSError as e:
             # if we get the error precisely because the file exists, continue
             if e.errno == 17:
@@ -66,7 +66,7 @@ class File(object):
         """
         return os.path.dirname(self.filename)
 
-    def _shlock(self, fd):
+    def _shlock(self, fh):
         """Get shared lock on file.
 
         Using fcntl.lockf, a shared lock on the file is obtained. If an
@@ -74,18 +74,18 @@ class File(object):
         then the method waits until it can obtain the lock.
 
         :Arguments:
-            *fd*
-                file descriptor
+            *fh*
+                file handle
 
         :Returns:
             *success*
                 True if shared lock successfully obtained
         """
-        fcntl.lockf(fd, fcntl.LOCK_SH)
+        fcntl.lockf(fh.fileno(), fcntl.LOCK_SH)
 
         return True
 
-    def _exlock(self, fd):
+    def _exlock(self, fh):
         """Get exclusive lock on file.
 
         Using fcntl.lockf, an exclusive lock on the file is obtained. If a
@@ -93,18 +93,18 @@ class File(object):
         process, then the method waits until it can obtain the lock.
 
         :Arguments:
-            *fd*
-                file descriptor
+            *fh*
+                file handle
 
         :Returns:
             *success*
                 True if exclusive lock successfully obtained
         """
-        fcntl.lockf(fd, fcntl.LOCK_EX)
+        fcntl.lockf(fh.fileno(), fcntl.LOCK_EX)
 
         return True
 
-    def _unlock(self, fd):
+    def _unlock(self, fh):
         """Remove exclusive or shared lock on file.
 
         WARNING: It is very rare that this is necessary, since a file must be
@@ -113,14 +113,14 @@ class File(object):
         removed in the future if not needed (likely).
 
         :Arguments:
-            *fd*
-                file descriptor
+            *fh*
+                file handle
 
         :Returns:
             *success*
                 True if lock removed
         """
-        fcntl.lockf(fd, fcntl.LOCK_UN)
+        fcntl.lockf(fh.fileno(), fcntl.LOCK_UN)
 
         return True
 
@@ -134,28 +134,28 @@ class File(object):
         to it.
 
         """
-        self.fd = os.open(self.proxy, os.O_RDONLY)
+        self.fh = open(self.proxy)
 
     def _open_fd_rw(self):
         """Open read-write file descriptor for application of advisory locks.
 
         """
-        self.fd = os.open(self.proxy, os.O_RDWR)
+        self.fh = open(self.proxy, 'r+')
 
     def _close_fd(self):
         """Close file descriptor used for application of advisory locks.
 
         """
         # close file descriptor for locks
-        os.close(self.fd)
-        self.fd = None
+        self.fh.close()
+        self.fh = None
 
     def _apply_shared_lock(self):
         """Apply shared lock.
 
         """
         self._open_fd_r()
-        self._shlock(self.fd)
+        self._shlock(self.fh)
         self.fdlock = 'shared'
 
     def _apply_exclusive_lock(self):
@@ -163,14 +163,14 @@ class File(object):
 
         """
         self._open_fd_rw()
-        self._exlock(self.fd)
+        self._exlock(self.fh)
         self.fdlock = 'exclusive'
 
     def _release_lock(self):
         """Apply exclusive lock.
 
         """
-        self._unlock(self.fd)
+        self._unlock(self.fh)
         self._close_fd()
         self.fdlock = None
 
@@ -212,7 +212,7 @@ class File(object):
 
         """
         self._open_fd_r()
-        self._shlock(self.fd)
+        self._shlock(self.fh)
         self.fdlock = 'shared'
         self.handle = self._open_file_r()
 
@@ -223,7 +223,7 @@ class File(object):
 
         """
         self._open_fd_rw()
-        self._exlock(self.fd)
+        self._exlock(self.fh)
         self.fdlock = 'exclusive'
         self.handle = self._open_file_w()
 
@@ -234,7 +234,7 @@ class File(object):
 
         """
         self.handle.close()
-        self._unlock(self.fd)
+        self._unlock(self.fh)
         self.fdlock = None
         self._close_fd()
 
