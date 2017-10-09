@@ -1,4 +1,4 @@
-from pyparsing import (CaselessLiteral, Word, alphanums, quotedString,
+from pyparsing import (CaselessLiteral, Word, quotedString,
                        removeQuotes, operatorPrecedence, opAssoc, stringEnd,
                        ParseException)
 
@@ -61,7 +61,9 @@ class SearchTerm(object):
 and_ = CaselessLiteral("and")
 or_ = CaselessLiteral("or")
 not_ = CaselessLiteral("not")
-searchTerm = Word(alphanums) | quotedString.setParseAction(removeQuotes)
+allowed_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'*+,-./:;<=>?@[]^_`{|}~'
+# first remove matching strings and then parse for printable characters
+searchTerm = quotedString.setParseAction(removeQuotes) | Word(allowed_chars)
 searchTerm.setParseAction(SearchTerm)
 searchExpr = operatorPrecedence(searchTerm, [
     (not_, 1, opAssoc.RIGHT, SearchNot),
