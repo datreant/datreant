@@ -10,15 +10,12 @@ datreant.core --- persistent, pythonic trees for heterogeneous data
 .. SeeAlso:: :class:`datreant.core.treants.Treant`
 
 """
-# global registries of classes. Must be imported first! Other modules will try
-# to import them and fail if they don't exist already
 
 # Bring some often used objects into the current namespace
 from .manipulators import discover
 from .treants import Treant
 from .trees import Veg, Leaf, Tree
 from .collections import View, Bundle
-from . import attach
 
 __all__ = ['Treant', 'Tree', 'Leaf', 'Bundle', 'discover', 'Veg',
            'attach', 'View']

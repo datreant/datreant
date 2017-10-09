@@ -21,9 +21,6 @@ from .rsync import rsync
 @total_ordering
 class Veg(object):
 
-    _classlimbs = set()
-    _limbs = set()
-
     def __init__(self, filepath):
         self._path = Path(os.path.abspath(filepath))
 
@@ -81,7 +78,7 @@ class Veg(object):
         """Parent directory for this path.
 
         """
-        return Tree(str(self.path.parent), limbs=None)
+        return Tree(str(self.path.parent))
 
     @property
     def name(self):
@@ -89,13 +86,6 @@ class Veg(object):
 
         """
         return os.path.basename(os.path.abspath(self.abspath))
-
-    @property
-    def limbs(self):
-        """A set giving the names of this object's attached limbs.
-
-        """
-        return self._classlimbs | self._limbs
 
 
 class Leaf(Veg):
@@ -162,11 +152,8 @@ class Leaf(Veg):
 
 class Tree(Veg):
     """A directory."""
-    def __init__(self, dirpath, limbs=None):
+    def __init__(self, dirpath):
         if isinstance(dirpath, Tree):
-            if limbs is None:
-                limbs = dirpath.limbs
-
             dirpath = dirpath.abspath
 
         elif os.path.isfile(dirpath):
@@ -174,9 +161,6 @@ class Tree(Veg):
                              "a Tree must be a directory".format(dirpath))
 
         self._path = Path(os.path.abspath(dirpath))
-
-        if limbs:
-            self.attach(*limbs)
 
     def __repr__(self):
         return "<Tree: '{}'>".format(self.relpath)
@@ -219,8 +203,7 @@ class Tree(Veg):
 
             if (os.path.isdir(fullpath) or path.endswith(os.sep) or
                     (fullpath in self.abspath)):
-                limbs = self._classlimbs | self._limbs
-                return Tree(fullpath, limbs=limbs)
+                return Tree(fullpath)
             else:
                 return Leaf(fullpath)
 
@@ -229,49 +212,11 @@ class Tree(Veg):
             for item in path:
                 outview.append(filt(item))
 
-            return View(outview, limbs=self.limbs)
+            return View(outview)
         elif isinstance(path, string_types):
             return filt(path)
         else:
             raise ValueError('Must use a path or a list of paths')
-
-    @classmethod
-    def _attach_limb_class(cls, limb):
-        """Attach a limb to the class."""
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        try:
-            setter = limb._setter
-        except AttributeError:
-            setter = None
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, setter, None, limb.__doc__))
-
-    def _attach_limb(self, limb):
-        """Attach a limb."""
-        try:
-            setattr(self, limb._name, limb(self))
-        except AttributeError:
-            pass
-
-        if limb._name in _TREELIMBS:
-            self._limbs.add(limb._name)
-
-    def attach(self, *limbname):
-        """Attach limbs by name to this Tree."""
-        for ln in limbname:
-            try:
-                limb = _TREELIMBS[ln]
-            except KeyError:
-                raise KeyError("No such limb '{}'".format(ln))
-            else:
-                self._attach_limb(limb)
 
     @property
     def loc(self):
@@ -348,9 +293,7 @@ class Tree(Veg):
     @property
     def parent(self):
         """Parent directory for this path."""
-        limbs = self._classlimbs | self._limbs
-
-        return Tree(str(self.path.parent), limbs=limbs)
+        return Tree(str(self.path.parent))
 
     def leaves(self, hidden=False):
         """Return a View of the files in this Tree.
@@ -380,7 +323,7 @@ class Tree(Veg):
             break
 
         out.sort()
-        return View(out, limbs=self.limbs)
+        return View(out)
 
     def trees(self, hidden=False):
         """Return a View of the directories in this Tree.
@@ -403,15 +346,15 @@ class Tree(Veg):
 
         for root, dirs, files in scandir.walk(self.abspath):
             if hidden:
-                out = [Tree(os.path.join(root, d), limbs=self.limbs)
+                out = [Tree(os.path.join(root, d))
                        for d in dirs]
             else:
-                out = [Tree(os.path.join(root, d), limbs=self.limbs)
+                out = [Tree(os.path.join(root, d))
                        for d in dirs if d[0] != os.extsep]
             break
 
         out.sort()
-        return View(out, limbs=self.limbs)
+        return View(out)
 
     def children(self, hidden=False):
         """Return a View of all files and directories in this Tree.
@@ -429,7 +372,7 @@ class Tree(Veg):
         """
         from .collections import View
         return View((self.trees(hidden=hidden) +
-                     self.leaves(hidden=hidden)), limbs=self.limbs)
+                     self.leaves(hidden=hidden)))
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees matching given globbing
@@ -452,7 +395,7 @@ class Tree(Veg):
 
         out.sort()
 
-        return View(out, limbs=self.limbs)
+        return View(out)
 
     def walk(self, topdown=True, onerror=None, followlinks=False):
         """Walk through the contents of the tree.

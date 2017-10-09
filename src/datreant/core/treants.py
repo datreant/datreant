@@ -11,6 +11,7 @@ from .collections import Bundle
 from .trees import Tree
 from .names import treantdir_name
 from .util import makedirs
+from .metadata import Tags, Categories
 
 
 @functools.total_ordering
@@ -35,6 +36,25 @@ class Treant(Tree):
         adding many distinguishing descriptors
     """
 
+    def __init__(self, treant, categories=None, tags=None):
+        # if given a Tree, get path out of it
+        if isinstance(treant, Tree):
+            treant = treant.abspath
+
+        super(Treant, self).__init__(treant)
+
+        # attach metadata objects
+        self._tags = Tags(self)
+        self._categories = Categories(self)
+
+        # make treantdir
+        self._make_treantdir()
+
+        if tags:
+            self.tags.add(tags)
+        if categories:
+            self.categories.add(categories)
+
     def _make_treantdir(self):
         abspath = super(Treant, self).__getattribute__('_path').absolute()
         treantdir = abspath / treantdir_name
@@ -49,36 +69,6 @@ class Treant(Tree):
                                   "cannot create '{}'".format(treantdir))
                 else:
                     raise
-
-    def __init__(self, treant, categories=None, tags=None):
-        # if given a Tree, get path out of it
-        if isinstance(treant, Tree):
-            treant = treant.abspath
-
-        super(Treant, self).__init__(treant)
-
-        # make treantdir
-        self._make_treantdir()
-
-        if tags:
-            self.tags.add(tags)
-        if categories:
-            self.categories.add(categories)
-
-    def attach(self, *limbname):
-        """Attach limbs by name to this Treant.
-
-        """
-        for ln in limbname:
-            try:
-                limb = _TREELIMBS[ln]
-            except KeyError:
-                try:
-                    limb = _LIMBS[ln]
-                except KeyError:
-                    raise KeyError("No such limb '{}'".format(ln))
-            else:
-                self._attach_limb(limb)
 
     def __repr__(self):
         return "<Treant: '{}'>".format(self.name)
@@ -109,8 +99,7 @@ class Treant(Tree):
 
         """
         if isinstance(other, (Treant, Bundle)):
-            limbs = self.limbs | other.limbs
-            return Bundle(self, other, limbs=limbs)
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Treants or Bundles.")
 
@@ -124,3 +113,29 @@ class Treant(Tree):
     @property
     def _treantdir(self):
         return os.path.join(self.abspath, treantdir_name)
+
+    @property
+    def tags(self):
+        return self._tags
+
+    @tags.setter
+    def tags(self, value):
+        if isinstance(value, (Tags, list, set)):
+            val = list(value)
+            self.tags.clear()
+            self.tags.add(val)
+        else:
+            raise TypeError("Can only set with tags, a list, or set")
+
+    @property
+    def categories(self):
+        return self._categories
+
+    @categories.setter
+    def categories(self, value):
+        if isinstance(value, (Categories, dict)):
+            val = dict(value)
+            self.categories.clear()
+            self.categories.add(val)
+        else:
+            raise TypeError("Can only set with categories or dict")

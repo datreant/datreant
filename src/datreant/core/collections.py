@@ -22,6 +22,7 @@ from six.moves import zip
 from .trees import Tree, Leaf
 from .names import treantdir_name
 from .exceptions import NotATreantError
+from .metadata import Tags, Categories, AggTags, AggCategories
 
 
 @functools.total_ordering
@@ -57,14 +58,12 @@ class CollectionMixin(object):
                 (hasattr(index, 'dtype') and index.dtype == 'bool')):
             # boolean indexing, either with list or np array
             out = self.__class__([memberlist[i]
-                                  for i, val in enumerate(index) if val],
-                                 limbs=self.limbs)
+                                  for i, val in enumerate(index) if val])
         # if is list or array of ints
         elif (isinstance(index, list) or
               (hasattr(index, 'dtype') and index.dtype == 'int')):
             # fancy indexing, either with list or np array
-            out = self.__class__([memberlist[item] for item in index],
-                                 limbs=self.limbs)
+            out = self.__class__([memberlist[item] for item in index])
         elif isinstance(index, int):
             # an index gets the member at that position
             out = memberlist[index]
@@ -88,7 +87,7 @@ class CollectionMixin(object):
 
         """
         return View([member.leaves(hidden=hidden)
-                     for member in self.membertrees], limbs=self.limbs)
+                     for member in self.membertrees])
 
     def trees(self, hidden=False):
         """Return a View of the directories within the member Trees.
@@ -105,7 +104,7 @@ class CollectionMixin(object):
 
         """
         return View([member.trees(hidden=hidden)
-                     for member in self.membertrees], limbs=self.limbs)
+                     for member in self.membertrees])
 
     def children(self, hidden=False):
         """Return a View of all files and directories within the member Trees.
@@ -122,7 +121,7 @@ class CollectionMixin(object):
 
         """
         return View([member.children(hidden=hidden)
-                     for member in self.membertrees], limbs=self.limbs)
+                     for member in self.membertrees])
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees of members matching
@@ -135,7 +134,7 @@ class CollectionMixin(object):
 
         """
         return View([member.glob(pattern) for member in self
-                     if isinstance(member, Tree)], limbs=self.limbs)
+                     if isinstance(member, Tree)])
 
     def draw(self, depth=None, hidden=False):
         """Print an ASCII-fied visual of all member Trees.
@@ -214,13 +213,6 @@ class CollectionMixin(object):
 
         return self._leafloc
 
-    @property
-    def limbs(self):
-        """A set giving the names of this collection's attached limbs.
-
-        """
-        return self._classagglimbs | self._agglimbs
-
 
 class View(CollectionMixin):
     """An ordered set of Trees and Leaves.
@@ -231,23 +223,12 @@ class View(CollectionMixin):
         Trees and/or Leaves to be added, which may be nested lists of Trees
         and Leaves. Trees and Leaves can be given as either objects or
         paths.
-    limbs : list or set
-        Names of limbs to immediately attach.
 
     """
-    _classagglimbs = set()
-    _agglimbs = set()
 
     def __init__(self, *vegs, **kwargs):
         self._state = list()
-        self.add(*vegs)
-
-        # attach any limbs given
-        for agglimb in kwargs.pop('limbs', []):
-            try:
-                self.attach(agglimb)
-            except KeyError:
-                pass
+        self._add(*vegs)
 
     def __repr__(self):
         names = [i.name if isinstance(i, Leaf) else i.name + '/'
@@ -274,11 +255,10 @@ class View(CollectionMixin):
             # a name can be used for indexing
             # always returns a View
             out = View([memberlist[i] for i, name
-                        in enumerate(self.names) if name == index],
-                       limbs=self.limbs)
+                        in enumerate(self.names) if name == index])
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = View(*memberlist[index], limbs=self.limbs)
+            out = View(*memberlist[index])
         else:
             out = super(View, self).__getitem__(index)
         return out
@@ -297,8 +277,7 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, (Tree, Leaf, View)):
-            limbs = self.limbs | other.limbs
-            return View(self, other, limbs=limbs)
+            return View(self, other)
         else:
             raise TypeError("Right operand must be a Tree, Leaf, or View.")
 
@@ -309,11 +288,9 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, View):
-            limbs = self.limbs | other.limbs
-            return View(list(set(self) - set(other)), limbs=limbs)
+            return View(list(set(self) - set(other)))
         elif isinstance(other, (Tree, Leaf)):
-            limbs = self.limbs | other.limbs
-            return View(list(set(self) - set([other])), limbs=limbs)
+            return View(list(set(self) - set([other])))
         else:
             raise TypeError("Right operand must be a Tree, Leaf, or View.")
 
@@ -322,8 +299,7 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, View):
-            limbs = self.limbs | other.limbs
-            return View(self, other, limbs=limbs)
+            return View(self, other)
         else:
             raise TypeError("Operands must be Views.")
 
@@ -332,8 +308,7 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, View):
-            limbs = self.limbs | other.limbs
-            return View(list(set(self) & set(other)), limbs=limbs)
+            return View(list(set(self) & set(other)))
         else:
             raise TypeError("Operands must be Views.")
 
@@ -343,59 +318,11 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, View):
-            limbs = self.limbs | other.limbs
-            return View(list(set(self) ^ set(other)), limbs=limbs)
+            return View(list(set(self) ^ set(other)))
         else:
             raise TypeError("Operands must be Views.")
 
-    @classmethod
-    def _attach_aggtreelimb_class(cls, limb):
-        """Attach an aggtreelimb to the class.
-
-        """
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, None, None, limb.__doc__))
-
-    def _attach_aggtreelimb(self, limb):
-        """Attach an aggtreelimb.
-
-        """
-        try:
-            setattr(self, limb._name, limb(self))
-        except AttributeError:
-            pass
-
-    def attach(self, *aggtreelimbname):
-        """Attach aggtreelimbs by name to this View. Attaches corresponding limb
-        to any member Trees.
-
-        """
-        for ln in aggtreelimbname:
-            # try and get the aggtreelimb class specified
-            try:
-                aggtreelimb = _AGGTREELIMBS[ln]
-            except KeyError:
-                raise KeyError("No such aggtreelimb '{}'".format(ln))
-
-            # attach agglimb; if it's already there, that's okay
-            try:
-                self._attach_aggtreelimb(aggtreelimb)
-            except AttributeError:
-                pass
-
-            # attach limb to each member
-            for member in self._list():
-                if isinstance(member, Tree):
-                    member.attach(ln)
-
-    def add(self, *vegs):
+    def _add(self, *vegs):
         """Add any number of members to this collection.
 
         :Arguments:
@@ -414,9 +341,9 @@ class View(CollectionMixin):
             if veg is None:
                 pass
             elif isinstance(veg, (list, tuple)):
-                self.add(*veg)
+                self._add(*veg)
             elif isinstance(veg, (View, Bundle)):
-                self.add(*list(veg))
+                self._add(*list(veg))
             elif isinstance(veg, Treant):
                 outconts.append(Tree(veg))
             elif isinstance(veg, Veg):
@@ -474,16 +401,14 @@ class View(CollectionMixin):
         """A View giving only members that are Trees (or subclasses).
 
         """
-        return View([member for member in self if isinstance(member, Tree)],
-                    limbs=self.limbs)
+        return View([member for member in self if isinstance(member, Tree)])
 
     @property
     def memberleaves(self):
         """A View giving only members that are Leaves (or subclasses).
 
         """
-        return View([member for member in self if isinstance(member, Leaf)],
-                    limbs=self.limbs)
+        return View([member for member in self if isinstance(member, Leaf)])
 
     @property
     def abspaths(self):
@@ -566,7 +491,7 @@ class View(CollectionMixin):
 
         """
         return View([self[name] for name in
-                     fnmatch.filter(self.names, pattern)], limbs=self.limbs)
+                     fnmatch.filter(self.names, pattern)])
 
     def make(self):
         """Make the Trees and Leaves in this View if they don't already exist.
@@ -593,26 +518,18 @@ class Bundle(CollectionMixin):
         can be given as either objects or paths to directories that contain
         Treant statefiles. Glob patterns are also allowed, and all found
         Treants will be added to the collection.
-    limbs : list or set
-        Names of limbs to immediately attach.
 
     """
-    _classagglimbs = set()
-    _agglimbs = set()
 
     def __init__(self, *treants, **kwargs):
         self._cache = dict()
         self._state = list()
 
-        self.add(*treants)
+        # add metadata objects
+        self._tags = AggTags(self)
+        self._categories = AggCategories(self)
 
-        # attach any limbs given
-        for agglimb in kwargs.pop('limbs', []):
-            if agglimb not in self.limbs:
-                try:
-                    self.attach(agglimb)
-                except KeyError:
-                    pass
+        self._add(*treants)
 
     def __repr__(self):
         return "<Bundle({})>".format(self.names)
@@ -648,14 +565,13 @@ class Bundle(CollectionMixin):
             # a name always returns a Bundle
             out = Bundle([self.abspaths[i]
                           for i, name in enumerate(self.names)
-                          if name == index],
-                         limbs=self.limbs)
+                          if name == index])
 
             if not len(out):
                 raise KeyError("No name matching string selection")
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = Bundle(*self.abspaths[index], limbs=self.limbs)
+            out = Bundle(*self.abspaths[index])
             out._cache.update(self._cache)
         else:
             out = super(Bundle, self).__getitem__(index)
@@ -668,8 +584,7 @@ class Bundle(CollectionMixin):
         from .treants import Treant
 
         if isinstance(other, (Treant, Bundle)):
-            limbs = self.limbs | other.limbs
-            return Bundle(self, other, limbs=limbs)
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
@@ -682,11 +597,9 @@ class Bundle(CollectionMixin):
         from .treants import Treant
 
         if isinstance(other, Bundle):
-            limbs = self.limbs | other.limbs
-            return Bundle(list(set(self) - set(other)), limbs=limbs)
+            return Bundle(list(set(self) - set(other)))
         elif isinstance(other, Treant):
-            limbs = self.limbs | other.limbs
-            return Bundle(list(set(self) - set([other])), limbs=limbs)
+            return Bundle(list(set(self) - set([other])))
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
@@ -695,8 +608,7 @@ class Bundle(CollectionMixin):
 
         """
         if isinstance(other, Bundle):
-            limbs = self.limbs | other.limbs
-            return Bundle(self, other, limbs=limbs)
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Bundles.")
 
@@ -705,8 +617,7 @@ class Bundle(CollectionMixin):
 
         """
         if isinstance(other, Bundle):
-            limbs = self.limbs | other.limbs
-            return Bundle(list(set(self) & set(other)), limbs=limbs)
+            return Bundle(list(set(self) & set(other)))
         else:
             raise TypeError("Operands must be Bundles.")
 
@@ -716,67 +627,11 @@ class Bundle(CollectionMixin):
 
         """
         if isinstance(other, Bundle):
-            limbs = self.limbs | other.limbs
-            return Bundle(list(set(self) ^ set(other)), limbs=limbs)
+            return Bundle(list(set(self) ^ set(other)))
         else:
             raise TypeError("Operands must be Bundles.")
 
-    @classmethod
-    def _attach_agglimb_class(cls, limb):
-        """Attach a agglimb to the class.
-
-        """
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        try:
-            setter = limb._setter
-        except AttributeError:
-            setter = None
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, setter, None, limb.__doc__))
-
-    def _attach_agglimb(self, limb):
-        """Attach an agglimb.
-
-        """
-        try:
-            setattr(self, limb._name, limb(self))
-        except AttributeError:
-            pass
-
-    def attach(self, *agglimbname):
-        """Attach agglimbs by name to this collection. Attaches corresponding limb
-        to member Treants.
-
-        """
-        for ln in agglimbname:
-            # try and get the aggtreelimb class specified
-            try:
-                agglimb = _AGGTREELIMBS[ln]
-            except KeyError:
-                # if not an aggtreelimb, perhaps its an agglimb?
-                try:
-                    agglimb = _AGGLIMBS[ln]
-                except KeyError:
-                    raise KeyError("No such agglimb '{}'".format(ln))
-
-            # attach agglimb; if it's already there, that's okay
-            try:
-                self._attach_agglimb(agglimb)
-            except AttributeError:
-                pass
-
-            # attach limb to each member
-            for member in self._list():
-                member.attach(ln)
-
-    def add(self, *treants):
+    def _add(self, *treants):
         """Add any number of members to this collection.
 
         :Arguments:
@@ -792,9 +647,9 @@ class Bundle(CollectionMixin):
             if treant is None:
                 pass
             elif isinstance(treant, (list, tuple, View)):
-                self.add(*treant)
+                self._add(*treant)
             elif isinstance(treant, Bundle):
-                self.add(*treant.abspaths)
+                self._add(*treant.abspaths)
                 self._cache.update(treant._cache)
             elif isinstance(treant, Treant):
                 abspaths.append(treant.abspath)
@@ -819,7 +674,7 @@ class Bundle(CollectionMixin):
 
         self._add_members(abspaths)
 
-    def remove(self, *members):
+    def _remove(self, *members):
         """Remove any number of members from the collection.
 
         :Arguments:
@@ -858,12 +713,6 @@ class Bundle(CollectionMixin):
         # remove from cache
         for abspath in remove:
             self._cache.pop(abspath, None)
-
-    def clear(self):
-        """Remove all members.
-
-        """
-        self._del_members(all=True)
 
     @property
     def names(self):
@@ -993,7 +842,7 @@ class Bundle(CollectionMixin):
 
         """
         return Bundle([self[name] for name in
-                      fnmatch.filter(self.names, pattern)], limbs=self.limbs)
+                      fnmatch.filter(self.names, pattern)])
 
     def _add_members(self, abspaths):
         """Add many members at once.
@@ -1038,6 +887,32 @@ class Bundle(CollectionMixin):
                 except ValueError:
                     pass
 
+    @property
+    def tags(self):
+        return self._tags
+
+    @tags.setter
+    def tags(self, value):
+        if isinstance(value, (Tags, list, set)):
+            val = list(value)
+            self.tags.clear()
+            self.tags.add(val)
+        else:
+            raise TypeError("Can only set with tags, a list, or set")
+
+    @property
+    def categories(self):
+        return self._categories
+
+    @categories.setter
+    def categories(self, value):
+        if isinstance(value, (Categories, dict)):
+            val = dict(value)
+            self.categories.clear()
+            self.categories.add(val)
+        else:
+            raise TypeError("Can only set with categories or dict")
+
 
 class _Loc(object):
     """Path accessor for collections."""
@@ -1050,7 +925,7 @@ class _Loc(object):
 
         """
         return View([t[path] for t in self._collection
-                     if isinstance(t, Tree)], limbs=self._collection.limbs)
+                     if isinstance(t, Tree)])
 
 
 class _TreeLoc(_Loc):
@@ -1061,7 +936,7 @@ class _TreeLoc(_Loc):
 
         """
         return View([t.treeloc[path] for t in self._collection
-                     if isinstance(t, Tree)], limbs=self._collection.limbs)
+                     if isinstance(t, Tree)])
 
 
 class _LeafLoc(_Loc):
