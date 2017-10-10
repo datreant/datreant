@@ -226,7 +226,7 @@ class View(CollectionMixin):
 
     """
 
-    def __init__(self, *vegs, **kwargs):
+    def __init__(self, *vegs):
         self._state = list()
         self._add(*vegs)
 
@@ -521,7 +521,7 @@ class Bundle(CollectionMixin):
 
     """
 
-    def __init__(self, *treants, **kwargs):
+    def __init__(self, *treants):
         self._cache = dict()
         self._state = list()
 
