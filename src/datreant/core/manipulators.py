@@ -7,7 +7,7 @@ import scandir
 import fnmatch
 from six.moves import range
 
-from .names import treantdir_name
+from .names import TREANTDIR_NAME
 
 
 def discover(dirpath='.', depth=None, treantdepth=None):
@@ -46,7 +46,7 @@ def discover(dirpath='.', depth=None, treantdepth=None):
     treantdirs = set()
 
     for root, dirs, files in scandir.walk(dirpath):
-        if (treantdir_name in dirs):
+        if (TREANTDIR_NAME in dirs):
             treantdirs.add(root)
             found.append(root)
 
