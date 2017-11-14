@@ -116,7 +116,6 @@ class Tags(Metadata):
         """Return a set giving the Tags in `a` that are not in `b`.
 
         """
-        from .metadata import AggTags
         if isinstance(other, (AggTags, Tags, set, list)):
             return set(self) - set(other)
         else:
@@ -126,7 +125,6 @@ class Tags(Metadata):
         """Return a set giving the Tags in `a` that are not in `b`.
 
         """
-        from .metadata import AggTags  # may not be necessary
         if isinstance(other, (AggTags, Tags, set, list)):
             return set(other) - set(self)
         else:

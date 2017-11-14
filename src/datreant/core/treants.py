@@ -12,6 +12,7 @@ from .trees import Tree
 from .names import treantdir_name
 from .util import makedirs
 from .metadata import Tags, Categories
+from .exceptions import NotATreantError
 
 
 @functools.total_ordering
@@ -116,26 +117,42 @@ class Treant(Tree):
 
     @property
     def tags(self):
-        return self._tags
+        try:
+            return self._tags
+        except FileNotFoundError:
+            raise NotATreantError("This Treant no longer has a '.datreant'"
+                                  " directory.")
 
     @tags.setter
     def tags(self, value):
-        if isinstance(value, (Tags, list, set)):
-            val = list(value)
-            self.tags.clear()
-            self.tags.add(val)
-        else:
-            raise TypeError("Can only set with tags, a list, or set")
+        try:
+            if isinstance(value, (Tags, list, set)):
+                val = list(value)
+                self.tags.clear()
+                self.tags.add(val)
+            else:
+                raise TypeError("Can only set with tags, a list, or set")
+        except FileNotFoundError:
+            raise NotATreantError("This Treant no longer has a '.datreant'"
+                                  " directory.")
 
     @property
     def categories(self):
-        return self._categories
+        try:
+            return self._categories
+        except FileNotFoundError:
+            raise NotATreantError("This Treant no longer has a '.datreant'"
+                                  " directory.")
 
     @categories.setter
     def categories(self, value):
-        if isinstance(value, (Categories, dict)):
-            val = dict(value)
-            self.categories.clear()
-            self.categories.add(val)
-        else:
-            raise TypeError("Can only set with categories or dict")
+        try:
+            if isinstance(value, (Categories, dict)):
+                val = dict(value)
+                self.categories.clear()
+                self.categories.add(val)
+            else:
+                raise TypeError("Can only set with categories or dict")
+        except FileNotFoundError:
+            raise NotATreantError("This Treant no longer has a '.datreant'"
+                                  " directory.")
