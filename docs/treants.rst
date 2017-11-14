@@ -59,7 +59,10 @@ will be reflected in the Treant in the other session ::
     <Tags(['elm'])>
 
 This is because both objects pull their identifying information from the same
-place on disk; they store almost nothing in memory.
+place on disk; they store almost nothing in memory. 
+
+.. note:: File handles are kept alive only as long as needed to serialize or
+          deserialize Treant metadata from the filesystem.
 
 
 API Reference: Treant
