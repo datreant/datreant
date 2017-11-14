@@ -2,10 +2,7 @@ Treants
 =======
 Treants are the core units of functionality of ``datreant``. They function as
 specially marked directories with distinguishing characteristics. They are
-designed to be subclassed, with their functionality extendable with attachable
-Limbs.
-
-The components documented here are those included within ``datreant.core``.
+designed to be subclassed.
 
 .. _Treant_api:
 
@@ -21,10 +18,10 @@ The class :class:`datreant.core.Treant` is the central object of ``datreant.core
 
 Tags
 ````
-The class :class:`datreant.core.limbs.Tags` is the interface used by Treants to
+The class :class:`datreant.core.metadata.Tags` is the interface used by Treants to
 access their tags. 
 
-.. autoclass:: datreant.core.limbs.Tags
+.. autoclass:: datreant.core.metadata.Tags
     :members:
     :inherited-members:
 
@@ -32,9 +29,9 @@ access their tags.
 
 Categories
 ``````````
-The class :class:`datreant.core.limbs.Categories` is the interface used by
+The class :class:`datreant.core.metadata.Categories` is the interface used by
 Treants to access their categories.
 
-.. autoclass:: datreant.core.limbs.Categories
+.. autoclass:: datreant.core.metadata.Categories
     :members:
     :inherited-members:

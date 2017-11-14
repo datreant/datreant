@@ -19,9 +19,10 @@ import fnmatch
 from six import string_types
 from six.moves import zip
 
-from . import filesystem
-from . import _AGGLIMBS, _AGGTREELIMBS
 from .trees import Tree, Leaf
+from .names import TREANTDIR_NAME
+from .exceptions import NotATreantError
+from .metadata import Tags, Categories, AggTags, AggCategories
 
 
 @functools.total_ordering
@@ -57,14 +58,12 @@ class CollectionMixin(object):
                 (hasattr(index, 'dtype') and index.dtype == 'bool')):
             # boolean indexing, either with list or np array
             out = self.__class__([memberlist[i]
-                                  for i, val in enumerate(index) if val],
-                                 limbs=self.limbs)
+                                  for i, val in enumerate(index) if val])
         # if is list or array of ints
         elif (isinstance(index, list) or
               (hasattr(index, 'dtype') and index.dtype == 'int')):
             # fancy indexing, either with list or np array
-            out = self.__class__([memberlist[item] for item in index],
-                                 limbs=self.limbs)
+            out = self.__class__([memberlist[item] for item in index])
         elif isinstance(index, int):
             # an index gets the member at that position
             out = memberlist[index]
@@ -72,6 +71,57 @@ class CollectionMixin(object):
             raise IndexError("Cannot index {} with given values"
                              "".format(self.__class__.__name__))
         return out
+
+    def leaves(self, hidden=False):
+        """Return a View of the files within the member Trees.
+
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden files.
+
+        Returns
+        -------
+        View
+            A View giving the files in the member Trees.
+
+        """
+        return View([member.leaves(hidden=hidden)
+                     for member in self.membertrees])
+
+    def trees(self, hidden=False):
+        """Return a View of the directories within the member Trees.
+
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden directories.
+
+        Returns
+        -------
+        View
+            A View giving the directories in the member Trees.
+
+        """
+        return View([member.trees(hidden=hidden)
+                     for member in self.membertrees])
+
+    def children(self, hidden=False):
+        """Return a View of all files and directories within the member Trees.
+
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden files and directories.
+
+        Returns
+        -------
+        View
+            A View giving the files and directories in the member Trees.
+
+        """
+        return View([member.children(hidden=hidden)
+                     for member in self.membertrees])
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees of members matching
@@ -84,7 +134,7 @@ class CollectionMixin(object):
 
         """
         return View([member.glob(pattern) for member in self
-                     if isinstance(member, Tree)], limbs=self.limbs)
+                     if isinstance(member, Tree)])
 
     def draw(self, depth=None, hidden=False):
         """Print an ASCII-fied visual of all member Trees.
@@ -124,11 +174,44 @@ class CollectionMixin(object):
         return self._loc
 
     @property
-    def limbs(self):
-        """A set giving the names of this collection's attached limbs.
+    def treeloc(self):
+        """Get a View giving Tree at `path` relative to each Tree in
+        collection.
+
+        Use with getitem syntax, e.g. ``.loc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If the given path resolves to an existing file for any Tree, then a
+        ``ValueError`` will be raised.
 
         """
-        return self._classagglimbs | self._agglimbs
+        if not hasattr(self, "_treeloc"):
+            self._treeloc = _TreeLoc(self)
+
+        return self._treeloc
+
+    @property
+    def leafloc(self):
+        """Get a View giving Leaf at `path` relative to each Tree in
+        collection.
+
+        Use with getitem syntax, e.g. ``.loc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If the given path resolves to an existing directory for any Tree, then
+        a ``ValueError`` will be raised.
+
+        """
+        if not hasattr(self, "_leafloc"):
+            self._leafloc = _LeafLoc(self)
+
+        return self._leafloc
 
 
 class View(CollectionMixin):
@@ -140,26 +223,17 @@ class View(CollectionMixin):
         Trees and/or Leaves to be added, which may be nested lists of Trees
         and Leaves. Trees and Leaves can be given as either objects or
         paths.
-    limbs : list or set
-        Names of limbs to immediately attach.
 
     """
-    _classagglimbs = set()
-    _agglimbs = set()
 
-    def __init__(self, *vegs, **kwargs):
+    def __init__(self, *vegs):
         self._state = list()
-        self.add(*vegs)
-
-        # attach any limbs given
-        for agglimb in kwargs.pop('limbs', []):
-            try:
-                self.attach(agglimb)
-            except KeyError:
-                pass
+        self._add(*vegs)
 
     def __repr__(self):
-        return "<View({})>".format(self._list())
+        names = [i.name if isinstance(i, Leaf) else i.name + '/'
+                 for i in self._list()]
+        return "<View({})>".format(names)
 
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
@@ -174,18 +248,17 @@ class View(CollectionMixin):
 
         """
         memberlist = self._list()
-        # we can take lists of indices, names, or uuids; these return a
+        # we can take lists of indices or names; these return a
         # View; repeats already not respected since View functions as a
         # set
         if isinstance(index, string_types):
             # a name can be used for indexing
             # always returns a View
             out = View([memberlist[i] for i, name
-                        in enumerate(self.names) if name == index],
-                       limbs=self.limbs)
+                        in enumerate(self.names) if name == index])
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = View(*memberlist[index], limbs=self.limbs)
+            out = View(*memberlist[index])
         else:
             out = super(View, self).__getitem__(index)
         return out
@@ -204,8 +277,7 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, (Tree, Leaf, View)):
-            limbs = self.limbs | other.limbs
-            return View(self, other, limbs=limbs)
+            return View(self, other)
         else:
             raise TypeError("Right operand must be a Tree, Leaf, or View.")
 
@@ -216,11 +288,9 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, View):
-            limbs = self.limbs | other.limbs
-            return View(list(set(self) - set(other)), limbs=limbs)
+            return View(list(set(self) - set(other)))
         elif isinstance(other, (Tree, Leaf)):
-            limbs = self.limbs | other.limbs
-            return View(list(set(self) - set([other])), limbs=limbs)
+            return View(list(set(self) - set([other])))
         else:
             raise TypeError("Right operand must be a Tree, Leaf, or View.")
 
@@ -229,8 +299,7 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, View):
-            limbs = self.limbs | other.limbs
-            return View(self, other, limbs=limbs)
+            return View(self, other)
         else:
             raise TypeError("Operands must be Views.")
 
@@ -239,8 +308,7 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, View):
-            limbs = self.limbs | other.limbs
-            return View(list(set(self) & set(other)), limbs=limbs)
+            return View(list(set(self) & set(other)))
         else:
             raise TypeError("Operands must be Views.")
 
@@ -250,65 +318,11 @@ class View(CollectionMixin):
 
         """
         if isinstance(other, View):
-            limbs = self.limbs | other.limbs
-            return View(list(set(self) ^ set(other)), limbs=limbs)
+            return View(list(set(self) ^ set(other)))
         else:
             raise TypeError("Operands must be Views.")
 
-    @classmethod
-    def _attach_aggtreelimb_class(cls, limb):
-        """Attach an aggtreelimb to the class.
-
-        """
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, None, None, limb.__doc__))
-
-        if limb._name in _AGGTREELIMBS:
-            cls._classagglimbs.add(limb._name)
-
-    def _attach_aggtreelimb(self, limb):
-        """Attach an aggtreelimb.
-
-        """
-        try:
-            setattr(self, limb._name, limb(self))
-        except AttributeError:
-            pass
-
-        if limb._name in _AGGTREELIMBS:
-            self._agglimbs.add(limb._name)
-
-    def attach(self, *aggtreelimbname):
-        """Attach aggtreelimbs by name to this View. Attaches corresponding limb
-        to any member Trees.
-
-        """
-        for ln in aggtreelimbname:
-            # try and get the aggtreelimb class specified
-            try:
-                aggtreelimb = _AGGTREELIMBS[ln]
-            except KeyError:
-                raise KeyError("No such aggtreelimb '{}'".format(ln))
-
-            # attach agglimb; if it's already there, that's okay
-            try:
-                self._attach_aggtreelimb(aggtreelimb)
-            except AttributeError:
-                pass
-
-            # attach limb to each member
-            for member in self._list():
-                if isinstance(member, Tree):
-                    member.attach(ln)
-
-    def add(self, *vegs):
+    def _add(self, *vegs):
         """Add any number of members to this collection.
 
         :Arguments:
@@ -327,11 +341,11 @@ class View(CollectionMixin):
             if veg is None:
                 pass
             elif isinstance(veg, (list, tuple)):
-                self.add(*veg)
+                self._add(*veg)
             elif isinstance(veg, (View, Bundle)):
-                self.add(*list(veg))
+                self._add(*list(veg))
             elif isinstance(veg, Treant):
-                outconts.append(veg.tree)
+                outconts.append(Tree(veg))
             elif isinstance(veg, Veg):
                 outconts.append(veg)
             elif (isinstance(veg, string_types) and
@@ -387,52 +401,14 @@ class View(CollectionMixin):
         """A View giving only members that are Trees (or subclasses).
 
         """
-        return View([member for member in self if isinstance(member, Tree)],
-                    limbs=self.limbs)
+        return View([member for member in self if isinstance(member, Tree)])
 
     @property
     def memberleaves(self):
         """A View giving only members that are Leaves (or subclasses).
 
         """
-        return View([member for member in self if isinstance(member, Leaf)],
-                    limbs=self.limbs)
-
-    @property
-    def children(self):
-        """A View of all children within the member Trees.
-
-        """
-        return View([member.children for member in self.membertrees],
-                    limbs=self.limbs)
-
-    @property
-    def trees(self):
-        """A View of directories within the member Trees.
-
-        Hidden directories are not included.
-
-        """
-        return View([member.trees for member in self.membertrees],
-                    limbs=self.limbs)
-
-    @property
-    def leaves(self):
-        """A View of the files within the member Trees.
-
-        Hidden files are not included.
-
-        """
-        return View([member.leaves for member in self.membertrees],
-                    limbs=self.limbs)
-
-    @property
-    def hidden(self):
-        """A View of the hidden files and directories within the member Trees.
-
-        """
-        return View([member.hidden for member in self.membertrees],
-                    limbs=self.limbs)
+        return View([member for member in self if isinstance(member, Leaf)])
 
     @property
     def abspaths(self):
@@ -488,10 +464,10 @@ class View(CollectionMixin):
             results = {member.abspath: pool.apply_async(
                     function, args=(member,), kwds=kwargs) for member in self}
 
-            output = {key: results[key].get() for key in results}
-
             pool.close()
             pool.join()
+
+            output = {key: results[key].get() for key in results}
 
             # sort by member order
             results = [output[abspath] for abspath in self.abspaths]
@@ -515,7 +491,7 @@ class View(CollectionMixin):
 
         """
         return View([self[name] for name in
-                     fnmatch.filter(self.names, pattern)], limbs=self.limbs)
+                     fnmatch.filter(self.names, pattern)])
 
     def make(self):
         """Make the Trees and Leaves in this View if they don't already exist.
@@ -527,7 +503,7 @@ class View(CollectionMixin):
 
         """
         for member in self:
-            self.make()
+            member.make()
 
         return self
 
@@ -542,34 +518,21 @@ class Bundle(CollectionMixin):
         can be given as either objects or paths to directories that contain
         Treant statefiles. Glob patterns are also allowed, and all found
         Treants will be added to the collection.
-    limbs : list or set
-        Names of limbs to immediately attach.
 
     """
-    _memberpaths = ['abspath']
-    _fields = ['uuid', 'treanttype']
-    _fields.extend(_memberpaths)
 
-    _classagglimbs = set()
-    _agglimbs = set()
-
-    def __init__(self, *treants, **kwargs):
+    def __init__(self, *treants):
         self._cache = dict()
         self._state = list()
-        self._searchtime = 10
 
-        self.add(*treants)
+        # add metadata objects
+        self._tags = AggTags(self)
+        self._categories = AggCategories(self)
 
-        # attach any limbs given
-        for agglimb in kwargs.pop('limbs', []):
-            if agglimb not in self.limbs:
-                try:
-                    self.attach(agglimb)
-                except KeyError:
-                    pass
+        self._add(*treants)
 
     def __repr__(self):
-        return "<Bundle({})>".format(self._list())
+        return "<Bundle({})>".format(self.names)
 
     def __str__(self):
         out = "<- Bundle ->\n"
@@ -583,7 +546,7 @@ class Bundle(CollectionMixin):
     def __getitem__(self, index):
         """Get member corresponding to the given index or slice.
 
-        A single integer or uuid will yield a single Treant. Lists of
+        A single integer will yield a single Treant. Lists of
         either will yield a Bundle with members in order by the given items.
         Giving a name will always yield a Bundle, since names are not
         guaranteed to be unique.
@@ -592,29 +555,23 @@ class Bundle(CollectionMixin):
         select out members.
 
         """
-        # we can take lists of indices, names, or uuids; these return a
+        # we can take lists of indices or names; these return a
         # Bundle; repeats already not respected since Bundle functions as a
         # set
         memberlist = self._list()
 
         if isinstance(index, string_types):
-            # a name or uuid can be used for indexing
+            # a name can be used for indexing
             # a name always returns a Bundle
-            out = Bundle([self.filepaths[i]
+            out = Bundle([self.abspaths[i]
                           for i, name in enumerate(self.names)
-                          if name == index],
-                         limbs=self.limbs)
-            # if no names match, we try uuids
+                          if name == index])
+
             if not len(out):
-                out = [member for member in self if member.uuid == index]
-                if not len(out):
-                    raise KeyError("No name or uuid matching string selection")
-                else:
-                    # we want to return a Treant, not a list for uuid matches
-                    out = out[0]
+                raise KeyError("No name matching string selection")
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = Bundle(*self.filepaths[index], limbs=self.limbs)
+            out = Bundle(*self.abspaths[index])
             out._cache.update(self._cache)
         else:
             out = super(Bundle, self).__getitem__(index)
@@ -627,8 +584,7 @@ class Bundle(CollectionMixin):
         from .treants import Treant
 
         if isinstance(other, (Treant, Bundle)):
-            limbs = self.limbs | other.limbs
-            return Bundle(self, other, limbs=limbs)
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
@@ -641,11 +597,9 @@ class Bundle(CollectionMixin):
         from .treants import Treant
 
         if isinstance(other, Bundle):
-            limbs = self.limbs | other.limbs
-            return Bundle(list(set(self) - set(other)), limbs=limbs)
+            return Bundle(list(set(self) - set(other)))
         elif isinstance(other, Treant):
-            limbs = self.limbs | other.limbs
-            return Bundle(list(set(self) - set([other])), limbs=limbs)
+            return Bundle(list(set(self) - set([other])))
         else:
             raise TypeError("Operands must be Treant-derived or Bundles.")
 
@@ -654,8 +608,7 @@ class Bundle(CollectionMixin):
 
         """
         if isinstance(other, Bundle):
-            limbs = self.limbs | other.limbs
-            return Bundle(self, other, limbs=limbs)
+            return Bundle(self, other)
         else:
             raise TypeError("Operands must be Bundles.")
 
@@ -664,8 +617,7 @@ class Bundle(CollectionMixin):
 
         """
         if isinstance(other, Bundle):
-            limbs = self.limbs | other.limbs
-            return Bundle(list(set(self) & set(other)), limbs=limbs)
+            return Bundle(list(set(self) & set(other)))
         else:
             raise TypeError("Operands must be Bundles.")
 
@@ -675,170 +627,100 @@ class Bundle(CollectionMixin):
 
         """
         if isinstance(other, Bundle):
-            limbs = self.limbs | other.limbs
-            return Bundle(list(set(self) ^ set(other)), limbs=limbs)
+            return Bundle(list(set(self) ^ set(other)))
         else:
             raise TypeError("Operands must be Bundles.")
 
-    @classmethod
-    def _attach_agglimb_class(cls, limb):
-        """Attach a agglimb to the class.
-
-        """
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        try:
-            setter = limb._setter
-        except AttributeError:
-            setter = None
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, setter, None, limb.__doc__))
-
-        if limb._name in _AGGTREELIMBS or limb._name in _AGGLIMBS:
-            cls._classagglimbs.add(limb._name)
-
-    def _attach_agglimb(self, limb):
-        """Attach an agglimb.
-
-        """
-        try:
-            setattr(self, limb._name, limb(self))
-        except AttributeError:
-            pass
-
-        if limb._name in _AGGTREELIMBS or limb._name in _AGGLIMBS:
-            self._agglimbs.add(limb._name)
-
-    def attach(self, *agglimbname):
-        """Attach agglimbs by name to this collection. Attaches corresponding limb
-        to member Treants.
-
-        """
-        for ln in agglimbname:
-            # try and get the aggtreelimb class specified
-            try:
-                agglimb = _AGGTREELIMBS[ln]
-            except KeyError:
-                # if not an aggtreelimb, perhaps its an agglimb?
-                try:
-                    agglimb = _AGGLIMBS[ln]
-                except KeyError:
-                    raise KeyError("No such agglimb '{}'".format(ln))
-
-            # attach agglimb; if it's already there, that's okay
-            try:
-                self._attach_agglimb(agglimb)
-            except AttributeError:
-                pass
-
-            # attach limb to each member
-            for member in self._list():
-                member.attach(ln)
-
-    def add(self, *treants):
+    def _add(self, *treants):
         """Add any number of members to this collection.
 
         :Arguments:
             *treants*
-                treants to be added, which may be nested lists of treants;
-                treants can be given as either objects or paths to directories
-                that contain treant statefiles; glob patterns are also allowed,
-                and all found treants will be added to the collection
+                Treants to be added, which may be nested lists/tuples of
+                Treants, Bundles, individual Treants or paths to existing
+                Treants
         """
         from .treants import Treant
 
-        outconts = list()
+        abspaths = list()
         for treant in treants:
             if treant is None:
                 pass
             elif isinstance(treant, (list, tuple, View)):
-                self.add(*treant)
+                self._add(*treant)
             elif isinstance(treant, Bundle):
-                self.add(*treant.filepaths)
+                self._add(*treant.abspaths)
                 self._cache.update(treant._cache)
             elif isinstance(treant, Treant):
-                outconts.append(treant)
-                self._cache[treant.uuid] = treant
-            elif isinstance(treant, (Leaf, Tree)):
-                tre = filesystem.path2treant(treant.abspath)
-                outconts.extend(tre)
+                abspaths.append(treant.abspath)
+                self._cache[treant.abspath] = treant
+            elif isinstance(treant, Tree):
+                treantdir = os.path.join(treant.abspath, TREANTDIR_NAME)
+                if os.path.exists(treantdir):
+                    abspaths.extend(treant.abspath)
+                else:
+                    raise NotATreantError("Directory '{}' is "
+                                          "not a Treant".format(treant))
             elif os.path.exists(treant):
-                tre = filesystem.path2treant(treant)
-                outconts.extend(tre)
-            elif isinstance(treant, string_types):
-                tre = filesystem.path2treant(*glob.glob(treant))
-                outconts.extend(tre)
+                treantdir = os.path.join(treant, TREANTDIR_NAME)
+                if os.path.exists(treantdir):
+                    abspaths.append(os.path.abspath(treant))
+                else:
+                    raise NotATreantError("Directory '{}' is "
+                                          "not a Treant".format(treant))
             else:
                 raise TypeError("'{}' not a valid input "
                                 "for Bundle".format(treant))
 
-        attrs = []
-        for attr in ('uuid', 'treanttype', 'abspath'):
-            attrs.append([getattr(treant, attr) for treant in outconts])
+        self._add_members(abspaths)
 
-        self._add_members(*attrs)
-
-    def remove(self, *members):
+    def _remove(self, *members):
         """Remove any number of members from the collection.
 
         :Arguments:
             *members*
-                instances or indices of the members to remove
+                instances, indices, names, or absolute paths of the members to
+                remove
 
         """
         from .treants import Treant
 
-        uuids = self._get_members_uuid()
+        abspaths = self._state
         remove = list()
+
         for member in members:
             if isinstance(member, int):
-                remove.append(uuids[member])
+                remove.append(abspaths[member])
             elif isinstance(member, Treant):
-                remove.append(member.uuid)
+                remove.append(member.abspath)
             elif isinstance(member, string_types):
+                # try abspaths
+                abspaths = fnmatch.filter(self.abspaths, member)
+                paths = [m.abspath for m in self
+                         if m.abspath in abspaths]
+                remove.extend(paths)
+                # try names
                 names = fnmatch.filter(self.names, member)
-                uuids = [member.uuid for member in self
-                         if member.name in names]
-                remove.extend(uuids)
-
+                paths = [m.abspath for m in self
+                         if m.name in names]
+                remove.extend(paths)
             else:
-                raise TypeError('Only an integer or treant acceptable')
+                raise TypeError('Only a Treant, index, name, or absolute '
+                                'path acceptable')
 
         self._del_members(remove)
 
         # remove from cache
-        for uuid in remove:
-            self._cache.pop(uuid, None)
-
-    def clear(self):
-        """Remove all members.
-
-        """
-        self._del_members(all=True)
-
-    @property
-    def treanttypes(self):
-        """Return a list of member treanttypes.
-
-        """
-        return self._get_members_treanttype()
+        for abspath in remove:
+            self._cache.pop(abspath, None)
 
     @property
     def names(self):
         """Return a list of member names.
 
-        Members that can't be found will have name ``None``.
-
         :Returns:
             *names*
-                list giving the name of each member, in order;
-                members that are missing will have name ``None``
+                list giving the name of each member, in order
 
         """
         names = list()
@@ -854,82 +736,25 @@ class Bundle(CollectionMixin):
     def abspaths(self):
         """Return a list of absolute member directory paths.
 
-        Members that can't be found will have path ``None``.
-
         :Returns:
-            *names*
+            *abspaths*
                 list giving the absolute directory path of each member, in
-                order; members that are missing will have path ``None``
+                order
 
         """
-        return [member.abspath if member else None for member in self._list()]
+        return [member.abspath for member in self._list()]
 
     @property
     def relpaths(self):
         """Return a list of relative member directory paths.
 
-        Members that can't be found will have path ``None``.
-
         :Returns:
             *names*
                 list giving the relative directory path of each member, in
-                order; members that are missing will have path ``None``
+                order
 
         """
-        return [member.relpath if member else None for member in self._list()]
-
-    @property
-    def filepaths(self):
-        """Return a list of member filepaths.
-
-        Members that can't be found will have filepath ``None``.
-
-        :Returns:
-            *names*
-                list giving the filepath of each member, in order;
-                members that are missing will have filepath ``None``
-
-        """
-        filepaths = list()
-        for member in self._list():
-            if member:
-                filepaths.append(member.filepath)
-            else:
-                filepaths.append(None)
-
-        return filepaths
-
-    @property
-    def uuids(self):
-        """Return a list of member uuids.
-
-        :Returns:
-            *uuids*
-                list giving the uuid of each member, in order
-
-        """
-        return self._get_members_uuid()
-
-    def _check(self):
-        """Check that all member paths resolve properly.
-
-        """
-        members = self._get_members()
-
-        paths = {path: members[path] for path in self._memberpaths}
-
-        foxhound = filesystem.Foxhound(self, members['uuid'], paths,
-                                       timeout=self.searchtime)
-        found = foxhound.fetch(as_treants=False)
-
-        if None not in found.values():
-            treanttypes = [os.path.basename(path).split(os.extsep)[0]
-                           for path in found.values()]
-
-            self._add_members(found.keys(), treanttypes, found.values())
-            return True
-        else:
-            return False
+        return [member.relpath for member in self._list()]
 
     def _list(self):
         """Return a list of members.
@@ -937,49 +762,23 @@ class Bundle(CollectionMixin):
         Note: modifications of this list won't modify the members of the
         collection!
 
-        Missing members will be present in the list as ``None``. This method is
-        not intended for user-level use.
-
         """
-        members = self._get_members()
-        uuids = members['uuid']
+        from .treants import Treant
+
+        abspaths = self._state
 
         findlist = list()
         memberlist = list()
 
-        for uuid in uuids:
-            if uuid in self._cache and self._cache[uuid]:
-                memberlist.append(self._cache[uuid])
+        for abspath in abspaths:
+            if abspath in self._cache:
+                memberlist.append(self._cache[abspath])
+            elif os.path.exists(os.path.join(abspath, TREANTDIR_NAME)):
+                self._cache[abspath] = Treant(abspath)
+                memberlist.append(self._cache[abspath])
             else:
-                memberlist.append(None)
-                findlist.append(uuid)
-
-        # track down our non-cached treants
-        if findlist:
-            paths = {path: members[path]
-                     for path in self._memberpaths}
-            foxhound = filesystem.Foxhound(self, findlist, paths,
-                                           timeout=self.searchtime)
-            foundconts = foxhound.fetch(as_treants=True)
-
-            # add to cache, and ensure we get updated paths with a re-add in
-            # case of an IOError, skip (probably due to permissions, but will
-            # need something more robust later
-            self._cache.update(foundconts)
-            try:
-                self.add(*foundconts.values())
-            except OSError:
-                pass
-
-            # insert found treants into output list
-            for uuid in findlist:
-                result = foundconts[uuid]
-                if not result:
-                    ind = list(members['uuid']).index(uuid)
-                    raise IOError("Could not find member {} (uuid: {});"
-                                  " re-add or remove it.".format(ind, uuid))
-
-                memberlist[list(uuids).index(uuid)] = result
+                raise NotATreantError("Directory '{}' is "
+                                      "not a Treant.".format(abspath))
 
         return memberlist
 
@@ -1013,7 +812,7 @@ class Bundle(CollectionMixin):
         if processes > 1:
             pool = mp.Pool(processes=processes)
             results = dict()
-            results = {member.uuid: pool.apply_async(
+            results = {member.abspath: pool.apply_async(
                     function, args=(member,), kwds=kwargs) for member in self}
 
             output = {key: results[key].get() for key in results}
@@ -1022,7 +821,7 @@ class Bundle(CollectionMixin):
             pool.join()
 
             # sort by member order
-            results = [output[uuid] for uuid in self.uuids]
+            results = [output[abspath] for abspath in self.abspaths]
         else:
             results = [function(member, **kwargs) for member in self]
 
@@ -1031,25 +830,6 @@ class Bundle(CollectionMixin):
             results = None
 
         return results
-
-    @property
-    def searchtime(self):
-        """Max time to spend searching for missing members, in seconds.
-
-        Setting a larger value allows more time for the collection to look for
-        members elsewhere in the filesystem.
-
-        If `None`, there will be no time limit. Use with care.
-
-        """
-        return self._searchtime
-
-    @searchtime.setter
-    def searchtime(self, value):
-        if isinstance(value, (float, int)) or value is None:
-            self._searchtime = value
-        else:
-            raise TypeError("Must give a number or `None` for searchtime")
 
     def globfilter(self, pattern):
         """Return a Bundle of members that match by name the given globbing
@@ -1062,59 +842,37 @@ class Bundle(CollectionMixin):
 
         """
         return Bundle([self[name] for name in
-                      fnmatch.filter(self.names, pattern)], limbs=self.limbs)
+                      fnmatch.filter(self.names, pattern)])
 
-    def _add_members(self, uuids, treanttypes, abspaths):
+    def _add_members(self, abspaths):
         """Add many members at once.
 
-        Given lists must be in the same order with respect to the members they
-        describe.
-
         :Arguments:
-            *uuids*
-                list of uuids
-            *treanttypes*
-                list of treanttypes
             *abspaths*
                 list of abspaths
 
         """
-        for uuid, treanttype, abspath in zip(uuids, treanttypes, abspaths):
-            self._add_member(uuid, treanttype, abspath)
+        for abspath in abspaths:
+            self._add_member(abspath)
 
-    def _add_member(self, uuid, treanttype, abspath):
+    def _add_member(self, abspath):
         """Add a member to the Bundle.
 
-        If the member is already present, its location will be updated with
-        the given location.
-
         :Arguments:
-            *uuid*
-                the uuid of the new member
-            *treanttype*
-                the treant type of the new member
             *abspath*
                 absolute path to directory of new member in the filesystem
 
         """
-        member_rec = {'uuid': uuid,
-                      'treanttype': treanttype,
-                      'abspath': os.path.abspath(abspath)}
 
-        # check if uuid already present
-        uuids = [member['uuid'] for member in self._state]
+        if not (abspath in self._state):
+            self._state.append(abspath)
 
-        if uuid in uuids:
-            self._state[uuids.index(uuid)] = member_rec
-        else:
-            self._state.append(member_rec)
-
-    def _del_members(self, uuids=None, all=False):
+    def _del_members(self, abspaths=None, all=False):
         """Remove members from the Bundle.
 
         :Arguments:
-            *uuids*
-                An iterable of uuids of the members to remove
+            *abspaths*
+                An iterable of abspaths of the members to remove
             *all*
                 When True, remove all members [``False``]
 
@@ -1122,95 +880,42 @@ class Bundle(CollectionMixin):
         if all:
             self._state = list()
         else:
-            # remove redundant uuids from given list if present
-            uuids = set([str(uuid) for uuid in uuids])
+            for abspath in abspaths:
+                try:
+                    self._state.remove(abspath)
+                    self._cache.pop(abspath, None)
+                except ValueError:
+                    pass
 
-            # get matching rows
-            memberlist = list()
-            for i, member in enumerate(self._state):
-                for uuid in uuids:
-                    if (member['uuid'] == uuid):
-                        memberlist.append(i)
+    @property
+    def tags(self):
+        return self._tags
 
-            memberlist.sort()
-            j = 0
-            # delete matching entries; have to use j to shift the register as
-            # we remove entries
-            for i in memberlist:
-                self._state.pop(i - j)
-                j = j + 1
+    @tags.setter
+    def tags(self, value):
+        if isinstance(value, (Tags, list, set)):
+            val = list(value)
+            self.tags.clear()
+            self.tags.add(val)
+        else:
+            raise TypeError("Can only set with tags, a list, or set")
 
-    def _get_member(self, uuid):
-        """Get all stored information on the specified member.
+    @property
+    def categories(self):
+        return self._categories
 
-        Returns a dictionary whose keys are column names and values the
-        corresponding values for the member.
-
-        :Arguments:
-            *uuid*
-                uuid of the member to retrieve information for
-
-        :Returns:
-            *memberinfo*
-                a dictionary containing all information stored for the
-                specified member
-        """
-        memberinfo = None
-        for member in self._state:
-            if member['uuid'] == uuid:
-                memberinfo = member
-
-        return memberinfo
-
-    def _get_members(self):
-        """Get full member table.
-
-        Sometimes it is useful to read the whole member table in one go instead
-        of doing multiple reads.
-
-        :Returns:
-            *memberdata*
-                dict giving full member data, with fields as keys and in member
-                order
-        """
-        out = defaultdict(list)
-
-        for member in self._state:
-            for key in self._fields:
-                out[key].append(member[key])
-
-        return out
-
-    def _get_members_uuid(self):
-        """List uuid for each member.
-
-        :Returns:
-            *uuids*
-                list giving treanttype of each member, in order
-        """
-        return [member['uuid'] for member in self._state]
-
-    def _get_members_names(self):
-        """List uuid for each member.
-
-        :Returns:
-            *uuids*
-                list giving treanttype of each member, in order
-        """
-        return [os.path.basename(member['abspath']) for member in self._state]
-
-    def _get_members_treanttype(self):
-        """List treanttype for each member.
-
-        :Returns:
-            *treanttypes*
-                list giving treanttype of each member, in order
-        """
-        return [member['treanttype'] for member in self._state]
+    @categories.setter
+    def categories(self, value):
+        if isinstance(value, (Categories, dict)):
+            val = dict(value)
+            self.categories.clear()
+            self.categories.add(val)
+        else:
+            raise TypeError("Can only set with categories or dict")
 
 
 class _Loc(object):
-    """Subtree accessor for collections."""
+    """Path accessor for collections."""
 
     def __init__(self, collection):
         self._collection = collection
@@ -1220,4 +925,26 @@ class _Loc(object):
 
         """
         return View([t[path] for t in self._collection
-                     if isinstance(t, Tree)], limbs=self._collection.limbs)
+                     if isinstance(t, Tree)])
+
+
+class _TreeLoc(_Loc):
+    """Tree accessor for collections."""
+
+    def __getitem__(self, path):
+        """Get Tree at `path` relative to each Tree in collection.
+
+        """
+        return View([t.treeloc[path] for t in self._collection
+                     if isinstance(t, Tree)])
+
+
+class _LeafLoc(_Loc):
+    """Leaf accessor for collections."""
+
+    def __getitem__(self, path):
+        """Get Leaf at `path` relative to each Tree in collection.
+
+        """
+        return View([t.leafloc[path] for t in self._collection
+                     if isinstance(t, Tree)])

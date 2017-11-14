@@ -16,17 +16,16 @@ from asciitree import LeftAligned
 from .util import makedirs
 from .manipulators import discover
 from .rsync import rsync
-from . import _TREELIMBS
 
 
 @total_ordering
 class Veg(object):
 
-    _classlimbs = set()
-    _limbs = set()
-
     def __init__(self, filepath):
         self._path = Path(os.path.abspath(filepath))
+
+    def __fspath__(self):
+        return str(self._path.absolute())
 
     def __str__(self):
         return str(self.path)
@@ -79,7 +78,7 @@ class Veg(object):
         """Parent directory for this path.
 
         """
-        return Tree(str(self.path.parent), limbs=None)
+        return Tree(str(self.path.parent))
 
     @property
     def name(self):
@@ -87,13 +86,6 @@ class Veg(object):
 
         """
         return os.path.basename(os.path.abspath(self.abspath))
-
-    @property
-    def limbs(self):
-        """A set giving the names of this object's attached limbs.
-
-        """
-        return self._classlimbs | self._limbs
 
 
 class Leaf(Veg):
@@ -118,7 +110,7 @@ class Leaf(Veg):
             this leaf
 
         """
-        makedirs(os.path.dirname(str(self.path)))
+        makedirs(os.path.dirname(str(self.path)), exist_ok=True)
 
         return self
 
@@ -160,15 +152,15 @@ class Leaf(Veg):
 
 class Tree(Veg):
     """A directory."""
-    def __init__(self, dirpath, limbs=None):
-        if os.path.isfile(dirpath):
+    def __init__(self, dirpath):
+        if isinstance(dirpath, Tree):
+            dirpath = dirpath.abspath
+
+        elif os.path.isfile(dirpath):
             raise ValueError("'{}' is an existing file; "
                              "a Tree must be a directory".format(dirpath))
 
         self._path = Path(os.path.abspath(dirpath))
-
-        if limbs:
-            self.attach(*limbs)
 
     def __repr__(self):
         return "<Tree: '{}'>".format(self.relpath)
@@ -211,8 +203,7 @@ class Tree(Veg):
 
             if (os.path.isdir(fullpath) or path.endswith(os.sep) or
                     (fullpath in self.abspath)):
-                limbs = self._classlimbs | self._limbs
-                return Tree(fullpath, limbs=limbs)
+                return Tree(fullpath)
             else:
                 return Leaf(fullpath)
 
@@ -221,56 +212,15 @@ class Tree(Veg):
             for item in path:
                 outview.append(filt(item))
 
-            return View(outview, limbs=self.limbs)
+            return View(outview)
         elif isinstance(path, string_types):
             return filt(path)
         else:
             raise ValueError('Must use a path or a list of paths')
 
-    @classmethod
-    def _attach_limb_class(cls, limb):
-        """Attach a limb to the class."""
-        # property definition
-        def getter(self):
-            if not hasattr(self, "_"+limb._name):
-                setattr(self, "_"+limb._name, limb(self))
-            return getattr(self, "_"+limb._name)
-
-        try:
-            setter = limb._setter
-        except AttributeError:
-            setter = None
-
-        # set the property
-        setattr(cls, limb._name,
-                property(getter, setter, None, limb.__doc__))
-
-        if limb._name in _TREELIMBS:
-            cls._classlimbs.add(limb._name)
-
-    def _attach_limb(self, limb):
-        """Attach a limb."""
-        try:
-            setattr(self, limb._name, limb(self))
-        except AttributeError:
-            pass
-
-        if limb._name in _TREELIMBS:
-            self._limbs.add(limb._name)
-
-    def attach(self, *limbname):
-        """Attach limbs by name to this Tree."""
-        for ln in limbname:
-            try:
-                limb = _TREELIMBS[ln]
-            except KeyError:
-                raise KeyError("No such limb '{}'".format(ln))
-            else:
-                self._attach_limb(limb)
-
     @property
     def loc(self):
-        """Get Tree/Leaf at `path` relative to Tree.
+        """Get Tree/Leaf at relative `path`.
 
         Use with getitem syntax, e.g. ``.loc['some name']``
 
@@ -293,6 +243,44 @@ class Tree(Veg):
         return self._loc
 
     @property
+    def treeloc(self):
+        """Get Tree at relative `path`.
+
+        Use with getitem syntax, e.g. ``.treeloc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If the given path resolves to an existing file, then a ``ValueError``
+        will be raised.
+
+        """
+        if not hasattr(self, "_treeloc"):
+            self._treeloc = _TreeLoc(self)
+
+        return self._treeloc
+
+    @property
+    def leafloc(self):
+        """Get Leaf at relative `path`.
+
+        Use with getitem syntax, e.g. ``.treeloc['some name']``
+
+        Allowed inputs are:
+        - A single name
+        - A list or array of names
+
+        If the given path resolves to an existing directory, then a
+        ``ValueError`` will be raised.
+
+        """
+        if not hasattr(self, "_leafloc"):
+            self._leafloc = _LeafLoc(self)
+
+        return self._leafloc
+
+    @property
     def abspath(self):
         """Absolute path of ``self.path``."""
         return str(self.path.absolute()) + os.sep
@@ -305,36 +293,20 @@ class Tree(Veg):
     @property
     def parent(self):
         """Parent directory for this path."""
-        limbs = self._classlimbs | self._limbs
+        return Tree(str(self.path.parent))
 
-        return Tree(str(self.path.parent), limbs=limbs)
+    def leaves(self, hidden=False):
+        """Return a View of the files in this Tree.
 
-    @property
-    def leaves(self):
-        """A View of the files in this Tree.
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden files.
 
-        Hidden files are not included.
-
-        """
-        from .collections import View
-
-        if self.exists:
-            for root, dirs, files in scandir.walk(self.abspath):
-                # remove hidden files
-                out = [Leaf(os.path.join(root, f)) for f in files
-                       if f[0] != os.extsep]
-                break
-
-            out.sort()
-            return View(out, limbs=self.limbs)
-        else:
-            raise OSError("Tree doesn't exist in the filesystem")
-
-    @property
-    def trees(self):
-        """A View of the directories in this Tree.
-
-        Hidden directories are not included.
+        Returns
+        -------
+        View
+            A View with files in this Tree as members.
 
         """
         from .collections import View
@@ -343,45 +315,64 @@ class Tree(Veg):
             raise OSError("Tree doesn't exist in the filesystem")
 
         for root, dirs, files in scandir.walk(self.abspath):
-            # remove hidden directories
-            out = [Tree(os.path.join(root, d), limbs=self.limbs) for d in dirs
-                   if d[0] != os.extsep]
+            if hidden:
+                out = [Leaf(os.path.join(root, f)) for f in files]
+            else:
+                out = [Leaf(os.path.join(root, f)) for f in files
+                       if f[0] != os.extsep]
             break
 
         out.sort()
-        return View(out, limbs=self.limbs)
+        return View(out)
 
-    @property
-    def hidden(self):
-        """A View of the hidden files and directories in this Tree."""
+    def trees(self, hidden=False):
+        """Return a View of the directories in this Tree.
+
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden directories.
+
+        Returns
+        -------
+        View
+            A View with directories in this Tree as members.
+
+        """
         from .collections import View
 
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
+
         for root, dirs, files in scandir.walk(self.abspath):
-            outdirs = [Tree(os.path.join(root, d), limbs=self.limbs)
-                       for d in dirs if d[0] == os.extsep]
-            outdirs.sort()
-
-            outfiles = [Leaf(os.path.join(root, f)) for f in files
-                        if f[0] == os.extsep]
-            outfiles.sort()
-
-            # want directories then files
-            out = outdirs + outfiles
+            if hidden:
+                out = [Tree(os.path.join(root, d))
+                       for d in dirs]
+            else:
+                out = [Tree(os.path.join(root, d))
+                       for d in dirs if d[0] != os.extsep]
             break
 
-        return View(out, limbs=self.limbs)
+        out.sort()
+        return View(out)
 
-    @property
-    def children(self):
-        """A View of all files and directories in this Tree.
+    def children(self, hidden=False):
+        """Return a View of all files and directories in this Tree.
 
-        Includes hidden files and directories.
+        Parameters
+        ----------
+        hidden : bool
+            If True, include hidden files and directories.
+
+        Returns
+        -------
+        View
+            A View with files and directories in this Tree as members.
 
         """
         from .collections import View
-        return View(self.trees + self.leaves + self.hidden, limbs=self.limbs)
+        return View((self.trees(hidden=hidden) +
+                     self.leaves(hidden=hidden)))
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees matching given globbing
@@ -404,7 +395,7 @@ class Tree(Veg):
 
         out.sort()
 
-        return View(out, limbs=self.limbs)
+        return View(out)
 
     def walk(self, topdown=True, onerror=None, followlinks=False):
         """Walk through the contents of the tree.
@@ -450,9 +441,8 @@ class Tree(Veg):
         ----------
         depth : int, optional
             Maximum directory depth to display. ``None`` indicates no limit.
-        hidden : bool, optional
-            If False, do not show hidden files; hidden directories are still
-            shown if they contain non-hidden files or directories.
+        hidden : bool
+            If True, show hidden files and directories.
 
         """
         if not self.exists:
@@ -462,21 +452,29 @@ class Tree(Veg):
         rootdir = self.abspath.rstrip(os.sep)
         start = rootdir.rfind(os.sep) + 1
         for path, dirs, files in scandir.walk(rootdir):
-            folders = ["{}/".format(x) for x in path[start:].split(os.sep)]
 
+            # sort files and directories so they show up in output sorted
+            dirs.sort()
+            files.sort()
+
+            folders = ["{}/".format(x) for x in path[start:].split(os.sep)]
             parent = reduce(dict.get, folders[:-1], tree)
 
+            # depth handling
             if depth and len(folders) == depth+1:
                 parent[folders[-1]] = {}
                 continue
             elif depth and len(folders) > depth+1:
                 continue
 
-            # filter out hidden files, if desired
+            # filter out hidden files and directories, if desired
             if not hidden:
-                outfiles = sorted(fn for fn in files if fn[0] != os.extsep)
+                outfiles = [file for file in files if file[0] != os.extsep]
+                hidden_dirs = [d for d in dirs if d[0] == os.extsep]
+                for d in hidden_dirs:
+                    dirs.remove(d)
             else:
-                outfiles = sorted(files)
+                outfiles = files
 
             subdir = OrderedDict.fromkeys(outfiles, {})
             parent[folders[-1]] = subdir
@@ -493,7 +491,7 @@ class Tree(Veg):
             This Tree.
 
         """
-        makedirs(str(self.path))
+        makedirs(str(self.path), exist_ok=True)
 
         return self
 
@@ -547,7 +545,7 @@ class Tree(Veg):
 
 
 class _Loc(object):
-    """Subtree accessor for Trees."""
+    """Path accessor for Trees."""
 
     def __init__(self, tree):
         self._tree = tree
@@ -557,3 +555,23 @@ class _Loc(object):
 
         """
         return self._tree[path]
+
+
+class _TreeLoc(_Loc):
+    """Tree accessor for Trees."""
+
+    def __getitem__(self, path):
+        """Get Tree at `path` relative to attached Tree.
+
+        """
+        return Tree(self._tree[path].abspath)
+
+
+class _LeafLoc(_Loc):
+    """Leaf accessor for Trees."""
+
+    def __getitem__(self, path):
+        """Get Leaf at `path` relative to attached Tree.
+
+        """
+        return Leaf(self._tree[path].abspath)

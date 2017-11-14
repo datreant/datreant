@@ -26,18 +26,18 @@ They can also be created directly from any number of Treants:
 
 AggTags
 ```````
-The class :class:`datreant.core.agglimbs.AggTags` is the interface used by
+The class :class:`datreant.core.metadata.AggTags` is the interface used by
 Bundles to access their members' tags.
 
-.. autoclass:: datreant.core.agglimbs.AggTags
+.. autoclass:: datreant.core.metadata.AggTags
     :members:
     :inherited-members:
 
 AggCategories
 `````````````
-The class :class:`datreant.core.agglimbs.AggCategories` is the interface used
+The class :class:`datreant.core.metadata.AggCategories` is the interface used
 by Bundles to access their members' categories.
 
-.. autoclass:: datreant.core.agglimbs.AggCategories
+.. autoclass:: datreant.core.metadata.AggCategories
     :members:
     :inherited-members:

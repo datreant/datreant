@@ -7,7 +7,7 @@ import scandir
 import fnmatch
 from six.moves import range
 
-from . import _TREANTS
+from .names import TREANTDIR_NAME
 
 
 def discover(dirpath='.', depth=None, treantdepth=None):
@@ -46,15 +46,9 @@ def discover(dirpath='.', depth=None, treantdepth=None):
     treantdirs = set()
 
     for root, dirs, files in scandir.walk(dirpath):
-        for treanttype in _TREANTS:
-            outnames = fnmatch.filter(files,
-                                      "{}.*.json".format(treanttype))
-
-            if treantdepth is not None and outnames:
-                treantdirs.add(root)
-
-            paths = [os.path.join(root, file) for file in outnames]
-            found.extend(paths)
+        if (TREANTDIR_NAME in dirs):
+            treantdirs.add(root)
+            found.append(root)
 
         # depth check; if too deep, empty dirs to avoid downward traversal
         if depth is not None and len(root.split(os.sep)) - startdepth >= depth:

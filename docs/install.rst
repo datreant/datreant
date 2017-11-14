@@ -20,6 +20,7 @@ All datreant packages currently support the following Python versions::
 - 3.3
 - 3.4
 - 3.5
+- 3.6
 
 
 Dependencies

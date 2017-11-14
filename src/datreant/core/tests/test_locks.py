@@ -10,9 +10,9 @@ import pytest
 from datreant.core import Treant
 
 
-def pokefile(treantfilepath, string):
+def pokefile(treantpath, string):
     """Add a number of tags to a Treant."""
-    treant = Treant(treantfilepath)
+    treant = Treant(treantpath)
     treant.tags.add(*["{}_{}".format(string, i) for i in range(100)])
 
 
@@ -33,7 +33,7 @@ class TestTreantFile:
     def test_death_by_1000_pokes(self, treant):
         pool = mp.Pool(processes=4)
         for i in range(10):
-            pool.apply_async(pokefile, args=(treant.filepath,
+            pool.apply_async(pokefile, args=(treant.abspath,
                                              "run_{}".format(i)))
         pool.close()
         pool.join()

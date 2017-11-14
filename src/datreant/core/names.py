@@ -1,0 +1,1 @@
+TREANTDIR_NAME = '.datreant'

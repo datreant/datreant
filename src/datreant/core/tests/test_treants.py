@@ -3,6 +3,7 @@
 """
 
 import datreant.core as dtr
+from datreant.core import Treant
 import pytest
 import mock
 import os
@@ -15,11 +16,6 @@ from .test_trees import TestTree
 class TestTreant(TestTree):
     """Test generic Treant features"""
     treantname = 'testtreant'
-    treanttype = 'Treant'
-
-    @pytest.fixture
-    def treantclass(self):
-        return dtr.treants.Treant
 
     @pytest.fixture
     def treant(self, tmpdir):
@@ -28,10 +24,10 @@ class TestTreant(TestTree):
         return c
 
     @pytest.fixture
-    def basic_treant(self, tmpdir, treantclass):
+    def basic_treant(self, tmpdir):
         # treant with tags and cats, in tmpdir
         with tmpdir.as_cwd():
-            t1 = treantclass('Rincewind')
+            t1 = Treant('Rincewind')
             t1.tags.add('magical')
             t1.categories.add({'colour': 'octarine'})
             yield t1
@@ -39,15 +35,13 @@ class TestTreant(TestTree):
     def test_init(self, treant, tmpdir):
         """Test basic Treant init"""
         assert treant.name == self.treantname
-        assert treant.location == tmpdir.strpath
-        assert treant.treanttype == self.treanttype
         assert treant.abspath == (os.path.join(tmpdir.strpath,
                                                self.treantname) + os.sep)
 
-    def test_init_from_Tree(self, tmpdir, treantclass):
+    def test_init_from_Tree(self, tmpdir):
         with tmpdir.as_cwd():
             tree = dtr.Tree('this')
-            t = treantclass(tree)
+            t = Treant(tree)
 
             assert t.path == tree.path
 
@@ -83,40 +77,27 @@ class TestTreant(TestTree):
                     assert cat in t2.categories
                     assert t2.categories[cat] == val
 
-    @pytest.mark.parametrize("tags", (None, [], ['small', 'spiky']))
-    @pytest.mark.parametrize("categories", (None, {}, {'colour': 'red'}))
-    def test_init_regenerate_via_statefile(self, tags, categories, tmpdir):
-        # test regenerating a Treant from the path of the statefile
-        with tmpdir.as_cwd():
-            t = dtr.Treant('this')
-            t2 = dtr.Treant(t.filepath, tags=tags, categories=categories)
-            if tags is not None:
-                for tag in tags:
-                    assert tag in t2.tags
-            if categories is not None:
-                for cat, val in categories.items():
-                    assert cat in t2.categories
-                    assert t2.categories[cat] == val
-
-    def test_gen_OSError(self, tmpdir, treantclass):
+    def test_gen_OSError(self, tmpdir):
         with tmpdir.as_cwd():
             with mock.patch('os.makedirs') as mp:
                 mp.sideeffect = OSError(os.errno.ENOSPC, 'Mock - disk full')
                 with pytest.raises(OSError) as error:
-                    t = treantclass('new')
+                    t = Treant('new')
+                    t.tags.add('worthless')
                     assert error.errno == os.errno.ENOSPC
 
-    def test_gen_OSError13(self, tmpdir, treantclass):
+    def test_gen_OSError13(self, tmpdir):
         with tmpdir.as_cwd():
             with mock.patch('os.makedirs') as mp:
                 mp.sideeffect = OSError(os.errno.EACCES, 'Mock - disk full')
                 with pytest.raises(OSError) as error:
-                    t = treantclass('new')
+                    t = Treant('new')
+                    t.tags.add('worthless')
                     assert error.errno == os.errno.EACCES
                     assert ("Permission denied; cannot create 'new'"
                             in str(error))
 
-    def test_gen_methods(self, tmpdir, treantclass):
+    def test_gen_methods(self, tmpdir):
         """Test the variety of ways we can generate a new Treant
 
         1. ``Treant('treant')``, where 'treant' is not an existing file or
@@ -131,38 +112,29 @@ class TestTreant(TestTree):
         4. ``Treant('/somedir/treant')``, where 'treant' is an existing
            directory in 'somedir' without any Treant state files inside
 
-        5. ``Treant('somedir/treant', new=True)``, where 'treant' is an
-           existing directory in 'somedir' with an existing Treant statefile
-
         """
         with tmpdir.as_cwd():
             # 1
-            t1 = treantclass('newone')
-            assert os.path.exists(t1.filepath)
+            t1 = Treant('newone')
+            assert os.path.exists(t1._treantdir)
 
             # 2
             os.mkdir('another')
-            t2 = treantclass('another')
-            assert os.path.exists(t2.filepath)
+            t2 = Treant('another')
+            assert os.path.exists(t2._treantdir)
 
             # 3
-            t3 = treantclass('yet/another')
-            assert os.path.exists(t3.filepath)
+            t3 = Treant('yet/another')
+            assert os.path.exists(t3._treantdir)
 
             # 4
             os.mkdir('yet/more')
-            t4 = treantclass('yet/more')
-            assert os.path.exists(t4.filepath)
-
-            # 5
-            t5 = treantclass('yet/more', new=True)
-            assert os.path.exists(t5.filepath)
-            assert t5.abspath == t4.abspath
-            assert t5.filepath != t4.filepath
+            t4 = Treant('yet/more')
+            assert os.path.exists(t4._treantdir)
 
     @pytest.mark.parametrize("tags", (None, [], ['small', 'spiky']))
     @pytest.mark.parametrize("categories", (None, {}, {'colour': 'red'}))
-    def test_regen(self, tags, categories, tmpdir, treantclass):
+    def test_regen(self, tags, categories, tmpdir):
         """Test regenerating Treant.
 
         - create Treant
@@ -171,9 +143,9 @@ class TestTreant(TestTree):
         - check that modifications were saved
         """
         with tmpdir.as_cwd():
-            C1 = treantclass('regen', tags=tags, categories=categories)
+            C1 = Treant('regen', tags=tags, categories=categories)
 
-            C2 = treantclass('regen')  # should be regen of C1
+            C2 = Treant('regen')  # should be regen of C1
 
             if tags is not None:
                 for tag in tags:
@@ -183,90 +155,17 @@ class TestTreant(TestTree):
                     assert cat in C2.categories
                     assert C2.categories[cat] == val
 
+            assert C1 == C2
+
             # they point to the same file, but they are not the same object
             assert C1 is not C2
 
-    def test_regen_methods(self, tmpdir, treantclass):
-        """Test the variety of ways Treants can be regenerated.
-
-        1. ``Treant('treant')``, where there exists *only one* ``Treant`` state
-           file inside 'treant'
-
-        2. ``Treant('treant/Treant.<uuid>.<ext>')``, where there need not be
-           only a single ``Treant`` state file in 'treant'
-
-        """
-        with tmpdir.as_cwd():
-            t1 = treantclass('newone')
-            t2 = treantclass('newone')
-            assert t1.uuid == t2.uuid
-
-            t3 = treantclass('newone', new=True)
-            assert t3.uuid != t2.uuid
-
-            t4 = treantclass(t3.filepath)
-            assert t4.uuid == t3.uuid
-
-    def test_noregen(self, tmpdir, treantclass):
-        """Test a variety of ways that generation of a new Treant should fail.
-
-        1. `Treant('somedir/treant')` should raise `MultipleTreantsError` if
-           more than one state file is in the given directory
-
-        """
-        with tmpdir.as_cwd():
-            # 1
-            t1 = treantclass('newone')
-            t2 = treantclass('newone', new=True)
-            assert t1.uuid != t2.uuid
-
-            with pytest.raises(dtr.treants.MultipleTreantsError):
-                t3 = treantclass('newone')
-
-    def test_rename(self, basic_treant, treantclass):
-        t1 = basic_treant
-        assert os.path.exists('Rincewind')
-        assert os.path.isdir('Rincewind')
-
-        t1.name = 'newplace'
-        assert not os.path.exists('Rincewind')
-        assert 'magical' in t1.tags
-        assert 'colour' in t1.categories
-
-        # make another Treant pointing to the new dir
-        t2 = treantclass('newplace')
-        assert 'magical' in t2.tags
-        assert 'colour' in t2.categories
-
-    class TestChangeLocation(object):
-        # locate can take either empty dir, or new dir
-        def test_relocate_empty_dir(self, basic_treant, treantclass):
-            t1 = basic_treant
-            os.mkdir('newplace')
-            t1.location = 'newplace'
-
-            assert t1.location.endswith('newplace')
-            assert os.path.isdir('newplace/Rincewind')
-            t2 = treantclass('newplace/Rincewind')
-            assert 'magical' in t2.tags
-            assert 'colour' in t2.categories
-
-        def test_relocate_new_dir(self, basic_treant, treantclass):
-            t1 = basic_treant
-            t1.location = 'newplace'
-
-            assert t1.location.endswith('newplace')
-            assert os.path.isdir('newplace/Rincewind')
-            t2 = treantclass('newplace/Rincewind')
-            assert 'magical' in t2.tags
-            assert 'colour' in t2.categories
-
-    def test_cmp(self, tmpdir, treantclass):
+    def test_cmp(self, tmpdir):
         """Test the comparison of Treants when sorting"""
         with tmpdir.as_cwd():
-            c1 = treantclass('a')
-            c2 = treantclass('b')
-            c3 = treantclass('c')
+            c1 = Treant('a')
+            c2 = Treant('b')
+            c3 = Treant('c')
 
         assert sorted([c3, c2, c1]) == [c1, c2, c3]
         assert c1 <= c2 < c3
@@ -315,16 +214,14 @@ class TestTreant(TestTree):
             treant.tags.clear()
             assert len(treant.tags) == 0
 
-        def test_tags_set_behavior(self, tmpdir, treantclass):
+        def test_tags_set_behavior(self, tmpdir):
             with tmpdir.as_cwd():
                 # 1
-                t1 = treantclass('maple')
-                assert os.path.exists(t1.filepath)
+                t1 = Treant('maple')
                 t1.tags.add(['sprout', 'deciduous'])
 
                 # 2
-                t2 = treantclass('sequoia')
-                assert os.path.exists(t2.filepath)
+                t2 = Treant('sequoia')
                 t2.tags.add(['sprout', 'evergreen'])
 
                 tags_union = t1.tags | t2.tags
@@ -347,8 +244,7 @@ class TestTreant(TestTree):
                 assert 'sprout' not in tags_symm_diff
 
                 # 3
-                t3 = treantclass('oak')
-                assert os.path.exists(t3.filepath)
+                t3 = Treant('oak')
                 t3.tags.add(['deciduous'])
 
                 # Test set membership
@@ -391,7 +287,7 @@ class TestTreant(TestTree):
                     t1.tags ^ ('tree')
                 # assert e.value.message == type_error_msg
 
-        def test_tags_setting(self, tmpdir, treantclass):
+        def test_tags_setting(self, tmpdir):
             """Test that we can set tags with lists or sets, or with Tags
             objects.
 
@@ -399,19 +295,19 @@ class TestTreant(TestTree):
             with tmpdir.as_cwd():
 
                 # set with a list
-                t1 = treantclass('maple')
+                t1 = Treant('maple')
                 t1.tags = ['sprout', 'deciduous']
 
                 assert t1.tags == {'sprout', 'deciduous'}
 
                 # set with a set
-                t2 = treantclass('elm')
+                t2 = Treant('elm')
                 t2.tags = {'sprout', 'deciduous'}
 
                 assert t2.tags == {'sprout', 'deciduous'}
 
                 # set with a Tags object
-                t3 = treantclass('sequoia')
+                t3 = Treant('sequoia')
                 t3.tags = t2.tags
 
                 assert t3.tags == {'sprout', 'deciduous'}
@@ -455,6 +351,11 @@ class TestTreant(TestTree):
         def test_tags_only_strings(self, treant, tag):
             with pytest.raises(ValueError):
                 treant.tags.add(tag)
+
+        def test_tags_printing(self, treant):
+            treant.tags.add('marklar')
+            repr = str(treant.tags)
+            assert repr == "Tags\n====\n'marklar'\n"
 
     class TestCategories:
         """Test treant categories"""
@@ -600,7 +501,7 @@ class TestReadOnly:
     def test_treant_read_only(self, treant):
         """Test that a read-only Treant can be accessed, but not written to.
         """
-        c = dtr.treants.Treant(treant.filepath)
+        c = dtr.treants.Treant(treant.abspath)
 
         assert '72' in c.tags
 

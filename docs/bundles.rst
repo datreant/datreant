@@ -3,10 +3,10 @@
 =================================
 Coordinating Treants with Bundles
 =================================
-Similar to a View, a **Bundle** is an ordered set of Treants that makes it easy
-to work with them as a single logical unit. Bundles can be constructed in a
-variety of ways, but often with a collection of Treants. If our working directory
-has a few Treants in it::
+Similar to a View, a **Bundle** is an immutable, ordered set of Treants that
+makes it easy to work with them as a single logical unit. Bundles can be
+constructed in a variety of ways, but often with a collection of Treants. If
+our working directory has a few Treants in it::
 
     > ls
     elm/  maple/  oak/  sequoia/
@@ -16,7 +16,7 @@ We can make a Bundle with ::
     >>> import datreant.core as dtr
     >>> b = dtr.Bundle('elm', 'maple', 'oak', 'sequoia')
     >>> b
-    <Bundle([<Treant: 'elm'>, <Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'sequoia'>])>
+    <Bundle(['elm', 'maple', 'oak', 'sequoia'])>
 
 Bundles can also be initialized from existing Treant instances, in addition to
 their paths in the filesystem, so ::
@@ -35,7 +35,7 @@ can do this work for us::
 
     >>> b = dtr.discover('.')
     >>> b
-    <Bundle([<Treant: 'sequoia'>, <Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['sequoia', 'maple', 'oak', 'elm'])>
 
 For this simple example all our Treants were in this directory, so it's not
 quite as useful. But for a directory structure that is deep and convoluted
@@ -58,22 +58,22 @@ work for Bundles. This includes indexing with integers::
 slicing::
 
     >>> b[1:]
-    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['maple', 'oak', 'elm'])>
 
 fancy indexing:: 
 
     >>> b[[1, 2, 0]]
-    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'sequoia'>])>
+    <Bundle(['maple', 'oak', 'sequoia'])>
 
 boolean indexing::
 
     >>> b[[False, False, True, False]]
-    <Bundle([<Treant: 'oak'>])>
+    <Bundle(['oak'])>
 
 and indexing by Treant name::
 
     >>> b['oak']
-    <Bundle([<Treant: 'oak'>])>
+    <Bundle(['oak'])>
 
 Note that since Treant names need not be unique, indexing by name always yields
 a Bundle.
@@ -130,17 +130,17 @@ gives us back a list of booleans. This can be used directly on the Bundle as
 a boolean index to get back a subselection of its members::
 
     >>> b[b.tags['building']]
-    <Bundle([<Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['oak', 'elm'])>
 
 We can also provide multiple tags to match more Treants::
 
     >>> b[b.tags['building', 'furniture']]
-    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['maple', 'oak', 'elm'])>
 
 The above is equivalent to giving a tuple of tags to match, as below::
 
     >>> b[b.tags[('building', 'furniture')]]
-    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['maple', 'oak', 'elm'])>
 
 Using a tuple functions as an "or"-ing of the tags given, in which case
 the resulting members are those that have at least one of the tags inside
@@ -160,13 +160,13 @@ Lists and tuples can be nested to build complex and/or selections. In addition,
 sets can be used to indicate negation ("not")::
 
     >>> b[b.tags[{'furniture'}]]
-    <Bundle([<Treant: 'sequoia'>, <Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['sequoia', 'oak', 'elm'])>
 
 Putting multiple tags inside a set functions as a negated "and"-ing of the
 contents::
 
     >>> b[b.tags[{'building', 'furniture'}]]
-    <Bundle([<Treant: 'sequoia'>, <Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['sequoia', 'maple', 'oak', 'elm'])>
 
 which is the opposite of the empty Bundle we got when we did the "and"-ing of
 these tags earlier.
@@ -201,10 +201,10 @@ We can use fuzzy matching::
 which we can use directly as an "or"-ing in a tag expression::
 
     >>> b[b.tags[b.tags.fuzzy('building', scope='any')]]
-    <Bundle([<Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['oak', 'elm'])>
 
 The threshold for fuzzy matching can be set with the ``threshold`` parameter.
-See the API reference for :meth:`~datreant.core.agglimbs.AggTags.fuzzy` for more
+See the API reference for :meth:`~datreant.core.metadata.AggTags.fuzzy` for more
 details on how to use this method.
 
 Grouping with Treant categories
@@ -304,11 +304,11 @@ Grouping by value
 Since for a given key a Bundle may have members with a variety of values,
 it can be useful to get subsets of the Bundle as a function of value for a
 given key. We can do this using the
-:meth:`~datreant.core.agglimbs.AggCategories.groupby` method::
+:meth:`~datreant.core.metadata.AggCategories.groupby` method::
 
     >>> b.categories.groupby('type')
-    {'deciduous': <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>,
-     'evergreen': <Bundle([<Treant: 'sequoia'>])>}
+    {'deciduous': <Bundle(['maple', 'oak', 'elm'])>,
+     'evergreen': <Bundle(['sequoia'])>}
 
 In grouping by the 'type' key, we get back a dictionary with the values present
 for this key as keys and Bundles giving the corresponding members as values. We
@@ -317,19 +317,19 @@ Bundle based on the value. Or we could extract out only the subset we want,
 perhaps just the 'deciduous' Treants::
 
     >>> b.categories.groupby('type')['deciduous']
-    <Bundle([<Treant: 'maple'>, <Treant: 'oak'>, <Treant: 'elm'>])>
+    <Bundle(['maple', 'oak', 'elm'])>
 
 We can also group by more than one key at once::
 
     >>> b.categories.groupby(['type', 'health'])
-    {('good', 'deciduous'): <Bundle([<Treant: 'oak'>])>,
-     ('poor', 'deciduous'): <Bundle([<Treant: 'elm'>])>}
+    {('good', 'deciduous'): <Bundle(['oak'])>,
+     ('poor', 'deciduous'): <Bundle(['elm'])>}
 
 Now the keys of the resulting dictionary are tuples of value combinations for
 which there are members. The resulting Bundles don't include some members since
 not every member has both the keys 'type' and 'health'.
 
-See the API reference for :meth:`~datreant.core.agglimbs.AggCategories.groupby`
+See the API reference for :meth:`~datreant.core.metadata.AggCategories.groupby`
 for more details on how to use this method.
 
 

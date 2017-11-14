@@ -10,6 +10,5 @@ datreant.tests --- unit tests for datreant
 """
 # Bring some often used objects into the current namespace
 from . import test_collections
-from . import test_filesystem
 from . import test_locks
 from . import test_treants
