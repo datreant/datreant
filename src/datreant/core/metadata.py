@@ -49,6 +49,10 @@ class Tags(Metadata):
 
     @staticmethod
     def _init_state(jsonfile):
+        """Used solely for initializing JSONFile state for storing tag
+        information.
+
+        """
         jsonfile._state = []
 
     def __repr__(self):
@@ -301,6 +305,10 @@ class Categories(Metadata):
 
     @staticmethod
     def _init_state(jsonfile):
+        """Used solely for initializing JSONFile state for storing category
+        information.
+
+        """
         jsonfile._state = {}
 
     def __repr__(self):
