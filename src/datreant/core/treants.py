@@ -9,7 +9,7 @@ from pathlib2 import Path
 
 from .collections import Bundle
 from .trees import Tree
-from .names import treantdir_name
+from .names import TREANTDIR_NAME
 from .util import makedirs
 from .metadata import Tags, Categories
 from .exceptions import NotATreantError
@@ -58,7 +58,7 @@ class Treant(Tree):
 
     def _make_treantdir(self):
         abspath = super(Treant, self).__getattribute__('_path').absolute()
-        treantdir = abspath / treantdir_name
+        treantdir = abspath / TREANTDIR_NAME
 
         if not treantdir.exists():
             # build datreant dir; stop if we hit a permissions error
@@ -113,7 +113,7 @@ class Treant(Tree):
 
     @property
     def _treantdir(self):
-        return os.path.join(self.abspath, treantdir_name)
+        return os.path.join(self.abspath, TREANTDIR_NAME)
 
     @property
     def tags(self):

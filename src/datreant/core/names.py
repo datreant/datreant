@@ -1,1 +1,1 @@
-treantdir_name = '.datreant'
+TREANTDIR_NAME = '.datreant'

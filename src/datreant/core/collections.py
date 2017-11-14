@@ -20,7 +20,7 @@ from six import string_types
 from six.moves import zip
 
 from .trees import Tree, Leaf
-from .names import treantdir_name
+from .names import TREANTDIR_NAME
 from .exceptions import NotATreantError
 from .metadata import Tags, Categories, AggTags, AggCategories
 
@@ -226,7 +226,7 @@ class View(CollectionMixin):
 
     """
 
-    def __init__(self, *vegs, **kwargs):
+    def __init__(self, *vegs):
         self._state = list()
         self._add(*vegs)
 
@@ -521,7 +521,7 @@ class Bundle(CollectionMixin):
 
     """
 
-    def __init__(self, *treants, **kwargs):
+    def __init__(self, *treants):
         self._cache = dict()
         self._state = list()
 
@@ -655,14 +655,14 @@ class Bundle(CollectionMixin):
                 abspaths.append(treant.abspath)
                 self._cache[treant.abspath] = treant
             elif isinstance(treant, Tree):
-                treantdir = os.path.join(treant.abspath, treantdir_name)
+                treantdir = os.path.join(treant.abspath, TREANTDIR_NAME)
                 if os.path.exists(treantdir):
                     abspaths.extend(treant.abspath)
                 else:
                     raise NotATreantError("Directory '{}' is "
                                           "not a Treant".format(treant))
             elif os.path.exists(treant):
-                treantdir = os.path.join(treant, treantdir_name)
+                treantdir = os.path.join(treant, TREANTDIR_NAME)
                 if os.path.exists(treantdir):
                     abspaths.append(os.path.abspath(treant))
                 else:
@@ -773,7 +773,7 @@ class Bundle(CollectionMixin):
         for abspath in abspaths:
             if abspath in self._cache:
                 memberlist.append(self._cache[abspath])
-            elif os.path.exists(os.path.join(abspath, treantdir_name)):
+            elif os.path.exists(os.path.join(abspath, TREANTDIR_NAME)):
                 self._cache[abspath] = Treant(abspath)
                 memberlist.append(self._cache[abspath])
             else:
