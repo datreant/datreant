@@ -16,10 +16,10 @@ it is often necessary to store intermediate results obtained from large amounts
 of simulation data so it can be accessed and explored interactively.
 
 These problems make data management difficult, and serve as a barrier to
-answering scientific questions. To make things easier, ``datreant`` is a
-collection of Python packages that provide a pythonic interface to the
-filesystem and the data that lives within it. It solves a boring problem, so we
-can focus on interesting ones.
+answering scientific questions. To make things easier, ``datreant`` is a Python
+package that provides a pythonic interface to the filesystem and the data that
+lives within it. It solves a boring problem, so we can focus on interesting
+ones.
 
 
 Stay organized
@@ -34,17 +34,6 @@ As an example: `MDSynthesis`_, a package for storing, recalling, and aggregating
 data from molecular dynamics simulations, is built on top of datreant.
 
 .. _`MDSynthesis`: https://github.com/datreant/MDSynthesis 
-
-
-The datreant namespace
-======================
-``datreant`` is a namespace package, which means that it's more a package of
-packages. These packages are all dependent on a central, core library, called
-``datreant.core``. This documentation is for that core library.
-
-Other packages in the ``datreant`` namespace currently include:
-
-- `datreant.data <http://datreantdata.readthedocs.org/en/latest/>`_
 
 
 Getting datreant
@@ -83,12 +72,3 @@ for more information.
     :caption: For Developers
 
     contributing
-..    limbs-treelimbs
-..    agglimbs-aggtreelimbs
-
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Miscellaneous
-
-    faq

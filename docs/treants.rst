@@ -31,17 +31,18 @@ a new Treant, for example, with the following ::
     >>> s = dtr.Treant('sprout')
 
 creates a directory called ``sprout`` in the current working directory. It contains
-a single file at the moment ::
+a single directory at the moment ::
 
     > # shell 
-    > ls sprout
-    Treant.2b4b5800-48a7-4814-ba6d-1e631a09a199.json
+    > ls -a sprout
+    .  ..  .datreant
 
-The name of this file includes the type of Treant it corresponds to, as
-well as the ``uuid`` of the Treant, which is its unique identifier. This
-is the state file containing all the information needed to regenerate an
-identical instance of this Treant. In fact, we can open a separate python
-session (go ahead!) and regenerate this Treant immediately there ::
+This ``.datreant`` directory is what makes ``sprout`` a Treant. On its own it
+serves as a marker, but as we'll see later it can also contain metadata
+elements distinguishing this Treant from others.  
+
+Treants are persistent. In fact, we can open a separate python
+session (go ahead!) and use this Treant immediately there ::
 
     >>> # python session 2
     >>> import datreant.core as dtr
@@ -58,32 +59,8 @@ will be reflected in the Treant in the other session ::
     <Tags(['elm'])>
 
 This is because both objects pull their identifying information from the same
-file on disk; they store almost nothing in memory.
+place on disk; they store almost nothing in memory.
 
-.. note:: The ``uuid`` of the Treant in this example will certainly differ from
-          any Treants you generate. This is used to differentiate Treants
-          from each other. Unexpected and broken behavior will result from
-          changing the names of state files!
-
-What goes into a state file?
-============================
-The state file of a Treant contains the core pieces of information that define
-it. A few of these things are defined in the filesystem itself, including ::
-
-    /home/bob/research/arborea/sprout/Treant.2b4b5800-48a7-4814-ba6d-1e631a09a199.json
-    |_________________________|______|______|____________________________________|
-              location          name     ^                 uuid 
-    |________________________________|   |
-                abspath               treanttype
-    |_________________________________________________________________________________|
-                                      filepath
-
-This means that changing the location or name of a Treant can be done at the
-filesystem level. Although this means that one can change the treanttype and
-uuid as well, this is generally not recommended.
-
-Other components, such as the Treant's tags and categories, are stored internally in
-the state file (see :ref:`tags_categories` for more on these).
 
 API Reference: Treant
 =====================

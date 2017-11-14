@@ -1,11 +1,11 @@
 =============================================
 Filesystem manipulation with Trees and Leaves
 =============================================
-A Treant functions as a specially marked directory, having a state file with
-identifying information. What's a Treant without a state file? It's just a
-**Tree**.
+A Treant functions as a specially marked directory, containing a ``.datreant``
+directory possibly with identifying information inside. What's a Treant without
+a ``.datreant`` directory? It's just a **Tree**.
 
-datreant gives pythonic access to the filesystem by way of **Trees** and
+``datreant`` gives pythonic access to the filesystem by way of **Trees** and
 **Leaves** (directories and files, respectively). Say our current working
 directory has two directories and a file ::
 
@@ -17,7 +17,7 @@ We can use Trees and Leaves directly to manipulate them ::
     >>> import datreant.core as dtr
     >>> t = dtr.Tree('moe')
     >>> t
-    <Tree: 'moe'>
+    <Tree: 'moe/'>
 
     >>> l = dtr.Leaf('curly.txt')
     >>> l
@@ -66,6 +66,16 @@ in which case whether a Tree or Leaf is returned is dependent on an ending
           sensitive to ending ``/`` separators to determine whether to give a
           Tree or a Leaf.
 
+If you don't want to rely on ending ``/`` characters when making new
+directories, we can use :py:meth:`~datreant.core.Tree.treeloc` to guarantee it::
+
+    >>> adir = t.treeloc['a/directory'].make()  # will always make a directory
+
+and likewise for files, to be explicit::
+
+    >>> afile = t.leafloc['a/file'].make()      # will always make a file
+
+
 Synchronizing Trees
 -------------------
 Synchronization of Tree contents can be performed through the
@@ -95,20 +105,20 @@ Treants. One of these is ``draw`` ::
     >>> s = dtr.Treant('sprout')
     >>> s['a/new/file'].make()
     >>> s['a/.hidden/directory/'].make()
-    >>> s.draw()
+    >>> s.draw(hidden=True)
     sprout/
-     +-- Treant.839c7265-5331-4224-a8b6-c365f18b9997.json
+     +-- .datreant/
      +-- a/
-         +-- new/
-         |   +-- file
          +-- .hidden/
-             +-- directory/
+         |   +-- directory/
+         +-- new/
+             +-- file
 
 which gives a nice ASCII-fied visual of the Tree. We can also obtain a
 collection of Trees and/or Leaves in the Tree with globbing ::
 
     >>> s.glob('a/*')
-    <View([<Tree: 'sprout/a/.hidden/'>, <Tree: 'sprout/a/new/'>])>
+    <View(['.hidden/', 'new/'])>
 
 See :ref:`Views` for more about the **View** object, and how it can be used to
 manipulate many Trees and Leaves as a single logical unit. More details on

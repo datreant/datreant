@@ -90,7 +90,7 @@ case, we categorize ``sprout`` as "dark" ::
 
 Perhaps we've written some analysis code that will take both "dark" and "light"
 Treants as input but needs to handle them differently. It can see what variety
-of **Treant** it is working with using ::
+of Treant it is working with using ::
 
     >>> s.categories['bark']
     'dark'
