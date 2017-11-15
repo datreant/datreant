@@ -17,6 +17,5 @@ from .treants import Treant
 from .trees import Veg, Leaf, Tree
 from .collections import View, Bundle
 
-__all__ = ['Treant', 'Tree', 'Leaf', 'Bundle', 'discover', 'Veg',
-           'attach', 'View']
+__all__ = ['Treant', 'Tree', 'Leaf', 'Bundle', 'discover', 'View']
 __version__ = "0.8.0-dev"  # NOTE: keep in sync with RELEASE in setup.py
