@@ -5,55 +5,115 @@ for filtering and selection.
 import os
 import itertools
 import functools
+import six
 from six import string_types
 from six.moves import range
 from collections import defaultdict
+import json
 
 from fuzzywuzzy import process
 
-from .state import JSONFile
+from . import state
 from .selectionparser import parse_selection
 
 
-class Metadata(object):
-
-    # TODO; raise meaningful exceptions when file can't be read, written, read
-    # and nonexistent, missing, or treantdir missing
-
-    def __init__(self, tree):
-        self._tree = tree
-
-    @property
-    def _write(self):
-        self._statefile = JSONFile(os.path.join(self._tree._treantdir,
-                                                self._statefilename),
-                                   init_state=self._init_state)
-
-        return self._statefile.write()
-
-    @property
-    def _read(self):
-        self._statefile = JSONFile(os.path.join(self._tree._treantdir,
-                                                self._statefilename),
-                                   init_state=self._init_state)
-
-        return self._statefile.read()
-
-
 @functools.total_ordering
-class Tags(Metadata):
+class Tags(object):
     """Interface to tags.
 
     """
     _statefilename = 'tags.json'
 
-    @staticmethod
-    def _init_state(jsonfile):
-        """Used solely for initializing JSONFile state for storing tag
-        information.
+    def __init__(self, tree):
+        self._fname = os.path.join(tree.abspath, self._statefilename)
+
+    def _list(self):
+        """Get all tags for the Treant as a list.
+
+        :Returns:
+            *tags*
+                list of all tags
+        """
+        with state.read(self._fname) as fh:
+            tags = json.load(fh)
+        tags.sort()
+        return tags
+
+    def add(self, *tags):
+        """Add any number of tags to the Treant.
+
+        Tags are individual strings that serve to differentiate Treants from
+        one another. Sometimes preferable to categories.
+
+        Parameters
+        ----------
+        tags : str or list
+            Tags to add. Must be strings or lists of strings.
 
         """
-        jsonfile._state = []
+        with state.atomic_write(self.fname) as fh:
+            outtags = set()
+            for tag in tags:
+                if not isinstance(tag, (list, set, tuple)):
+                    tag = [tag, ]
+                for t in tag:
+                    if not isinstance(t, string_types):
+                        raise ValueError("Only string can be added as tags. Tried "
+                                        "to add '{}' which is '{}'".format(
+                                            tag, type(tag)))
+                    outtags.append(t)
+
+            outtags = outtags.difference(set(self.read()))
+            json.dump(fh, outtags)
+
+    def clear(self):
+        with state.atomic_write(self.fname) as fh:
+            json.dump(fh, list())
+
+    def remove(self, *tags):
+        """Remove tags from Treant.
+
+        Any number of tags can be given as arguments, and these will be
+        deleted.
+
+        :Arguments:
+            *tags*
+                Tags to delete.
+        """
+        with state.atomic_write(self.fname) as fh:
+            tags = set(self._list()).difference(tags)
+            json.dump(fh, tags)
+
+    def fuzzy(self, tag, threshold=80):
+        """Get a tuple of existing tags that fuzzily match a given one.
+
+        Parameters
+        ----------
+        tags : str or list
+            Tag or tags to get fuzzy matches for.
+        threshold : int
+            Lowest match score to return. Setting to 0 will return every tag,
+            while setting to 100 will return only exact matches.
+
+        Returns
+        -------
+        matches : tuple
+            Tuple of tags that match.
+        """
+        if isinstance(tag, string_types):
+            other_tags = [tag]
+        else:
+            other_tags = tag
+
+        matches = []
+        tags = self._list()
+        for tag in other_tags:
+            matches += [
+                i[0] for i in process.extract(tag, tags, limit=None)
+                if i[1] > threshold
+            ]
+
+        return tuple(matches)
 
     def __repr__(self):
         return "<Tags({})>".format(self._list())
@@ -74,14 +134,19 @@ class Tags(Metadata):
         return out
 
     def __getitem__(self, value):
+        """get tags according to a selection
+        """
         # check if we might have a string to parse into a selection object
         if isinstance(value, string_types):
             value = parse_selection(value)
         return self._getselection(value)
 
+    #TODO: remove to outside function that works on a given set, can be renamed filter
     def _getselection(self, value):
-        """get tags according to a selection
-        """
+        #   TODO: I hope I can get this
+        # with state.read(self._fname) as fh:
+        #     tags = json.load(fh)
+        # return set_filter(tags, value)
         with self._read:
             if isinstance(value, list):
                 # a list of tags gives only members with ALL the tags
@@ -190,126 +255,119 @@ class Tags(Metadata):
         else:
             raise TypeError("Operands must be tags, a set, or list.")
 
-    def _list(self):
-        """Get all tags for the Treant as a list.
 
-        :Returns:
-            *tags*
-                list of all tags
-        """
-        with self._read:
-            tags = self._statefile._state
-
-        tags.sort()
-        return tags
-
-    def add(self, *tags):
-        """Add any number of tags to the Treant.
-
-        Tags are individual strings that serve to differentiate Treants from
-        one another. Sometimes preferable to categories.
-
-        Parameters
-        ----------
-        tags : str or list
-            Tags to add. Must be strings or lists of strings.
-
-        """
-        outtags = list()
-        for tag in tags:
-            if isinstance(tag, (list, set, tuple)):
-                outtags.extend(tag)
-            else:
-                outtags.append(tag)
-
-        with self._write:
-            # ensure tags are unique (we don't care about order)
-            # also they must be strings
-            _outtags = []
-            for tag in outtags:
-                if not isinstance(tag, string_types):
-                    raise ValueError("Only string can be added as tags. Tried "
-                                     "to add '{}' which is '{}'".format(
-                                         tag, type(tag)))
-                _outtags.append(tag)
-            outtags = set(_outtags)
-
-            # remove tags already present in metadata from list
-            outtags = outtags.difference(set(self._statefile._state))
-
-            # add new tags
-            self._statefile._state.extend(outtags)
-
-    def remove(self, *tags):
-        """Remove tags from Treant.
-
-        Any number of tags can be given as arguments, and these will be
-        deleted.
-
-        :Arguments:
-            *tags*
-                Tags to delete.
-        """
-        with self._write:
-            # remove redundant tags from given list if present
-            tags = set([str(tag) for tag in tags])
-            for tag in tags:
-                # remove tag; if not present, continue anyway
-                try:
-                    self._statefile._state.remove(tag)
-                except ValueError:
-                    pass
-
-    def clear(self):
-        """Remove all tags from Treant.
-
-        """
-        with self._write:
-            self._statefile._state = list()
-
-    def fuzzy(self, tag, threshold=80):
-        """Get a tuple of existing tags that fuzzily match a given one.
-
-        Parameters
-        ----------
-        tags : str or list
-            Tag or tags to get fuzzy matches for.
-        threshold : int
-            Lowest match score to return. Setting to 0 will return every tag,
-            while setting to 100 will return only exact matches.
-
-        Returns
-        -------
-        matches : tuple
-            Tuple of tags that match.
-        """
-        if isinstance(tag, string_types):
-            tags = [tag]
-        else:
-            tags = tag
-
-        matches = []
-
-        for tag in tags:
-            matches += [i[0] for i in process.extract(tag, self, limit=None)
-                        if i[1] > threshold]
-
-        return tuple(matches)
-
-
-class Categories(Metadata):
+class Categories(object):
     """Interface to categories.
 
     """
     _statefilename = 'categories.json'
 
-    @staticmethod
-    def _init_state(jsonfile):
-        """Used solely for initializing JSONFile state for storing category
-        information.
+    def __init__(self, tree):
+        self._fname = os.path.join(tree.abspath, self._statefilename)
+
+    def _dict(self):
+        """Get all categories for the Treant as a dictionary.
+
+        :Returns:
+            *categories*
+                dictionary of all categories
 
         """
-        jsonfile._state = {}
+        with state.read(self._fname) as fh:
+            return json.load(fh)
+
+    def clear(self):
+        with state.atomic_write(self._fname) as fh:
+            json.dump(fh, {})
+
+    def add(self, categorydict=None, **categories):
+        """Add any number of categories to the Treant.
+
+        Categories are key-value pairs that serve to differentiate Treants from
+        one another. Sometimes preferable to tags.
+
+        If a given category already exists (same key), the value given will
+        replace the value for that category.
+
+        Keys must be strings.
+
+        Values may be ints, floats, strings, or bools. ``None`` as a value
+        will not the existing value for the key, if present.
+
+        Parameters
+        ----------
+        categorydict : dict
+            Dict of categories to add; keys used as keys, values used as
+            values.
+        categories : dict
+            Categories to add. Keyword used as key, value used as value.
+
+        """
+        with state.atomic_write(self._fname) as fh:
+            outcats = dict()
+            if isinstance(categorydict, (dict, Categories)):
+                outcats.update(categorydict)
+            elif categorydict is None:
+                pass
+            else:
+                raise TypeError("Invalid arguments; non-keyword"
+                                " argument must be dict")
+
+            outcats.update(categories)
+            outcats.update(self._dict())
+
+            # type check
+            for key, value in six.iteritems(outcats):
+                if not isinstance(key, string_types):
+                    raise TypeError("Keys must be strings.")
+                if not isinstance(value, (int, float, string_types, bool)):
+                    raise TypeError("Values must be ints, floats,"
+                                    " strings, or bools.")
+
+            json.dump(fh, outcats)
+
+    def remove(self, *categories):
+        """Remove categories from Treant.
+
+        Any number of categories (keys) can be given as arguments, and these
+        keys (with their values) will be deleted.
+
+        Parameters
+        ----------
+        categories : str
+                Categories to delete.
+
+        """
+        with state.atomic_write(self._fname) as fh:
+            d = self._dict()
+            for key in categories:
+                d.pop(key, None)
+            json.dump(fh, d)
+
+    def clear(self):
+        """Remove all categories from Treant.
+
+        """
+        with state.atomic_write(self._fname) as fh:
+            json.dump(fh, {})
+
+    def keys(self):
+        """Get category keys.
+
+        :Returns:
+            *keys*
+                keys present among categories
+        """
+        return self._dict().keys()
+
+    def values(self):
+        """Get category values.
+
+        :Returns:
+            *values*
+                values present among categories
+        """
+        return self._dict().values()
 
     def __repr__(self):
         return "<Categories({})>".format(self._dict())
@@ -401,109 +459,8 @@ class Categories(Metadata):
     def __len__(self):
         return len(self._dict())
 
-    def _dict(self):
-        """Get all categories for the Treant as a dictionary.
-
-        :Returns:
-            *categories*
-                dictionary of all categories
-
-        """
-        with self._read:
-            return self._statefile._state
-
-    def add(self, categorydict=None, **categories):
-        """Add any number of categories to the Treant.
-
-        Categories are key-value pairs that serve to differentiate Treants from
-        one another. Sometimes preferable to tags.
-
-        If a given category already exists (same key), the value given will
-        replace the value for that category.
-
-        Keys must be strings.
-
-        Values may be ints, floats, strings, or bools. ``None`` as a value
-        will not the existing value for the key, if present.
-
-        Parameters
-        ----------
-        categorydict : dict
-            Dict of categories to add; keys used as keys, values used as
-            values.
-        categories : dict
-            Categories to add. Keyword used as key, value used as value.
-
-        """
-        outcats = dict()
-        if isinstance(categorydict, (dict, Categories)):
-            outcats.update(categorydict)
-        elif categorydict is None:
-            pass
-        else:
-            raise TypeError("Invalid arguments; non-keyword"
-                            " argument must be dict")
-
-        outcats.update(categories)
-
-        with self._write:
-            for key, value in outcats.items():
-                if not isinstance(key, string_types):
-                    raise TypeError("Keys must be strings.")
-
-                if (isinstance(value, (int, float, string_types, bool))):
-                    self._statefile._state[key] = value
-                elif value is not None:
-                    raise TypeError("Values must be ints, floats,"
-                                    " strings, or bools.")
-
-    def remove(self, *categories):
-        """Remove categories from Treant.
-
-        Any number of categories (keys) can be given as arguments, and these
-        keys (with their values) will be deleted.
-
-        Parameters
-        ----------
-        categories : str
-                Categories to delete.
-
-        """
-        with self._write:
-            for key in categories:
-                # continue even if key not already present
-                self._statefile._state.pop(key, None)
-
-    def clear(self):
-        """Remove all categories from Treant.
-
-        """
-        with self._write:
-            self._statefile._state = dict()
-
-    def keys(self):
-        """Get category keys.
-
-        :Returns:
-            *keys*
-                keys present among categories
-        """
-        with self._read:
-            return self._statefile._state.keys()
-
-    def values(self):
-        """Get category values.
-
-        :Returns:
-            *values*
-                values present among categories
-        """
-        with self._read:
-            return self._statefile._state.values()
-
 
 class AggMetadata(object):
-
     def __init__(self, collection):
         self._collection = collection
 
@@ -531,7 +488,7 @@ class AggTags(AggMetadata):
         else:
             out = agg + '\n'
             out = out + majsep * seplength + '\n'
-            for i in xrange(len(tags)):
+            for i in range(len(tags)):
                 out = out + "'{}'\n".format(tags[i])
         return out
 
@@ -716,8 +673,10 @@ class AggTags(AggMetadata):
         matches = []
 
         for tag in tags:
-            matches += [i[0] for i in process.extract(tag, choices, limit=None)
-                        if i[1] > threshold]
+            matches += [
+                i[0] for i in process.extract(tag, choices, limit=None)
+                if i[1] > threshold
+            ]
 
         return tuple(matches)
 
@@ -799,21 +758,27 @@ class AggCategories(AggMetadata):
         members = self._collection
         if isinstance(keys, (int, float, string_types, bool)):
             k = keys
-            return [m.categories[k] if k in m.categories else None
-                    for m in members]
+            return [
+                m.categories[k] if k in m.categories else None for m in members
+            ]
         elif isinstance(keys, list):
-            return [[m.categories[k] if k in m.categories else None
-                    for m in members]
-                    for k in keys]
+            return [[
+                m.categories[k] if k in m.categories else None for m in members
+            ] for k in keys]
         elif isinstance(keys, set):
-            return {k: [m.categories[k] if k in m.categories else None
-                    for m in members]
-                    for k in keys}
+            return {
+                k: [
+                    m.categories[k] if k in m.categories else None
+                    for m in members
+                ]
+                for k in keys
+            }
         else:
             raise TypeError("Key must be a string, list of strings, or set"
                             " of strings.")
 
-    def __setitem__(self, key, values):
+
+        def __setitem__(self, key, values):
         """Set the value of categories for each Treant in the collection.
 
         If `values` is not a sequence and is a valid category type (int,
@@ -878,9 +843,13 @@ class AggCategories(AggMetadata):
         keys = [set(member.categories.keys()) for member in self._collection]
         keys = set.union(*keys)
 
-        return {k: [m.categories[k] if k in m.categories else None
-                for m in self._collection]
-                for k in keys}
+        return {
+            k: [
+                m.categories[k] if k in m.categories else None
+                for m in self._collection
+            ]
+            for k in keys
+        }
 
     @property
     def all(self):
@@ -894,9 +863,13 @@ class AggCategories(AggMetadata):
         keys = [set(member.categories.keys()) for member in self._collection]
         keys = set.intersection(*keys)
 
-        return {k: [m.categories[k] if k in m.categories else None
-                for m in self._collection]
-                for k in keys}
+        return {
+            k: [
+                m.categories[k] if k in m.categories else None
+                for m in self._collection
+            ]
+            for k in keys
+        }
 
     def add(self, categorydict=None, **categories):
         """Add any number of categories to each Treant in collection.
@@ -1031,8 +1004,8 @@ class AggCategories(AggMetadata):
             groups = {k: Bundle() for k in groupkeys}
 
             k = keys
-            gen = ((m, m.categories[k]) for m in members if
-                   k in m.categories and m.categories[k] in groupkeys)
+            gen = ((m, m.categories[k]) for m in members
+                   if k in m.categories and m.categories[k] in groupkeys)
             for m, catval in gen:
                 groups[catval] += m
         # Note: redundant code in if/elif block can be consolidated in future
@@ -1041,13 +1014,12 @@ class AggCategories(AggMetadata):
             groupkeys = [v for v in catvals if None not in v]
             groups = {k: Bundle() for k in groupkeys}
 
-            gen = ((i, m) for i, m in enumerate(members) if
-                   set(keys) <= set(m.categories) and
-                   tuple([m.categories[k] for k in keys]) in groupkeys)
+            gen = ((i, m) for i, m in enumerate(members)
+                   if set(keys) <= set(m.categories)
+                   and tuple([m.categories[k] for k in keys]) in groupkeys)
             for i, m in gen:
                 groups[catvals[i]] += m
 
         else:
-            raise TypeError("Keys must be a string or a list of"
-                            " strings")
+            raise TypeError("Keys must be a string or a list of" " strings")
         return groups
