@@ -86,6 +86,7 @@ class BaseFile(object):
             yield self.handle
         else:
             self._apply_shared_lock()
+
             try:
                 # open the file using the actual reader
                 self.handle = self._open_file_r()
@@ -208,17 +209,19 @@ class BaseFile(object):
 
 class File(BaseFile):
     def _open_file_r(self):
-        return open(self.filename, 'r')
+        return open(self.filename)
 
     def _open_file_w(self):
         return open(self.filename, 'w')
 
 
+@contextmanager
 def atomic_write(fname, file_type=File):
     with file_type(fname).write() as fh:
         yield fh
 
 
+@contextmanager
 def read(fname, file_type=File):
     with file_type(fname).read() as fh:
         yield fh

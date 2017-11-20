@@ -34,6 +34,11 @@ class Tags(object):
             *tags*
                 list of all tags
         """
+        if not os.path.exists(self._fname):
+            return []
+        if os.stat(self._fname).st_size == 0:
+            return []
+
         with state.read(self._fname) as fh:
             tags = json.load(fh)
         tags.sort()
@@ -51,7 +56,7 @@ class Tags(object):
             Tags to add. Must be strings or lists of strings.
 
         """
-        with state.atomic_write(self.fname) as fh:
+        with state.atomic_write(self._fname) as fh:
             outtags = set()
             for tag in tags:
                 if not isinstance(tag, (list, set, tuple)):
@@ -61,14 +66,14 @@ class Tags(object):
                         raise ValueError("Only string can be added as tags. Tried "
                                         "to add '{}' which is '{}'".format(
                                             tag, type(tag)))
-                    outtags.append(t)
+                    outtags.add(t)
 
-            outtags = outtags.difference(set(self.read()))
-            json.dump(fh, outtags)
+            outtags = outtags.difference(set(self._list()))
+            json.dump(list(outtags), fh)
 
     def clear(self):
-        with state.atomic_write(self.fname) as fh:
-            json.dump(fh, list())
+        with state.atomic_write(self._fname) as fh:
+            json.dump(list(), fh)
 
     def remove(self, *tags):
         """Remove tags from Treant.
@@ -80,9 +85,9 @@ class Tags(object):
             *tags*
                 Tags to delete.
         """
-        with state.atomic_write(self.fname) as fh:
+        with state.atomic_write(self._fname) as fh:
             tags = set(self._list()).difference(tags)
-            json.dump(fh, tags)
+            json.dump(list(tags), fh)
 
     def fuzzy(self, tag, threshold=80):
         """Get a tuple of existing tags that fuzzily match a given one.
@@ -147,21 +152,20 @@ class Tags(object):
         # with state.read(self._fname) as fh:
         #     tags = json.load(fh)
         # return set_filter(tags, value)
-        with self._read:
-            if isinstance(value, list):
-                # a list of tags gives only members with ALL the tags
-                fits = all(self._getselection(item) for item in value)
-            elif isinstance(value, tuple):
-                # a tuple of tags gives members with ANY of the tags
-                fits = any(self._getselection(item) for item in value)
-            if isinstance(value, set):
-                # a set of tags gives only members WITHOUT ALL the tags
-                # can be used for `not`, basically
-                fits = not all(self._getselection(item) for item in value)
-            elif isinstance(value, string_types):
-                fits = value in self
+        if isinstance(value, list):
+            # a list of tags gives only members with ALL the tags
+            fits = all(self._getselection(item) for item in value)
+        elif isinstance(value, tuple):
+            # a tuple of tags gives members with ANY of the tags
+            fits = any(self._getselection(item) for item in value)
+        if isinstance(value, set):
+            # a set of tags gives only members WITHOUT ALL the tags
+            # can be used for `not`, basically
+            fits = not all(self._getselection(item) for item in value)
+        elif isinstance(value, string_types):
+            fits = value in self
 
-            return fits
+        return fits
 
     def __iter__(self):
         return self._list().__iter__()
@@ -273,12 +277,16 @@ class Categories(object):
                 dictionary of all categories
 
         """
+        if not os.path.exists(self._fname):
+            return {}
+        if os.stat(self._fname).st_size == 0:
+            return {}
         with state.read(self._fname) as fh:
             return json.load(fh)
 
     def clear(self):
         with state.atomic_write(self._fname) as fh:
-            json.dump(fh, {})
+            json.dump({}, fh)
 
     def add(self, categorydict=None, **categories):
         """Add any number of categories to the Treant.
@@ -324,7 +332,7 @@ class Categories(object):
                     raise TypeError("Values must be ints, floats,"
                                     " strings, or bools.")
 
-            json.dump(fh, outcats)
+            json.dump(outcats, fh)
 
     def remove(self, *categories):
         """Remove categories from Treant.
@@ -342,14 +350,14 @@ class Categories(object):
             d = self._dict()
             for key in categories:
                 d.pop(key, None)
-            json.dump(fh, d)
+            json.dump(d, fh)
 
     def clear(self):
         """Remove all categories from Treant.
 
         """
         with state.atomic_write(self._fname) as fh:
-            json.dump(fh, {})
+            json.dump({}, fh)
 
     def keys(self):
         """Get category keys.
@@ -778,7 +786,7 @@ class AggCategories(AggMetadata):
                             " of strings.")
 
 
-        def __setitem__(self, key, values):
+    def __setitem__(self, key, values):
         """Set the value of categories for each Treant in the collection.
 
         If `values` is not a sequence and is a valid category type (int,
