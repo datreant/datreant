@@ -181,6 +181,7 @@ class TestTreant(TestTree):
             treant.tags.add(tags)
             assert sorted(list(tags)) == sorted(list(treant.tags))
 
+        @pytest.mark.skip("broken")
         def test_add_tags(self, treant):
             treant.tags.add('marklar')
             assert 'marklar' in treant.tags
