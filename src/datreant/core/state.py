@@ -76,14 +76,8 @@ class File(object):
         :Arguments:
             *fd*
                 file descriptor
-
-        :Returns:
-            *success*
-                True if shared lock successfully obtained
         """
         fcntl.lockf(fd, fcntl.LOCK_SH)
-
-        return True
 
     def _exlock(self, fd):
         """Get exclusive lock on file.
@@ -95,14 +89,8 @@ class File(object):
         :Arguments:
             *fd*
                 file descriptor
-
-        :Returns:
-            *success*
-                True if exclusive lock successfully obtained
         """
         fcntl.lockf(fd, fcntl.LOCK_EX)
-
-        return True
 
     def _unlock(self, fd):
         """Remove exclusive or shared lock on file.
@@ -115,14 +103,8 @@ class File(object):
         :Arguments:
             *fd*
                 file descriptor
-
-        :Returns:
-            *success*
-                True if lock removed
         """
         fcntl.lockf(fd, fcntl.LOCK_UN)
-
-        return True
 
     def _open_fd_r(self):
         """Open read-only file descriptor for application of advisory locks.
@@ -204,39 +186,6 @@ class File(object):
             finally:
                 self.handle.close()
                 self._release_lock()
-
-    def _open_r(self):
-        """Open file with intention to write.
-
-        Not to be used except for debugging files.
-
-        """
-        self._open_fd_r()
-        self._shlock(self.fd)
-        self.fdlock = 'shared'
-        self.handle = self._open_file_r()
-
-    def _open_w(self):
-        """Open file with intention to write.
-
-        Not to be used except for debugging files.
-
-        """
-        self._open_fd_rw()
-        self._exlock(self.fd)
-        self.fdlock = 'exclusive'
-        self.handle = self._open_file_w()
-
-    def _close(self):
-        """Close file.
-
-        Not to be used except for debugging files.
-
-        """
-        self.handle.close()
-        self._unlock(self.fd)
-        self.fdlock = None
-        self._close_fd()
 
     def delete(self):
         """Delete this file and its proxy file.
