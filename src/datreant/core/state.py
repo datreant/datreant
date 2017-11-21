@@ -15,7 +15,7 @@ if six.PY2:
     FileNotFoundError = IOError
 
 
-class File(object):
+class BaseFile(object):
     """Generic File object base class. Implements file locking and reloading
     methods.
 
@@ -156,6 +156,12 @@ class File(object):
         self._close_fd()
         self.fdlock = None
 
+    def _open_file_r(self):
+        raise NotImplementedError
+
+    def _open_file_w(self):
+        raise NotImplementedError
+
     @contextmanager
     def read(self):
         # if we already have any lock, proceed
@@ -198,7 +204,7 @@ class File(object):
             os.remove(self.proxy)
 
 
-class FileSerial(File):
+class FileSerial(BaseFile):
     """File object base class for serialization formats, such as JSON.
 
     """
