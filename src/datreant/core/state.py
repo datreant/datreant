@@ -26,13 +26,16 @@ class BaseFile(object):
     respectively. It handles any other low-level tasks for maintaining file
     integrity.
 
+    Any child class will have to implement `_open_file_r` and `_open_file_w`.
+    These function should return a file like object that has a `close` method.
+
     :Arguments:
         *filename*
             name of file on disk object corresponds to
 
     """
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename):
         self.filename = os.path.abspath(filename)
         self.handle = None
         self.fd = None
