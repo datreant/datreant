@@ -27,6 +27,8 @@ API Changes
 Enhancements
     * Allow numpy integer and boolean slicing for View and Bundle
       (Issue #107)
+    * Added Bundle.get method, allowing for convenient filtering on tags
+      and categories (#144)
 
 
 Fixes
