@@ -19,6 +19,19 @@ def return_nothing(treant):
 class CollectionsTests(object):
     """Mixin tests for collections"""
 
+    def test_parents(self, collection, tmpdir):
+        with tmpdir.as_cwd():
+            t1 = dtr.Treant('free-associate/lark')
+            t2 = dtr.Treant('free-associate/hark')
+            t3 = dtr.Treant('characters/linus')
+
+        col = collection(t1, t2, t3)
+
+        assert len(col.parents()) == 2
+        assert 'free-associate' in col.parents().names
+        assert 'linus' not in col.parents().names
+        assert 'characters' in col.parents().names
+
     class TestGetitem(object):
         @pytest.mark.parametrize('slx', (
             [1, 2],
