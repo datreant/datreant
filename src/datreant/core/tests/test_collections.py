@@ -313,6 +313,96 @@ class TestBundle(CollectionsTests):
         assert col.map(return_nothing) is None
         assert col.map(return_nothing, processes=2) is None
 
+    class TestGet:
+        @pytest.fixture
+        def filled_bundle(self, tmpdir):
+            with tmpdir.as_cwd():
+                t1 = dtr.Treant('one')
+                t2 = dtr.Treant('two')
+                t3 = dtr.Treant('three')
+                t4 = dtr.Treant('four')
+
+                t1.tags.add('odd', 'one')
+                t2.tags.add('even', 'two')
+                t3.tags.add('odd', 'three')
+                t4.tags.add('even', 'four')
+                t1.categories.add(is_even=False, value=1)
+                t2.categories.add(is_even=True, value=2)
+                t3.categories.add(is_even=False, value=3)
+                t4.categories.add(is_even=True, value=4)
+
+                return [t1, t2, t3, t4], dtr.Bundle([t1, t2, t3, t4])
+
+        def test_get_blank(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get()
+
+            assert new == b
+
+        def test_get_cats(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get(is_even=True)
+
+            assert len(new) == 2
+            assert ref[1] in new
+            assert ref[3] in new
+
+        def test_get_cats_double(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get(is_even=True, value=4)
+
+            assert len(new) == 1
+            assert ref[3] in new
+
+        def test_get_cats_empty(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get(is_even=True, value=1)
+
+            assert len(new) == 0
+
+        def test_get_cats_KeyError(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get(colour='yellow')
+
+            assert len(new) == 0
+
+        def test_get_tags(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get('odd')
+
+            assert len(new) == 2
+            assert ref[0] in new
+            assert ref[2] in new
+
+        def test_get_tags_many(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get('odd', 'three')
+
+            assert len(new) == 1
+            assert ref[2] in new
+
+        def test_get_tags_empty(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get('magical')
+
+            assert len(new) == 0
+
+        def test_get_cat_and_tag(self, filled_bundle):
+            ref, b = filled_bundle
+
+            new = b.get('odd', value=3)
+
+            assert len(new) == 1
+            assert ref[2] in new
+
     class TestAggTags:
         """Test behavior of manipulating tags collectively.
 

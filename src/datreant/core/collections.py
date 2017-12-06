@@ -913,6 +913,65 @@ class Bundle(CollectionMixin):
         else:
             raise TypeError("Can only set with categories or dict")
 
+    def get(self, *tags, **categories):
+        """Filter to only Treants which match the defined tags and categories.
+
+        If no arguments given, the full Bundle is returned. This method should
+        be thought of as a filtering, with more values specified giving only
+        those Treants that match.
+
+        Parameters
+        ----------
+        *tags
+            Tags to match.
+        **categories
+            Category key, value pairs to match.
+
+        Returns
+        -------
+        Bundle
+            All matched Treants.
+
+        Examples
+        --------
+        Doing a `get` with::
+
+        >>> b.get('this')  # doctest: +SKIP
+
+        is equivalent to::
+
+        >>> b.tags.filter('this')  # doctest: +SKIP
+
+        Finally, doing::
+
+        >>> b.get('this', length=5)  # doctest: +SKIP
+
+        is equivalent to::
+
+        >>> b_n = b.tags.filter('this')  # doctest: +SKIP
+        >>> b_n.categories.groupby('length')[5.0]  # doctest: +SKIP
+
+        """
+        if not (tags or categories):
+            # if nothing given, return an empty version of this bundle
+            return self
+
+        output = self  # initially return self
+        for c, v in categories.items():
+            try:
+                output &= output.categories.groupby(c)[v]
+            except KeyError:
+                # the key wasn't present, so we return an empty Bundle
+                output = Bundle()
+                break  # don't need to loop any further
+
+        # if any tags are given that don't match anything, this will yield an
+        # empty Bundle
+        for t in tags:
+            output &= output.tags.filter(t)
+
+        return output
+
 
 class _Loc(object):
     """Path accessor for collections."""
