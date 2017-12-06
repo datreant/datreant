@@ -15,7 +15,7 @@ if six.PY2:
     FileNotFoundError = IOError
 
 
-class File(object):
+class BaseFile(object):
     """Generic File object base class. Implements file locking and reloading
     methods.
 
@@ -26,13 +26,16 @@ class File(object):
     respectively. It handles any other low-level tasks for maintaining file
     integrity.
 
+    Any child class will have to implement `_open_file_r` and `_open_file_w`.
+    These function should return a file like object that has a `close` method.
+
     :Arguments:
         *filename*
             name of file on disk object corresponds to
 
     """
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename):
         self.filename = os.path.abspath(filename)
         self.handle = None
         self.fd = None
@@ -76,14 +79,8 @@ class File(object):
         :Arguments:
             *fd*
                 file descriptor
-
-        :Returns:
-            *success*
-                True if shared lock successfully obtained
         """
         fcntl.lockf(fd, fcntl.LOCK_SH)
-
-        return True
 
     def _exlock(self, fd):
         """Get exclusive lock on file.
@@ -95,14 +92,8 @@ class File(object):
         :Arguments:
             *fd*
                 file descriptor
-
-        :Returns:
-            *success*
-                True if exclusive lock successfully obtained
         """
         fcntl.lockf(fd, fcntl.LOCK_EX)
-
-        return True
 
     def _unlock(self, fd):
         """Remove exclusive or shared lock on file.
@@ -115,14 +106,8 @@ class File(object):
         :Arguments:
             *fd*
                 file descriptor
-
-        :Returns:
-            *success*
-                True if lock removed
         """
         fcntl.lockf(fd, fcntl.LOCK_UN)
-
-        return True
 
     def _open_fd_r(self):
         """Open read-only file descriptor for application of advisory locks.
@@ -174,6 +159,12 @@ class File(object):
         self._close_fd()
         self.fdlock = None
 
+    def _open_file_r(self):
+        raise NotImplementedError
+
+    def _open_file_w(self):
+        raise NotImplementedError
+
     @contextmanager
     def read(self):
         # if we already have any lock, proceed
@@ -205,39 +196,6 @@ class File(object):
                 self.handle.close()
                 self._release_lock()
 
-    def _open_r(self):
-        """Open file with intention to write.
-
-        Not to be used except for debugging files.
-
-        """
-        self._open_fd_r()
-        self._shlock(self.fd)
-        self.fdlock = 'shared'
-        self.handle = self._open_file_r()
-
-    def _open_w(self):
-        """Open file with intention to write.
-
-        Not to be used except for debugging files.
-
-        """
-        self._open_fd_rw()
-        self._exlock(self.fd)
-        self.fdlock = 'exclusive'
-        self.handle = self._open_file_w()
-
-    def _close(self):
-        """Close file.
-
-        Not to be used except for debugging files.
-
-        """
-        self.handle.close()
-        self._unlock(self.fd)
-        self.fdlock = None
-        self._close_fd()
-
     def delete(self):
         """Delete this file and its proxy file.
 
@@ -249,7 +207,7 @@ class File(object):
             os.remove(self.proxy)
 
 
-class FileSerial(File):
+class FileSerial(BaseFile):
     """File object base class for serialization formats, such as JSON.
 
     """
