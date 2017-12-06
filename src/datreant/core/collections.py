@@ -152,6 +152,16 @@ class CollectionMixin(object):
             if isinstance(member, Tree):
                 member.draw(depth=depth, hidden=hidden)
 
+    def parents(self):
+        """Return a View of the parent directories for each member.
+
+        Because a View functions as an ordered set, and some members of this
+        collection may share a parent, the View of parents may contain fewer
+        elements than this collection.
+
+        """
+        return View([member.parent for member in self])
+
     @property
     def loc(self):
         """Get a View giving Tree/Leaf at `path` relative to each Tree in

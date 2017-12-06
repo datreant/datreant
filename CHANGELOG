@@ -29,6 +29,7 @@ Enhancements
       (Issue #107)
     * Added Bundle.get method, allowing for convenient filtering on tags
       and categories (#144)
+    * Added ``parents`` property to ``View`` (#133)
 
 
 Fixes
