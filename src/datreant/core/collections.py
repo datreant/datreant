@@ -936,27 +936,20 @@ class Bundle(CollectionMixin):
         --------
         Doing a `get` with::
 
-            >>> bundle.get(length=5.0, colour='green')  # doctest: +SKIP
+        >>> b.get('this')  # doctest: +SKIP
 
         is equivalent to::
 
-        >>> bundle.categories.groupby(['length', 'colour'])[5.0, 'green']  # doctest: +SKIP
-
-        And doing::
-
-        >>> bundle.get('this')  # doctest: +SKIP
-
-        is equivalent to::
-
-        >>> bundle.tags.filter('this')  # doctest: +SKIP
+        >>> b.tags.filter('this')  # doctest: +SKIP
 
         Finally, doing::
 
-        >>> bundle.get('this', length=5)  # doctest: +SKIP
+        >>> b.get('this', length=5)  # doctest: +SKIP
 
         is equivalent to::
 
-        >>> bundle.tags.filter('this').categories.groupby('length')[5.0]  # doctest: +SKIP
+        >>> b_n = b.tags.filter('this')  # doctest: +SKIP
+        >>> b_n.categories.groupby('length')[5.0]  # doctest: +SKIP
 
         """
         if not (tags or categories):
