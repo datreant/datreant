@@ -338,7 +338,7 @@ class TestBundle(CollectionsTests):
 
             new = b.get()
 
-            assert len(new) == 0
+            assert new == b
 
         def test_get_cats(self, filled_bundle):
             ref, b = filled_bundle
