@@ -936,27 +936,27 @@ class Bundle(CollectionMixin):
         --------
         Doing a `get` with::
 
-        >>> bundle.get(length=5.0, colour='green')
+            >>> bundle.get(length=5.0, colour='green')  # doctest: +SKIP
 
         is equivalent to::
 
-        >>> bundle.categories.groupby(['length', 'colour'])[5.0, 'green']
+        >>> bundle.categories.groupby(['length', 'colour'])[5.0, 'green']  # doctest: +SKIP
 
         And doing::
 
-        >>> bundle.get('this')
+        >>> bundle.get('this')  # doctest: +SKIP
 
         is equivalent to::
 
-        >>> bundle.tags.filter('this')
+        >>> bundle.tags.filter('this')  # doctest: +SKIP
 
         Finally, doing::
 
-        >>> bundle.get('this', length=5)
+        >>> bundle.get('this', length=5)  # doctest: +SKIP
 
         is equivalent to::
 
-        >>> bundle.tags.filter('this').categories.groupby('length')[5.0]
+        >>> bundle.tags.filter('this').categories.groupby('length')[5.0]  # doctest: +SKIP
 
         """
         if not (tags or categories):
@@ -971,6 +971,9 @@ class Bundle(CollectionMixin):
                 # the key wasn't present, so we return an empty Bundle
                 output = Bundle()
                 break  # don't need to loop any further
+
+        # if any tags are given that don't match anything, this will yield an
+        # empty Bundle
         for t in tags:
             output &= output.tags.filter(t)
 
