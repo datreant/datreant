@@ -313,47 +313,6 @@ class TestBundle(CollectionsTests):
         assert col.map(return_nothing) is None
         assert col.map(return_nothing, processes=2) is None
 
-    def test_flatten(self, collection, tmpdir):
-        """Test that flattening a collection of Treants and Groups works as
-        expected.
-
-        """
-        treantnames = ('lark', 'mark', 'bark')
-        with tmpdir.as_cwd():
-            g = dtr.Group('bork')
-
-            for name in treantnames:
-                dtr.Treant(name)
-
-            g.members.add('bork', *treantnames)
-
-            # now our collection has a Group that has itself as a member
-            # the flattened collection should detect this "loop" and leave
-            # out the Group
-            collection.add(g)
-
-            assert len(collection) == 1
-
-            b = collection.flatten()
-
-            # shouldn't be any Groups
-            assert g not in b
-
-            # should have all our Treants
-            assert len(b) == 3
-            for name in treantnames:
-                assert name in b.names
-
-            # if we exclude the Group from the flattening, this should leave us
-            # with nothing
-            assert len(collection.flatten([g.uuid])) == 0
-
-            # if one of the Treants is also a member of the collection,
-            # should get something
-            collection.add('mark')
-            assert len(collection.flatten([g.uuid])) == 1
-            assert 'mark' in collection.flatten([g.uuid]).names
-
     class TestGet:
         @pytest.fixture
         def filled_bundle(self, tmpdir):
