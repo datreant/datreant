@@ -563,7 +563,7 @@ class Bundle(CollectionMixin):
         if isinstance(index, string_types):
             # a name can be used for indexing
             # a name always returns a Bundle
-            out = Bundle([self.abspaths[i]
+            out = Bundle([self._list()[i]
                           for i, name in enumerate(self.names)
                           if name == index])
 
@@ -571,7 +571,7 @@ class Bundle(CollectionMixin):
                 raise KeyError("No name matching string selection")
         elif isinstance(index, slice):
             # we also take slices, obviously
-            out = Bundle(*self.abspaths[index])
+            out = Bundle(*self._list()[index])
             out._cache.update(self._cache)
         else:
             out = super(Bundle, self).__getitem__(index)
@@ -646,11 +646,8 @@ class Bundle(CollectionMixin):
         for treant in treants:
             if treant is None:
                 pass
-            elif isinstance(treant, (list, tuple, View)):
+            elif isinstance(treant, (list, tuple, View, Bundle)):
                 self._add(*treant)
-            elif isinstance(treant, Bundle):
-                self._add(*treant.abspaths)
-                self._cache.update(treant._cache)
             elif isinstance(treant, Treant):
                 abspaths.append(treant.abspath)
                 self._cache[treant.abspath] = treant
