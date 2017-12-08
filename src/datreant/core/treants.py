@@ -57,7 +57,7 @@ class Treant(Tree):
             self.categories.add(categories)
 
     def _make_treantdir(self):
-        abspath = super(Treant, self).__getattribute__('_path').absolute()
+        abspath = self._path.absolute()
         treantdir = abspath / TREANTDIR_NAME
 
         if not treantdir.exists():

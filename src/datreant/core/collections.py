@@ -674,46 +674,6 @@ class Bundle(CollectionMixin):
 
         self._add_members(abspaths)
 
-    def _remove(self, *members):
-        """Remove any number of members from the collection.
-
-        :Arguments:
-            *members*
-                instances, indices, names, or absolute paths of the members to
-                remove
-
-        """
-        from .treants import Treant
-
-        abspaths = self._state
-        remove = list()
-
-        for member in members:
-            if isinstance(member, int):
-                remove.append(abspaths[member])
-            elif isinstance(member, Treant):
-                remove.append(member.abspath)
-            elif isinstance(member, string_types):
-                # try abspaths
-                abspaths = fnmatch.filter(self.abspaths, member)
-                paths = [m.abspath for m in self
-                         if m.abspath in abspaths]
-                remove.extend(paths)
-                # try names
-                names = fnmatch.filter(self.names, member)
-                paths = [m.abspath for m in self
-                         if m.name in names]
-                remove.extend(paths)
-            else:
-                raise TypeError('Only a Treant, index, name, or absolute '
-                                'path acceptable')
-
-        self._del_members(remove)
-
-        # remove from cache
-        for abspath in remove:
-            self._cache.pop(abspath, None)
-
     @property
     def names(self):
         """Return a list of member names.
