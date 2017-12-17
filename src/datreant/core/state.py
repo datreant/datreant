@@ -57,7 +57,8 @@ class BaseFile(object):
             if e.errno == 17:
                 pass
             else:
-                raise
+                raise IOError(
+                    e.errno, "can't open file '{}'".format(self.proxy))
 
     def get_location(self):
         """Get File basedir.
@@ -125,7 +126,10 @@ class BaseFile(object):
         """Open read-write file descriptor for application of advisory locks.
 
         """
-        self.fd = os.open(self.proxy, os.O_RDWR)
+        try:
+            self.fd = os.open(self.proxy, os.O_RDWR)
+        except OSError as e:
+            raise IOError(e.errno)
 
     def _close_fd(self):
         """Close file descriptor used for application of advisory locks.
