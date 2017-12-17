@@ -514,5 +514,5 @@ class TestReadOnly:
 
         assert '72' in c.tags
 
-        with pytest.raises(OSError):
+        with pytest.raises(IOError):
             c.tags.add('yet another')

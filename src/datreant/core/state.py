@@ -57,7 +57,8 @@ class BaseFile(object):
             if e.errno == 17:
                 pass
             else:
-                raise
+                raise IOError(
+                    e.errno, "can't open file '{}'".format(self.proxy))
 
     def get_location(self):
         """Get File basedir.
