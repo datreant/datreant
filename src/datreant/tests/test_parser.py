@@ -2,7 +2,7 @@
 
 """
 
-from datreant.core.selectionparser import parse_selection
+from datreant.selectionparser import parse_selection
 
 import pytest
 

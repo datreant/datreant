@@ -1,16 +1,16 @@
 Filesystem manipulation
 =======================
-The components of ``datreant.core`` documented here are those designed for
+The components of ``datreant`` documented here are those designed for
 working directly with filesystem objects, namely directories and files.
 
 .. _Tree_api:
 
 Tree
 ----
-The class :class:`datreant.core.Tree` is an interface to a directory in the
+The class :class:`datreant.Tree` is an interface to a directory in the
 filesystem.
 
-.. autoclass:: datreant.core.Tree
+.. autoclass:: datreant.Tree
     :members:
     :inherited-members:
 
@@ -18,10 +18,10 @@ filesystem.
 
 Leaf
 ----
-The class :class:`datreant.core.Leaf` is an interface to a file in the
+The class :class:`datreant.Leaf` is an interface to a file in the
 filesystem.
 
-.. autoclass:: datreant.core.Leaf
+.. autoclass:: datreant.Leaf
     :members:
     :inherited-members:
 
@@ -29,10 +29,10 @@ filesystem.
 
 View
 ----
-The class :class:`datreant.core.View` is an ordered set of Trees and Leaves.
+The class :class:`datreant.View` is an ordered set of Trees and Leaves.
 It allows for convenient operations on its members as a collective, as well
 as providing mechanisms for filtering and subselection.
 
-.. autoclass:: datreant.core.View
+.. autoclass:: datreant.View
     :members:
     :inherited-members:

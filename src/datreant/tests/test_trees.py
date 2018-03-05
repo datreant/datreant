@@ -6,8 +6,8 @@ import pytest
 import os
 import py
 
-import datreant.core as dtr
-from datreant.core import Veg, Leaf, Tree, Treant
+import datreant as dtr
+from datreant import Veg, Leaf, Tree, Treant
 
 
 class TestVeg(object):

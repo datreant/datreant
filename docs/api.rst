@@ -1,7 +1,7 @@
 =============
 API Reference
 =============
-This is an overview of the ``datreant.core`` API.
+This is an overview of the ``datreant`` API.
 
 
 .. toctree::

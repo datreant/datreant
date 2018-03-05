@@ -1,6 +1,6 @@
-=======================
-datreant.core CHANGELOG
-=======================
+==================
+datreant CHANGELOG
+==================
 
 The rules for this file:
   * entries are sorted newest-first.
@@ -22,6 +22,7 @@ API Changes
     * Removed Tree.treants, Treant.treants, View.bundle, Bundle.view,
       Tree.discover, Treant.discover; favor use of classes and functions
       directly for finer control (#114)
+    * Namespace package removed; now library called `datreant`
 
 
 Enhancements

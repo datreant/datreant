@@ -523,7 +523,7 @@ class Tree(Veg):
 
 
         The other options are described in the
-        :py:func:`datreant.core.rsync.rsync` documentation.
+        :py:func:`datreant.rsync.rsync` documentation.
 
         """
         if isinstance(other, Tree):

@@ -2,7 +2,7 @@
 
 """
 
-import datreant.core as dtr
+import datreant as dtr
 import pytest
 import os
 import py.path

@@ -1,18 +1,18 @@
-========================
-Installing datreant.core
-========================
-You can install ``datreant.core`` from `PyPI <https://pypi.python.org/>`_ using pip::
+===================
+Installing datreant
+===================
+You can install ``datreant`` from `PyPI <https://pypi.python.org/>`_ using pip::
 
-    pip install datreant.core
+    pip install datreant
 
 It is also possible to use ``--user`` to install into your user's site-packages
 directory::
 
-    pip install --user datreant.core
+    pip install --user datreant
 
 Alternatively we also provide conda package. ::
 
-    conda install -c datreant datreant.core
+    conda install -c datreant datreant
 
 All datreant packages currently support the following Python versions::
 
@@ -25,7 +25,7 @@ All datreant packages currently support the following Python versions::
 
 Dependencies
 ============
-The dependencies of ``datreant.core`` are light, with many being pure-Python
+The dependencies of ``datreant`` are light, with many being pure-Python
 packages themselves. The current dependencies are::
 
 - asciitree
@@ -33,23 +33,24 @@ packages themselves. The current dependencies are::
 - scandir
 - six
 - fuzzywuzzy
+- python-Levenshtein
 
-These are automatically installed when installing ``datreant.core``.
+These are automatically installed when installing ``datreant``.
 
 Installing from source
 ======================
 
 To install from source, clone the repository and switch to the master branch ::
 
-    git clone git@github.com:datreant/datreant.core.git
-    cd datreant.core
+    git clone git@github.com:datreant/datreant.git
+    cd datreant
     git checkout master
 
 Installation of the packages is as simple as ::
 
     pip install .
 
-This installs ``datreant.core`` in the system wide python directory; this may
+This installs ``datreant`` in the system wide python directory; this may
 require administrative privileges. If you have a virtualenv active, it will
 install the package within your virtualenv. See :ref:`Development_env` for more
 on setting up a proper development environment.

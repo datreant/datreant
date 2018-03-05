@@ -1,6 +1,6 @@
 Treant synchronization
 ======================
-These are the API components of ``datreant.core`` for synchronizing
+These are the API components of ``datreant`` for synchronizing
 Treants locally and remotely.
 
 .. _Sync_api:
@@ -8,6 +8,6 @@ Treants locally and remotely.
 Sync
 ----
 The synchronization functionality is provided by the rsync wrapper function.
-The function is used by the :py:meth:`datreant.core.Tree.sync` method.
+The function is used by the :py:meth:`datreant.Tree.sync` method.
 
-.. autofunction:: datreant.core.rsync.rsync
+.. autofunction:: datreant.rsync.rsync

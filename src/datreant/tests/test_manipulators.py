@@ -2,8 +2,8 @@
 
 """
 
-import datreant.core as dtr
-from datreant.core.manipulators import discover
+import datreant as dtr
+from datreant import discover
 
 
 def test_discover(tmpdir):

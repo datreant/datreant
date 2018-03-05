@@ -35,7 +35,7 @@ The package itself is pure Python.
 If you want to work on the code, either for yourself or to contribute back to
 the project, clone the repository to your local machine with::
 
-    git clone https://github.com/datreant/datreant.core.git
+    git clone https://github.com/datreant/datreant.git
 
 .. _`installation instructions`: http://datreant.readthedocs.org/en/develop/install.html
 
@@ -54,12 +54,12 @@ contributing back.
     :scale: 100%
     :target: http://datreant.readthedocs.org/en/develop/?badge=develop
 
-.. |build| image:: https://travis-ci.org/datreant/datreant.core.svg?branch=develop
+.. |build| image:: https://travis-ci.org/datreant/datreant.svg?branch=develop
     :alt: Build Status
-    :target: https://travis-ci.org/datreant/datreant.core
+    :target: https://travis-ci.org/datreant/datreant
 
-.. |cov| image:: http://codecov.io/github/datreant/datreant.core/coverage.svg?branch=develop
+.. |cov| image:: http://codecov.io/github/datreant/datreant/coverage.svg?branch=develop
     :alt: Code Coverage
     :scale: 100%
-    :target: http://codecov.io/github/datreant/datreant.core?branch=develop
+    :target: http://codecov.io/github/datreant/datreant?branch=develop
 

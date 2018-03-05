@@ -2,8 +2,8 @@
 
 """
 
-import datreant.core as dtr
-from datreant.core import Treant
+import datreant as dtr
+from datreant import Treant
 import pytest
 import mock
 import os

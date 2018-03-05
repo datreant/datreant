@@ -2,7 +2,7 @@ import mock
 import os
 import pytest
 
-import datreant.core as dtr
+import datreant as dtr
 
 
 def test_makedirs(tmpdir):

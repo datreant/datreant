@@ -5,7 +5,7 @@
 import multiprocessing as mp
 import pytest
 
-from datreant.core import Treant
+from datreant import Treant
 
 
 @pytest.fixture

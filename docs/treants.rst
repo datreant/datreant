@@ -27,7 +27,7 @@ Treants store their data as directory structures in the file system. Generating
 a new Treant, for example, with the following ::
     
     >>> # python session 1
-    >>> import datreant.core as dtr
+    >>> import datreant as dtr
     >>> s = dtr.Treant('sprout')
 
 creates a directory called ``sprout`` in the current working directory. It contains
@@ -45,7 +45,7 @@ Treants are persistent. In fact, we can open a separate python
 session (go ahead!) and use this Treant immediately there ::
 
     >>> # python session 2
-    >>> import datreant.core as dtr
+    >>> import datreant as dtr
     >>> s = dtr.Treant('sprout')
 
 Making a modification to the Treant in one session, perhaps by adding a tag,

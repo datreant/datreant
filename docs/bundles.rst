@@ -13,7 +13,7 @@ our working directory has a few Treants in it::
 
 We can make a Bundle with ::
     
-    >>> import datreant.core as dtr
+    >>> import datreant as dtr
     >>> b = dtr.Bundle('elm', 'maple', 'oak', 'sequoia')
     >>> b
     <Bundle(['elm', 'maple', 'oak', 'sequoia'])>
@@ -30,7 +30,7 @@ would work equally well.
 Gathering Treants from the filesystem
 =====================================
 It can be tedious manually hunting for existing Treants throughout the
-filesystem. For this reason the :func:`~datreant.core.discover` function
+filesystem. For this reason the :func:`~datreant.discover` function
 can do this work for us::
 
     >>> b = dtr.discover('.')
@@ -39,12 +39,12 @@ can do this work for us::
 
 For this simple example all our Treants were in this directory, so it's not
 quite as useful. But for a directory structure that is deep and convoluted
-perhaps from a project spanning years, :func:`~datreant.core.discover` lets
+perhaps from a project spanning years, :func:`~datreant.discover` lets
 you get a Bundle of all Treants in the tree with little effort. You can then
 filter on tags and categories to get Bundles of the Treants you actually want
 to work with.
 
-See the :func:`datreant.core.discover` API reference for more details.
+See the :func:`datreant.discover` API reference for more details.
 
 Basic member selection
 ======================
@@ -91,7 +91,7 @@ members.
           individual Treants applies to using them in aggregate with Bundles.
 
 The aggregated tags for all members in a Bundle are accessible via
-:attr:`datreant.core.Bundle.tags`. Just calling this property gives a view of
+:attr:`datreant.Bundle.tags`. Just calling this property gives a view of
 the tags present in every member Treant::
 
     >>> b.tags
@@ -204,7 +204,7 @@ which we can use directly as an "or"-ing in a tag expression::
     <Bundle(['oak', 'elm'])>
 
 The threshold for fuzzy matching can be set with the ``threshold`` parameter.
-See the API reference for :meth:`~datreant.core.metadata.AggTags.fuzzy` for more
+See the API reference for :meth:`~datreant.metadata.AggTags.fuzzy` for more
 details on how to use this method.
 
 Grouping with Treant categories
@@ -219,7 +219,7 @@ them to build groupings of members by category value.
           Bundles.
 
 The aggregated categories for all members in a Bundle are accessible via
-:attr:`datreant.core.Bundle.categories`. Just calling this property gives a
+:attr:`datreant.Bundle.categories`. Just calling this property gives a
 view of the categories with keys present in every member Treant::
 
     >>> b.categories
@@ -304,7 +304,7 @@ Grouping by value
 Since for a given key a Bundle may have members with a variety of values,
 it can be useful to get subsets of the Bundle as a function of value for a
 given key. We can do this using the
-:meth:`~datreant.core.metadata.AggCategories.groupby` method::
+:meth:`~datreant.metadata.AggCategories.groupby` method::
 
     >>> b.categories.groupby('type')
     {'deciduous': <Bundle(['maple', 'oak', 'elm'])>,
@@ -329,7 +329,7 @@ Now the keys of the resulting dictionary are tuples of value combinations for
 which there are members. The resulting Bundles don't include some members since
 not every member has both the keys 'type' and 'health'.
 
-See the API reference for :meth:`~datreant.core.metadata.AggCategories.groupby`
+See the API reference for :meth:`~datreant.metadata.AggCategories.groupby`
 for more details on how to use this method.
 
 
@@ -350,7 +350,7 @@ This example isn't the most useful, but the point is that we can apply any
 function across all members without much fanfare, with the results returned
 in a list and in member order.
 
-The :meth:`~datreant.core.Bundle.map` method also features a ``processes``
+The :meth:`~datreant.Bundle.map` method also features a ``processes``
 parameter, and setting this to an integer greater than 1 will use the
 :mod:`multiprocessing` module internally to map the function across all members
 using multiple processes.  For this to work, we have to give our function an
@@ -369,7 +369,7 @@ that the parallelism gave any advantage here. But functions that need to do
 more complicated work with each Treant and the data stored within its tree can 
 gain much from process parallelism when applied to a Bundle of many Treants.
 
-See the API reference for :meth:`~datreant.core.Bundle.map` for more details on
+See the API reference for :meth:`~datreant.Bundle.map` for more details on
 how to use this method.
 
 API Reference: Bundle

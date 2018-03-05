@@ -44,7 +44,7 @@ The package itself is pure Python, and light on dependencies by design.
 If you want to work on the code, either for yourself or to contribute back to
 the project, clone the repository to your local machine with::
 
-    git clone https://github.com/datreant/datreant.core.git
+    git clone https://github.com/datreant/datreant.git
 
 
 Contributing

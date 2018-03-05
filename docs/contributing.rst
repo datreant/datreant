@@ -26,15 +26,15 @@ We recommend using `virtual environments
 <http://virtualenvwrapper.readthedocs.org/en/latest/>`_. 
 First, clone the repository::
 
-    git clone git@github.com:datreant/datreant.core.git
+    git clone git@github.com:datreant/datreant.git
 
 Make a new virtualenv called ``datreant`` with::
 
     mkvirtualenv datreant
 
-and make a development installation of ``datreant.core`` with::
+and make a development installation of ``datreant`` with::
 
-    cd datreant.core
+    cd datreant
     pip install -e .
 
 The ``-e`` flag will cause pip to call setup with the ``develop`` option. This
@@ -52,7 +52,7 @@ switch to the top-level directory of the package and run::
 
     py.test --cov src/ --pep8 src/
     
-This will run all the tests (inside ``src/datreant/core/tests``), with
+This will run all the tests (inside ``src/datreant/tests``), with
 `coverage <https://pypi.python.org/pypi/pytest-cov>`_ and `PEP8
 <https://pypi.python.org/pypi/pytest-pep8>`_ checks.
 

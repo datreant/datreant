@@ -17,7 +17,7 @@ Using tags
 Tags are individual strings that describe a Treant. Using our Treant
 ``sprout`` as an example, we can add many tags at once ::
 
-    >>> from datreant.core import Treant
+    >>> from datreant import Treant
     >>> s = Treant('sprout')
     >>> s.tags.add('elm', 'mirky', 'misty')
     >>> s.tags

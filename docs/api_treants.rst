@@ -8,9 +8,9 @@ designed to be subclassed.
 
 Treant
 ------
-The class :class:`datreant.core.Treant` is the central object of ``datreant.core``. 
+The class :class:`datreant.Treant` is the central object of ``datreant``. 
 
-.. autoclass:: datreant.core.Treant
+.. autoclass:: datreant.Treant
     :members:
     :inherited-members:
 
@@ -18,10 +18,10 @@ The class :class:`datreant.core.Treant` is the central object of ``datreant.core
 
 Tags
 ````
-The class :class:`datreant.core.metadata.Tags` is the interface used by Treants to
+The class :class:`datreant.metadata.Tags` is the interface used by Treants to
 access their tags. 
 
-.. autoclass:: datreant.core.metadata.Tags
+.. autoclass:: datreant.metadata.Tags
     :members:
     :inherited-members:
 
@@ -29,9 +29,9 @@ access their tags.
 
 Categories
 ``````````
-The class :class:`datreant.core.metadata.Categories` is the interface used by
+The class :class:`datreant.metadata.Categories` is the interface used by
 Treants to access their categories.
 
-.. autoclass:: datreant.core.metadata.Categories
+.. autoclass:: datreant.metadata.Categories
     :members:
     :inherited-members:

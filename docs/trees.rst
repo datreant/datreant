@@ -14,7 +14,7 @@ directory has two directories and a file ::
 
 We can use Trees and Leaves directly to manipulate them ::
 
-    >>> import datreant.core as dtr
+    >>> import datreant as dtr
     >>> t = dtr.Tree('moe')
     >>> t
     <Tree: 'moe/'>
@@ -67,7 +67,7 @@ in which case whether a Tree or Leaf is returned is dependent on an ending
           Tree or a Leaf.
 
 If you don't want to rely on ending ``/`` characters when making new
-directories, we can use :py:meth:`~datreant.core.Tree.treeloc` to guarantee it::
+directories, we can use :py:meth:`~datreant.Tree.treeloc` to guarantee it::
 
     >>> adir = t.treeloc['a/directory'].make()  # will always make a directory
 
@@ -79,7 +79,7 @@ and likewise for files, to be explicit::
 Synchronizing Trees
 -------------------
 Synchronization of Tree contents can be performed through the
-:py:meth:`~datreant.core.Tree.sync` method. Synchronization can be performed
+:py:meth:`~datreant.Tree.sync` method. Synchronization can be performed
 both locally and remotely, and is done through the rsync command::
 
     >>> sequoia = dtr.Tree('sequoia')

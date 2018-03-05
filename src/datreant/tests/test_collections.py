@@ -5,7 +5,7 @@
 import numpy as np
 import pytest
 
-import datreant.core as dtr
+import datreant as dtr
 
 
 def do_stuff(treant):

@@ -19,7 +19,7 @@ directory with ::
 
 We can build a View immediately ::
 
-    >>> import datreant.core as dtr
+    >>> import datreant as dtr
     >>> import glob
     >>> v = dtr.View(glob.glob('*'))
     >>> v
