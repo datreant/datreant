@@ -34,7 +34,8 @@ Enhancements
 
 
 Fixes
-
+   * Setting a Category to None will delete any existing value and is
+     otherwise not allowed. (Issue #117)
 
 Changes
 

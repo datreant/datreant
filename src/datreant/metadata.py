@@ -424,7 +424,8 @@ class Categories(Metadata):
         Keys must be strings.
 
         Values may be ints, floats, strings, or bools. ``None`` as a value
-        will not the existing value for the key, if present.
+        will delete the existing value for the key, if present, and is
+        otherwise not allowed.
 
         Parameters
         ----------
@@ -453,7 +454,13 @@ class Categories(Metadata):
 
                 if (isinstance(value, (int, float, string_types, bool))):
                     self._statefile._state[key] = value
-                elif value is not None:
+                elif value is None:
+                    # delete if present
+                    if key in self._statefile._state:
+                        del self._statefile._state[key]
+                    else:
+                        raise ValueError("Cannot set to 'None'")
+                else:
                     raise TypeError("Values must be ints, floats,"
                                     " strings, or bools.")
 
