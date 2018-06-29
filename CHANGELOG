@@ -13,9 +13,9 @@ The rules for this file:
 
 ------------------------------------------------------------------------------
 
-??/??/??
+06/29/18
 
-    * 0.8.0 kain88-de, dotsdl, orbeckst, richardjgowers
+    * 1.0.0 kain88-de, dotsdl, orbeckst, richardjgowers
 
 API Changes
     * Group object no longer supported; removed (#130)
