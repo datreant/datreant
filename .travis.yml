@@ -26,6 +26,8 @@ install:
 # run tests
 script: 
   - py.test --cov src/datreant --pep8 src/datreant -v --doctest-modules
+  # test conversion script runs
+  - datreant_07to1 --help
 
 after_success:
   - codecov
