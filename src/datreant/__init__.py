@@ -18,4 +18,4 @@ from .trees import Veg, Leaf, Tree
 from .collections import View, Bundle
 
 __all__ = ['Treant', 'Tree', 'Leaf', 'Bundle', 'discover', 'View']
-__version__ = "1.0.1"  # NOTE: keep in sync with RELEASE in setup.py
+__version__ = "1.0.2"  # NOTE: keep in sync with RELEASE in setup.py
