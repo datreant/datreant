@@ -15,6 +15,25 @@ The rules for this file:
 
 06/29/18
 
+    * 1.0.1 dotsdl
+
+API Changes
+
+
+Enhancements
+
+
+Fixes
+   * Bundle.leaves, Bundle.trees, and Bundle.children fixed
+
+Changes
+
+
+Doc Updates
+
+
+06/29/18
+
     * 1.0.0 kain88-de, dotsdl, orbeckst, richardjgowers
 
 API Changes

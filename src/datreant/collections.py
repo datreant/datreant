@@ -72,6 +72,9 @@ class CollectionMixin(object):
                              "".format(self.__class__.__name__))
         return out
 
+    def _membertrees(self):
+        return View([member for member in self if isinstance(member, Tree)])
+
     def leaves(self, hidden=False):
         """Return a View of the files within the member Trees.
 
@@ -87,7 +90,7 @@ class CollectionMixin(object):
 
         """
         return View([member.leaves(hidden=hidden)
-                     for member in self.membertrees])
+                     for member in self._membertrees()])
 
     def trees(self, hidden=False):
         """Return a View of the directories within the member Trees.
@@ -104,7 +107,7 @@ class CollectionMixin(object):
 
         """
         return View([member.trees(hidden=hidden)
-                     for member in self.membertrees])
+                     for member in self._membertrees()])
 
     def children(self, hidden=False):
         """Return a View of all files and directories within the member Trees.
@@ -121,7 +124,7 @@ class CollectionMixin(object):
 
         """
         return View([member.children(hidden=hidden)
-                     for member in self.membertrees])
+                     for member in self._membertrees()])
 
     def glob(self, pattern):
         """Return a View of all child Leaves and Trees of members matching
@@ -411,7 +414,7 @@ class View(CollectionMixin):
         """A View giving only members that are Trees (or subclasses).
 
         """
-        return View([member for member in self if isinstance(member, Tree)])
+        return self._membertrees()
 
     @property
     def memberleaves(self):
