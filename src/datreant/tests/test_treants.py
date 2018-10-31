@@ -375,17 +375,19 @@ class TestTreant(TestTree):
             treant.categories['lark'] = 42
             assert treant.categories['lark'] == 42
 
-            treant_tuple = ('ark', 'clark', 1)
-            treant.categories['hark'] = treant_tuple
-            assert treant.categories['hark'] == list(treant_tuple)
+        @pytest.mark.parametrize('obj, val', [
+            [tuple, ('ark', 'clark', 1)],
+            [list, ['shark', 'knark', 'mark']],
+            [dict, {'park': 1, 'nark': 2}]
+            ])
+        def test_add_tuple_list_dict_categories(self, treant, obj, val):
+            treant.categories['dark'] = val
 
-            treant_list = ['shark', 'knark', 'mark']
-            treant.categories['fark'] = treant_list
-            assert treant.categories['fark'] == treant_list
+            # Make sure to convert tuple to list, before asserting
+            if obj == tuple:
+                val = list(val)
 
-            treant_dict = {'park': 1, 'nark': 2}
-            treant.categories['dark'] = treant_dict
-            assert treant.categories['dark'] == treant_dict
+            assert treant.categories['dark'] == val
 
         def test_remove_categories(self, treant):
             treant.categories.add(marklar=42)
