@@ -367,7 +367,7 @@ class TestTreant(TestTree):
             treant.categories.add({'bark': 'snark'}, lark=27)
             assert 'bark' in treant.categories
             assert 'snark' not in treant.categories
-            assert 'bark' in treant.categories
+            assert 'lark' in treant.categories
 
             assert treant.categories['bark'] == 'snark'
             assert treant.categories['lark'] == 27
