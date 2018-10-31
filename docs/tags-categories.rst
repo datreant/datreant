@@ -100,7 +100,7 @@ The keys for categories must be strings, but the values may be strings, numbers
 
     >>> s.categories['dark'] = ['mark', 'clark', 'bark']
     >>> s.categories
-    <Categories({'dark': ['mark', 'clark', 'bark']})
+    <Categories({'dark': ['mark', 'clark', 'bark']})>
 
 .. note:: ``None`` may not be used as a category value since this is used in
           aggregations (see :ref:`Bundles`) to indicate keys that are absent.
