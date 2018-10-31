@@ -375,6 +375,18 @@ class TestTreant(TestTree):
             treant.categories['lark'] = 42
             assert treant.categories['lark'] == 42
 
+            treant_tuple = ('ark', 'clark', 1)
+            treant.categories['hark'] = treant_tuple
+            assert treant.categories['hark'] == list(treant_tuple)
+
+            treant_list = ['shark', 'knark', 'mark']
+            treant.categories['fark'] = treant_list
+            assert treant.categories['fark'] == treant_list
+
+            treant_dict = {'park': 1, 'nark': 2}
+            treant.categories['dark'] = treant_dict
+            assert treant.categories['dark'] == treant_dict
+
         def test_remove_categories(self, treant):
             treant.categories.add(marklar=42)
             assert 'marklar' in treant.categories
@@ -413,8 +425,7 @@ class TestTreant(TestTree):
             with pytest.raises(TypeError):
                 treant.categories.add(key, val)
 
-        @pytest.mark.parametrize('key, val', [['bark', ['shaggy']],
-                                              ['snark', {'yes'}]])
+        @pytest.mark.parametrize('key, val', [['snark', {'yes'}]])
         def test_add_wrong_values(self, treant, key, val):
             # always test both addition methods
             with pytest.raises(TypeError):
