@@ -452,7 +452,8 @@ class Categories(Metadata):
                 if not isinstance(key, string_types):
                     raise TypeError("Keys must be strings.")
 
-                if (isinstance(value, (int, float, string_types, bool))):
+                if (isinstance(value, (int, float, string_types,
+                                       bool, tuple, list, dict))):
                     self._statefile._state[key] = value
                 elif value is None:
                     # delete if present
