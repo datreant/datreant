@@ -13,6 +13,29 @@ The rules for this file:
 
 ------------------------------------------------------------------------------
 
+??/??/18
+
+    * 1.0.2 dotsdl
+
+API Changes
+
+
+Enhancements
+
+
+Fixes
+   * `Tree.trees` no longer gives `NameError` if scandir returns an empty
+     iterator (#121).
+
+
+Changes
+
+
+Doc Updates
+   * All docstrings follow numpy conventions
+
+
+
 06/29/18
 
     * 1.0.1 dotsdl

@@ -319,6 +319,33 @@ class TestTree(TestVeg):
             tree.draw()
         assert "Tree doesn't exist in the filesystem" in str(error)
 
+    def test_children(self, tree):
+
+        # actually make the directory now
+        tree.makedirs()
+
+        tree['a/file'].make()
+        tree['a/dir/'].make()
+
+        assert len(tree.children()) == 1
+
+        tree['thing1'].make()
+        tree['thing2'].make()
+
+        assert len(tree.children()) == 3
+
+    def test_children_nopermissions(self, tree):
+
+        # actually make the directory now
+        tree.makedirs()
+
+        tree['a/file'].make()
+        tree['a/dir/'].make()
+
+        os.chmod(tree, 0000)
+
+        assert len(tree.children()) == 0
+
 
 class TestLeaf(TestVeg):
     """Test Leaf-specific features.
