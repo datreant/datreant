@@ -342,7 +342,7 @@ class TestTree(TestVeg):
         tree['a/file'].make()
         tree['a/dir/'].make()
 
-        os.chmod(tree, 0000)
+        os.chmod(tree.abspath, 0000)
 
         assert len(tree.children()) == 0
 
