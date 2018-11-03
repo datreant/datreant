@@ -29,9 +29,10 @@ class BaseFile(object):
     Any child class will have to implement `_open_file_r` and `_open_file_w`.
     These function should return a file like object that has a `close` method.
 
-    :Arguments:
-        *filename*
-            name of file on disk object corresponds to
+    Parameters
+    ----------
+    filename : str
+        Name of file on disk object corresponds to.
 
     """
 
@@ -62,9 +63,10 @@ class BaseFile(object):
     def get_location(self):
         """Get File basedir.
 
-        :Returns:
-            *location*
-                absolute path to File basedir
+        Returns
+        -------
+        location : str
+            Absolute path to File basedir.
 
         """
         return os.path.dirname(self.filename)
@@ -76,9 +78,9 @@ class BaseFile(object):
         exclusive lock is already held on the file by another process,
         then the method waits until it can obtain the lock.
 
-        :Arguments:
-            *fd*
-                file descriptor
+        Parameters
+        ----------
+        fd : file descriptor
         """
         fcntl.lockf(fd, fcntl.LOCK_SH)
 
@@ -89,9 +91,9 @@ class BaseFile(object):
         shared or exclusive lock is already held on the file by another
         process, then the method waits until it can obtain the lock.
 
-        :Arguments:
-            *fd*
-                file descriptor
+        Parameters
+        ----------
+        fd : file descriptor
         """
         fcntl.lockf(fd, fcntl.LOCK_EX)
 
@@ -103,9 +105,9 @@ class BaseFile(object):
         is closed anyway.  This method will remain here for now, but may be
         removed in the future if not needed (likely).
 
-        :Arguments:
-            *fd*
-                file descriptor
+        Parameters
+        ----------
+        fd : file descriptor
         """
         fcntl.lockf(fd, fcntl.LOCK_UN)
 

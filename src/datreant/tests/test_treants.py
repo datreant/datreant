@@ -8,6 +8,7 @@ import pytest
 import mock
 import os
 import py
+import errno
 
 from . import test_collections
 from .test_trees import TestTree
@@ -80,20 +81,20 @@ class TestTreant(TestTree):
     def test_gen_OSError(self, tmpdir):
         with tmpdir.as_cwd():
             with mock.patch('os.makedirs') as mp:
-                mp.sideeffect = OSError(os.errno.ENOSPC, 'Mock - disk full')
+                mp.sideeffect = OSError(errno.ENOSPC, 'Mock - disk full')
                 with pytest.raises(OSError) as error:
                     t = Treant('new')
                     t.tags.add('worthless')
-                    assert error.errno == os.errno.ENOSPC
+                    assert error.errno == errno.ENOSPC
 
     def test_gen_OSError13(self, tmpdir):
         with tmpdir.as_cwd():
             with mock.patch('os.makedirs') as mp:
-                mp.sideeffect = OSError(os.errno.EACCES, 'Mock - disk full')
+                mp.sideeffect = OSError(errno.EACCES, 'Mock - disk full')
                 with pytest.raises(OSError) as error:
                     t = Treant('new')
                     t.tags.add('worthless')
-                    assert error.errno == os.errno.EACCES
+                    assert error.errno == errno.EACCES
                     assert ("Permission denied; cannot create 'new'"
                             in str(error))
 

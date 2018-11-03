@@ -4,9 +4,10 @@ import os
 def makedirs(path, mode=0o777, exist_ok=False):
     """Make directories and all parents necessary.
 
-    :Arguments:
-        *path*
-            directory path to make
+    Parameters
+    ----------
+    path : str
+        Directory path to make.
     """
     try:
         os.makedirs(str(path), mode=mode)

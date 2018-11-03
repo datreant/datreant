@@ -193,9 +193,10 @@ class Tags(Metadata):
     def _list(self):
         """Get all tags for the Treant as a list.
 
-        :Returns:
-            *tags*
-                list of all tags
+        Returns
+        -------
+        tags : list
+            List of all tags.
         """
         with self._read:
             tags = self._statefile._state
@@ -246,9 +247,10 @@ class Tags(Metadata):
         Any number of tags can be given as arguments, and these will be
         deleted.
 
-        :Arguments:
-            *tags*
-                Tags to delete.
+        Parameters
+        ----------
+        tags : iterable
+            Tags to delete.
         """
         with self._write:
             # remove redundant tags from given list if present
@@ -404,9 +406,10 @@ class Categories(Metadata):
     def _dict(self):
         """Get all categories for the Treant as a dictionary.
 
-        :Returns:
-            *categories*
-                dictionary of all categories
+        Returns
+        -------
+        categories : dict
+            Dictionary of all categories.
 
         """
         with self._read:
@@ -491,9 +494,10 @@ class Categories(Metadata):
     def keys(self):
         """Get category keys.
 
-        :Returns:
-            *keys*
-                keys present among categories
+        Returns
+        -------
+        keys : list
+            Keys present among categories.
         """
         with self._read:
             return self._statefile._state.keys()
@@ -501,9 +505,10 @@ class Categories(Metadata):
     def values(self):
         """Get category values.
 
-        :Returns:
-            *values*
-                values present among categories
+        Returns
+        -------
+        values : list
+            Values present among categories.
         """
         with self._read:
             return self._statefile._state.values()
@@ -660,9 +665,10 @@ class AggTags(AggMetadata):
     def add(self, *tags):
         """Add any number of tags to each Treant in collection.
 
-        :Arguments:
-           *tags*
-              Tags to add. Must be strings or lists of strings.
+        Parameters
+        ----------
+        tags : str or list
+            Tags to add. Must be strings or lists of strings.
 
         """
         for member in self._collection:
@@ -674,9 +680,10 @@ class AggTags(AggMetadata):
         Any number of tags can be given as arguments, and these will be
         deleted.
 
-        :Arguments:
-            *tags*
-                Tags to delete.
+        Parameters
+        ----------
+        tags : iterable
+            Tags to delete.
         """
         for member in self._collection:
             member.tags.remove(*tags)

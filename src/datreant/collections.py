@@ -232,16 +232,16 @@ class View(CollectionMixin):
 
     Parameters
     ----------
-    vegs : Tree, Leaf, or list
+    members : Tree, Leaf, or list
         Trees and/or Leaves to be added, which may be nested lists of Trees
         and Leaves. Trees and Leaves can be given as either objects or
         paths.
 
     """
 
-    def __init__(self, *vegs):
+    def __init__(self, *members):
         self._state = list()
-        self._add(*vegs)
+        self._add(*members)
 
     def __repr__(self):
         names = [i.name if isinstance(i, Leaf) else i.name + '/'
@@ -335,11 +335,12 @@ class View(CollectionMixin):
         else:
             raise TypeError("Operands must be Views.")
 
-    def _add(self, *vegs):
+    def _add(self, *members):
         """Add any number of members to this collection.
 
-        :Arguments:
-            *vegs*
+        Parameters
+        ----------
+        members : iterable of `Tree` or `Leaf`
                 Trees or Leaves to add; lists, tuples, or other
                 Views with Trees or Leaves will also work; strings
                 giving a path (existing or not) also work, since these
@@ -350,36 +351,37 @@ class View(CollectionMixin):
         from .treants import Treant
 
         outconts = list()
-        for veg in vegs:
-            if veg is None:
+        for member in members:
+            if member is None:
                 pass
-            elif isinstance(veg, (list, tuple)):
-                self._add(*veg)
-            elif isinstance(veg, (View, Bundle)):
-                self._add(*list(veg))
-            elif isinstance(veg, Treant):
-                outconts.append(Tree(veg))
-            elif isinstance(veg, Veg):
-                outconts.append(veg)
-            elif (isinstance(veg, string_types) and
-                    (os.path.isdir(veg) or veg.endswith(os.sep))):
-                tre = Tree(veg)
+            elif isinstance(member, (list, tuple)):
+                self._add(*member)
+            elif isinstance(member, (View, Bundle)):
+                self._add(*list(member))
+            elif isinstance(member, Treant):
+                outconts.append(Tree(member))
+            elif isinstance(member, Veg):
+                outconts.append(member)
+            elif (isinstance(member, string_types) and
+                    (os.path.isdir(member) or member.endswith(os.sep))):
+                tre = Tree(member)
                 outconts.append(tre)
-            elif isinstance(veg, string_types):
-                tre = Leaf(veg)
+            elif isinstance(member, string_types):
+                tre = Leaf(member)
                 outconts.append(tre)
             else:
                 raise TypeError("'{}' not a valid input "
-                                "for View".format(veg))
+                                "for View".format(member))
 
         self._add_members(*outconts)
 
     def _add_members(self, *members):
         """Add many members at once.
 
-        :Arguments:
-            *members*
-                list of Trees and Leaves
+        Parameters
+        ----------
+        members : iterable
+            An iterable of Trees and Leaves.
 
         """
         for member in members:
@@ -388,9 +390,10 @@ class View(CollectionMixin):
     def _add_member(self, member):
         """Add a member to the View.
 
-        :Arguments:
-            *member*
-                Tree or Leaf to add
+        Parameters
+        ----------
+        member : `Tree` or `Leaf`
+            Tree or Leaf to add.
 
         """
         if member not in self._state:
@@ -647,11 +650,11 @@ class Bundle(CollectionMixin):
     def _add(self, *treants):
         """Add any number of members to this collection.
 
-        :Arguments:
-            *treants*
-                Treants to be added, which may be nested lists/tuples of
-                Treants, Bundles, individual Treants or paths to existing
-                Treants
+        Parameters
+        ----------
+        treants : `datreant.Treant`s
+            Treants to be added, which may be nested lists/tuples of Treants,
+            Bundles, individual Treants or paths to existing Treants
         """
         from .treants import Treant
 
@@ -687,10 +690,11 @@ class Bundle(CollectionMixin):
     def _remove(self, *members):
         """Remove any number of members from the collection.
 
-        :Arguments:
-            *members*
-                instances, indices, names, or absolute paths of the members to
-                remove
+        Parameters
+        ----------
+        members : `datreant.Treant`, int, str
+            Instances, indices, names, or absolute paths of the members to
+            remove.
 
         """
         from .treants import Treant
@@ -728,9 +732,10 @@ class Bundle(CollectionMixin):
     def names(self):
         """Return a list of member names.
 
-        :Returns:
-            *names*
-                list giving the name of each member, in order
+        Returns
+        --------
+        names : list
+            List giving the name of each member, in order.
 
         """
         names = list()
@@ -746,10 +751,10 @@ class Bundle(CollectionMixin):
     def abspaths(self):
         """Return a list of absolute member directory paths.
 
-        :Returns:
-            *abspaths*
-                list giving the absolute directory path of each member, in
-                order
+        Returns
+        -------
+        abspaths : list
+            List giving the absolute directory path of each member, in order.
 
         """
         return [member.abspath for member in self._list()]
@@ -758,10 +763,10 @@ class Bundle(CollectionMixin):
     def relpaths(self):
         """Return a list of relative member directory paths.
 
-        :Returns:
-            *names*
-                list giving the relative directory path of each member, in
-                order
+        Returns
+        -------
+        names : list
+            List giving the relative directory path of each member, in order.
 
         """
         return [member.relpath for member in self._list()]
@@ -802,23 +807,22 @@ class Bundle(CollectionMixin):
 
         *kwargs* are passed to the given function when applied to each member
 
-        :Arguments:
-            *function*
-                function to apply to each member; must take only a single
-                treant instance as input, but may take any number of keyword
-                arguments
+        Parameters
+        ----------
+        function : function
+            Function to apply to each member; must take only a single Treant
+            instance as input, but may take any number of keyword arguments.
+        processes : int
+            How many processes to use; if 1, applies function to each member in
+            member order, in sequence, using the current Python process.
 
-        :Keywords:
-            *processes*
-                how many processes to use; if 1, applies function to each
-                member in member order
-
-        :Returns:
-            *results*
-                list giving the result of the function for each member,
-                in member order; if the function returns ``None`` for each
-                member, then only ``None`` is returned instead of a list
-            """
+        Returns
+        -------
+        results : list
+            List giving the result of the function for each member, in member
+            order; if the function returns ``None`` for each member, then only
+            ``None`` is returned instead of a list.
+        """
         if processes > 1:
             pool = mp.Pool(processes=processes)
             results = dict()
@@ -857,9 +861,10 @@ class Bundle(CollectionMixin):
     def _add_members(self, abspaths):
         """Add many members at once.
 
-        :Arguments:
-            *abspaths*
-                list of abspaths
+        Parameters
+        -----------
+        abspaths : iterable
+            An iterable of abspaths.
 
         """
         for abspath in abspaths:
@@ -868,9 +873,10 @@ class Bundle(CollectionMixin):
     def _add_member(self, abspath):
         """Add a member to the Bundle.
 
-        :Arguments:
-            *abspath*
-                absolute path to directory of new member in the filesystem
+        Parameters
+        ----------
+        abspath : str
+            Absolute path to directory of new member in the filesystem.
 
         """
 
@@ -880,11 +886,12 @@ class Bundle(CollectionMixin):
     def _del_members(self, abspaths=None, all=False):
         """Remove members from the Bundle.
 
-        :Arguments:
-            *abspaths*
-                An iterable of abspaths of the members to remove
-            *all*
-                When True, remove all members [``False``]
+        Parameters
+        ----------
+        abspaths : iterable
+            An iterable of abspaths of the members to remove.
+        all : bool
+            When ``True``, remove all members [``False``].
 
         """
         if all:
