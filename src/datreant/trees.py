@@ -344,6 +344,7 @@ class Tree(Veg):
         if not self.exists:
             raise OSError("Tree doesn't exist in the filesystem")
 
+        out = []
         for root, dirs, files in scandir.walk(self.abspath):
             if hidden:
                 out = [Tree(os.path.join(root, d))
