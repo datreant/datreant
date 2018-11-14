@@ -513,6 +513,19 @@ class Categories(Metadata):
         with self._read:
             return self._statefile._state.values()
 
+    def items(self):
+        """Get category (key, value) tuples.
+
+        Returns
+        -------
+        items : list
+            (key, value) tuples; corresponds to `dict.items`.
+        """
+        with self._read:
+            return self._statefile._state.items()
+
+
+
 
 class AggMetadata(object):
 
