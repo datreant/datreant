@@ -490,6 +490,24 @@ class TestTreant(TestTree):
             with tmpdir.as_cwd():
                 dtr.Treant('sprout', categories=treant.categories)
 
+        def test_getters(self, treant, tmpdir):
+            with tmpdir.as_cwd():
+                treant.categories = {'happy': True,
+                                     'fulfilled': False,
+                                     'number': 27}
+
+                assert set(treant.categories.keys()) == {'happy',
+                                                         'fulfilled',
+                                                         'number'}
+
+                assert set(treant.categories.values()) == {True,
+                                                           False,
+                                                           27}
+
+                assert set(treant.categories.items()) == {('happy', True),
+                                                          ('fulfilled', False),
+                                                          ('number', 27)}
+
 
 class TestReadOnly:
     """Test Treant functionality when read-only"""
