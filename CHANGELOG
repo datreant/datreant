@@ -21,6 +21,8 @@ API Changes
 
 
 Enhancements
+   * Added `items` method to `Categories`, giving greater interface parity with
+     `dict`.
 
 
 Fixes
