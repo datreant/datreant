@@ -525,8 +525,6 @@ class Categories(Metadata):
             return self._statefile._state.items()
 
 
-
-
 class AggMetadata(object):
 
     def __init__(self, collection):
