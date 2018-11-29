@@ -1075,6 +1075,29 @@ class TestBundle(CollectionsTests):
                         assert v == col.categories[
                                 col.categories.keys(scope=scope)[i]]
 
+        def test_categories_items(self, collection, testtreant, testtreant2,
+                                  tmpdir):
+            with tmpdir.as_cwd():
+                # add a couple test Treants to collection
+                col = collection(testtreant, testtreant2)
+                col.categories.add({'age': 'young', 'bark': 'smooth'})
+
+                t1 = dtr.Treant('maple')
+                t2 = dtr.Treant('sequoia')
+                t1.categories.add({'age': 'seedling', 'bark': 'rough',
+                                   'type': 'deciduous'})
+                t2.categories.add({'age': 'adult', 'bark': 'rough',
+                                   'type': 'evergreen', 'nickname': 'redwood'})
+                col += collection(t1, t2)
+
+                for scope in ('all', 'any'):
+                    keys = col.categories.keys(scope=scope)
+                    for i, values in enumerate(
+                            col.categories.items(scope=scope)):
+                        for j, v in enumerate(values):
+                            assert v[1] == col.categories[keys[i]][j]
+                            assert v[0] == keys[i]
+
         def test_categories_groupby(self, collection, testtreant, testtreant2,
                                     tmpdir):
             with tmpdir.as_cwd():
