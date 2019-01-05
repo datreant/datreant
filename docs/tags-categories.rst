@@ -96,7 +96,11 @@ of Treant it is working with using ::
     'dark'
 
 The keys for categories must be strings, but the values may be strings, numbers
-(floats, ints), or booleans (``True``, ``False``). 
+(floats, ints), lists, or dictionaries or booleans (``True``, ``False``)::
+
+    >>> s.categories['dark'] = ['mark', 'clark', 'bark']
+    >>> s.categories
+    <Categories({'dark': ['mark', 'clark', 'bark']})>
 
 .. note:: ``None`` may not be used as a category value since this is used in
           aggregations (see :ref:`Bundles`) to indicate keys that are absent.
