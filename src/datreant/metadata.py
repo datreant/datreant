@@ -1018,6 +1018,30 @@ class AggCategories(AggMetadata):
         keys = self.keys(scope=scope)
         return self[keys]
 
+    def items(self, scope='all'):
+        """Get category (key, value) tuples for all Treants in collection.
+
+        Parameters
+        ----------
+        scope : {'all', 'any'}
+            Keys to return. 'all' will return tuples only for keys found within
+            all Treants in the collection, while 'any' will return tuples for
+            keys found within at least one Treant in the collection.
+
+        Returns
+        -------
+        items : list
+            A list of tuples for each Treant in the collection is returned for
+            each key within the given `scope`. The tuple lists are given in the
+            same order as the keys from ``AggCategories.keys``.
+
+        """
+        keys = self.keys(scope=scope)
+        items = [[(key, value) for value in values]
+                 for key, values in zip(keys, self[keys])]
+
+        return items
+
     def groupby(self, keys):
         """Return groupings of Treants based on values of Categories.
 
