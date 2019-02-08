@@ -56,12 +56,12 @@ class OptionEatAll(click.Option):
 @click.group()
 @click.version_option()
 def cli():
-    """CLI interface for datreant filesystem databases"""
+    """CLI interface for treants"""
     pass
 
 
 @cli.command()
-@click.argument("dirs", metavar='dir(s)', nargs=-1)
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
 def init(dirs):
     """Turn directory into a treant"""
     if not dirs:
@@ -86,7 +86,8 @@ def print_treant(treant, verbose=False):
             res['tags'] = list(treant.tags)
         if treant.categories:
             res['categories'] = dict(treant.categories)
-    click.echo(json.dumps(res, indent=4))
+    return res
+    #click.echo(json.dumps(res, indent=4))
 
 
 @cli.command()
@@ -101,22 +102,108 @@ def show(dirs):
         except:
             pass
 
+    res = []
     for i in dirs:
         tree = dtr.Tree(i)
         if tree[".datreant"].exists:
             treant = dtr.Treant(i)
-            print_treant(treant, verbose=True)
+            res.append(print_treant(treant, verbose=True))
+    click.echo(json.dumps(res, indent=4))
+
+@cli.command()
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
+@click.option("--melt", is_flag=True, help="merge tags from multiple treants")
+def tags(dirs, melt):
+    """Show treant tags"""
+    if not dirs:
+        try:
+            with click.get_text_stream('stdin') as stdin:
+                stdin_text = stdin.read()
+            dirs = stdin_text.strip().split()
+        except:
+            pass
+
+    res = []
+    for i in dirs:
+        tree = dtr.Tree(i)
+        if tree[".datreant"].exists:
+            treant = dtr.Treant(i)
+            if treant.tags:
+                res.append(list(treant.tags))
+
+    if melt:
+        res_set = set()
+        for j in res:
+            res_set.update(set(j))
+        res = list(res_set)
+
+    if res:
+        click.echo(json.dumps(res, indent=4))
+
+@cli.command()
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
+def categories(dirs):
+    """Show treant categories"""
+    if not dirs:
+        try:
+            with click.get_text_stream('stdin') as stdin:
+                stdin_text = stdin.read()
+            dirs = stdin_text.strip().split()
+        except:
+            pass
+
+    res = []
+    for i in dirs:
+        tree = dtr.Tree(i)
+        if tree[".datreant"].exists:
+            treant = dtr.Treant(i)
+            if treant.categories:
+                res.append(dict(treant.categories))
+
+    if res:
+        click.echo(json.dumps(res, indent=4))
+
+
+def _parse_categories(catstrings):
+    return {key: json.loads(value) for key, value in
+            (c.split(":") for c in catstrings)}
 
 
 @cli.command()
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
 @click.option("--tags", cls=OptionEatAll, help="list of tags")
 @click.option(
     "--categories",
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
-@click.argument("dirs", metavar='<dir(s)', nargs=-1)
-def update(tags, categories, folder):
+def add(tags, categories, dirs):
+    """Update tags and categories of treant"""
+    if not dirs:
+        try:
+            with click.get_text_stream('stdin') as stdin:
+                stdin_text = stdin.read()
+            dirs = stdin_text.strip().split()
+        except:
+            pass
+
+    for i in dirs:
+        treant = dtr.Treant(i)
+        if tags is not None:
+            treant.tags.add(tags)
+        if categories is not None:
+            treant.categories.add(_parse_categories(categories))
+
+
+@cli.command(name='set')
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
+@click.option("--tags", cls=OptionEatAll, help="list of tags")
+@click.option(
+    "--categories",
+    cls=OptionEatAll,
+    help="list of categories as key-value pairs separated by a colon ':'",
+)
+def set_(tags, categories, dirs):
     """Update tags and categories of treant"""
     if not dirs:
         try:
@@ -131,40 +218,59 @@ def update(tags, categories, folder):
         if tags is not None:
             treant.tags = set(tags)
         if categories is not None:
-            for key, value in (c.split(":") for c in categories):
-                treant.categories[key] = value
+            treant.categories = _parse_categories(categories)
+
+
+@cli.command(name='del')
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
+@click.option("--tags", cls=OptionEatAll, help="list of tags")
+@click.option(
+    "--categories",
+    cls=OptionEatAll,
+    help="list of category keys"
+)
+def del_(tags, categories, dirs):
+    """Delete tags and categories of treant"""
+    if not dirs:
+        try:
+            with click.get_text_stream('stdin') as stdin:
+                stdin_text = stdin.read()
+            dirs = stdin_text.strip().split()
+        except:
+            pass
+
+    for i in dirs:
+        treant = dtr.Treant(i)
+        if tags is not None:
+            treant.tags.remove(*tags)
+        if categories is not None:
+            treant.categories.remove(*categories)
 
 
 @cli.command()
-@click.argument("folder", default=".")
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
 @click.option("--tags", cls=OptionEatAll, help="list of tags or search string")
 @click.option(
     "--categories",
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
-@click.option("--verbose", is_flag=True, help="list tags and categories as well")
-def search(tags, folder, categories, verbose):
-    """search folder for treants and list them"""
-    bundle = dtr.discover(folder)
+@click.option("--verbose", '-v', is_flag=True, help="list tags and categories as well")
+def find(dirs, tags, categories, verbose):
+    """Search folder for treants and list them"""
+    bundle = dtr.Bundle([dtr.discover(i) for i in dirs])
 
-    if tags is not None:
-        if len(tags) != 1:
-            tags = set(tags)
-        bundle = bundle[bundle.tags[tags]]
+    if tags is None:
+        tags = []
 
-    if categories is not None:
-        categories = {k: v for k, v in (c.split(":") for c in categories)}
-        groupby = bundle.categories.groupby(list(categories.keys()))
-        bundle = groupby[set(categories.values())]
+    if categories is None:
+        categories = {}
+    else:
+        categories = _parse_categories(categories)
 
-    for treant in bundle:
-        if verbose:
-            print_treant(treant, verbose=True)
-        else:
-            click.echo(treant.abspath)
+    res = bundle.get(*tags, **categories)
 
-
-# for easier debugging
-if __name__ == "__main__":
-    cli()
+    if verbose:
+        res = print_treant(treant, verbose=True)
+    else:
+        click.echo("\n".join(res.abspaths))
