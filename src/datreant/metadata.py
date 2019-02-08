@@ -5,6 +5,7 @@ for filtering and selection.
 import os
 import itertools
 import functools
+import json
 from collections import defaultdict
 
 from fuzzywuzzy import process
@@ -57,19 +58,7 @@ class Tags(Metadata):
         return "<Tags({})>".format(self._list())
 
     def __str__(self):
-        tags = self._list()
-        agg = "Tags"
-        majsep = "="
-        seplength = len(agg)
-
-        if not tags:
-            out = "No Tags"
-        else:
-            out = agg + '\n'
-            out = out + majsep * seplength + '\n'
-            for i in range(len(tags)):
-                out = out + "'{}'\n".format(tags[i])
-        return out
+        return json.dumps(self._list(), indent=4)
 
     def __getitem__(self, value):
         # check if we might have a string to parse into a selection object
@@ -315,19 +304,7 @@ class Categories(Metadata):
         return "<Categories({})>".format(self._dict())
 
     def __str__(self):
-        categories = self._dict()
-        agg = "Categories"
-        majsep = "="
-        seplength = len(agg)
-
-        if not categories:
-            out = "No Categories"
-        else:
-            out = agg + '\n'
-            out = out + majsep * seplength + '\n'
-            for key in categories.keys():
-                out = out + "'{}': '{}'\n".format(key, categories[key])
-        return out
+        return json.dumps(self._dict(), indent=4)
 
     def __getitem__(self, keys):
         """Get values for given `keys`.

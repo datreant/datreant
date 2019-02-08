@@ -2,6 +2,7 @@
 datreant.cli
 """
 from __future__ import print_function
+import json
 
 import click
 import datreant as dtr
@@ -60,30 +61,51 @@ def cli():
 
 
 @cli.command()
-@click.argument("folder", default=".")
-def init(folder):
-    """turn folder into a treant"""
-    dtr.Treant(folder)
+@click.argument("dirs", metavar='dir(s)', nargs=-1)
+def init(dirs):
+    """Turn directory into a treant"""
+    if not dirs:
+        try:
+            with click.get_text_stream('stdin') as stdin:
+                stdin_text = stdin.read()
+            dirs = stdin_text.strip().split()
+        except:
+            pass
+
+    for i in dirs:
+        dtr.Treant(i)
 
 
 def print_treant(treant, verbose=False):
-    """print treant with more human readable information"""
-    print("abspath: ", treant)
+    """Print treant with more human readable information"""
+    res = dict()
+    res['relpath'] = treant.relpath
+    res['abspath'] = treant.abspath
     if verbose:
-        print("tags: ", treant.tags)
-        print("categories: ", treant.categories)
+        if treant.tags:
+            res['tags'] = list(treant.tags)
+        if treant.categories:
+            res['categories'] = dict(treant.categories)
+    click.echo(json.dumps(res, indent=4))
 
 
 @cli.command()
-@click.argument("folder", default=".")
-def show(folder):
-    """show content of treant"""
-    tree = dtr.Tree(folder)
-    if tree[".datreant"].exists:
-        treant = dtr.Treant(folder)
-        print_treant(treant, verbose=True)
-    else:
-        print("not a treant")
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
+def show(dirs):
+    """Show content of treant"""
+    if not dirs:
+        try:
+            with click.get_text_stream('stdin') as stdin:
+                stdin_text = stdin.read()
+            dirs = stdin_text.strip().split()
+        except:
+            pass
+
+    for i in dirs:
+        tree = dtr.Tree(i)
+        if tree[".datreant"].exists:
+            treant = dtr.Treant(i)
+            print_treant(treant, verbose=True)
 
 
 @cli.command()
@@ -91,17 +113,26 @@ def show(folder):
 @click.option(
     "--categories",
     cls=OptionEatAll,
-    help="list of categories as key-value pairs separated by a double point ':'",
+    help="list of categories as key-value pairs separated by a colon ':'",
 )
-@click.argument("folder", default=".")
+@click.argument("dirs", metavar='<dir(s)', nargs=-1)
 def update(tags, categories, folder):
-    """update tags and categories of treant"""
-    treant = dtr.Treant(folder)
-    if tags is not None:
-        treant.tags = set(tags)
-    if categories is not None:
-        for key, value in (c.split(":") for c in categories):
-            treant.categories[key] = value
+    """Update tags and categories of treant"""
+    if not dirs:
+        try:
+            with click.get_text_stream('stdin') as stdin:
+                stdin_text = stdin.read()
+            dirs = stdin_text.strip().split()
+        except:
+            pass
+
+    for i in dirs:
+        treant = dtr.Treant(i)
+        if tags is not None:
+            treant.tags = set(tags)
+        if categories is not None:
+            for key, value in (c.split(":") for c in categories):
+                treant.categories[key] = value
 
 
 @cli.command()
@@ -110,7 +141,7 @@ def update(tags, categories, folder):
 @click.option(
     "--categories",
     cls=OptionEatAll,
-    help="list of categories as key-value pairs separated by a double point ':'",
+    help="list of categories as key-value pairs separated by a colon ':'",
 )
 @click.option("--verbose", is_flag=True, help="list tags and categories as well")
 def search(tags, folder, categories, verbose):
@@ -131,7 +162,7 @@ def search(tags, folder, categories, verbose):
         if verbose:
             print_treant(treant, verbose=True)
         else:
-            print(treant.abspath)
+            click.echo(treant.abspath)
 
 
 # for easier debugging
