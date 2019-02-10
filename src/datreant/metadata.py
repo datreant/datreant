@@ -634,7 +634,10 @@ class AggTags(AggMetadata):
 
         """
         tags = [set(member.tags) for member in self._collection]
-        out = set.union(*tags)
+        if tags:
+            out = set.union(*tags)
+        else:
+            out = set()
 
         return out
 
@@ -644,7 +647,10 @@ class AggTags(AggMetadata):
 
         """
         tags = [set(member.tags) for member in self._collection]
-        out = set.intersection(*tags)
+        if tags:
+            out = set.intersection(*tags)
+        else:
+            out = set()
 
         return out
 
@@ -876,6 +882,10 @@ class AggCategories(AggMetadata):
             All unique Categories among members.
         """
         keys = [set(member.categories.keys()) for member in self._collection]
+
+        if not keys:
+            return {}
+
         keys = set.union(*keys)
 
         return {k: [m.categories[k] if k in m.categories else None
@@ -892,6 +902,10 @@ class AggCategories(AggMetadata):
             Categories common to all members.
         """
         keys = [set(member.categories.keys()) for member in self._collection]
+
+        if not keys:
+            return {}
+
         keys = set.intersection(*keys)
 
         return {k: [m.categories[k] if k in m.categories else None
@@ -925,7 +939,7 @@ class AggCategories(AggMetadata):
             member.categories.add(categorydict, **categories)
 
     def remove(self, *categories):
-        """Remove categories from Treant.
+        """Remove categories from each Treant in collection.
 
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
@@ -939,7 +953,7 @@ class AggCategories(AggMetadata):
             member.categories.remove(*categories)
 
     def clear(self):
-        """Remove all categories from all Treants in collection.
+        """Remove all categories from each Treant in collection.
 
         """
         for member in self._collection:

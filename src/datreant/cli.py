@@ -6,7 +6,6 @@ import json
 
 import click
 import datreant as dtr
-from datreant.names import TREANTDIR_NAME
 
 
 class OptionEatAll(click.Option):
@@ -68,29 +67,52 @@ def help(ctx):
     """Show the CLI help contents"""
     click.echo(ctx.parent.get_help())
 
-
-@cli.command()
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-def init(dirs):
-    """Turn directory into a treant"""
-    if not dirs:
+def _handle_stdin(dirs):
+    if (len(dirs) == 1) and (dirs[0] == '-') :
         try:
             with click.get_text_stream('stdin') as stdin:
                 stdin_text = stdin.read()
             dirs = stdin_text.strip().split()
         except:
             pass
+    elif len(dirs) == 0:
+        dirs = ('.',)
+
+    return dirs
+        
+def _set(treant, tags, categories):
+    if tags is not None:
+        treant.tags = set(tags)
+    if categories is not None:
+        treant.categories = _parse_categories(categories)
+
+
+@cli.command()
+@click.argument("dirs", nargs=-1)
+@click.option("--tags", "-t", cls=OptionEatAll, help="list of tags")
+@click.option(
+    "--categories",
+    "-c",
+    cls=OptionEatAll,
+    help="list of categories as key-value pairs separated by a colon ':'",
+)
+def init(dirs):
+    """Turn directories into treants, optionally setting tags/categories"""
+    dirs = _handle_stdin(dirs)
 
     for i in dirs:
         dtr.Treant(i)
 
+    dirs = dtr.Bundle(dirs)
+    dirs.map(_set, tags=tags, categories=categories)
 
-def print_treant(treant, verbose=False):
+
+def print_treant(treant, detail=False):
     """Print treant with more human readable information"""
     res = dict()
     res['relpath'] = treant.relpath
     res['abspath'] = treant.abspath
-    if verbose:
+    if detail:
         if treant.tags:
             res['tags'] = list(treant.tags)
         if treant.categories:
@@ -99,223 +121,41 @@ def print_treant(treant, verbose=False):
 
 
 @cli.command()
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
+@click.argument("dirs", nargs=-1)
 def show(dirs):
-    """Show content of treant"""
-    if not dirs:
-        try:
-            with click.get_text_stream('stdin') as stdin:
-                stdin_text = stdin.read()
-            dirs = stdin_text.strip().split()
-        except:
-            pass
-
-    res = []
-    for i in dirs:
-        tree = dtr.Tree(i)
-        if tree[TREANTDIR_NAME].exists:
-            treant = dtr.Treant(i)
-            res.append(print_treant(treant, verbose=True))
-    click.echo(json.dumps(res, indent=4))
-
-
-@cli.command()
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-def draw(dirs):
-    """Draw filesystem structure of treant"""
-    if not dirs:
-        try:
-            with click.get_text_stream('stdin') as stdin:
-                stdin_text = stdin.read()
-            dirs = stdin_text.strip().split()
-        except:
-            pass
+    """Show metadata contents of given treants"""
+    dirs = _handle_stdin(dirs)
 
     # get all existing Treants among dirs
-    dirs = dtr.Bundle(dirs)
-    res = []
-    for treant in dirs:
-        treant.draw()
-
-
-@cli.command()
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-@click.option("--melt", is_flag=True, help="merge tags from multiple treants")
-@click.option("--json", 'json_', is_flag=True, help="print results in JSON format")
-def tags(dirs, melt, json_):
-    """Show treant tags"""
-    if not dirs:
-        try:
-            with click.get_text_stream('stdin') as stdin:
-                stdin_text = stdin.read()
-            dirs = stdin_text.strip().split()
-        except:
-            pass
-
-    # get all existing Treants among dirs
-    dirs = dtr.Bundle(dirs)
-    res = []
-    for treant in dirs:
-        if treant.tags:
-            res.append(list(treant.tags))
-
-    if melt:
-        res_set = set()
-        for j in res:
-            res_set.update(set(j))
-        res = list(res_set)
-
-        if res:
-            if json_:
-                click.echo(json.dumps(res, indent=4))
-            else:
-                for tag in res:
-                    click.echo(tag)
-    else:
-        if res:
-            if json_:
-                click.echo(json.dumps(res, indent=4))
-            else:
-                for tags in res:
-                    for tag in tags:
-                        click.echo(tag)
-                    click.echo("")
-
-
-@cli.command()
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-@click.option("--json", 'json_', is_flag=True, help="print results in JSON format")
-@click.option("--get", cls=OptionEatAll, help="get values for given keys")
-def categories(dirs, json_, get):
-    """Show treant categories"""
-    if not dirs:
-        try:
-            with click.get_text_stream('stdin') as stdin:
-                stdin_text = stdin.read()
-            dirs = stdin_text.strip().split()
-        except:
-            pass
-
-    # get all existing Treants among dirs
-    dirs = dtr.Bundle(dirs)
-    res = []
-    for treant in dirs:
-        if treant.categories:
-            if get:
-                res.append(dict(treant.categories[set(get)]))
-            else:
-                res.append(dict(treant.categories))
-
+    dirs = dtr.Bundle(dirs, ignore=True)
+    res = dirs.map(print_treant, detail=True)
+    
     if res:
-        if json_:
-            click.echo(json.dumps(res, indent=4))
-        else:
-            for cats in res:
-                for key, value in cats.items():
-                    click.echo("{} : {}".format(key, value))
-                click.echo("")
-
-
-def _parse_categories(catstrings):
-    return {key: json.loads(value) for key, value in
-            (c.split(":") for c in catstrings)}
+        click.echo(json.dumps(res, indent=4))
 
 
 @cli.command()
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-@click.option("--tags", cls=OptionEatAll, help="list of tags")
-@click.option(
-    "--categories",
-    cls=OptionEatAll,
-    help="list of categories as key-value pairs separated by a colon ':'",
-)
-def add(tags, categories, dirs):
-    """Update tags and categories of treant"""
-    if not dirs:
-        try:
-            with click.get_text_stream('stdin') as stdin:
-                stdin_text = stdin.read()
-            dirs = stdin_text.strip().split()
-        except:
-            pass
+@click.argument("dirs", nargs=-1)
+@click.option("--relpath/--abspath", 'relpath', default=True, help="return relative or absolute paths")
+@click.option("--json", 'json_', is_flag=True, help="return results in JSON format")
+def bundle(dirs, relpath, json_):
+    """Get paths for given dirs that are already treants"""
+    dirs = _handle_stdin(dirs)
 
-    # get all existing Treants among dirs
-    dirs = dtr.Bundle(dirs)
-    for treant in dirs:
-        if tags is not None:
-            treant.tags.add(tags)
-        if categories is not None:
-            treant.categories.add(_parse_categories(categories))
+    dirs = dtr.Bundle(dirs, ignore=True)
+
+    if relpath:
+        res = dirs.relpaths
+    else:
+        res = dirs.abspaths
+
+    if json_:
+        click.echo(json.dumps(res, indent=4))
+    else:
+        click.echo("\n".join(res))
 
 
-@cli.command(name='set')
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-@click.option("--tags", cls=OptionEatAll, help="list of tags")
-@click.option(
-    "--categories",
-    cls=OptionEatAll,
-    help="list of categories as key-value pairs separated by a colon ':'",
-)
-def set_(tags, categories, dirs):
-    """Replace tags and/or categories as given"""
-    if not dirs:
-        try:
-            with click.get_text_stream('stdin') as stdin:
-                stdin_text = stdin.read()
-            dirs = stdin_text.strip().split()
-        except:
-            pass
-
-    # get all existing Treants among dirs
-    dirs = dtr.Bundle(dirs)
-    for treant in dirs:
-        if tags is not None:
-            treant.tags = set(tags)
-        if categories is not None:
-            treant.categories = _parse_categories(categories)
-
-
-@cli.command(name='del')
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-@click.option("--tags", cls=OptionEatAll, help="list of tags")
-@click.option(
-    "--categories",
-    cls=OptionEatAll,
-    help="list of category keys"
-)
-def del_(tags, categories, dirs):
-    """Delete tags and categories of treant"""
-    if not dirs:
-        try:
-            with click.get_text_stream('stdin') as stdin:
-                stdin_text = stdin.read()
-            dirs = stdin_text.strip().split()
-        except:
-            pass
-
-    # get all existing Treants among dirs
-    dirs = dtr.Bundle(dirs)
-    for treant in dirs:
-        if tags is not None:
-            treant.tags.remove(*tags)
-        if categories is not None:
-            treant.categories.remove(*categories)
-
-
-@cli.command()
-@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-@click.option("--tags", cls=OptionEatAll, help="list of tags or search string")
-@click.option(
-    "--categories",
-    cls=OptionEatAll,
-    help="list of categories as key-value pairs separated by a colon ':'",
-)
-@click.option("--verbose", '-v', is_flag=True,
-              help="list tags and categories as well")
-def search(dirs, tags, categories, verbose):
-    """Search folder for treants and list them"""
-    bundle = dtr.Bundle([dtr.discover(i) for i in dirs])
-
+def _get(bundle, tags, categories):
     if tags is None:
         tags = []
 
@@ -324,9 +164,213 @@ def search(dirs, tags, categories, verbose):
     else:
         categories = _parse_categories(categories)
 
-    res = bundle.get(*tags, **categories)
+    return bundle.get(*tags, **categories)
 
-    if verbose:
-        res = print_treant(treant, verbose=True)
+
+@cli.command()
+@click.argument("dirs", nargs=-1)
+@click.option("--relpath/--abspath", 'relpath', default=True, help="return relative or absolute paths")
+@click.option("--json", 'json_', is_flag=True, help="return results in JSON format")
+@click.option("--tags", cls=OptionEatAll, help="list of tags or search string")
+@click.option(
+    "--categories",
+    cls=OptionEatAll,
+    help="list of categories as key-value pairs separated by a colon ':'",
+)
+@click.option("--detail", '-d', is_flag=True,
+              help="list tags and categories as well")
+def get(dirs, relpath, json_, tags, categories, detail):
+    """Get paths from given dirs that strictly match tags and/or categories"""
+    dirs = _handle_stdin(dirs)
+
+    dirs = dtr.Bundle(dirs, ignore=True)
+
+    res = _get(dirs, tags, categories)
+
+    if detail:
+        res = print_treant(treant, detail=True)
     else:
         click.echo("\n".join(res.abspaths))
+
+
+@cli.command()
+@click.argument("dirs", nargs=-1)
+def draw(dirs):
+    """Draw filesystem structure of treant"""
+    dirs = _handle_stdin(dirs)
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs, ignore=True)
+    for treant in dirs:
+        treant.draw()
+
+
+@cli.command()
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
+@click.option("--all/--any", 'all_', default=True,
+              help="results for tags present in ALL or ANY treants")
+@click.option("--json", 'json_', is_flag=True,
+              help="return results in JSON format")
+@click.option("--has", cls=OptionEatAll,
+              help="list of tags; returns true for presence, false for absence")
+def tags(dirs, all_, json_, has):
+    """Show treant tags"""
+    dirs = _handle_stdin(dirs)
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs, ignore=True)
+
+    if all_:
+        res = list(dirs.tags.all)
+    else:
+        res = list(dirs.tags.any)
+
+    if has:
+        res = [tag in res for tag in has]
+
+    if res:
+        if json_:
+            click.echo(json.dumps(res, indent=4))
+        else:
+            for i in res:
+                click.echo(i)
+
+
+@cli.command()
+@click.argument("dirs", nargs=-1)
+@click.option("--all/--any", 'all_', default=True, help="results for keys present in ANY treants")
+@click.option("--json", 'json_', is_flag=True, help="results in JSON format")
+@click.option("--get", cls=OptionEatAll, help="get values for given keys")
+def categories(dirs, all_, json_, get):
+    """Show treant categories"""
+    dirs = _handle_stdin(dirs)
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs, ignore=True)
+
+    if get:
+        res = dirs.categories[set(get)]
+        keys = get
+    else:
+        if all_:
+            res = dict(dirs.categories.all)
+        else:
+            res = dict(dirs.categories.any)
+        keys = res.keys()
+
+    if res:
+        if json_:
+            click.echo(json.dumps(res, indent=4))
+        else:
+            for i, key in enumerate(keys):
+                for value in res[key]:
+                    click.echo("{} : {}".format(key, value))
+
+                if i < len(res) - 1:
+                    click.echo("")
+
+
+def _parse_categories(catstrings):
+    return {key: json.loads(value) for key, value in
+            (c.split(":") for c in catstrings)}
+
+
+@cli.command()
+@click.argument("dirs", nargs=-1)
+@click.option("--tags", cls=OptionEatAll, help="list of tags")
+@click.option(
+    "--categories",
+    cls=OptionEatAll,
+    help="list of categories as key-value pairs separated by a colon ':'",
+)
+def add(dirs, tags, categories):
+    """Add or update treant tags and/or categories"""
+    dirs = _handle_stdin(dirs)
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs, ignore=True)
+    if tags is not None:
+        dirs.tags.add(tags)
+    if categories is not None:
+        dirs.categories.add(_parse_categories(categories))
+
+
+@cli.command(name='set')
+@click.argument("dirs", nargs=-1)
+@click.option("--tags", cls=OptionEatAll, help="list of tags")
+@click.option(
+    "--categories",
+    cls=OptionEatAll,
+    help="list of categories as key-value pairs separated by a colon ':'",
+)
+def set_(dirs, tags, categories):
+    """Set/replace all treant tags and/or categories"""
+    dirs = _handle_stdin(dirs)
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs, ignore=True)
+    dirs.map(_set, tags=tags, categories=categories)
+
+
+@cli.command(name='del')
+@click.argument("dirs", nargs=-1)
+@click.option("--tags", cls=OptionEatAll, help="list of tags")
+@click.option(
+    "--categories",
+    cls=OptionEatAll,
+    help="list of category keys"
+)
+def del_(dirs, tags, categories):
+    """Delete treant tags and/or categories"""
+    dirs = _handle_stdin(dirs)
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs, ignore=True)
+    for treant in dirs:
+        if tags is not None:
+            treant.tags.remove(*tags)
+        if categories is not None:
+            treant.categories.remove(*categories)
+
+
+@cli.command()
+@click.argument("dirs", nargs=-1)
+@click.option("--tags", is_flag=True, help="remove all tags")
+@click.option("--categories", is_flag=True, help="remove all categories")
+def clear(dirs, tags, categories):
+    """Clear treant tags and/or categories"""
+    dirs = _handle_stdin(dirs)
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs, ignore=True)
+    for treant in dirs:
+        if tags:
+            treant.tags.clear()
+        if categories:
+            treant.categories.clear()
+
+@cli.command()
+@click.argument("dirs", nargs=-1)
+@click.option("--relpath/--abspath", 'relpath', default=True, help="return relative or absolute paths")
+@click.option("--tags", cls=OptionEatAll, help="list of tags or search string")
+@click.option(
+    "--categories",
+    cls=OptionEatAll,
+    help="list of categories as key-value pairs separated by a colon ':'",
+)
+@click.option("--detail", '-d', is_flag=True,
+              help="list treant detail")
+def discover(dirs, relpath, tags, categories, detail):
+    """Search folder for treants and list them"""
+    dirs = _handle_stdin(dirs)
+
+    dirs = dtr.Bundle([dtr.discover(i) for i in dirs])
+
+    res = _get(dirs, tags, categories)
+
+    if detail:
+        res = dirs.map(print_treant, detail=True)
+        click.echo(json.dumps(res, indent=4))
+    else:
+        paths = res.relpaths if relpath else res.abspaths
+        click.echo("\n".join(paths))
