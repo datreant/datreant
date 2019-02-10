@@ -156,6 +156,46 @@ def show(dirs):
         click.echo(json.dumps(res, indent=4))
 
 
+@cli.command()
+@click.argument("dirs", nargs=-1)
+def draw(dirs):
+    """Draw treant filesystem structure"""
+    dirs = _handle_stdin(dirs)
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs, ignore=True)
+    for treant in dirs:
+        treant.draw()
+
+
+@cli.command()
+@click.argument("dirs", nargs=-1)
+@click.option("--relpath/--abspath", "-r/-a", 'relpath', default=True, help="return relative or absolute paths")
+@click.option("--tags", '-t', cls=OptionEatAll, help="list of tags")
+@click.option(
+    "--categories",
+    '-c',
+    cls=OptionEatAll,
+    help="list of categories as key-value pairs separated by a colon ':'",
+)
+@click.option("--json", '-j', 'json_', is_flag=True,
+              help="return results in JSON format")
+def discover(dirs, relpath, tags, categories, json_):
+    """Search folder for treants and list them"""
+    dirs = _handle_stdin(dirs)
+
+    dirs = dtr.Bundle([dtr.discover(i) for i in dirs])
+
+    res = _get(dirs, tags, categories)
+
+    if json:
+        res = dirs.map(print_treant, detail=True)
+        click.echo(json.dumps(res, indent=4))
+    else:
+        paths = res.relpaths if relpath else res.abspaths
+        click.echo("\n".join(paths))
+
+
 def _get(bundle, tags, categories):
     if tags is None:
         tags = []
@@ -197,17 +237,6 @@ def get(dirs, relpath, json_, tags, categories):
     else:
         click.echo("\n".join(res.abspaths))
 
-
-@cli.command()
-@click.argument("dirs", nargs=-1)
-def draw(dirs):
-    """Draw treant filesystem structure"""
-    dirs = _handle_stdin(dirs)
-
-    # get all existing Treants among dirs
-    dirs = dtr.Bundle(dirs, ignore=True)
-    for treant in dirs:
-        treant.draw()
 
 
 @cli.command()
@@ -356,30 +385,3 @@ def clear(dirs, tags, categories):
             treant.tags.clear()
         if categories:
             treant.categories.clear()
-
-@cli.command()
-@click.argument("dirs", nargs=-1)
-@click.option("--relpath/--abspath", "-r/-a", 'relpath', default=True, help="return relative or absolute paths")
-@click.option("--tags", '-t', cls=OptionEatAll, help="list of tags or search string")
-@click.option(
-    "--categories",
-    '-c',
-    cls=OptionEatAll,
-    help="list of categories as key-value pairs separated by a colon ':'",
-)
-@click.option("--json", '-j', 'json_', is_flag=True,
-              help="return results in JSON format")
-def discover(dirs, relpath, tags, categories, json_):
-    """Search folder for treants and list them"""
-    dirs = _handle_stdin(dirs)
-
-    dirs = dtr.Bundle([dtr.discover(i) for i in dirs])
-
-    res = _get(dirs, tags, categories)
-
-    if json:
-        res = dirs.map(print_treant, detail=True)
-        click.echo(json.dumps(res, indent=4))
-    else:
-        paths = res.relpaths if relpath else res.abspaths
-        click.echo("\n".join(paths))
