@@ -53,11 +53,33 @@ class OptionEatAll(click.Option):
                 break
         return retval
 
+class AliasedGroup(click.Group):
 
-@click.group()
+    def list_commands(self, ctx):
+        subcommands = ['init',
+                       'show',
+                       'draw',
+                       'discover',
+                       'get',
+                       'tags',
+                       'categories',
+                       'add',
+                       'set',
+                       'del',
+                       'clear',
+                       'help']
+        return subcommands
+
+@click.command(cls=AliasedGroup)
 @click.version_option()
 def cli():
-    """CLI interface for treants"""
+    """CLI interface for datreant.
+
+    All subcommands take <dirs> as input, by default using the current
+    directory '.' if none given. If '-' given for <dirs>, the subcommand
+    will read these from STDIN.
+
+    """
     pass
 
 
@@ -89,15 +111,15 @@ def _set(treant, tags, categories):
 
 @cli.command()
 @click.argument("dirs", nargs=-1)
-@click.option("--tags", "-t", cls=OptionEatAll, help="list of tags")
+@click.option("--tags", '-t', cls=OptionEatAll, help="list of tags")
 @click.option(
     "--categories",
-    "-c",
+    '-c',
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
 def init(dirs):
-    """Turn directories into treants, optionally setting tags/categories"""
+    """Make treants from dirs, optionally setting tags/categories"""
     dirs = _handle_stdin(dirs)
 
     for i in dirs:
@@ -123,7 +145,7 @@ def print_treant(treant, detail=False):
 @cli.command()
 @click.argument("dirs", nargs=-1)
 def show(dirs):
-    """Show metadata contents of given treants"""
+    """Show treant metadata contents"""
     dirs = _handle_stdin(dirs)
 
     # get all existing Treants among dirs
@@ -132,27 +154,6 @@ def show(dirs):
     
     if res:
         click.echo(json.dumps(res, indent=4))
-
-
-@cli.command()
-@click.argument("dirs", nargs=-1)
-@click.option("--relpath/--abspath", 'relpath', default=True, help="return relative or absolute paths")
-@click.option("--json", 'json_', is_flag=True, help="return results in JSON format")
-def bundle(dirs, relpath, json_):
-    """Get paths for given dirs that are already treants"""
-    dirs = _handle_stdin(dirs)
-
-    dirs = dtr.Bundle(dirs, ignore=True)
-
-    if relpath:
-        res = dirs.relpaths
-    else:
-        res = dirs.abspaths
-
-    if json_:
-        click.echo(json.dumps(res, indent=4))
-    else:
-        click.echo("\n".join(res))
 
 
 def _get(bundle, tags, categories):
@@ -170,25 +171,29 @@ def _get(bundle, tags, categories):
 @cli.command()
 @click.argument("dirs", nargs=-1)
 @click.option("--relpath/--abspath", 'relpath', default=True, help="return relative or absolute paths")
-@click.option("--json", 'json_', is_flag=True, help="return results in JSON format")
-@click.option("--tags", cls=OptionEatAll, help="list of tags or search string")
+@click.option("--json", '-j', 'json_', is_flag=True,
+              help="return results in JSON format")
+@click.option("--tags", '-t', cls=OptionEatAll, help="list of tags or search string")
 @click.option(
     "--categories",
+    '-c',
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
-@click.option("--detail", '-d', is_flag=True,
-              help="list tags and categories as well")
-def get(dirs, relpath, json_, tags, categories, detail):
-    """Get paths from given dirs that strictly match tags and/or categories"""
+def get(dirs, relpath, json_, tags, categories):
+    """Filter treants that strictly match tags and/or categories
+
+    """
     dirs = _handle_stdin(dirs)
 
     dirs = dtr.Bundle(dirs, ignore=True)
 
     res = _get(dirs, tags, categories)
 
-    if detail:
-        res = print_treant(treant, detail=True)
+    if json_:
+        res = res.map(print_treant, detail=True)
+        if res:
+            click.echo(json.dumps(res, indent=4))
     else:
         click.echo("\n".join(res.abspaths))
 
@@ -196,7 +201,7 @@ def get(dirs, relpath, json_, tags, categories, detail):
 @cli.command()
 @click.argument("dirs", nargs=-1)
 def draw(dirs):
-    """Draw filesystem structure of treant"""
+    """Draw treant filesystem structure"""
     dirs = _handle_stdin(dirs)
 
     # get all existing Treants among dirs
@@ -209,7 +214,7 @@ def draw(dirs):
 @click.argument("dirs", metavar='<dir(s)>', nargs=-1)
 @click.option("--all/--any", 'all_', default=True,
               help="results for tags present in ALL or ANY treants")
-@click.option("--json", 'json_', is_flag=True,
+@click.option("--json", '-j', 'json_', is_flag=True,
               help="return results in JSON format")
 @click.option("--has", cls=OptionEatAll,
               help="list of tags; returns true for presence, false for absence")
@@ -239,8 +244,8 @@ def tags(dirs, all_, json_, has):
 @cli.command()
 @click.argument("dirs", nargs=-1)
 @click.option("--all/--any", 'all_', default=True, help="results for keys present in ANY treants")
-@click.option("--json", 'json_', is_flag=True, help="results in JSON format")
-@click.option("--get", cls=OptionEatAll, help="get values for given keys")
+@click.option("--json", '-j', 'json_', is_flag=True, help="results in JSON format")
+@click.option("--get", cls=OptionEatAll, help="get values for keys")
 def categories(dirs, all_, json_, get):
     """Show treant categories"""
     dirs = _handle_stdin(dirs)
@@ -277,9 +282,10 @@ def _parse_categories(catstrings):
 
 @cli.command()
 @click.argument("dirs", nargs=-1)
-@click.option("--tags", cls=OptionEatAll, help="list of tags")
+@click.option("--tags", '-t', cls=OptionEatAll, help="list of tags")
 @click.option(
     "--categories",
+    '-c',
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
@@ -297,9 +303,10 @@ def add(dirs, tags, categories):
 
 @cli.command(name='set')
 @click.argument("dirs", nargs=-1)
-@click.option("--tags", cls=OptionEatAll, help="list of tags")
+@click.option("--tags", '-t', cls=OptionEatAll, help="list of tags")
 @click.option(
     "--categories",
+    '-c', 
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
@@ -314,9 +321,10 @@ def set_(dirs, tags, categories):
 
 @cli.command(name='del')
 @click.argument("dirs", nargs=-1)
-@click.option("--tags", cls=OptionEatAll, help="list of tags")
+@click.option("--tags", '-t', cls=OptionEatAll, help="list of tags")
 @click.option(
     "--categories",
+    '-c',
     cls=OptionEatAll,
     help="list of category keys"
 )
@@ -335,8 +343,8 @@ def del_(dirs, tags, categories):
 
 @cli.command()
 @click.argument("dirs", nargs=-1)
-@click.option("--tags", is_flag=True, help="remove all tags")
-@click.option("--categories", is_flag=True, help="remove all categories")
+@click.option("--tags", '-t', is_flag=True, help="remove all tags")
+@click.option("--categories", '-c', is_flag=True, help="remove all categories")
 def clear(dirs, tags, categories):
     """Clear treant tags and/or categories"""
     dirs = _handle_stdin(dirs)
@@ -351,16 +359,17 @@ def clear(dirs, tags, categories):
 
 @cli.command()
 @click.argument("dirs", nargs=-1)
-@click.option("--relpath/--abspath", 'relpath', default=True, help="return relative or absolute paths")
-@click.option("--tags", cls=OptionEatAll, help="list of tags or search string")
+@click.option("--relpath/--abspath", "-r/-a", 'relpath', default=True, help="return relative or absolute paths")
+@click.option("--tags", '-t', cls=OptionEatAll, help="list of tags or search string")
 @click.option(
     "--categories",
+    '-c',
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
-@click.option("--detail", '-d', is_flag=True,
-              help="list treant detail")
-def discover(dirs, relpath, tags, categories, detail):
+@click.option("--json", '-j', 'json_', is_flag=True,
+              help="return results in JSON format")
+def discover(dirs, relpath, tags, categories, json_):
     """Search folder for treants and list them"""
     dirs = _handle_stdin(dirs)
 
@@ -368,7 +377,7 @@ def discover(dirs, relpath, tags, categories, detail):
 
     res = _get(dirs, tags, categories)
 
-    if detail:
+    if json:
         res = dirs.map(print_treant, detail=True)
         click.echo(json.dumps(res, indent=4))
     else:

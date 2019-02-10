@@ -519,19 +519,7 @@ class AggTags(AggMetadata):
         return "<AggTags({})>".format(list(self.all))
 
     def __str__(self):
-        tags = list(self.all)
-        agg = "Tags"
-        majsep = "="
-        seplength = len(agg)
-
-        if not tags:
-            out = "No Tags"
-        else:
-            out = agg + '\n'
-            out = out + majsep * seplength + '\n'
-            for i in xrange(len(tags)):
-                out = out + "'{}'\n".format(tags[i])
-        return out
+        return json.dumps(self.all, indent=4)
 
     def __iter__(self):
         return self.all.__iter__()
@@ -756,19 +744,7 @@ class AggCategories(AggMetadata):
         return "<AggCategories({})>".format(self.all)
 
     def __str__(self):
-        categories = self.all
-        agg = "Categories"
-        majsep = "="
-        seplength = len(agg)
-
-        if not categories:
-            out = "No Categories"
-        else:
-            out = agg + '\n'
-            out = out + majsep * seplength + '\n'
-            for key, value in categories.items():
-                out = out + "'{}': '{}'\n".format(key, value)
-        return out
+        return json.dumps(self.all, indent=4)
 
     def __getitem__(self, keys):
         """Get values for a given key, list of keys, or set of keys.
