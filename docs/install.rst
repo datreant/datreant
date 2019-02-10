@@ -16,9 +16,6 @@ Alternatively we also provide conda package. ::
 
 All datreant packages currently support the following Python versions::
 
-- 2.7
-- 3.3
-- 3.4
 - 3.5
 - 3.6
 
