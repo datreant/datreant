@@ -193,8 +193,8 @@ def discover(dirs, relpath, tags, categories, json_):
 
     res = _get(dirs, tags, categories)
 
-    if json:
-        res = dirs.map(print_treant, detail=True)
+    if json_:
+        res = res.map(print_treant, detail=True)
         click.echo(json.dumps(res, indent=4))
     else:
         paths = res.relpaths if relpath else res.abspaths
