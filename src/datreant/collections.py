@@ -6,8 +6,6 @@ conveniences for Trees and Leaves.
 
 """
 
-from __future__ import absolute_import
-
 import os
 import functools
 from collections import defaultdict
