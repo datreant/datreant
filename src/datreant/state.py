@@ -9,10 +9,6 @@ import warnings
 import json
 from functools import wraps
 from contextlib import contextmanager
-import six
-
-if six.PY2:
-    FileNotFoundError = IOError
 
 
 class BaseFile(object):

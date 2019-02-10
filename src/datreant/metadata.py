@@ -5,8 +5,6 @@ for filtering and selection.
 import os
 import itertools
 import functools
-from six import string_types
-from six.moves import range
 from collections import defaultdict
 
 from fuzzywuzzy import process
@@ -75,7 +73,7 @@ class Tags(Metadata):
 
     def __getitem__(self, value):
         # check if we might have a string to parse into a selection object
-        if isinstance(value, string_types):
+        if isinstance(value, str):
             value = parse_selection(value)
         return self._getselection(value)
 
@@ -93,7 +91,7 @@ class Tags(Metadata):
                 # a set of tags gives only members WITHOUT ALL the tags
                 # can be used for `not`, basically
                 fits = not all(self._getselection(item) for item in value)
-            elif isinstance(value, string_types):
+            elif isinstance(value, str):
                 fits = value in self
 
             return fits
@@ -228,7 +226,7 @@ class Tags(Metadata):
             # also they must be strings
             _outtags = []
             for tag in outtags:
-                if not isinstance(tag, string_types):
+                if not isinstance(tag, str):
                     raise ValueError("Only string can be added as tags. Tried "
                                      "to add '{}' which is '{}'".format(
                                          tag, type(tag)))
@@ -285,7 +283,7 @@ class Tags(Metadata):
         matches : tuple
             Tuple of tags that match.
         """
-        if isinstance(tag, string_types):
+        if isinstance(tag, str):
             tags = [tag]
         else:
             tags = tag
@@ -355,7 +353,7 @@ class Categories(Metadata):
         """
         categories = self._dict()
 
-        if isinstance(keys, (int, float, string_types, bool)):
+        if isinstance(keys, (int, float, str, bool)):
             return categories[keys]
         elif isinstance(keys, list):
             return [categories[key] for key in keys]
@@ -452,10 +450,10 @@ class Categories(Metadata):
 
         with self._write:
             for key, value in outcats.items():
-                if not isinstance(key, string_types):
+                if not isinstance(key, str):
                     raise TypeError("Keys must be strings.")
 
-                if (isinstance(value, (int, float, string_types, bool))):
+                if (isinstance(value, (int, float, str, bool))):
                     self._statefile._state[key] = value
                 elif value is None:
                     # delete if present
@@ -726,7 +724,7 @@ class AggTags(AggMetadata):
         matches : tuple
             Tuple of tags that match.
         """
-        if isinstance(tag, string_types):
+        if isinstance(tag, str):
             tags = [tag]
         else:
             tags = tag
@@ -822,7 +820,7 @@ class AggCategories(AggMetadata):
             return None
 
         members = self._collection
-        if isinstance(keys, (int, float, string_types, bool)):
+        if isinstance(keys, (int, float, str, bool)):
             k = keys
             return [m.categories[k] if k in m.categories else None
                     for m in members]
@@ -842,7 +840,7 @@ class AggCategories(AggMetadata):
         """Set the value of categories for each Treant in the collection.
 
         If `values` is not a sequence and is a valid category type (int,
-        string_types, bool, float), then it is broadcasted over all members of
+        str, bool, float), then it is broadcasted over all members of
         the collection for the category specified by `key`.
 
         If `values` is a sequence, it must have the same length as the number
@@ -862,7 +860,7 @@ class AggCategories(AggMetadata):
             return
 
         members = self._collection
-        if isinstance(values, (int, float, string_types, bool)):
+        if isinstance(values, (int, float, str, bool)):
             for m in members:
                 m.categories.add({key: values})
         elif isinstance(values, (list, tuple)):
@@ -1074,7 +1072,7 @@ class AggCategories(AggMetadata):
             return None
 
         members = self._collection
-        if isinstance(keys, (string_types)):
+        if isinstance(keys, (str)):
             catvals = members.categories[keys]
             groupkeys = [v for v in catvals if v is not None]
             groups = {k: Bundle() for k in groupkeys}
