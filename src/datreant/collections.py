@@ -16,9 +16,6 @@ import multiprocessing as mp
 import glob
 import fnmatch
 
-from six import string_types
-from six.moves import zip
-
 from .trees import Tree, Leaf
 from .names import TREANTDIR_NAME
 from .exceptions import NotATreantError
@@ -264,7 +261,7 @@ class View(CollectionMixin):
         # we can take lists of indices or names; these return a
         # View; repeats already not respected since View functions as a
         # set
-        if isinstance(index, string_types):
+        if isinstance(index, str):
             # a name can be used for indexing
             # always returns a View
             out = View([memberlist[i] for i, name
@@ -362,11 +359,11 @@ class View(CollectionMixin):
                 outconts.append(Tree(member))
             elif isinstance(member, Veg):
                 outconts.append(member)
-            elif (isinstance(member, string_types) and
+            elif (isinstance(member, str) and
                     (os.path.isdir(member) or member.endswith(os.sep))):
                 tre = Tree(member)
                 outconts.append(tre)
-            elif isinstance(member, string_types):
+            elif isinstance(member, str):
                 tre = Leaf(member)
                 outconts.append(tre)
             else:
@@ -576,7 +573,7 @@ class Bundle(CollectionMixin):
         # set
         memberlist = self._list()
 
-        if isinstance(index, string_types):
+        if isinstance(index, str):
             # a name can be used for indexing
             # a name always returns a Bundle
             out = Bundle([self._list()[i]
@@ -707,7 +704,7 @@ class Bundle(CollectionMixin):
                 remove.append(abspaths[member])
             elif isinstance(member, Treant):
                 remove.append(member.abspath)
-            elif isinstance(member, string_types):
+            elif isinstance(member, str):
                 # try abspaths
                 abspaths = fnmatch.filter(self.abspaths, member)
                 paths = [m.abspath for m in self

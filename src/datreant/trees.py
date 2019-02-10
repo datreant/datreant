@@ -6,7 +6,6 @@ from __future__ import absolute_import
 
 import os
 from functools import reduce, total_ordering
-from six import string_types
 
 from collections import OrderedDict
 import scandir
@@ -174,7 +173,7 @@ class Tree(Veg):
         """
         if isinstance(item, (Tree, Leaf)):
             return str(self) in str(item)
-        elif isinstance(item, string_types):
+        elif isinstance(item, str):
             return str(self) in os.path.abspath(item)
         else:
             raise TypeError("Item must be a Tree, Leaf, or plain path")
@@ -213,7 +212,7 @@ class Tree(Veg):
                 outview.append(filt(item))
 
             return View(outview)
-        elif isinstance(path, string_types):
+        elif isinstance(path, str):
             return filt(path)
         else:
             raise ValueError('Must use a path or a list of paths')
