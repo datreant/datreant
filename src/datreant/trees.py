@@ -9,7 +9,7 @@ from functools import reduce, total_ordering
 
 from collections import OrderedDict
 import scandir
-from pathlib2 import Path
+from pathlib import Path
 from asciitree import LeftAligned
 
 from .util import makedirs
@@ -53,7 +53,7 @@ class Veg(object):
 
     @property
     def path(self):
-        """Filesystem path as a :class:`pathlib2.Path`.
+        """Filesystem path as a :class:`pathlib.Path`.
 
         """
         return self._path
