@@ -6,6 +6,7 @@ import json
 
 import click
 import datreant as dtr
+from datreant.names import TREANTDIR_NAME
 
 
 class OptionEatAll(click.Option):
@@ -44,7 +45,8 @@ class OptionEatAll(click.Option):
 
         retval = super(OptionEatAll, self).add_to_parser(parser, ctx)
         for name in self.opts:
-            our_parser = parser._long_opt.get(name) or parser._short_opt.get(name)
+            our_parser = (parser._long_opt.get(name) or
+                          parser._short_opt.get(name))
             if our_parser:
                 self._eat_all_parser = our_parser
                 self._previous_parser_process = our_parser.process
@@ -58,6 +60,13 @@ class OptionEatAll(click.Option):
 def cli():
     """CLI interface for treants"""
     pass
+
+
+@cli.command()
+@click.pass_context
+def help(ctx):
+    """Show the CLI help contents"""
+    click.echo(ctx.parent.get_help())
 
 
 @cli.command()
@@ -87,7 +96,6 @@ def print_treant(treant, verbose=False):
         if treant.categories:
             res['categories'] = dict(treant.categories)
     return res
-    #click.echo(json.dumps(res, indent=4))
 
 
 @cli.command()
@@ -105,15 +113,36 @@ def show(dirs):
     res = []
     for i in dirs:
         tree = dtr.Tree(i)
-        if tree[".datreant"].exists:
+        if tree[TREANTDIR_NAME].exists:
             treant = dtr.Treant(i)
             res.append(print_treant(treant, verbose=True))
     click.echo(json.dumps(res, indent=4))
 
+
+@cli.command()
+@click.argument("dirs", metavar='<dir(s)>', nargs=-1)
+def draw(dirs):
+    """Draw filesystem structure of treant"""
+    if not dirs:
+        try:
+            with click.get_text_stream('stdin') as stdin:
+                stdin_text = stdin.read()
+            dirs = stdin_text.strip().split()
+        except:
+            pass
+
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs)
+    res = []
+    for treant in dirs:
+        treant.draw()
+
+
 @cli.command()
 @click.argument("dirs", metavar='<dir(s)>', nargs=-1)
 @click.option("--melt", is_flag=True, help="merge tags from multiple treants")
-def tags(dirs, melt):
+@click.option("--json", 'json_', is_flag=True, help="print results in JSON format")
+def tags(dirs, melt, json_):
     """Show treant tags"""
     if not dirs:
         try:
@@ -123,13 +152,12 @@ def tags(dirs, melt):
         except:
             pass
 
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs)
     res = []
-    for i in dirs:
-        tree = dtr.Tree(i)
-        if tree[".datreant"].exists:
-            treant = dtr.Treant(i)
-            if treant.tags:
-                res.append(list(treant.tags))
+    for treant in dirs:
+        if treant.tags:
+            res.append(list(treant.tags))
 
     if melt:
         res_set = set()
@@ -137,12 +165,28 @@ def tags(dirs, melt):
             res_set.update(set(j))
         res = list(res_set)
 
-    if res:
-        click.echo(json.dumps(res, indent=4))
+        if res:
+            if json_:
+                click.echo(json.dumps(res, indent=4))
+            else:
+                for tag in res:
+                    click.echo(tag)
+    else:
+        if res:
+            if json_:
+                click.echo(json.dumps(res, indent=4))
+            else:
+                for tags in res:
+                    for tag in tags:
+                        click.echo(tag)
+                    click.echo("")
+
 
 @cli.command()
 @click.argument("dirs", metavar='<dir(s)>', nargs=-1)
-def categories(dirs):
+@click.option("--json", 'json_', is_flag=True, help="print results in JSON format")
+@click.option("--get", cls=OptionEatAll, help="get values for given keys")
+def categories(dirs, json_, get):
     """Show treant categories"""
     if not dirs:
         try:
@@ -152,16 +196,24 @@ def categories(dirs):
         except:
             pass
 
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs)
     res = []
-    for i in dirs:
-        tree = dtr.Tree(i)
-        if tree[".datreant"].exists:
-            treant = dtr.Treant(i)
-            if treant.categories:
+    for treant in dirs:
+        if treant.categories:
+            if get:
+                res.append(dict(treant.categories[set(get)]))
+            else:
                 res.append(dict(treant.categories))
 
     if res:
-        click.echo(json.dumps(res, indent=4))
+        if json_:
+            click.echo(json.dumps(res, indent=4))
+        else:
+            for cats in res:
+                for key, value in cats.items():
+                    click.echo("{} : {}".format(key, value))
+                click.echo("")
 
 
 def _parse_categories(catstrings):
@@ -187,8 +239,9 @@ def add(tags, categories, dirs):
         except:
             pass
 
-    for i in dirs:
-        treant = dtr.Treant(i)
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs)
+    for treant in dirs:
         if tags is not None:
             treant.tags.add(tags)
         if categories is not None:
@@ -204,7 +257,7 @@ def add(tags, categories, dirs):
     help="list of categories as key-value pairs separated by a colon ':'",
 )
 def set_(tags, categories, dirs):
-    """Update tags and categories of treant"""
+    """Replace tags and/or categories as given"""
     if not dirs:
         try:
             with click.get_text_stream('stdin') as stdin:
@@ -213,8 +266,9 @@ def set_(tags, categories, dirs):
         except:
             pass
 
-    for i in dirs:
-        treant = dtr.Treant(i)
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs)
+    for treant in dirs:
         if tags is not None:
             treant.tags = set(tags)
         if categories is not None:
@@ -239,8 +293,9 @@ def del_(tags, categories, dirs):
         except:
             pass
 
-    for i in dirs:
-        treant = dtr.Treant(i)
+    # get all existing Treants among dirs
+    dirs = dtr.Bundle(dirs)
+    for treant in dirs:
         if tags is not None:
             treant.tags.remove(*tags)
         if categories is not None:
@@ -255,8 +310,9 @@ def del_(tags, categories, dirs):
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
-@click.option("--verbose", '-v', is_flag=True, help="list tags and categories as well")
-def find(dirs, tags, categories, verbose):
+@click.option("--verbose", '-v', is_flag=True,
+              help="list tags and categories as well")
+def search(dirs, tags, categories, verbose):
     """Search folder for treants and list them"""
     bundle = dtr.Bundle([dtr.discover(i) for i in dirs])
 
