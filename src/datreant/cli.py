@@ -122,7 +122,7 @@ def _set(treant, tags, categories):
     cls=OptionEatAll,
     help="list of categories as key-value pairs separated by a colon ':'",
 )
-def init(dirs):
+def init(dirs, tags=None, categories=None):
     """Make treants from dirs, optionally setting tags/categories"""
     dirs = _handle_stdin(dirs)
 
@@ -314,7 +314,7 @@ def categories(dirs, all_, json_, get):
 
 
 def _parse_categories(catstrings):
-    return {key: json.loads(value) for key, value in
+    return {key: value for key, value in
             (c.split(":") for c in catstrings)}
 
 
