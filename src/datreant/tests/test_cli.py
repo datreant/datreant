@@ -109,3 +109,54 @@ def test_get(readymades):
     assert len(output.split('\n')) == 2
     assert 'wheel' in output
     assert 'head' in output
+
+
+def test_tags(readymade_treant):
+    ret = subprocess.run('dtr tags duchamp/fountain', shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True,
+    )
+
+    output = ret.stdout.decode()
+
+    assert 'art?' in output
+    assert 'duchamp' in output
+
+
+def test_categories(readymade_treant):
+    ret = subprocess.run('dtr categories duchamp/fountain', shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True,
+    )
+
+    output = ret.stdout.decode()
+
+    assert 'colour : white' in output
+
+
+def test_add_tag(readymade_treant):
+    ret = subprocess.run('dtr add duchamp/fountain -t dada',
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True,
+    )
+
+    t = dtr.Treant('duchamp/fountain')
+
+    assert 'dada' in t.tags
+
+
+def test_add_category(readymade_treant):
+    ret = subprocess.run('dtr add duchamp/fountain -c year:1917',
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True,
+    )
+
+    t = dtr.Treant('duchamp/fountain')
+
+    assert t.categories['year'] == 1917
