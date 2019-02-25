@@ -96,6 +96,56 @@ def test_discover(readymades):
     assert len(items) == 7
 
 
+def test_discover_cat(readymades):
+    ret = subprocess.run('dtr discover -c material:wood',
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True,
+    )
+    # should return 2 results, 'duchamp/wheel' and 'hausmann/head'
+    output = ret.stdout.decode()
+    items = [item for item in output.split('\n')
+             if item]
+
+    assert len(items) == 2
+    assert 'duchamp/wheel/' in items
+    assert 'hausmann/head/' in items
+
+
+def test_discover_tags(readymades):
+    ret = subprocess.run('dtr discover -t duchamp',
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True,
+    )
+    # should return 2 results, both duchamps
+    output = ret.stdout.decode()
+    items = [item for item in output.split('\n')
+             if item]
+
+    assert len(items) == 2
+    assert 'duchamp/fountain/' in items
+    assert 'duchamp/wheel/' in items
+
+
+def test_discover_both(readymades):
+    ret = subprocess.run('dtr discover -t duchamp -c colour:white',
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True,
+    )
+    # should return 2 results, 'duchamp/wheel' and 'hausmann/head'
+    output = ret.stdout.decode()
+    items = [item for item in output.split('\n')
+             if item]
+
+    assert len(items) == 1
+    assert 'duchamp/fountain/' in items
+
+
 def test_get(readymades):
     ret = subprocess.run('dtr get -c material:wood', shell=True,
                          stdout=subprocess.PIPE,
