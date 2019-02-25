@@ -65,8 +65,10 @@ def readymades(readymade_treant):
     t6 = dtr.Treant('hausmann')
     t7 = dtr.Treant('hausmann/head',
                     tags=['hausmann'],
-                    categories={'material': 'wood',
-                                'spiky': False})
+                    categories={
+                        'origin': 'austria',
+                        'material': 'wood',
+                        'spiky': False})
 
 
 def test_show(readymade_treant):
@@ -210,3 +212,18 @@ def test_add_category(readymade_treant):
     t = dtr.Treant('duchamp/fountain')
 
     assert t.categories['year'] == 1917
+
+
+def test_set_categories(readymades):
+    ret = subprocess.run('dtr set duchamp/* -c origin:france',
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True,
+    )
+
+    for t in ['duchamp/wheel', 'duchamp/fountain']:
+        treant = dtr.Treant(t)
+
+        assert treant.categories['origin'] == 'france'
+    assert not dtr.Treant('hausmann/head').categories['origin'] == 'france'
