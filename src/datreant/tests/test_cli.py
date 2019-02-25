@@ -41,3 +41,23 @@ def test_init(in_tmpdir, tags, categories):
         assert 'tasty' in t.tags
     if categories:
         assert t.categories['flavour'] == 'chicken'
+
+
+@pytest.fixture
+def readymade_treant(in_tmpdir):
+    t = dtr.Treant('duchamp',
+                   tags='art?',
+                   categories={'colour': 'white',
+                               'material': 'porcelain'},
+    )
+
+def test_show(readymade_treant):
+    ret = subprocess.run('dtr show duchamp', shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         check=True)
+
+    output = ret.stdout.decode()
+    assert 'art?' in output
+    assert 'colour' in output
+    assert 'white' in output
