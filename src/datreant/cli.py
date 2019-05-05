@@ -314,7 +314,17 @@ def categories(dirs, all_, json_, get):
 
 
 def _parse_categories(catstrings):
-    return {key: value for key, value in
+    def value_convert(val):
+        # from least to most permissive:
+        # int -> float -> string
+        try:
+            return int(val)
+        except ValueError:
+            try:
+                return float(val)
+            except ValueError:
+                return val
+    return {key: value_convert(value) for key, value in
             (c.split(":") for c in catstrings)}
 
 
