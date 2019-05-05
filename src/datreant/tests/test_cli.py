@@ -49,7 +49,8 @@ def readymade_treant(in_tmpdir):
                    tags=['art?', 'duchamp'],
                    categories={'colour': 'white',
                                'material': 'porcelain'},
-    )
+                   )
+
 
 @pytest.fixture
 def readymades(readymade_treant):
@@ -88,7 +89,7 @@ def test_discover(readymades):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
 
     output = ret.stdout.decode()
 
@@ -104,7 +105,7 @@ def test_discover_cat(readymades):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
     # should return 2 results, 'duchamp/wheel' and 'hausmann/head'
     output = ret.stdout.decode()
     items = [item for item in output.split('\n')
@@ -121,7 +122,7 @@ def test_discover_tags(readymades):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
     # should return 2 results, both duchamps
     output = ret.stdout.decode()
     items = [item for item in output.split('\n')
@@ -138,7 +139,7 @@ def test_discover_both(readymades):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
     # should return 2 results, 'duchamp/wheel' and 'hausmann/head'
     output = ret.stdout.decode()
     items = [item for item in output.split('\n')
@@ -153,7 +154,7 @@ def test_get(readymades):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
 
     # should return 2 results, 'duchamp/wheel' and 'hausmann/head'
     output = ret.stdout.decode()
@@ -168,7 +169,7 @@ def test_tags(readymade_treant):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
 
     output = ret.stdout.decode()
 
@@ -181,7 +182,7 @@ def test_categories(readymade_treant):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
 
     output = ret.stdout.decode()
 
@@ -194,7 +195,7 @@ def test_add_tag(readymade_treant):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
 
     t = dtr.Treant('duchamp/fountain')
 
@@ -207,7 +208,7 @@ def test_add_category(readymade_treant):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
 
     t = dtr.Treant('duchamp/fountain')
 
@@ -220,7 +221,7 @@ def test_set_categories(readymades):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
-    )
+                         )
 
     for t in ['duchamp/wheel', 'duchamp/fountain']:
         treant = dtr.Treant(t)
