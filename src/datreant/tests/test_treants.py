@@ -5,7 +5,7 @@
 import datreant as dtr
 from datreant import Treant
 import pytest
-import mock
+from unittest import mock
 import os
 import py
 import errno
