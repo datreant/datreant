@@ -215,7 +215,7 @@ def _get(bundle, tags, categories):
 
 @cli.command()
 @click.argument("dirs", nargs=-1)
-@click.option("--relpath/--abspath", 'relpath', default=True,
+@click.option("--relpath/--abspath", "-r/-a", 'relpath', default=True,
               help="return relative or absolute paths")
 @click.option("--json", '-j', 'json_', is_flag=True,
               help="return results in JSON format")
@@ -242,7 +242,8 @@ def get(dirs, relpath, json_, tags, categories):
         if res:
             click.echo(json.dumps(res, indent=4))
     else:
-        click.echo("\n".join(res.abspaths))
+        paths = res.relpaths if relpath else res.abspaths
+        click.echo("\n".join(paths))
 
 
 @cli.command()
