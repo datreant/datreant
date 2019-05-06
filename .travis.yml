@@ -23,7 +23,7 @@ install:
 
 # run tests
 script: 
-  - pytest -v --doctest-modules
+  - pytest -v
   # test conversion script runs
   - datreant_07to1 --help
 
