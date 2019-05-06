@@ -150,7 +150,7 @@ def test_discover_both(readymades):
 
 
 def test_get(readymades):
-    ret = subprocess.run('dtr get -c material:wood', shell=True,
+    ret = subprocess.run('dtr get duchamp/* hausmann/* -c material:wood', shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
@@ -158,8 +158,11 @@ def test_get(readymades):
 
     # should return 2 results, 'duchamp/wheel' and 'hausmann/head'
     output = ret.stdout.decode()
+    items = [item for item in output.split('\n')
+             if item]
+
     print('#' + output + '#')
-    assert len(output.split('\n')) == 2
+    assert len(items) == 2
     assert 'wheel' in output
     assert 'head' in output
 
