@@ -150,7 +150,8 @@ def test_discover_both(readymades):
 
 
 def test_get(readymades):
-    ret = subprocess.run('dtr get duchamp/* hausmann/* -c material:wood', shell=True,
+    ret = subprocess.run('dtr get duchamp/* hausmann/* -c material:wood',
+                         shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
                          check=True,
