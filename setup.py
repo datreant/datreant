@@ -33,7 +33,7 @@ setup(
                   ['datreant_07to1=datreant.scripts.datreant_07to1:main']},
     license='BSD',
     long_description=open('README.rst').read(),
-    tests_require=['numpy', 'pytest>=2.10', 'mock'],
+    tests_require=['numpy', 'pytest>=2.10', 'pytest-cov', 'pytest-pep8'],
     install_requires=[
         'asciitree', 'scandir', 'fuzzywuzzy',
         'python-Levenshtein', 'pyparsing'])

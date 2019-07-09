@@ -1,6 +1,6 @@
 language: python
-sudo: required
 dist: xenial
+cache: pip
 
 python:
   - "3.6"
@@ -15,7 +15,6 @@ branches:
 # install python dependencies
 install:
   - pip install codecov
-  - pip install mock
   - pip install --upgrade pytest
   - pip install pytest-cov
   - pip install pytest-pep8
@@ -24,7 +23,7 @@ install:
 
 # run tests
 script: 
-  - py.test --cov src/datreant --pep8 src/datreant -v --doctest-modules
+  - pytest -v
   # test conversion script runs
   - datreant_07to1 --help
 
