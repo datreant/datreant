@@ -262,7 +262,7 @@ class TestTree(TestVeg):
     def test_glob_OSError(self, tree):
         with pytest.raises(OSError) as error:
             tree.glob('something.*')
-        assert "Tree doesn't exist in the filesystem" in str(error)
+        assert "Tree doesn't exist in the filesystem" in str(error.value)
 
     def test_walk(self, tree):
         # files
@@ -312,12 +312,12 @@ class TestTree(TestVeg):
         with pytest.raises(OSError) as error:
             for v in tree.walk():  # need to use generator to trigger OSError?!
                 assert v == 1
-        assert "Tree doesn't exist in the filesystem" in str(error)
+        assert "Tree doesn't exist in the filesystem" in str(error.value)
 
     def test_draw_OSError(self, tree):
         with pytest.raises(OSError) as error:
             tree.draw()
-        assert "Tree doesn't exist in the filesystem" in str(error)
+        assert "Tree doesn't exist in the filesystem" in str(error.value)
 
     def test_children(self, tree):
 

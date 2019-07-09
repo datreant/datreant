@@ -96,7 +96,7 @@ class TestTreant(TestTree):
                     t.tags.add('worthless')
                     assert error.errno == errno.EACCES
                     assert ("Permission denied; cannot create 'new'"
-                            in str(error))
+                            in str(error.value))
 
     def test_gen_methods(self, tmpdir):
         """Test the variety of ways we can generate a new Treant
@@ -442,7 +442,7 @@ class TestTreant(TestTree):
         def test_setting_to_None_VE(self, treant):
             with pytest.raises(ValueError) as err:
                 treant.categories['colour'] = None
-            assert "Cannot set to 'None'" in str(err)
+            assert "Cannot set to 'None'" in str(err.value)
 
         def test_KeyError(self, treant):
             with pytest.raises(KeyError):
