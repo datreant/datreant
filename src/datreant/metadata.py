@@ -95,8 +95,9 @@ class Tags(Metadata):
                 fits = value in self
             else:
                 raise ValueError(
-                        "Given value is not a valid selection. "
-                        "See documentation for tags selection options")
+                        f"Given value ({repr(value)}) of type {type(value)} "
+                        "is not a valid selection. See documentation for "
+                        "tags selection options")
 
             return fits
 
