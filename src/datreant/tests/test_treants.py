@@ -348,6 +348,10 @@ class TestTreant(TestTree):
             # complex logic
             assert t.tags[[('marklar', 'bark'), {'dark'}]]
 
+            # error on forbidden types
+            with pytest.raises(ValueError) as e:
+                t.tags[1]
+
         @pytest.mark.parametrize('tag', (1, 1.2))
         def test_tags_only_strings(self, treant, tag):
             with pytest.raises(ValueError):
