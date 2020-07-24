@@ -87,12 +87,17 @@ class Tags(Metadata):
             elif isinstance(value, tuple):
                 # a tuple of tags gives members with ANY of the tags
                 fits = any(self._getselection(item) for item in value)
-            if isinstance(value, set):
+            elif isinstance(value, set):
                 # a set of tags gives only members WITHOUT ALL the tags
                 # can be used for `not`, basically
                 fits = not all(self._getselection(item) for item in value)
             elif isinstance(value, str):
                 fits = value in self
+            else:
+                raise ValueError(
+                        f"Given value ({repr(value)}) of type {type(value)} "
+                        "is not a valid selection. See documentation for "
+                        "tags selection options")
 
             return fits
 
