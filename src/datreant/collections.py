@@ -527,12 +527,13 @@ class Bundle(CollectionMixin):
     treants : Treant, list
         Treants to be added, which may be nested lists of Treants. Treants
         can be given as either objects or paths to directories that contain
-        Treant statefiles. Glob patterns are also allowed, and all found
-        Treants will be added to the collection.
+        Treant statefiles.
+    ignore : bool
+         If True, ignore paths that don't point to existing Treants.
 
     """
 
-    def __init__(self, *treants):
+    def __init__(self, *treants, ignore=False):
         self._cache = dict()
         self._state = list()
 
@@ -540,7 +541,7 @@ class Bundle(CollectionMixin):
         self._tags = AggTags(self)
         self._categories = AggCategories(self)
 
-        self._add(*treants)
+        self._add(*treants, ignore=ignore)
 
     def __repr__(self):
         return "<Bundle({})>".format(self.names)
@@ -642,7 +643,7 @@ class Bundle(CollectionMixin):
         else:
             raise TypeError("Operands must be Bundles.")
 
-    def _add(self, *treants):
+    def _add(self, *treants, ignore=False):
         """Add any number of members to this collection.
 
         Parameters
@@ -650,6 +651,8 @@ class Bundle(CollectionMixin):
         treants : `datreant.Treant`s
             Treants to be added, which may be nested lists/tuples of Treants,
             Bundles, individual Treants or paths to existing Treants
+        ignore : bool
+            If True, ignore paths that don't point to existing Treants.
         """
         from .treants import Treant
 
@@ -658,7 +661,7 @@ class Bundle(CollectionMixin):
             if treant is None:
                 pass
             elif isinstance(treant, (list, tuple, View, Bundle)):
-                self._add(*treant)
+                self._add(*treant, ignore=ignore)
             elif isinstance(treant, Treant):
                 abspaths.append(treant.abspath)
                 self._cache[treant.abspath] = treant
@@ -667,15 +670,17 @@ class Bundle(CollectionMixin):
                 if os.path.exists(treantdir):
                     abspaths.extend(treant.abspath)
                 else:
-                    raise NotATreantError("Directory '{}' is "
-                                          "not a Treant".format(treant))
+                    if not ignore:
+                        raise NotATreantError("Directory '{}' is "
+                                              "not a Treant".format(treant))
             elif os.path.exists(treant):
                 treantdir = os.path.join(treant, TREANTDIR_NAME)
                 if os.path.exists(treantdir):
                     abspaths.append(os.path.abspath(treant))
                 else:
-                    raise NotATreantError("Directory '{}' is "
-                                          "not a Treant".format(treant))
+                    if not ignore:
+                        raise NotATreantError("Directory '{}' is "
+                                              "not a Treant".format(treant))
             else:
                 raise TypeError("'{}' not a valid input "
                                 "for Bundle".format(treant))

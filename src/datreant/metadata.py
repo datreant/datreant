@@ -5,6 +5,7 @@ for filtering and selection.
 import os
 import itertools
 import functools
+import json
 from collections import defaultdict
 
 from fuzzywuzzy import process
@@ -57,19 +58,7 @@ class Tags(Metadata):
         return "<Tags({})>".format(self._list())
 
     def __str__(self):
-        tags = self._list()
-        agg = "Tags"
-        majsep = "="
-        seplength = len(agg)
-
-        if not tags:
-            out = "No Tags"
-        else:
-            out = agg + '\n'
-            out = out + majsep * seplength + '\n'
-            for i in range(len(tags)):
-                out = out + "'{}'\n".format(tags[i])
-        return out
+        return json.dumps(self._list(), indent=4)
 
     def __getitem__(self, value):
         # check if we might have a string to parse into a selection object
@@ -320,19 +309,7 @@ class Categories(Metadata):
         return "<Categories({})>".format(self._dict())
 
     def __str__(self):
-        categories = self._dict()
-        agg = "Categories"
-        majsep = "="
-        seplength = len(agg)
-
-        if not categories:
-            out = "No Categories"
-        else:
-            out = agg + '\n'
-            out = out + majsep * seplength + '\n'
-            for key in categories.keys():
-                out = out + "'{}': '{}'\n".format(key, categories[key])
-        return out
+        return json.dumps(self._dict(), indent=4)
 
     def __getitem__(self, keys):
         """Get values for given `keys`.
@@ -547,19 +524,7 @@ class AggTags(AggMetadata):
         return "<AggTags({})>".format(list(self.all))
 
     def __str__(self):
-        tags = list(self.all)
-        agg = "Tags"
-        majsep = "="
-        seplength = len(agg)
-
-        if not tags:
-            out = "No Tags"
-        else:
-            out = agg + '\n'
-            out = out + majsep * seplength + '\n'
-            for i in xrange(len(tags)):
-                out = out + "'{}'\n".format(tags[i])
-        return out
+        return json.dumps(self.all, indent=4)
 
     def __iter__(self):
         return self.all.__iter__()
@@ -662,7 +627,10 @@ class AggTags(AggMetadata):
 
         """
         tags = [set(member.tags) for member in self._collection]
-        out = set.union(*tags)
+        if tags:
+            out = set.union(*tags)
+        else:
+            out = set()
 
         return out
 
@@ -672,7 +640,10 @@ class AggTags(AggMetadata):
 
         """
         tags = [set(member.tags) for member in self._collection]
-        out = set.intersection(*tags)
+        if tags:
+            out = set.intersection(*tags)
+        else:
+            out = set()
 
         return out
 
@@ -778,19 +749,7 @@ class AggCategories(AggMetadata):
         return "<AggCategories({})>".format(self.all)
 
     def __str__(self):
-        categories = self.all
-        agg = "Categories"
-        majsep = "="
-        seplength = len(agg)
-
-        if not categories:
-            out = "No Categories"
-        else:
-            out = agg + '\n'
-            out = out + majsep * seplength + '\n'
-            for key, value in categories.items():
-                out = out + "'{}': '{}'\n".format(key, value)
-        return out
+        return json.dumps(self.all, indent=4)
 
     def __getitem__(self, keys):
         """Get values for a given key, list of keys, or set of keys.
@@ -904,6 +863,10 @@ class AggCategories(AggMetadata):
             All unique Categories among members.
         """
         keys = [set(member.categories.keys()) for member in self._collection]
+
+        if not keys:
+            return {}
+
         keys = set.union(*keys)
 
         return {k: [m.categories[k] if k in m.categories else None
@@ -920,6 +883,10 @@ class AggCategories(AggMetadata):
             Categories common to all members.
         """
         keys = [set(member.categories.keys()) for member in self._collection]
+
+        if not keys:
+            return {}
+
         keys = set.intersection(*keys)
 
         return {k: [m.categories[k] if k in m.categories else None
@@ -953,7 +920,7 @@ class AggCategories(AggMetadata):
             member.categories.add(categorydict, **categories)
 
     def remove(self, *categories):
-        """Remove categories from Treant.
+        """Remove categories from each Treant in collection.
 
         Any number of categories (keys) can be given as arguments, and these
         keys (with their values) will be deleted.
@@ -967,7 +934,7 @@ class AggCategories(AggMetadata):
             member.categories.remove(*categories)
 
     def clear(self):
-        """Remove all categories from all Treants in collection.
+        """Remove all categories from each Treant in collection.
 
         """
         for member in self._collection:
