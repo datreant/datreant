@@ -13,9 +13,9 @@ The rules for this file:
 
 ------------------------------------------------------------------------------
 
-??/??/18
+05/16/21
 
-    * 1.0.2 dotsdl
+    * 1.1.0 richardjgowers, kain88-de, dotsdl
 
 API Changes
 
@@ -29,8 +29,13 @@ Fixes
    * `Tree.trees` no longer gives `NameError` if scandir returns an empty
      iterator (#121).
 
+   * Appropriate exception now raised when an unrecognizable tag selection is
+     made (#175).
+
 
 Changes
+
+   * Python 2 no longer supported (#172)
 
 
 Doc Updates
