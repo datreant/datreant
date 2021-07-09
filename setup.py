@@ -30,10 +30,11 @@ setup(
     package_dir={'': 'src'},
     scripts=[],
     entry_points={'console_scripts':
-                  ['datreant_07to1=datreant.scripts.datreant_07to1:main']},
+                  ['datreant_07to1=datreant.scripts.datreant_07to1:main',
+                   'dtr=datreant.cli:cli']},
     license='BSD',
     long_description=open('README.rst').read(),
     tests_require=['numpy', 'pytest>=2.10', 'pytest-cov', 'pytest-pep8'],
     install_requires=[
         'asciitree', 'scandir', 'fuzzywuzzy',
-        'python-Levenshtein', 'pyparsing'])
+        'python-Levenshtein', 'pyparsing', 'click'])

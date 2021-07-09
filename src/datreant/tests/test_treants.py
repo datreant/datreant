@@ -357,11 +357,6 @@ class TestTreant(TestTree):
             with pytest.raises(ValueError):
                 treant.tags.add(tag)
 
-        def test_tags_printing(self, treant):
-            treant.tags.add('marklar')
-            repr = str(treant.tags)
-            assert repr == "Tags\n====\n'marklar'\n"
-
     class TestCategories:
         """Test treant categories"""
 
