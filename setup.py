@@ -36,4 +36,4 @@ setup(
     tests_require=['numpy', 'pytest>=2.10', 'pytest-cov', 'pytest-pep8'],
     install_requires=[
         'asciitree', 'scandir', 'fuzzywuzzy',
-        'python-Levenshtein', 'pyparsing'])
+        'python-Levenshtein', 'pyparsing>=3.0'])
