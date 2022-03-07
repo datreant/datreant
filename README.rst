@@ -54,9 +54,9 @@ contributing back.
     :scale: 100%
     :target: http://datreant.readthedocs.org/en/develop/?badge=develop
 
-.. |build| image:: https://travis-ci.org/datreant/datreant.svg?branch=develop
+.. |build| image:: https://github.com/datreant/datreant/actions/workflows/gh-ci.yml/badge.svg?branch=develop
     :alt: Build Status
-    :target: https://travis-ci.org/datreant/datreant
+    :target: https://www.github.com/datreant/datreant/actions
 
 .. |cov| image:: http://codecov.io/github/datreant/datreant/coverage.svg?branch=develop
     :alt: Code Coverage
