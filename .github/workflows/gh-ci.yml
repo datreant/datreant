@@ -1,0 +1,29 @@
+name: GH Actions Ci
+on:
+  push:
+    branches:
+      - develop
+      - master
+  pull_request:
+    branches:
+      - develop
+      - master
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: install Dependencies
+        run: |
+          pip install --upgrade pytest-cov numpy pytest
+      - name: install library
+        run: |
+          pip install -e .
+      - name: Run test suite
+        run: |
+          pytest -v
