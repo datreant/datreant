@@ -13,6 +13,24 @@ The rules for this file:
 
 ------------------------------------------------------------------------------
 
+05/19/22
+
+    * 1.1.1 kain88-de
+
+API Changes
+
+Enhancements
+
+Fixes
+   * Updated `setup.py` to use `pyparsing>=3.0` (#180)
+
+
+Changes
+
+
+Doc Updates
+
+
 05/16/21
 
     * 1.1.0 richardjgowers, kain88-de, dotsdl
