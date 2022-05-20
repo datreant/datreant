@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='datreant',
-    version='1.1.1',
+    version='1.1.2-dev',
     description='persistent, pythonic trees for heterogeneous data',
     author='David Dotson',
     author_email='dotsdl@gmail.com',
