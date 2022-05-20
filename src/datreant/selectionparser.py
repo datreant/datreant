@@ -1,5 +1,5 @@
 from pyparsing import (CaselessLiteral, Word, quotedString,
-                       removeQuotes, operatorPrecedence, opAssoc, stringEnd,
+                       removeQuotes, infix_notation, opAssoc, stringEnd,
                        ParseException)
 
 __all__ = ['parse_selection']
@@ -65,7 +65,7 @@ allowed_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!
 # first remove matching strings and then parse for printable characters
 searchTerm = quotedString.setParseAction(removeQuotes) | Word(allowed_chars)
 searchTerm.setParseAction(SearchTerm)
-searchExpr = operatorPrecedence(searchTerm, [
+searchExpr = infix_notation(searchTerm, [
     (not_, 1, opAssoc.RIGHT, SearchNot),
     (and_, 2, opAssoc.LEFT, SearchAnd),
     (or_, 2, opAssoc.LEFT, SearchOr),
